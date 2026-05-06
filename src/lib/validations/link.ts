@@ -100,6 +100,14 @@ export const linkIdParamsSchema = z
 
 export type LinkIdParams = z.infer<typeof linkIdParamsSchema>;
 
+export const linkSlugParamsSchema = z
+  .object({
+    slug: slugSchema,
+  })
+  .strict();
+
+export type LinkSlugParams = z.infer<typeof linkSlugParamsSchema>;
+
 export const createLinkSchema = z
   .object({
     destinationUrl: destinationUrlSchema,

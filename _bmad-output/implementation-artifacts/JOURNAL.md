@@ -960,3 +960,53 @@ Implemented `GET /api/v1/links/[id]/analytics` with UUID param validation, stric
 - ✅ No raw SQL, secrets, plaintext IP, or sensitive logging added.
 
 **Next Task:** 2.7 — Create Link Form (Dashboard)
+
+### 2.7 — Create Link Form (Dashboard)
+- **Date:** 2026-05-06 23:22 GMT+7
+- **Duration:** 0h 40m
+- **Status:** ✅ Complete
+
+**What I Did:**
+Built the protected `/links/new` dashboard form with destination URL, optional title, custom slug preview, debounced server-side slug availability checks, Link Page config controls, Smart Rules config controls, toast success handling, and redirect back to the links list. Added an authenticated slug availability endpoint for the form and set the local MaxMind City database path in `.env`.
+
+**Files Changed:**
+- `.gitignore` — ignored local GeoLite `.mmdb` files so binary databases are not committed.
+- `.env` — set local `MAXMIND_DB_PATH` to `src/database/geolite/city.mmdb` absolute path; file remains ignored.
+- `src/app/(dashboard)/links/new/page.tsx` — added create-link dashboard route shell.
+- `src/app/(dashboard)/links/new/create-link-form.tsx` — added client form, validation states, debounced slug checks, preview panel, and submit handling.
+- `src/app/api/v1/links/slug/[slug]/route.ts` — added authenticated slug availability API with strict param validation and tiered rate limiting.
+- `src/lib/links/preview.ts` — added short URL preview helpers.
+- `src/lib/validations/link.ts` — added strict slug params schema.
+- `tests/integration/slug-availability-api.test.ts` — added endpoint coverage for availability, taken slug, plan gating, auth, invalid params, and rate limits.
+- `tests/unit/link-preview.test.ts` — added preview helper coverage.
+- `tests/unit/link-validation.test.ts` — added slug param validation coverage.
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — checked off Task 2.7.
+- `_bmad-output/planning-artifacts/SECURITY.md` — updated API rate-limit and slug validation checklist status.
+- `_bmad-output/implementation-artifacts/JOURNAL.md` — recorded this completion entry.
+
+**Decisions Made:**
+- Slug availability is checked through an authenticated API rather than trusting client-only state.
+- The availability response includes custom-slug plan access so free-plan users get feedback before submit.
+- Link Page and Smart Rules config controls are captured in the UI only for now because persistence APIs are scoped to the upcoming Link Page and Smart Rules tasks.
+- Local GeoLite `.mmdb` files are ignored instead of committed; deployments should provide their own `MAXMIND_DB_PATH`.
+
+**Tests:**
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed after moving sync slug state updates out of `useEffect`.
+- ✅ Unit/Integration: `rtk bun run test` — 24 files passed, 112 tests passed.
+- ✅ Build: `rtk bun run build` — Passed; `/links/new` and `/api/v1/links/slug/[slug]` are registered.
+- ✅ Next runtime diagnostics: `get_errors` on port 3000 returned no config/session errors.
+- ✅ Browser verification: navigating to `/links/new` redirected to `/login?callbackUrl=%2Flinks%2Fnew`, confirming the protected route gate; browser console had no errors.
+
+**Issues Encountered:**
+- React lint disallowed synchronous state updates inside `useEffect`; resolved by moving immediate slug validation state to the input handler and leaving the effect for debounced fetch only.
+- Auth protection prevents unauthenticated browser rendering of the form; verified route registration through build and Next route metadata instead.
+
+**Security Checks:**
+- ✅ Destination URL and slug are validated with strict Zod schemas before submit/API handling.
+- ✅ Slug availability endpoint requires auth and applies tiered API rate limiting.
+- ✅ Create link submit still uses the existing server-side quota, plan, duplicate slug, and SSRF protections.
+- ✅ No raw SQL, secrets, plaintext IP, or sensitive logging added.
+- ✅ `.env` and local `.mmdb` files remain ignored and are not staged for commit.
+
+**Next Task:** 2.8 — Edit Link Page

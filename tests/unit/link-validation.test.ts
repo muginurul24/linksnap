@@ -4,6 +4,7 @@ import {
   isSafeDestinationUrl,
   linkAnalyticsQuerySchema,
   listLinksQuerySchema,
+  linkSlugParamsSchema,
   updateLinkSchema,
 } from "../../src/lib/validations/link";
 
@@ -38,6 +39,20 @@ describe("link validation", () => {
       destinationUrl: "https://example.com",
       slug: "Promo_123",
     });
+
+    expect(parsed.success).toBe(false);
+  });
+
+  it("should parse slug params for availability checks", () => {
+    const parsed = linkSlugParamsSchema.safeParse({ slug: "promo-123" });
+
+    expect(parsed.success).toBe(true);
+    if (!parsed.success) return;
+    expect(parsed.data).toEqual({ slug: "promo-123" });
+  });
+
+  it("should reject invalid slug params", () => {
+    const parsed = linkSlugParamsSchema.safeParse({ slug: "Promo_123" });
 
     expect(parsed.success).toBe(false);
   });

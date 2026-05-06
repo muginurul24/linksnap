@@ -214,13 +214,13 @@ src/
 - [x] Query params: `from`, `to` (date range)
 
 ### TASK 2.7 — Create Link Form (Dashboard)
-- File: `src/app/(dashboard)/links/new/page.tsx`
-- Form fields: Destination URL, Custom slug (optional), Title (optional)
-- Live slug preview: `linksnap.id/your-slug`
-- Enable Link Page toggle → expands Link Page config
-- Enable Smart Rules toggle → expands rules config
-- Validation: URL format, slug availability check (debounced)
-- On success: toast + redirect to links list
+- [x] File: `src/app/(dashboard)/links/new/page.tsx`
+- [x] Form fields: Destination URL, Custom slug (optional), Title (optional)
+- [x] Live slug preview: `linksnap.id/your-slug`
+- [x] Enable Link Page toggle → expands Link Page config
+- [x] Enable Smart Rules toggle → expands rules config
+- [x] Validation: URL format, slug availability check (debounced)
+- [x] On success: toast + redirect to links list
 
 ### TASK 2.8 — Edit Link Page
 - File: `src/app/(dashboard)/links/[slug]/edit/page.tsx`
