@@ -1632,3 +1632,40 @@ Implemented the public QR generation endpoint for short links. The API validates
 - ✅ No raw SQL, secrets, plaintext IP storage, or sensitive logging added.
 
 **Next Task:** 5.2 — QR Download
+
+### 5.2 — QR Download
+- **Date:** 2026-05-07 06:55 GMT+7
+- **Duration:** 0h 25m
+- **Status:** ✅ Complete
+
+**What I Did:**
+Added QR download controls for PNG and SVG formats in both the dashboard links table and the QR Codes page. The QR page now lists the authenticated user’s real links instead of static placeholder cards, and each link exposes direct download targets backed by the public QR API.
+
+**Files Changed:**
+- `src/lib/qr/downloads.ts` — Added helpers for QR download hrefs and filenames.
+- `src/app/(dashboard)/links/page.tsx` — Added PNG and SVG QR download actions to each link row dropdown.
+- `src/app/(dashboard)/qr/page.tsx` — Rebuilt the QR Codes page around the authenticated user’s links with PNG/SVG download buttons.
+- `tests/unit/qr-downloads.test.ts` — Added helper coverage for download URLs and filenames.
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Checked off Task 5.2.
+- `_bmad-output/implementation-artifacts/JOURNAL.md` — Recorded this completion entry.
+
+**Decisions Made:**
+- Centralized download URL and filename generation in `src/lib/qr/downloads.ts` so the links table, QR page, and future tests use the same contract.
+- Kept QR download links as normal anchors with `download` attributes so the browser can handle file downloads without client-side JavaScript.
+- Replaced static QR page data with real link data to make the download controls actionable.
+
+**Tests:**
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Unit/Integration: `rtk bun run test` — 40 files passed, 189 tests passed.
+- ✅ Build: `rtk bun run build` — Passed; `/qr` is dynamic and `/api/v1/qr/[slug]` remains registered.
+
+**Issues Encountered:**
+- None.
+
+**Security Checks:**
+- ✅ QR page requires authenticated dashboard access.
+- ✅ Download links use the public QR endpoint, which validates slug/query input and link availability.
+- ✅ No client-side secret handling or sensitive logging added.
+
+**Next Task:** 5.3 — QR Tests

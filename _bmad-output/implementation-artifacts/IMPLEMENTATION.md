@@ -351,9 +351,9 @@ src/
 - [x] Size: 300x300 default, configurable `?size=300`
 
 ### TASK 5.2 — QR Download
-- Add download buttons in links table and QR codes page
-- PNG download: `<a download="slug.png" href="/api/v1/qr/slug?format=png">`
-- SVG download: `<a download="slug.svg" href="/api/v1/qr/slug?format=svg">`
+- [x] Add download buttons in links table and QR codes page
+- [x] PNG download: `<a download="slug.png" href="/api/v1/qr/slug?format=png">`
+- [x] SVG download: `<a download="slug.svg" href="/api/v1/qr/slug?format=svg">`
 
 ### TASK 5.3 — QR Tests
 - Integration: generate QR → verify it's valid → scan with phone → verify redirect

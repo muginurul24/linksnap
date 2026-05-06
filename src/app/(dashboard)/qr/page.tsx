@@ -1,51 +1,142 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { redirect } from "next/navigation";
+import { Download, QrCode } from "lucide-react";
+import { auth } from "@/lib/auth";
+import { listLinksByUserId, type ListedLink } from "@/lib/db/queries/links";
+import {
+  getQrDownloadFilename,
+  getQrDownloadHref,
+  type QrDownloadFormat,
+} from "@/lib/qr/downloads";
 import { Badge } from "@/components/ui/badge";
-import { QrCode, Download, Edit, Trash2, MoreHorizontal } from "lucide-react";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { buttonVariants } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { EmptyState } from "@/components/dashboard/empty-state";
 
-const qrCodes = [
-  { slug: "promo-ramadhan", title: "Ramadhan Sale", scans: 1230, type: "Dynamic", format: "PNG + SVG" },
-  { slug: "launch-sneakers", title: "Sneakers Drop", scans: 890, type: "Static", format: "PNG" },
-  { slug: "app-download", title: "App Download", scans: 4521, type: "Dynamic", format: "PNG + SVG" },
-  { slug: "menu-resto", title: "Restaurant Menu", scans: 234, type: "Static", format: "PNG" },
-];
+const PAGE_LIMIT = 60;
 
-export default function QrCodesPage() {
+type SessionWithUserId = {
+  user?: {
+    id?: unknown;
+  } | null;
+} | null;
+
+function getSessionUserId(session: SessionWithUserId): string | null {
+  return typeof session?.user?.id === "string" ? session.user.id : null;
+}
+
+function getShortUrl(slug: string): string {
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL?.trim().replace(/\/+$/, "");
+  return `${baseUrl || "https://linksnap.id"}/${slug}`;
+}
+
+function DownloadButton({
+  format,
+  slug,
+}: {
+  format: QrDownloadFormat;
+  slug: string;
+}) {
+  return (
+    <a
+      aria-label={`Download ${format.toUpperCase()} QR for ${slug}`}
+      className={buttonVariants({ size: "sm", variant: "outline" })}
+      download={getQrDownloadFilename(slug, format)}
+      href={getQrDownloadHref(slug, format)}
+    >
+      <Download className="size-4" />
+      {format.toUpperCase()}
+    </a>
+  );
+}
+
+function QrEmptyState() {
+  return (
+    <EmptyState
+      actionHref="/links/new"
+      actionLabel="Create link"
+      icon={<QrCode className="size-5" />}
+      title="No QR codes yet. Create a link to generate one."
+    />
+  );
+}
+
+function QrCodeCard({ link }: { link: ListedLink }) {
+  return (
+    <Card>
+      <CardHeader className="pb-3">
+        <div className="flex items-start gap-3">
+          <div className="flex aspect-square size-12 items-center justify-center rounded-lg border bg-muted">
+            <QrCode className="size-6" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <CardTitle className="truncate text-base">
+              {link.title || `/${link.slug}`}
+            </CardTitle>
+            <CardDescription className="truncate font-mono text-xs">
+              {getShortUrl(link.slug)}
+            </CardDescription>
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="grid grid-cols-2 gap-2 rounded-lg border bg-muted/50 p-3">
+          <div>
+            <p className="text-xs text-muted-foreground">Scans</p>
+            <p className="text-lg font-bold tabular-nums">
+              {link.clickCount.toLocaleString()}
+            </p>
+          </div>
+          <div>
+            <p className="text-xs text-muted-foreground">Type</p>
+            <Badge variant={link.isActive ? "default" : "secondary"}>
+              Dynamic
+            </Badge>
+          </div>
+        </div>
+        <div className="flex gap-2">
+          <DownloadButton format="png" slug={link.slug} />
+          <DownloadButton format="svg" slug={link.slug} />
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+export default async function QrCodesPage() {
+  const session = await auth();
+  const userId = getSessionUserId(session);
+  if (!userId) redirect("/login?callbackUrl=/qr");
+
+  const { items: links } = await listLinksByUserId({
+    limit: PAGE_LIMIT,
+    page: 1,
+    userId,
+  });
+
   return (
     <>
-      <div><h1 className="text-2xl font-bold tracking-tight">QR Codes</h1><p className="text-sm text-muted-foreground">Manage your generated QR codes. Dynamic QR codes can be edited anytime.</p></div>
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {qrCodes.map((qr) => (
-          <Card key={qr.slug}>
-            <CardHeader className="pb-3">
-              <div className="flex items-start justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="flex aspect-square size-12 items-center justify-center rounded-lg border bg-muted"><QrCode className="size-6" /></div>
-                  <div><CardTitle className="text-base">{qr.title}</CardTitle><CardDescription className="font-mono text-xs">/{qr.slug}</CardDescription></div>
-                </div>
-                <DropdownMenu>
-                  <DropdownMenuTrigger><Button variant="ghost" size="icon" className="size-8"><MoreHorizontal className="size-4" /></Button></DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem><Download className="mr-2 size-4" /> Download PNG</DropdownMenuItem>
-                    <DropdownMenuItem><Download className="mr-2 size-4" /> Download SVG</DropdownMenuItem>
-                    <DropdownMenuItem><Edit className="mr-2 size-4" /> Edit URL</DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem className="text-destructive"><Trash2 className="mr-2 size-4" /> Delete</DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="mb-3 grid grid-cols-2 gap-2 rounded-lg border bg-muted/50 p-3">
-                <div><p className="text-xs text-muted-foreground">Scans</p><p className="text-lg font-bold tabular-nums">{qr.scans.toLocaleString()}</p></div>
-                <div><p className="text-xs text-muted-foreground">Format</p><p className="text-sm font-medium">{qr.format}</p></div>
-              </div>
-              <Badge variant={qr.type === "Dynamic" ? "default" : "secondary"}>{qr.type}</Badge>
-            </CardContent>
-          </Card>
-        ))}
+      <div>
+        <h1 className="text-2xl font-bold tracking-tight">QR Codes</h1>
+        <p className="text-sm text-muted-foreground">
+          Download dynamic QR codes for your short links.
+        </p>
       </div>
+
+      {links.length === 0 ? (
+        <QrEmptyState />
+      ) : (
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {links.map((link) => (
+            <QrCodeCard key={link.id} link={link} />
+          ))}
+        </div>
+      )}
     </>
   );
 }

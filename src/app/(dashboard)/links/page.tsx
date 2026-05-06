@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import {
   BarChart3,
   Copy,
+  Download,
   Edit,
   ExternalLink,
   Filter,
@@ -15,6 +16,10 @@ import {
 } from "lucide-react";
 import { auth } from "@/lib/auth";
 import { listLinksByUserId, type ListedLink } from "@/lib/db/queries/links";
+import {
+  getQrDownloadFilename,
+  getQrDownloadHref,
+} from "@/lib/qr/downloads";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ButtonLink } from "@/components/ui/button-link";
@@ -138,6 +143,28 @@ function LinkRows({ links }: { links: ListedLink[] }) {
                 <DropdownMenuItem>
                   <Copy className="mr-2 size-4" />
                   Copy URL
+                </DropdownMenuItem>
+                <DropdownMenuItem>
+                  <a
+                    aria-label={`Download PNG QR for ${link.slug}`}
+                    className="flex w-full items-center gap-1.5"
+                    download={getQrDownloadFilename(link.slug, "png")}
+                    href={getQrDownloadHref(link.slug, "png")}
+                  >
+                    <Download className="mr-2 size-4" />
+                    Download QR PNG
+                  </a>
+                </DropdownMenuItem>
+                <DropdownMenuItem>
+                  <a
+                    aria-label={`Download SVG QR for ${link.slug}`}
+                    className="flex w-full items-center gap-1.5"
+                    download={getQrDownloadFilename(link.slug, "svg")}
+                    href={getQrDownloadHref(link.slug, "svg")}
+                  >
+                    <Download className="mr-2 size-4" />
+                    Download QR SVG
+                  </a>
                 </DropdownMenuItem>
                 <DropdownMenuItem>
                   <BarChart3 className="mr-2 size-4" />
