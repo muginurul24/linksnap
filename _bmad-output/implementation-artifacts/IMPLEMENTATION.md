@@ -170,10 +170,10 @@ src/
 - [x] Return: `{ success: true, data: { id, slug, destinationUrl, shortUrl } }`
 
 ### TASK 2.2 — List Links API
-- File: `src/app/api/v1/links/route.ts` (GET)
-- Auth: required
-- Query params: `page`, `limit`, `search`, `campaignId`
-- Return paginated list: `{ success, data: [...], meta: { page, limit, total } }`
+- [x] File: `src/app/api/v1/links/route.ts` (GET)
+- [x] Auth: required
+- [x] Query params: `page`, `limit`, `search`, `campaignId`
+- [x] Return paginated list: `{ success, data: [...], meta: { page, limit, total } }`
 
 ### TASK 2.3 — Get/Update/Delete Link API
 - File: `src/app/api/v1/links/[id]/route.ts`

@@ -14,6 +14,12 @@ const LINK_CREATION_RATE_LIMITS: Record<UserPlan, number> = {
   BUSINESS: 60,
 };
 
+const API_ENDPOINT_RATE_LIMITS: Record<UserPlan, number> = {
+  FREE: 30,
+  PRO: 60,
+  BUSINESS: 120,
+};
+
 export function canUseCustomSlug(plan: UserPlan): boolean {
   return plan !== "FREE";
 }
@@ -24,6 +30,10 @@ export function getLinkQuota(plan: UserPlan): number {
 
 export function getLinkCreationRateLimit(plan: UserPlan): number {
   return LINK_CREATION_RATE_LIMITS[plan];
+}
+
+export function getApiEndpointRateLimit(plan: UserPlan): number {
+  return API_ENDPOINT_RATE_LIMITS[plan];
 }
 
 export function hasReachedLinkQuota(plan: UserPlan, linkCount: number): boolean {

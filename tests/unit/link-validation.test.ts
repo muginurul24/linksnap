@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { createLinkSchema, isSafeDestinationUrl } from "../../src/lib/validations/link";
+import {
+  createLinkSchema,
+  isSafeDestinationUrl,
+  listLinksQuerySchema,
+} from "../../src/lib/validations/link";
 
 describe("link validation", () => {
   it("should normalize valid create link input when optional fields are blank", () => {
@@ -63,5 +67,37 @@ describe("link validation", () => {
   it("should allow public HTTP and HTTPS destination URLs", () => {
     expect(isSafeDestinationUrl("https://example.com/path")).toBe(true);
     expect(isSafeDestinationUrl("http://example.com/path")).toBe(true);
+  });
+
+  it("should parse list query defaults when query params are omitted", () => {
+    const parsed = listLinksQuerySchema.safeParse({});
+
+    expect(parsed.success).toBe(true);
+    if (!parsed.success) return;
+    expect(parsed.data).toEqual({ limit: 20, page: 1 });
+  });
+
+  it("should coerce and trim list query params", () => {
+    const parsed = listLinksQuerySchema.safeParse({
+      campaignId: "f4bd85a6-2e8c-47fc-894d-3dbe3c7d86b0",
+      limit: "10",
+      page: "2",
+      search: " promo ",
+    });
+
+    expect(parsed.success).toBe(true);
+    if (!parsed.success) return;
+    expect(parsed.data).toEqual({
+      campaignId: "f4bd85a6-2e8c-47fc-894d-3dbe3c7d86b0",
+      limit: 10,
+      page: 2,
+      search: "promo",
+    });
+  });
+
+  it("should reject unknown list query params", () => {
+    const parsed = listLinksQuerySchema.safeParse({ sort: "clicks" });
+
+    expect(parsed.success).toBe(false);
   });
 });

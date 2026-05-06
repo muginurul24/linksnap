@@ -100,6 +100,7 @@ vi.mock("@/lib/db/queries/links", () => ({
     error !== null &&
     "code" in error &&
     (error as { code?: unknown }).code === "23505",
+  listLinksByUserId: async () => ({ items: [], total: 0 }),
 }));
 
 import { POST } from "../../src/app/api/v1/links/route";

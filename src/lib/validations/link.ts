@@ -100,3 +100,26 @@ export const createLinkSchema = z
   .strict();
 
 export type CreateLinkInput = z.infer<typeof createLinkSchema>;
+
+export const listLinksQuerySchema = z
+  .object({
+    campaignId: z.preprocess(
+      emptyStringToUndefined,
+      z.string().uuid("Campaign ID must be a valid UUID").optional(),
+    ),
+    limit: z.preprocess(
+      emptyStringToUndefined,
+      z.coerce.number().int().min(1).max(100).default(20),
+    ),
+    page: z.preprocess(
+      emptyStringToUndefined,
+      z.coerce.number().int().min(1).default(1),
+    ),
+    search: z.preprocess(
+      emptyStringToUndefined,
+      z.string().trim().max(100, "Search is too long").optional(),
+    ),
+  })
+  .strict();
+
+export type ListLinksQuery = z.infer<typeof listLinksQuerySchema>;

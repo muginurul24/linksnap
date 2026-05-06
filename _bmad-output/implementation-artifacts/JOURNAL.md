@@ -713,3 +713,51 @@ Implemented `POST /api/v1/links` with session auth, strict Zod validation, SSRF-
 - ✅ No raw SQL, secrets, or sensitive logging added.
 
 **Next Task:** 2.2 — List Links API
+
+### 2.2 — List Links API
+- **Date:** 2026-05-06 22:06 GMT+7
+- **Duration:** 0h 20m
+- **Status:** ✅ Complete
+
+**What I Did:**
+Implemented `GET /api/v1/links` with session auth, strict query validation, plan-based API rate limiting, owner-scoped Drizzle queries, pagination, optional search and campaign filters, and response metadata `{ page, limit, total }`. Each returned link includes a generated `shortUrl`.
+
+**Files Changed:**
+- `src/app/api/v1/links/route.ts` — Added authenticated list-links API route.
+- `src/lib/db/queries/links.ts` — Added paginated owner-scoped list query with optional search/campaign filters and total count.
+- `src/lib/validations/link.ts` — Added list query schema for `page`, `limit`, `search`, and `campaignId`.
+- `src/lib/links/limits.ts` — Added plan-based general API rate limits.
+- `src/lib/api/response.ts` — Added optional `meta` support to success responses.
+- `tests/integration/list-links-api.test.ts` — Added route coverage for success, defaults, auth, query validation, unknown params, and rate limiting.
+- `tests/integration/create-link-api.test.ts` — Updated query mock for the expanded links query module.
+- `tests/unit/link-validation.test.ts` — Added list query validation tests.
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Checked off Task 2.2.
+- `_bmad-output/planning-artifacts/SECURITY.md` — Updated implemented-so-far Zod API input coverage.
+- `_bmad-output/implementation-artifacts/JOURNAL.md` — Recorded this completion entry.
+
+**Decisions Made:**
+- Default pagination is `page=1`, `limit=20`; `limit` is capped at 100 to protect query cost.
+- Unknown query params are rejected instead of silently ignored.
+- List queries are scoped by `session.user.id` in the Drizzle filter, so users only receive their own links.
+- Search covers slug, destination URL, and title using parameterized Drizzle predicates.
+
+**Tests:**
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Unit/Integration: `rtk bun run test` — 13 files passed, 54 tests passed.
+- ✅ Build: `rtk bun run build` — Passed.
+- ✅ Next runtime diagnostics: `get_errors` on port 3000 returned no config/session errors.
+- ✅ Security grep: no raw SQL, user-controlled fetch, or obvious async loop/N+1 patterns in `src`.
+
+**Issues Encountered:**
+- None.
+
+**Security Checks:**
+- ✅ Query params validated with strict Zod schema.
+- ✅ Auth required before returning user data.
+- ✅ Ownership enforced by filtering every list query with authenticated `userId`.
+- ✅ Tiered API rate limiting applied to list endpoint.
+- ✅ Pagination cap protects database workload.
+- ✅ No raw SQL, secrets, or sensitive logging added.
+
+**Next Task:** 2.3 — Get/Update/Delete Link API

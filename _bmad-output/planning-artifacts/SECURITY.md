@@ -134,7 +134,7 @@
   ```
 
 ### SEC-09: Input Validation & Sanitization
-- [x] **Zod schemas** on ALL API inputs implemented so far (auth API routes); future API routes must continue this pattern.
+- [x] **Zod schemas** on ALL API inputs implemented so far (auth API routes, link create body, link list query); future API routes must continue this pattern.
 - [x] **Slug validation** — `/^[a-z0-9-]{3,50}$/` for create-link input (no special chars, no Unicode tricks)
 - [x] **URL validation** — Create-link input uses Zod `.url()` with additional checks:
   - Reject `javascript:` protocol
