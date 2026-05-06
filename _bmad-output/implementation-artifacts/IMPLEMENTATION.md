@@ -230,10 +230,10 @@ src/
 - [x] Delete link button with confirmation dialog
 
 ### TASK 2.9 — Empty & Error States
-- Links list empty: "No links yet. Create your first short link!" with CTA button
-- Analytics empty (no clicks yet): "Waiting for clicks..." with share link CTA
-- 404 slug: "This link doesn't exist or has been removed" with create CTA
-- Rate limited: "Too many requests. Try again in X seconds."
+- [x] Links list empty: "No links yet. Create your first short link!" with CTA button
+- [x] Analytics empty (no clicks yet): "Waiting for clicks..." with share link CTA
+- [x] 404 slug: "This link doesn't exist or has been removed" with create CTA
+- [x] Rate limited: "Too many requests. Try again in X seconds."
 
 ### TASK 2.10 — Link Tests
 - Unit: slug generation, URL validation, quota checking

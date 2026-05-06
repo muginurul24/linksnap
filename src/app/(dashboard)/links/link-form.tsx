@@ -58,6 +58,7 @@ type ApiEnvelope<T> =
   | {
       error: {
         code: string;
+        details?: unknown;
         message?: string;
       };
       success: false;
@@ -139,7 +140,25 @@ function getClientPreviewBaseUrl(): string {
   return "https://linksnap.id";
 }
 
-function apiErrorMessage(code: string, fallback?: string): string {
+function getRetryAfter(details: unknown): number | null {
+  if (typeof details !== "object" || details === null) return null;
+
+  const retryAfter = (details as Record<string, unknown>).retryAfter;
+  return typeof retryAfter === "number" && Number.isFinite(retryAfter)
+    ? Math.ceil(retryAfter)
+    : null;
+}
+
+function apiErrorMessage(
+  code: string,
+  fallback?: string,
+  details?: unknown,
+): string {
+  const retryAfter = getRetryAfter(details);
+  if (code === "RATE_LIMITED" && retryAfter !== null) {
+    return `Too many requests. Try again in ${retryAfter} seconds.`;
+  }
+
   const messages: Record<string, string> = {
     LINK_QUOTA_EXCEEDED: "Link quota exceeded.",
     PLAN_UPGRADE_REQUIRED: "Custom slugs require an upgraded plan.",
@@ -255,7 +274,9 @@ export function CreateLinkForm({ initialLink }: LinkFormProps) {
         .then(async (response) => {
           const body = (await response.json()) as ApiEnvelope<SlugAvailabilityResponse>;
           if (!body.success) {
-            throw new Error(apiErrorMessage(body.error.code, body.error.message));
+            throw new Error(
+              apiErrorMessage(body.error.code, body.error.message, body.error.details),
+            );
           }
           return body.data;
         })
@@ -386,7 +407,11 @@ export function CreateLinkForm({ initialLink }: LinkFormProps) {
       const body = (await response.json()) as ApiEnvelope<LinkMutationResponse>;
 
       if (!body.success) {
-        const message = apiErrorMessage(body.error.code, body.error.message);
+        const message = apiErrorMessage(
+          body.error.code,
+          body.error.message,
+          body.error.details,
+        );
         if (body.error.code === "SLUG_ALREADY_EXISTS") {
           setFieldErrors((current) => ({ ...current, slug: message }));
           setSlugState({ message, status: "taken" });
@@ -427,7 +452,11 @@ export function CreateLinkForm({ initialLink }: LinkFormProps) {
       const body = (await response.json()) as ApiEnvelope<{ deleted: boolean }>;
 
       if (!body.success) {
-        const message = apiErrorMessage(body.error.code, body.error.message);
+        const message = apiErrorMessage(
+          body.error.code,
+          body.error.message,
+          body.error.details,
+        );
         setFormError(message);
         return;
       }

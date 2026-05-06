@@ -1054,3 +1054,45 @@ Added the protected `/links/[slug]/edit` dashboard page. The page validates slug
 - ✅ No raw SQL, secrets, plaintext IP, or sensitive logging added.
 
 **Next Task:** 2.9 — Empty & Error States
+
+### 2.9 — Empty & Error States
+- **Date:** 2026-05-06 23:37 GMT+7
+- **Duration:** 0h 25m
+- **Status:** ✅ Complete
+
+**What I Did:**
+Added reusable dashboard empty states, converted the links page from static mock data to authenticated owner-scoped database data, added the required links empty state CTA, added the analytics no-clicks state, added a public slug 404 page with create CTA, and updated link form rate-limit errors to show retry seconds when the API returns `retryAfter`.
+
+**Files Changed:**
+- `src/components/dashboard/empty-state.tsx` — Added shared dashboard empty state component.
+- `src/app/(dashboard)/links/page.tsx` — Loads authenticated user links from DB and renders the required empty state when none exist.
+- `src/app/(dashboard)/analytics/page.tsx` — Added no-clicks empty state with share CTA.
+- `src/app/[slug]/not-found.tsx` — Added public missing-link 404 state with create CTA.
+- `src/app/(dashboard)/links/link-form.tsx` — Added `retryAfter`-aware rate-limit copy.
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Checked off Task 2.9.
+- `_bmad-output/implementation-artifacts/JOURNAL.md` — Recorded this completion entry.
+
+**Decisions Made:**
+- `/links` now uses real owner-scoped data so the empty state appears based on the actual database instead of a mock array.
+- The public missing-link CTA points to registration because unauthenticated users cannot access `/links/new` directly.
+- Rate-limit copy is generated from API `error.details.retryAfter` when available and falls back to generic copy otherwise.
+
+**Tests:**
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Unit/Integration: `rtk bun run test` — 25 files passed, 114 tests passed.
+- ✅ Build: `rtk bun run build` — Passed; `/links` is now dynamic and public slug 404 builds successfully.
+- ✅ Browser verification: `/definitely-missing-slug` rendered "This link doesn't exist or has been removed" with create/back CTAs.
+- ✅ Next runtime diagnostics: `get_errors` on port 3000 returned no config/session errors after browser verification.
+
+**Issues Encountered:**
+- Browser console records the expected 404 resource status for the missing slug page during verification.
+- Existing dashboard pages still have some static mock surfaces; this task only converted `/links` because its empty state depends on real link data.
+
+**Security Checks:**
+- ✅ `/links` data is fetched only after auth and filtered by authenticated `userId`.
+- ✅ Missing public slugs do not leak link existence details beyond the generic 404 state.
+- ✅ Rate-limit retry details are displayed without exposing request IDs or internal errors.
+- ✅ No raw SQL, secrets, plaintext IP, or sensitive logging added.
+
+**Next Task:** 2.10 — Link Tests
