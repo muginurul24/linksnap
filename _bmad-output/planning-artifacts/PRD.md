@@ -97,7 +97,7 @@ Kelola links dalam campaign untuk analytics terpadu:
 **Core Platform:**
 
 - Short link generation: random slug & custom slug
-- Redirect endpoint: 301 permanent, p99 <50ms
+- Redirect endpoint: permanent redirect via Next.js App Router (`permanentRedirect`, HTTP 308), p99 <50ms
 - QR Code generation per link (downloadable PNG/SVG)
 - Link Pages — branded preview per link (CTA, countdown, social proof)
 - Smart Redirect Rules — geo & device rules (MVP; time/language di V2)

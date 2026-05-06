@@ -20,7 +20,7 @@
 - [x] **JWT secret** — `AUTH_SECRET` ≥ 32 characters, generated via `openssl rand -base64 32`
 - [ ] **TLS everywhere** — Force HTTPS in production via Vercel + Cloudflare
 - [ ] **Sensitive data encryption** — API keys, tokens stored hashed (not plaintext)
-- [ ] **IP hashing** — SHA256(IP + salt) for analytics; salt rotated periodically
+- [x] **IP hashing** — Analytics hashes IPs with SHA256(IP + `IP_HASH_SALT`) before persistence.
 - [ ] **No hardcoded secrets** — Verify zero secrets in source code: `rtk grep -r "sk-|api_key|secret|password" src/ --include="*.ts" --include="*.tsx"`
 
 ### SEC-03: Injection Attacks
@@ -184,7 +184,7 @@
 ### SEC-13: Data Protection
 - [ ] **GDPR compliance** — Users can request data export/deletion
 - [ ] **Data retention policy** — Analytics data purged after plan-specific period
-- [ ] **IP anonymization** — Raw IPs hashed immediately, never stored plaintext
+- [x] **IP anonymization** — Redirect click logging hashes IPs immediately and never stores plaintext IPs.
 - [ ] **PII minimization** — Only collect essential user data
 - [ ] **Encryption at rest** — Neon.tech encrypts data at rest by default
 - [ ] **Encryption in transit** — TLS 1.3 everywhere

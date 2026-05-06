@@ -2,7 +2,11 @@ import { after } from "next/server";
 import { headers } from "next/headers";
 import { notFound, permanentRedirect } from "next/navigation";
 import { ArrowUpRight, CalendarClock, Link2 } from "lucide-react";
-import { logRedirectClick } from "@/lib/analytics/click-logger";
+import {
+  buildRedirectClickInput,
+  logRedirectClick,
+  type RedirectClickInput,
+} from "@/lib/analytics/click-logger";
 import {
   findPublicLinkPageByLinkId,
   findRedirectLinkBySlug,
@@ -22,11 +26,6 @@ import { cacheGet, cacheSet } from "@/lib/redis";
 
 type RedirectPageProps = {
   params: Promise<{ slug: string }>;
-};
-
-type ClickMetadata = {
-  referrer: string | null;
-  userAgent: string | null;
 };
 
 const DEFAULT_CTA_COLOR = "#6366f1";
@@ -49,20 +48,9 @@ async function getRedirectLink(slug: string): Promise<RedirectLink | null> {
   return link;
 }
 
-function readClickMetadata(headersList: Headers): ClickMetadata {
-  return {
-    referrer: headersList.get("referer"),
-    userAgent: headersList.get("user-agent"),
-  };
-}
-
-function scheduleClickLog(linkId: string, metadata: ClickMetadata): void {
+function scheduleClickLog(input: RedirectClickInput): void {
   after(() => {
-    void logRedirectClick({
-      linkId,
-      referrer: metadata.referrer,
-      userAgent: metadata.userAgent,
-    });
+    void logRedirectClick(input);
   });
 }
 
@@ -163,12 +151,11 @@ export default async function RedirectPage({ params }: RedirectPageProps) {
   if (!isPublicSlug(slug)) notFound();
 
   const headersList = await headers();
-  const clickMetadata = readClickMetadata(headersList);
   const link = await getRedirectLink(slug);
 
   if (!link || !isRedirectLinkAvailable(link)) notFound();
 
-  scheduleClickLog(link.id, clickMetadata);
+  scheduleClickLog(buildRedirectClickInput(link.id, headersList));
 
   if (link.hasLinkPage) {
     const page = await findPublicLinkPageByLinkId(link.id);

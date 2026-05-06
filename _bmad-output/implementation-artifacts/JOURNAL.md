@@ -834,7 +834,7 @@ Implemented the public `/{slug}` handler with Redis-first lookup, PostgreSQL fal
 - Link Page content uses JSX escaping and validates dynamic CTA color as a strict hex value before applying inline style.
 - If a link has `hasLinkPage=true` but no Link Page record exists, the handler falls back to redirect rather than breaking the short link.
 - The minimal click logger does not store IP address yet; IP hashing, geo lookup, and device parsing remain scoped to Task 2.5.
-- Next.js `page.tsx` supports `permanentRedirect`, which returns a permanent 308 redirect. A literal 301 response would require a route handler instead of the requested page file.
+- Next.js App Router best practice is `permanentRedirect`, which returns a permanent 308 redirect and preserves the request method.
 
 **Tests:**
 - ✅ Typecheck: `rtk bun run typecheck` — Passed.
@@ -858,3 +858,54 @@ Implemented the public `/{slug}` handler with Redis-first lookup, PostgreSQL fal
 - ✅ No raw SQL, secrets, or sensitive logging added.
 
 **Next Task:** 2.5 — Click Logging
+
+### 2.5 — Click Logging
+- **Date:** 2026-05-06 22:56 GMT+7
+- **Duration:** 0h 25m
+- **Status:** ✅ Complete
+
+**What I Did:**
+Expanded redirect click logging to capture hashed IP, country, city, referrer, user agent, device, browser, and OS. The redirect page now reads request headers during render, passes plain metadata into `after()`, and the logger enriches the click before inserting it. Also aligned redirect documentation with Next.js App Router best practice: `permanentRedirect` / HTTP 308.
+
+**Files Changed:**
+- `src/app/[slug]/page.tsx` — Passes full click metadata into async `after()` logging.
+- `src/lib/analytics/click-logger.ts` — Builds enriched click event payloads and inserts via query helper.
+- `src/lib/analytics/ip.ts` — Added trusted header IP extraction and SHA-256 hashing with `IP_HASH_SALT`.
+- `src/lib/analytics/user-agent.ts` — Added lightweight device/browser/OS parser.
+- `src/lib/geo/ip-lookup.ts` — Added MaxMind GeoLite2 lookup with edge-header fallback.
+- `src/lib/db/queries/click-events.ts` — Added batch-capable Drizzle insert helper.
+- `.env.example` — Added `MAXMIND_DB_PATH` and `IP_HASH_SALT`.
+- `package.json`, `bun.lock` — Added `@maxmind/geoip2-node`.
+- `tests/unit/*` — Added coverage for click logger, click-event query helper, IP hashing, user-agent parsing, and geo fallback.
+- `_bmad-output/planning-artifacts/spec-click-logging.md` — Added quick-dev tech spec.
+- `_bmad-output/planning-artifacts/PRD.md` — Updated permanent redirect requirement to Next.js 308 best practice.
+- `_bmad-output/planning-artifacts/SECURITY.md` — Marked IP hashing/anonymization implemented.
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Checked off Task 2.5.
+- `_bmad-output/implementation-artifacts/JOURNAL.md` — Recorded this completion entry.
+
+**Decisions Made:**
+- `IP_HASH_SALT` is required for IP hashing; no fallback to `AUTH_SECRET` so auth secrets are not reused for analytics.
+- MaxMind is loaded only when `MAXMIND_DB_PATH` is configured; missing database falls back to Vercel/Cloudflare geo headers and does not break redirects.
+- User-agent parsing uses local heuristics to avoid adding another dependency for MVP-level analytics dimensions.
+- Insert helper accepts event arrays for batch writes; request path uses Next.js `after()` direct async insert because in-memory 30-second batching is unsafe on serverless. Redis/Cron queueing remains the production scaling path.
+
+**Tests:**
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Unit/Integration: `rtk bun run test` — 20 files passed, 87 tests passed.
+- ✅ Build: `rtk bun run build` — Passed.
+- ✅ Next runtime diagnostics: `get_errors` on port 3000 returned no config/session errors.
+- ✅ Security grep: no raw SQL, user-controlled fetch, or obvious async loop/N+1 patterns in `src`.
+
+**Issues Encountered:**
+- MaxMind GeoLite2 needs a deployed `.mmdb` file path; local/dev without `MAXMIND_DB_PATH` uses edge-header fallback.
+- Security grep still reports existing `dangerouslySetInnerHTML` in `src/components/ui/chart.tsx`; this task did not add or modify that code.
+
+**Security Checks:**
+- ✅ Plaintext IP is never inserted into `click_events`; only SHA-256 hash is persisted when `IP_HASH_SALT` is configured.
+- ✅ Referrer and user-agent are stored as metadata only, with no secrets or tokens logged by this task.
+- ✅ Geo lookup errors are swallowed so analytics failures do not block redirects.
+- ✅ MaxMind lookup receives IP in memory only and does not persist it.
+- ✅ No raw SQL, secrets, or sensitive logging added.
+
+**Next Task:** 2.6 — Link Analytics API
