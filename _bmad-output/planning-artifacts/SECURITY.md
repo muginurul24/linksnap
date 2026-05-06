@@ -9,11 +9,11 @@
 
 ### SEC-01: Broken Access Control
 - [x] **Middleware auth gate** — Dashboard surfaces protected via `src/proxy.ts`; public auth/static routes excluded. Future user-data `/api/v1/*` routes still need per-route auth/ownership.
-- [ ] **Ownership verification** — Every API route that returns user data must verify `session.user.id === resource.userId`
+- [x] **Ownership verification** — User-data API routes implemented so far verify `session.user.id === resource.userId`; future user-data routes must continue this pattern.
 - [ ] **Role-based access** — Admin routes (`/api/v1/admin/*`) check `session.user.role === "admin"`
 - [ ] **Plan-gated features** — Check user plan before allowing premium features (Smart Rules, Link Pages, API access)
-- [ ] **IDOR prevention** — Never use sequential IDs in URLs without ownership check; UUIDs are used but still verify ownership
-- [ ] **Direct object reference test** — Try accessing `/api/v1/links/{another-users-link-id}` → must return 403
+- [x] **IDOR prevention** — Link item routes use UUID params and explicit ownership checks before returning, updating, or deleting.
+- [x] **Direct object reference test** — `tests/integration/link-item-api.test.ts` verifies another user's `/api/v1/links/{id}` returns 403.
 
 ### SEC-02: Cryptographic Failures
 - [x] **Password hashing** — bcryptjs with cost factor ≥ 12 (implemented in `src/app/api/v1/auth/register/route.ts`)
@@ -134,9 +134,9 @@
   ```
 
 ### SEC-09: Input Validation & Sanitization
-- [x] **Zod schemas** on ALL API inputs implemented so far (auth API routes, link create body, link list query); future API routes must continue this pattern.
+- [x] **Zod schemas** on ALL API inputs implemented so far (auth API routes, link create/update bodies, link list query, link item params); future API routes must continue this pattern.
 - [x] **Slug validation** — `/^[a-z0-9-]{3,50}$/` for create-link input (no special chars, no Unicode tricks)
-- [x] **URL validation** — Create-link input uses Zod `.url()` with additional checks:
+- [x] **URL validation** — Link create/update inputs use Zod `.url()` with additional checks:
   - Reject `javascript:` protocol
   - Reject `data:` protocol
   - Reject `file:` protocol
@@ -147,7 +147,7 @@
 - [x] **Null/undefined handling** — Auth API routes handle missing/invalid JSON bodies gracefully.
 
 ### SEC-10: SSRF Prevention
-- [x] **URL destination validation** — Create-link input rejects internal URLs:
+- [x] **URL destination validation** — Link create/update inputs reject internal URLs:
   ```typescript
   function isValidDestination(url: string): boolean {
     const parsed = new URL(url);

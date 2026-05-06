@@ -7,6 +7,10 @@ function emptyStringToUndefined(value: unknown): unknown {
   return typeof value === "string" && value.trim() === "" ? undefined : value;
 }
 
+function emptyStringToNull(value: unknown): unknown {
+  return typeof value === "string" && value.trim() === "" ? null : value;
+}
+
 function normalizeHostname(hostname: string): string {
   return hostname.toLowerCase().replace(/^\[|\]$/g, "").replace(/\.$/, "");
 }
@@ -88,6 +92,14 @@ const slugSchema = z
   .trim()
   .regex(SLUG_PATTERN, "Slug must be 3-50 lowercase letters, numbers, or hyphens");
 
+export const linkIdParamsSchema = z
+  .object({
+    id: z.string().uuid("Link ID must be a valid UUID"),
+  })
+  .strict();
+
+export type LinkIdParams = z.infer<typeof linkIdParamsSchema>;
+
 export const createLinkSchema = z
   .object({
     destinationUrl: destinationUrlSchema,
@@ -100,6 +112,26 @@ export const createLinkSchema = z
   .strict();
 
 export type CreateLinkInput = z.infer<typeof createLinkSchema>;
+
+export const updateLinkSchema = z
+  .object({
+    destinationUrl: z.preprocess(
+      emptyStringToUndefined,
+      destinationUrlSchema.optional(),
+    ),
+    slug: z.preprocess(emptyStringToUndefined, slugSchema.optional()),
+    title: z.preprocess(
+      emptyStringToNull,
+      z.string().trim().max(255, "Title is too long").nullable().optional(),
+    ),
+  })
+  .strict()
+  .refine(
+    (data) => Object.values(data).some((value) => value !== undefined),
+    "At least one field must be provided",
+  );
+
+export type UpdateLinkInput = z.infer<typeof updateLinkSchema>;
 
 export const listLinksQuerySchema = z
   .object({

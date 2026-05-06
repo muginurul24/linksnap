@@ -176,11 +176,11 @@ src/
 - [x] Return paginated list: `{ success, data: [...], meta: { page, limit, total } }`
 
 ### TASK 2.3 — Get/Update/Delete Link API
-- File: `src/app/api/v1/links/[id]/route.ts`
-- GET: link details + click summary
-- PATCH: update destination, title, slug (only if not taken)
-- DELETE: soft delete
-- Auth: required, ownership check
+- [x] File: `src/app/api/v1/links/[id]/route.ts`
+- [x] GET: link details + click summary
+- [x] PATCH: update destination, title, slug (only if not taken)
+- [x] DELETE: soft delete
+- [x] Auth: required, ownership check
 
 ### TASK 2.4 — Redirect Handler
 - File: `src/app/[slug]/page.tsx`

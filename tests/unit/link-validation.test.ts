@@ -3,6 +3,7 @@ import {
   createLinkSchema,
   isSafeDestinationUrl,
   listLinksQuerySchema,
+  updateLinkSchema,
 } from "../../src/lib/validations/link";
 
 describe("link validation", () => {
@@ -97,6 +98,26 @@ describe("link validation", () => {
 
   it("should reject unknown list query params", () => {
     const parsed = listLinksQuerySchema.safeParse({ sort: "clicks" });
+
+    expect(parsed.success).toBe(false);
+  });
+
+  it("should normalize valid update input", () => {
+    const parsed = updateLinkSchema.safeParse({
+      destinationUrl: " https://example.com/updated ",
+      title: "",
+    });
+
+    expect(parsed.success).toBe(true);
+    if (!parsed.success) return;
+    expect(parsed.data).toEqual({
+      destinationUrl: "https://example.com/updated",
+      title: null,
+    });
+  });
+
+  it("should reject empty update input", () => {
+    const parsed = updateLinkSchema.safeParse({});
 
     expect(parsed.success).toBe(false);
   });

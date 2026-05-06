@@ -761,3 +761,49 @@ Implemented `GET /api/v1/links` with session auth, strict query validation, plan
 - ✅ No raw SQL, secrets, or sensitive logging added.
 
 **Next Task:** 2.3 — Get/Update/Delete Link API
+
+### 2.3 — Get/Update/Delete Link API
+- **Date:** 2026-05-06 22:13 GMT+7
+- **Duration:** 0h 30m
+- **Status:** ✅ Complete
+
+**What I Did:**
+Implemented `GET`, `PATCH`, and `DELETE` for `/api/v1/links/[id]` with UUID param validation, session auth, ownership checks, plan-based API rate limiting, detail response with click summary, destination/title/slug updates, duplicate slug handling, custom-slug plan gating, and soft delete behavior.
+
+**Files Changed:**
+- `src/app/api/v1/links/[id]/route.ts` — Added detail, update, and delete route handlers.
+- `src/lib/db/queries/links.ts` — Added link detail lookup, owned update, and soft-delete query helpers.
+- `src/lib/validations/link.ts` — Added link ID params schema and update body schema.
+- `tests/integration/link-item-api.test.ts` — Added route coverage for detail, IDOR, update, duplicate slug, free-plan slug denial, invalid destination, empty body, soft delete, auth, and invalid ID.
+- `tests/unit/link-validation.test.ts` — Added update input validation coverage.
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Checked off Task 2.3.
+- `_bmad-output/planning-artifacts/SECURITY.md` — Updated ownership, IDOR, Zod, and destination URL validation status.
+- `_bmad-output/implementation-artifacts/JOURNAL.md` — Recorded this completion entry.
+
+**Decisions Made:**
+- Soft delete uses `isActive=false` because the current database schema does not have a `deletedAt` column; adding a new column would require a schema migration outside this task.
+- Another user's link returns `403 FORBIDDEN`, matching the SECURITY.md direct object reference requirement.
+- `GET` returns `clickSummary.totalClicks` from the link's maintained `clickCount`; full analytics remains scoped to Task 2.6.
+- Empty string title in PATCH clears the title to `null`; omitted fields are left unchanged.
+
+**Tests:**
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Unit/Integration: `rtk bun run test` — 14 files passed, 66 tests passed.
+- ✅ Build: `rtk bun run build` — Passed.
+- ✅ Next runtime diagnostics: `get_errors` on port 3000 returned no config/session errors.
+- ✅ Security grep: no raw SQL, user-controlled fetch, or obvious async loop/N+1 patterns in `src`.
+
+**Issues Encountered:**
+- The schema lacks a dedicated deleted marker, so soft delete currently maps to `isActive=false`.
+
+**Security Checks:**
+- ✅ Params and update body validated with strict Zod schemas.
+- ✅ Auth required before item access, update, or delete.
+- ✅ Ownership checked explicitly before returning, updating, or deleting a link.
+- ✅ IDOR test verifies cross-user access returns 403.
+- ✅ Tiered API rate limiting applied to item endpoints.
+- ✅ Destination URL updates use the SSRF guard.
+- ✅ No raw SQL, secrets, or sensitive logging added.
+
+**Next Task:** 2.4 — Redirect Handler

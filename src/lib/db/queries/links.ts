@@ -29,6 +29,12 @@ export type ListedLink = {
   updatedAt: Date;
 };
 
+export type LinkDetail = ListedLink & {
+  expiresAt: Date | null;
+  scheduledAt: Date | null;
+  userId: string;
+};
+
 type ListLinksInput = {
   campaignId?: string;
   limit: number;
@@ -36,6 +42,30 @@ type ListLinksInput = {
   search?: string;
   userId: string;
 };
+
+type UpdateLinkRecordInput = {
+  destinationUrl?: string;
+  id: string;
+  slug?: string;
+  title?: string | null;
+  userId: string;
+};
+
+const linkDetailColumns = {
+  campaignId: true,
+  clickCount: true,
+  createdAt: true,
+  destinationUrl: true,
+  expiresAt: true,
+  hasLinkPage: true,
+  id: true,
+  isActive: true,
+  scheduledAt: true,
+  slug: true,
+  title: true,
+  updatedAt: true,
+  userId: true,
+} as const;
 
 export async function getUserPlanById(userId: string): Promise<UserPlan | null> {
   const user = await db.query.users.findFirst({
@@ -64,6 +94,15 @@ export async function findLinkBySlug(slug: string): Promise<{ id: string } | nul
   return link ?? null;
 }
 
+export async function findLinkById(id: string): Promise<LinkDetail | null> {
+  const link = await db.query.links.findFirst({
+    columns: linkDetailColumns,
+    where: eq(links.id, id),
+  });
+
+  return link ?? null;
+}
+
 export async function createLinkRecord({
   destinationUrl,
   slug,
@@ -87,6 +126,54 @@ export async function createLinkRecord({
   if (!link) throw new Error("Unable to create link record.");
 
   return link;
+}
+
+export async function updateLinkRecordForUser({
+  destinationUrl,
+  id,
+  slug,
+  title,
+  userId,
+}: UpdateLinkRecordInput): Promise<LinkDetail | null> {
+  const [link] = await db
+    .update(links)
+    .set({
+      ...(destinationUrl === undefined ? {} : { destinationUrl }),
+      ...(slug === undefined ? {} : { slug }),
+      ...(title === undefined ? {} : { title }),
+      updatedAt: new Date(),
+    })
+    .where(and(eq(links.id, id), eq(links.userId, userId)))
+    .returning({
+      campaignId: links.campaignId,
+      clickCount: links.clickCount,
+      createdAt: links.createdAt,
+      destinationUrl: links.destinationUrl,
+      expiresAt: links.expiresAt,
+      hasLinkPage: links.hasLinkPage,
+      id: links.id,
+      isActive: links.isActive,
+      scheduledAt: links.scheduledAt,
+      slug: links.slug,
+      title: links.title,
+      updatedAt: links.updatedAt,
+      userId: links.userId,
+    });
+
+  return link ?? null;
+}
+
+export async function softDeleteLinkForUser(
+  id: string,
+  userId: string,
+): Promise<{ id: string } | null> {
+  const [link] = await db
+    .update(links)
+    .set({ isActive: false, updatedAt: new Date() })
+    .where(and(eq(links.id, id), eq(links.userId, userId)))
+    .returning({ id: links.id });
+
+  return link ?? null;
 }
 
 function buildListLinksWhere({
