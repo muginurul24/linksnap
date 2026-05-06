@@ -11,7 +11,7 @@
 - [x] **Middleware auth gate** — Dashboard surfaces protected via `src/proxy.ts`; public auth/static routes excluded. Future user-data `/api/v1/*` routes still need per-route auth/ownership.
 - [x] **Ownership verification** — User-data API routes implemented so far verify `session.user.id === resource.userId`; future user-data routes must continue this pattern.
 - [ ] **Role-based access** — Admin routes (`/api/v1/admin/*`) check `session.user.role === "admin"`
-- [ ] **Plan-gated features** — Link Page quotas are enforced by plan; Smart Rules and broader API-access plan gates still pending.
+- [ ] **Plan-gated features** — Link Page and Smart Rules quotas are enforced by plan; broader API-access plan gates still pending.
 - [x] **IDOR prevention** — Link item routes use UUID params and explicit ownership checks before returning, updating, or deleting.
 - [x] **Direct object reference test** — `tests/integration/link-item-api.test.ts` verifies another user's `/api/v1/links/{id}` returns 403.
 
@@ -96,7 +96,7 @@
 - [x] **Register endpoint** — 3 registrations/hour per IP
 - [x] **OTP resend** — 3 OTPs/hour per email
 - [x] **Link creation** — Tier-based (Free: 10/min, Pro: 30/min, Business: 60/min) implemented in `src/app/api/v1/links/route.ts`
-- [x] **API endpoints** — Tier-based (Free: 30/min, Pro: 60/min, Business: 120/min) implemented for Link list/item/analytics/slug/Link Page endpoints; future user-data APIs must continue this pattern.
+- [x] **API endpoints** — Tier-based (Free: 30/min, Pro: 60/min, Business: 120/min) implemented for Link list/item/analytics/slug/Link Page/Smart Rules endpoints; future user-data APIs must continue this pattern.
 - [ ] **Redirect endpoint** — 1000 requests/min per IP (abuse prevention)
 
 #### DDoS Mitigation
@@ -134,7 +134,7 @@
   ```
 
 ### SEC-09: Input Validation & Sanitization
-- [x] **Zod schemas** on ALL API inputs implemented so far (auth API routes, link create/update bodies, link list query, link item params, link slug availability params, Link Page body); future API routes must continue this pattern.
+- [x] **Zod schemas** on ALL API inputs implemented so far (auth API routes, link create/update bodies, link list query, link item params, link slug availability params, Link Page body, Smart Rules batch/delete inputs); future API routes must continue this pattern.
 - [x] **Slug validation** — `/^[a-z0-9-]{3,50}$/` for create-link input, slug availability params, and public redirect params (no special chars, no Unicode tricks)
 - [x] **URL validation** — Link create/update inputs use Zod `.url()` with additional checks:
   - Reject `javascript:` protocol

@@ -5,6 +5,8 @@ import {
   getLinkCreationRateLimit,
   getLinkPageQuota,
   getLinkQuota,
+  getSmartRuleQuota,
+  exceedsSmartRuleQuota,
   hasReachedLinkPageQuota,
   hasReachedLinkQuota,
 } from "../../src/lib/links/limits";
@@ -22,6 +24,12 @@ describe("link limits", () => {
     expect(getLinkPageQuota("BUSINESS")).toBe(Number.POSITIVE_INFINITY);
   });
 
+  it("should expose plan quotas for Smart Rules", () => {
+    expect(getSmartRuleQuota("FREE")).toBe(2);
+    expect(getSmartRuleQuota("PRO")).toBe(5);
+    expect(getSmartRuleQuota("BUSINESS")).toBe(Number.POSITIVE_INFINITY);
+  });
+
   it("should identify when a plan has reached its link quota", () => {
     expect(hasReachedLinkQuota("FREE", 24)).toBe(false);
     expect(hasReachedLinkQuota("FREE", 25)).toBe(true);
@@ -34,6 +42,13 @@ describe("link limits", () => {
     expect(hasReachedLinkPageQuota("FREE", 3)).toBe(true);
     expect(hasReachedLinkPageQuota("PRO", 50)).toBe(true);
     expect(hasReachedLinkPageQuota("BUSINESS", 50_000)).toBe(false);
+  });
+
+  it("should identify Smart Rule quota overages", () => {
+    expect(exceedsSmartRuleQuota("FREE", 2)).toBe(false);
+    expect(exceedsSmartRuleQuota("FREE", 3)).toBe(true);
+    expect(exceedsSmartRuleQuota("PRO", 6)).toBe(true);
+    expect(exceedsSmartRuleQuota("BUSINESS", 50_000)).toBe(false);
   });
 
   it("should gate custom slugs by plan", () => {

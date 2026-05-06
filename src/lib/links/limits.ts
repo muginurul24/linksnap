@@ -14,6 +14,12 @@ const LINK_PAGE_QUOTAS: Record<UserPlan, number> = {
   BUSINESS: Number.POSITIVE_INFINITY,
 };
 
+const SMART_RULE_QUOTAS: Record<UserPlan, number> = {
+  FREE: 2,
+  PRO: 5,
+  BUSINESS: Number.POSITIVE_INFINITY,
+};
+
 const LINK_CREATION_RATE_LIMITS: Record<UserPlan, number> = {
   FREE: 10,
   PRO: 30,
@@ -38,6 +44,10 @@ export function getLinkPageQuota(plan: UserPlan): number {
   return LINK_PAGE_QUOTAS[plan];
 }
 
+export function getSmartRuleQuota(plan: UserPlan): number {
+  return SMART_RULE_QUOTAS[plan];
+}
+
 export function getLinkCreationRateLimit(plan: UserPlan): number {
   return LINK_CREATION_RATE_LIMITS[plan];
 }
@@ -55,4 +65,11 @@ export function hasReachedLinkPageQuota(
   linkPageCount: number,
 ): boolean {
   return linkPageCount >= getLinkPageQuota(plan);
+}
+
+export function exceedsSmartRuleQuota(
+  plan: UserPlan,
+  smartRuleCount: number,
+): boolean {
+  return smartRuleCount > getSmartRuleQuota(plan);
 }

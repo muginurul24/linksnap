@@ -1388,3 +1388,47 @@ Completed the Link Page test coverage required for Phase 3. The dashboard create
 - ✅ No raw SQL, secrets, plaintext IP, or sensitive logging added.
 
 **Next Task:** 4.1 — Smart Rules API
+
+### 4.1 — Smart Rules API
+- **Date:** 2026-05-07 00:23 GMT+7
+- **Duration:** 0h 30m
+- **Status:** ✅ Complete
+
+**What I Did:**
+Implemented the authenticated Smart Rules API for owned links. The route supports listing rules, replacing the rule batch, deleting individual rules, validating rule conditions and destination URLs, enforcing Free/Pro/Business rule quotas, rate limiting, and redirect-cache invalidation after mutations.
+
+**Files Changed:**
+- `src/app/api/v1/links/[id]/rules/route.ts` — Added GET, POST, and DELETE Smart Rules handlers.
+- `src/lib/validations/smart-rule.ts` — Added strict Smart Rule batch and delete query validation.
+- `src/lib/db/queries/smart-rules.ts` — Added list, replace, and delete query helpers.
+- `src/lib/links/limits.ts` — Added Smart Rule plan quotas.
+- `tests/integration/smart-rules-api.test.ts` — Added API coverage for create/update, list, delete, quota, IDOR, validation, auth, and rate limits.
+- `tests/unit/smart-rule-validation.test.ts` — Added Smart Rule validation coverage.
+- `tests/unit/link-limits.test.ts` — Added Smart Rule quota coverage.
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Checked off Task 4.1.
+- `_bmad-output/planning-artifacts/SECURITY.md` — Updated Smart Rules quota, rate-limit, and validation notes.
+- `_bmad-output/implementation-artifacts/JOURNAL.md` — Recorded this completion entry.
+
+**Decisions Made:**
+- POST replaces the full rule batch for a link, which matches the task’s create/update batch semantics and avoids partial priority-order ambiguity.
+- Smart Rule conditions accept bounded JSON objects so rule-specific engines can evolve without accepting unbounded nested input.
+- Mutations delete the redirect cache key now so the upcoming rule engine can safely rely on cached redirect decisions.
+
+**Tests:**
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Unit/Integration: `rtk bun run test` — 34 files passed, 161 tests passed.
+- ✅ Build: `rtk bun run build` — Passed; `/api/v1/links/[id]/rules` is registered.
+
+**Issues Encountered:**
+- Recursive JSON condition depth helper needed explicit `reduce<number>` typing to satisfy strict TypeScript.
+
+**Security Checks:**
+- ✅ Link ID params, delete query, and POST bodies validated with Zod.
+- ✅ Auth required before Smart Rules access or mutation.
+- ✅ Ownership checked before returning, replacing, or deleting rules.
+- ✅ Plan quotas and tiered API rate limiting enforced.
+- ✅ Destination URLs reuse SSRF-safe validation.
+- ✅ No raw SQL, secrets, plaintext IP, or sensitive logging added.
+
+**Next Task:** 4.2 — Rule Evaluation Engine

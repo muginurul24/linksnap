@@ -295,13 +295,13 @@ src/
 ## 🟣 Phase 4: Smart Redirect Rules (5 tasks)
 
 ### TASK 4.1 — Smart Rules API
-- File: `src/app/api/v1/links/[id]/rules/route.ts`
-- POST: create/update rules (batch)
+- [x] File: `src/app/api/v1/links/[id]/rules/route.ts`
+- [x] POST: create/update rules (batch)
   - Input: `{ rules: [{ type: "GEO"|"DEVICE"|"TIME"|"LANGUAGE", condition: {...}, destinationUrl, priority }] }`
-- GET: get all rules for a link
-- DELETE: delete individual rule
-- Auth: required, ownership check
-- Quota: check plan limit (Free: 2, Pro: 5, Business: unlimited)
+- [x] GET: get all rules for a link
+- [x] DELETE: delete individual rule
+- [x] Auth: required, ownership check
+- [x] Quota: check plan limit (Free: 2, Pro: 5, Business: unlimited)
 
 ### TASK 4.2 — Rule Evaluation Engine
 - File: `src/lib/rules/rule-engine.ts`
