@@ -1010,3 +1010,47 @@ Built the protected `/links/new` dashboard form with destination URL, optional t
 - ✅ `.env` and local `.mmdb` files remain ignored and are not staged for commit.
 
 **Next Task:** 2.8 — Edit Link Page
+
+### 2.8 — Edit Link Page
+- **Date:** 2026-05-06 23:30 GMT+7
+- **Duration:** 0h 30m
+- **Status:** ✅ Complete
+
+**What I Did:**
+Added the protected `/links/[slug]/edit` dashboard page. The page validates slug params, loads the owned link by slug, pre-fills the shared link form, supports destination/title/slug updates through the existing item API, shows Link Page and Smart Rules sections when configured, and adds a delete confirmation dialog that soft-deletes the link.
+
+**Files Changed:**
+- `src/app/(dashboard)/links/[slug]/edit/page.tsx` — Added protected dynamic edit page with server-side auth, slug validation, ownership-scoped lookup, and form hydration.
+- `src/app/(dashboard)/links/link-form.tsx` — Refactored create form into a shared create/edit form with PATCH mode and delete confirmation.
+- `src/app/(dashboard)/links/new/page.tsx` — Updated form import after the shared form move.
+- `src/lib/db/queries/links.ts` — Added editable link lookup by slug and user with Link Page and Smart Rules data loaded in parallel.
+- `tests/unit/link-queries.test.ts` — Added coverage for editable link lookup and related data loading.
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Checked off Task 2.8.
+- `_bmad-output/implementation-artifacts/JOURNAL.md` — Recorded this completion entry.
+
+**Decisions Made:**
+- The edit page fetches initial data server-side by `{ slug, userId }` instead of exposing another item lookup endpoint.
+- The shared form skips slug availability checks when the slug is unchanged, preventing the current link from falsely blocking itself.
+- Delete uses the existing soft-delete API path, preserving analytics history and matching Task 2.3 behavior.
+- Link Page and Smart Rules fields remain UI-editable placeholders until their persistence APIs are implemented in Phase 3 and later Smart Rules work.
+
+**Tests:**
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Unit/Integration: `rtk bun run test` — 25 files passed, 114 tests passed.
+- ✅ Build: `rtk bun run build` — Passed; `/links/[slug]/edit` is registered as a dynamic route.
+- ✅ Next runtime diagnostics: `get_errors` on port 3000 returned no config/session errors.
+- ✅ Browser verification: navigating to `/links/promo/edit` redirected to `/login?callbackUrl=%2Flinks%2Fpromo%2Fedit`; browser console had no errors.
+
+**Issues Encountered:**
+- The form needed to distinguish unchanged slugs from new custom slugs; handled locally before calling the availability endpoint.
+- Auth protection prevents unauthenticated browser rendering of the edit form; verified route registration through build and Next route metadata.
+
+**Security Checks:**
+- ✅ Slug params validated with strict Zod before database lookup.
+- ✅ Edit page loads only links matching the authenticated `userId`.
+- ✅ Update/delete actions continue through authenticated API routes with ownership checks and rate limits.
+- ✅ Editable related data is loaded in parallel, not through looped per-row queries.
+- ✅ No raw SQL, secrets, plaintext IP, or sensitive logging added.
+
+**Next Task:** 2.9 — Empty & Error States

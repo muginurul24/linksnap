@@ -223,11 +223,11 @@ src/
 - [x] On success: toast + redirect to links list
 
 ### TASK 2.8 — Edit Link Page
-- File: `src/app/(dashboard)/links/[slug]/edit/page.tsx`
-- All fields from create form, pre-filled
-- Link Page edit section (if enabled)
-- Smart Rules edit section (if enabled)
-- Delete link button with confirmation dialog
+- [x] File: `src/app/(dashboard)/links/[slug]/edit/page.tsx`
+- [x] All fields from create form, pre-filled
+- [x] Link Page edit section (if enabled)
+- [x] Smart Rules edit section (if enabled)
+- [x] Delete link button with confirmation dialog
 
 ### TASK 2.9 — Empty & Error States
 - Links list empty: "No links yet. Create your first short link!" with CTA button

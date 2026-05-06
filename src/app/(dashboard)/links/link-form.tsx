@@ -9,6 +9,7 @@ import {
   Loader2,
   Route,
   Save,
+  Trash2,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -19,6 +20,16 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
@@ -26,11 +37,13 @@ import { buildShortUrlPreview } from "@/lib/links/preview";
 import {
   createLinkSchema,
   linkSlugParamsSchema,
+  updateLinkSchema,
   type CreateLinkInput,
 } from "@/lib/validations/link";
 
-type CreateLinkField = keyof CreateLinkInput;
-type FieldErrors = Partial<Record<CreateLinkField, string>>;
+type LinkFormField = keyof CreateLinkInput;
+type FieldErrors = Partial<Record<LinkFormField, string>>;
+type SmartRuleType = "GEO" | "DEVICE" | "TIME" | "LANGUAGE";
 type SlugStatus =
   | "idle"
   | "checking"
@@ -50,11 +63,12 @@ type ApiEnvelope<T> =
       success: false;
     };
 
-type CreateLinkResponse = {
+type LinkMutationResponse = {
   destinationUrl: string;
   id: string;
   shortUrl: string;
   slug: string;
+  title?: string | null;
 };
 
 type SlugAvailabilityResponse = {
@@ -68,14 +82,52 @@ type SlugState = {
   status: SlugStatus;
 };
 
+export type EditableLinkInitialData = {
+  destinationUrl: string;
+  hasLinkPage: boolean;
+  id: string;
+  linkPage: {
+    brandName: string;
+    ctaColor: string;
+    ctaText: string;
+    description: string | null;
+    title: string;
+  } | null;
+  slug: string;
+  smartRules: {
+    condition: unknown;
+    destinationUrl: string;
+    id: string;
+    priority: number;
+    type: SmartRuleType;
+  }[];
+  title: string | null;
+};
+
+type LinkFormProps = {
+  initialLink?: EditableLinkInitialData;
+};
+
 const initialSlugState: SlugState = { status: "idle" };
 
 function firstFieldErrors(
-  errors: Partial<Record<CreateLinkField, string[] | undefined>>,
+  errors: Partial<Record<LinkFormField, string[] | undefined>>,
 ): FieldErrors {
   return Object.fromEntries(
     Object.entries(errors).map(([field, messages]) => [field, messages?.[0]]),
   ) as FieldErrors;
+}
+
+function getRuleConditionValue(condition: unknown): string {
+  if (typeof condition !== "object" || condition === null) return "";
+
+  const candidates = ["value", "device", "country", "language", "timezone"];
+  for (const key of candidates) {
+    const value = (condition as Record<string, unknown>)[key];
+    if (typeof value === "string") return value;
+  }
+
+  return "";
 }
 
 function getClientPreviewBaseUrl(): string {
@@ -130,24 +182,49 @@ function SlugStatusMessage({ state }: { state: SlugState }) {
   );
 }
 
-export function CreateLinkForm() {
+export function CreateLinkForm({ initialLink }: LinkFormProps) {
   const router = useRouter();
-  const [destinationUrl, setDestinationUrl] = useState("");
-  const [slug, setSlug] = useState("");
-  const [title, setTitle] = useState("");
-  const [enableLinkPage, setEnableLinkPage] = useState(false);
-  const [enableSmartRules, setEnableSmartRules] = useState(false);
-  const [linkPageBrandName, setLinkPageBrandName] = useState("");
-  const [linkPageTitle, setLinkPageTitle] = useState("");
-  const [linkPageDescription, setLinkPageDescription] = useState("");
-  const [linkPageCtaText, setLinkPageCtaText] = useState("Continue");
-  const [linkPageCtaColor, setLinkPageCtaColor] = useState("#111827");
-  const [smartRuleType, setSmartRuleType] = useState("device");
-  const [smartRuleValue, setSmartRuleValue] = useState("");
-  const [smartRuleDestination, setSmartRuleDestination] = useState("");
+  const isEditMode = initialLink !== undefined;
+  const initialLinkPage = initialLink?.linkPage;
+  const initialSmartRule = initialLink?.smartRules[0];
+  const [destinationUrl, setDestinationUrl] = useState(
+    initialLink?.destinationUrl ?? "",
+  );
+  const [slug, setSlug] = useState(initialLink?.slug ?? "");
+  const [title, setTitle] = useState(initialLink?.title ?? "");
+  const [enableLinkPage, setEnableLinkPage] = useState(
+    Boolean(initialLink?.hasLinkPage || initialLinkPage),
+  );
+  const [enableSmartRules, setEnableSmartRules] = useState(
+    Boolean(initialSmartRule),
+  );
+  const [linkPageBrandName, setLinkPageBrandName] = useState(
+    initialLinkPage?.brandName ?? "",
+  );
+  const [linkPageTitle, setLinkPageTitle] = useState(initialLinkPage?.title ?? "");
+  const [linkPageDescription, setLinkPageDescription] = useState(
+    initialLinkPage?.description ?? "",
+  );
+  const [linkPageCtaText, setLinkPageCtaText] = useState(
+    initialLinkPage?.ctaText ?? "Continue",
+  );
+  const [linkPageCtaColor, setLinkPageCtaColor] = useState(
+    initialLinkPage?.ctaColor ?? "#111827",
+  );
+  const [smartRuleType, setSmartRuleType] = useState<SmartRuleType>(
+    initialSmartRule?.type ?? "DEVICE",
+  );
+  const [smartRuleValue, setSmartRuleValue] = useState(
+    getRuleConditionValue(initialSmartRule?.condition),
+  );
+  const [smartRuleDestination, setSmartRuleDestination] = useState(
+    initialSmartRule?.destinationUrl ?? "",
+  );
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [formError, setFormError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [slugState, setSlugState] = useState<SlugState>(initialSlugState);
 
   const previewUrl = useMemo(
@@ -161,6 +238,7 @@ export function CreateLinkForm() {
   useEffect(() => {
     const trimmedSlug = slug.trim();
     if (!trimmedSlug) return;
+    if (initialLink?.slug === trimmedSlug) return;
 
     const parsed = linkSlugParamsSchema.safeParse({ slug: trimmedSlug });
     if (!parsed.success) return;
@@ -214,7 +292,7 @@ export function CreateLinkForm() {
       controller.abort();
       window.clearTimeout(timeoutId);
     };
-  }, [slug]);
+  }, [initialLink?.slug, slug]);
 
   const updateSlug = (value: string) => {
     setSlug(value);
@@ -223,6 +301,11 @@ export function CreateLinkForm() {
 
     const trimmedSlug = value.trim();
     if (!trimmedSlug) {
+      setSlugState(initialSlugState);
+      return;
+    }
+
+    if (initialLink?.slug === trimmedSlug) {
       setSlugState(initialSlugState);
       return;
     }
@@ -240,7 +323,16 @@ export function CreateLinkForm() {
   };
 
   const assertSlugCanSubmit = (): boolean => {
-    if (!slug.trim()) return true;
+    const trimmedSlug = slug.trim();
+    if (!trimmedSlug) {
+      if (!isEditMode) return true;
+
+      const message = "Slug is required.";
+      setFieldErrors((current) => ({ ...current, slug: message }));
+      return false;
+    }
+
+    if (initialLink?.slug === trimmedSlug) return true;
 
     const blockingMessages: Partial<Record<SlugStatus, string>> = {
       checking: "Wait for slug availability check to finish.",
@@ -259,11 +351,14 @@ export function CreateLinkForm() {
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
-    const parsed = createLinkSchema.safeParse({
+    const rawInput = {
       destinationUrl,
       slug,
       title,
-    });
+    };
+    const parsed = isEditMode
+      ? updateLinkSchema.safeParse(rawInput)
+      : createLinkSchema.safeParse(rawInput);
 
     if (!parsed.success) {
       setFieldErrors(firstFieldErrors(parsed.error.flatten().fieldErrors));
@@ -277,15 +372,18 @@ export function CreateLinkForm() {
     setFormError(null);
 
     try {
-      const response = await fetch("/api/v1/links", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "X-Requested-With": "XMLHttpRequest",
+      const response = await fetch(
+        isEditMode ? `/api/v1/links/${initialLink.id}` : "/api/v1/links",
+        {
+          method: isEditMode ? "PATCH" : "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-Requested-With": "XMLHttpRequest",
+          },
+          body: JSON.stringify(parsed.data),
         },
-        body: JSON.stringify(parsed.data),
-      });
-      const body = (await response.json()) as ApiEnvelope<CreateLinkResponse>;
+      );
+      const body = (await response.json()) as ApiEnvelope<LinkMutationResponse>;
 
       if (!body.success) {
         const message = apiErrorMessage(body.error.code, body.error.message);
@@ -301,7 +399,9 @@ export function CreateLinkForm() {
         return;
       }
 
-      toast.success("Link created.", { description: body.data.shortUrl });
+      toast.success(isEditMode ? "Link updated." : "Link created.", {
+        description: body.data.shortUrl,
+      });
       router.push("/links");
       router.refresh();
     } catch {
@@ -311,8 +411,44 @@ export function CreateLinkForm() {
     }
   };
 
+  const handleDelete = async () => {
+    if (!initialLink) return;
+
+    setIsDeleting(true);
+    setFormError(null);
+
+    try {
+      const response = await fetch(`/api/v1/links/${initialLink.id}`, {
+        method: "DELETE",
+        headers: {
+          "X-Requested-With": "XMLHttpRequest",
+        },
+      });
+      const body = (await response.json()) as ApiEnvelope<{ deleted: boolean }>;
+
+      if (!body.success) {
+        const message = apiErrorMessage(body.error.code, body.error.message);
+        setFormError(message);
+        return;
+      }
+
+      toast.success("Link deleted.");
+      setIsDeleteOpen(false);
+      router.push("/links");
+      router.refresh();
+    } catch {
+      setFormError("Unable to reach the link service.");
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   return (
-    <form className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_360px]" onSubmit={handleSubmit} noValidate>
+    <form
+      className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_360px]"
+      onSubmit={handleSubmit}
+      noValidate
+    >
       <Card>
         <CardHeader>
           <CardTitle>Link details</CardTitle>
@@ -478,12 +614,15 @@ export function CreateLinkForm() {
                     id="smartRuleType"
                     className="h-8 w-full rounded-lg border border-input bg-background px-2.5 text-sm outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-input/30"
                     value={smartRuleType}
-                    onChange={(event) => setSmartRuleType(event.target.value)}
+                    onChange={(event) =>
+                      setSmartRuleType(event.target.value as SmartRuleType)
+                    }
                     disabled={isSubmitting}
                   >
-                    <option value="device">Device</option>
-                    <option value="country">Country</option>
-                    <option value="referrer">Referrer</option>
+                    <option value="DEVICE">Device</option>
+                    <option value="GEO">Geo</option>
+                    <option value="TIME">Time</option>
+                    <option value="LANGUAGE">Language</option>
                   </select>
                 </div>
                 <div className="space-y-1.5">
@@ -518,14 +657,54 @@ export function CreateLinkForm() {
             </div>
           )}
 
-          <div className="flex justify-end">
+          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-between">
+            {isEditMode ? (
+              <Dialog open={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
+                <DialogTrigger
+                  render={
+                    <Button type="button" variant="destructive" disabled={isSubmitting} />
+                  }
+                >
+                  <Trash2 className="size-4" />
+                  Delete link
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Delete link</DialogTitle>
+                    <DialogDescription>
+                      This disables the short link and removes it from active use.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <DialogFooter>
+                    <DialogClose render={<Button type="button" variant="outline" />}>
+                      Cancel
+                    </DialogClose>
+                    <Button
+                      type="button"
+                      variant="destructive"
+                      onClick={() => void handleDelete()}
+                      disabled={isDeleting}
+                    >
+                      {isDeleting ? (
+                        <Loader2 className="size-4 animate-spin" />
+                      ) : (
+                        <Trash2 className="size-4" />
+                      )}
+                      Delete
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+            ) : (
+              <span />
+            )}
             <Button type="submit" disabled={isSubmitting}>
               {isSubmitting ? (
                 <Loader2 className="size-4 animate-spin" />
               ) : (
                 <Save className="size-4" />
               )}
-              Create link
+              {isEditMode ? "Save changes" : "Create link"}
             </Button>
           </div>
         </CardContent>
@@ -583,7 +762,7 @@ export function CreateLinkForm() {
             <div className="space-y-2 rounded-lg border border-border p-3 text-sm">
               <div className="flex items-center gap-2 font-medium">
                 <Route className="size-4 text-muted-foreground" />
-                {smartRuleType}
+                {smartRuleType.toLowerCase()}
               </div>
               <div className="text-muted-foreground">
                 {smartRuleValue || "match"} to{" "}

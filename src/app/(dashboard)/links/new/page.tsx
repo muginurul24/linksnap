@@ -1,6 +1,6 @@
 import { ArrowLeft } from "lucide-react";
 import { ButtonLink } from "@/components/ui/button-link";
-import { CreateLinkForm } from "./create-link-form";
+import { CreateLinkForm } from "../link-form";
 
 export default function NewLinkPage() {
   return (

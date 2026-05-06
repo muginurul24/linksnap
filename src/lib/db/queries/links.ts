@@ -1,6 +1,6 @@
 import { and, count, desc, eq, ilike, or, type SQL } from "drizzle-orm";
 import { db } from "@/lib/db";
-import { linkPages, links, users } from "@/lib/db/schema";
+import { linkPages, links, smartRules, users } from "@/lib/db/schema";
 import type { UserPlan } from "@/lib/links/limits";
 import type { RedirectLink } from "@/lib/links/redirect";
 
@@ -46,6 +46,27 @@ export type PublicLinkPage = {
   ogImage: string | null;
   showCountdown: boolean | null;
   title: string;
+};
+
+export type EditableLinkPage = {
+  brandName: string;
+  ctaColor: string;
+  ctaText: string;
+  description: string | null;
+  title: string;
+};
+
+export type EditableSmartRule = {
+  condition: unknown;
+  destinationUrl: string;
+  id: string;
+  priority: number;
+  type: typeof smartRules.$inferSelect["type"];
+};
+
+export type EditableLink = LinkDetail & {
+  linkPage: EditableLinkPage | null;
+  smartRules: EditableSmartRule[];
 };
 
 type ListLinksInput = {
@@ -154,6 +175,48 @@ export async function findLinkById(id: string): Promise<LinkDetail | null> {
   });
 
   return link ?? null;
+}
+
+export async function findEditableLinkBySlugForUser(
+  slug: string,
+  userId: string,
+): Promise<EditableLink | null> {
+  const link = await db.query.links.findFirst({
+    columns: linkDetailColumns,
+    where: and(eq(links.slug, slug), eq(links.userId, userId)),
+  });
+
+  if (!link) return null;
+
+  const [linkPage, rules] = await Promise.all([
+    db.query.linkPages.findFirst({
+      columns: {
+        brandName: true,
+        ctaColor: true,
+        ctaText: true,
+        description: true,
+        title: true,
+      },
+      where: eq(linkPages.linkId, link.id),
+    }),
+    db.query.smartRules.findMany({
+      columns: {
+        condition: true,
+        destinationUrl: true,
+        id: true,
+        priority: true,
+        type: true,
+      },
+      where: eq(smartRules.linkId, link.id),
+      orderBy: (table, { asc }) => [asc(table.priority)],
+    }),
+  ]);
+
+  return {
+    ...link,
+    linkPage: linkPage ?? null,
+    smartRules: rules,
+  };
 }
 
 export async function createLinkRecord({
