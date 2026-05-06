@@ -1096,3 +1096,42 @@ Added reusable dashboard empty states, converted the links page from static mock
 - ✅ No raw SQL, secrets, plaintext IP, or sensitive logging added.
 
 **Next Task:** 2.10 — Link Tests
+
+### 2.10 — Link Tests
+- **Date:** 2026-05-06 23:45 GMT+7
+- **Duration:** 0h 35m
+- **Status:** ✅ Complete
+
+**What I Did:**
+Completed Phase 2 link test coverage with quota/limit unit tests, an integration test that creates a link then exercises the public redirect path and verifies click logging, and an E2E flow that signs in, creates a dashboard link, visits the short URL, and verifies redirect analytics were recorded.
+
+**Files Changed:**
+- `tests/unit/link-limits.test.ts` — Added quota, custom slug gate, and tiered rate-limit coverage.
+- `tests/integration/create-redirect-click-flow.test.ts` — Added create → redirect → click log integration coverage with mocked route dependencies.
+- `tests/e2e/link-flow.spec.ts` — Added browser flow for dashboard create link, short URL redirect, and click analytics persistence.
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Checked off Task 2.10.
+- `_bmad-output/implementation-artifacts/JOURNAL.md` — Recorded this completion entry.
+
+**Decisions Made:**
+- The integration test mocks `after()` to run immediately so click logging can be asserted deterministically.
+- The E2E test creates a verified PRO user directly in the database to focus the test on link creation and redirect analytics rather than repeating the registration flow.
+- The E2E short link points to `https://example.com/e2e` because destination URL validation correctly rejects localhost/private destinations.
+
+**Tests:**
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Unit/Integration: `rtk bun run test` — 27 files passed, 119 tests passed.
+- ✅ Build: `rtk bun run build` — Passed.
+- ✅ E2E: `rtk bun run test:e2e` — 2 specs passed.
+
+**Issues Encountered:**
+- Playwright initially failed to start because an existing Next dev server for this repo was running; stopped that server so Playwright could manage its own test server.
+- E2E selectors initially matched duplicate CTA/toast text; tightened selectors to exact empty-state CTA and table-scoped slug text.
+
+**Security Checks:**
+- ✅ E2E user and generated links are cleaned up after the test.
+- ✅ Test user uses a hashed password and verified email timestamp.
+- ✅ Redirect analytics assertion checks persisted click events without storing plaintext IP in test expectations.
+- ✅ No raw SQL, secrets, plaintext IP, or sensitive logging added.
+
+**Next Task:** 3.1 — Link Page API

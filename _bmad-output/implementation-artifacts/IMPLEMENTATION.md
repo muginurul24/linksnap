@@ -236,9 +236,9 @@ src/
 - [x] Rate limited: "Too many requests. Try again in X seconds."
 
 ### TASK 2.10 — Link Tests
-- Unit: slug generation, URL validation, quota checking
-- Integration: create → redirect → verify click logged
-- E2E: create link from dashboard → visit short URL → check analytics updated
+- [x] Unit: slug generation, URL validation, quota checking
+- [x] Integration: create → redirect → verify click logged
+- [x] E2E: create link from dashboard → visit short URL → check analytics updated
 
 ---
 
