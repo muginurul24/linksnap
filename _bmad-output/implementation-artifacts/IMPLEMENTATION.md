@@ -124,7 +124,7 @@ src/
 - [x] On success: redirect to callback URL, default `/links` because `/dashboard` route does not currently exist
 
 ### TASK 1.5 — Google OAuth
-- [ ] Configure in Google Cloud Console: callback URL = `{APP_URL}/api/auth/callback/google` (local callback verified: `http://localhost:3000/api/auth/callback/google`)
+- [x] Configure in Google Cloud Console: callback URL = `{APP_URL}/api/auth/callback/google` (configured for `http://localhost:3000/api/auth/callback/google`)
 - [ ] Test flow end-to-end
 - [x] Handle: new user auto-register, existing user link Google account
 

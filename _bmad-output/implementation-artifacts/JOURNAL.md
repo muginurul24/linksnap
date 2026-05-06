@@ -541,3 +541,31 @@ Implemented a Redis-backed sliding-window rate limiter and applied it to registe
 - ✅ Limited responses include retry timing without exposing sensitive state.
 
 **Next Task:** 1.8 — Auth Tests
+
+### 1.5 — Google OAuth Callback Configuration
+- **Date:** 2026-05-06 20:55 GMT+7
+- **Duration:** 0 hours 5 minutes
+- **Status:** ⚠️ Partial
+
+**What I Did:**
+Updated the implementation checklist after the Google Cloud Console authorized callback URL was configured. The configured local callback is `http://localhost:3000/api/auth/callback/google`.
+
+**Files Changed:**
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Marked Google Cloud Console callback configuration as complete while leaving E2E OAuth testing unchecked.
+- `_bmad-output/implementation-artifacts/JOURNAL.md` — Recorded Google OAuth callback configuration progress.
+
+**Decisions Made:**
+- Kept Task 1.5 as partial because the end-to-end Google consent flow still needs to be tested interactively.
+- Did not change application code because the NextAuth Google provider and callback URL shape were already present.
+
+**Tests:**
+- ⬜ E2E OAuth: pending interactive Google browser sign-in.
+
+**Issues Encountered:**
+- None for checklist update.
+
+**Security Checks:**
+- ✅ Callback URL remains same-origin for local development.
+- ✅ No Google OAuth secrets were written to tracked files.
+
+**Next Task:** 1.5 — Google OAuth end-to-end browser test
