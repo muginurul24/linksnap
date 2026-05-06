@@ -113,9 +113,18 @@ test("should register verify login and access the dashboard", async ({ page }) =
 
     await page.getByLabel("Email").fill(email);
     await page.getByLabel("Password", { exact: true }).fill(password);
-    await page.getByRole("button", { name: /^Sign in$/ }).click();
+    const credentialsResponsePromise = page.waitForResponse(
+      (response) =>
+        response.url().includes("/api/auth/callback/credentials") &&
+        response.request().method() === "POST",
+      { timeout: 20_000 },
+    );
 
-    await expect(page).toHaveURL(/\/links$/);
+    await page.getByRole("button", { name: /^Sign in$/ }).click();
+    const credentialsResponse = await credentialsResponsePromise;
+    expect(credentialsResponse.ok()).toBe(true);
+
+    await expect(page).toHaveURL(/\/links$/, { timeout: 15_000 });
     await expect(page.getByRole("heading", { name: "My Links" })).toBeVisible();
   } finally {
     await cleanupAuthState(email);

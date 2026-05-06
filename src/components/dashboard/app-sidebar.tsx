@@ -63,11 +63,13 @@ export function AppSidebar() {
             <SidebarMenu>
               {mainNav.map((item) => (
                 <SidebarMenuItem key={item.url}>
-                  <SidebarMenuButton isActive={isActive(item.url)} tooltip={item.title}>
-                    <Link href={item.url} className="flex w-full items-center gap-2">
-                      <item.icon className="size-4" />
-                      <span>{item.title}</span>
-                    </Link>
+                  <SidebarMenuButton
+                    isActive={isActive(item.url)}
+                    render={<Link href={item.url} />}
+                    tooltip={item.title}
+                  >
+                    <item.icon className="size-4" />
+                    <span>{item.title}</span>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
@@ -81,11 +83,13 @@ export function AppSidebar() {
             <SidebarMenu>
               {accountNav.map((item) => (
                 <SidebarMenuItem key={item.url}>
-                  <SidebarMenuButton isActive={isActive(item.url)} tooltip={item.title}>
-                    <Link href={item.url} className="flex w-full items-center gap-2">
-                      <item.icon className="size-4" />
-                      <span>{item.title}</span>
-                    </Link>
+                  <SidebarMenuButton
+                    isActive={isActive(item.url)}
+                    render={<Link href={item.url} />}
+                    tooltip={item.title}
+                  >
+                    <item.icon className="size-4" />
+                    <span>{item.title}</span>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
@@ -118,17 +122,15 @@ export function AppSidebar() {
         <SidebarMenu>
           <SidebarMenuItem>
             <DropdownMenu>
-              <DropdownMenuTrigger>
-                <SidebarMenuButton size="lg">
-                  <Avatar className="size-8 rounded-lg">
-                    <AvatarImage src="/avatars/user.png" alt="User" />
-                    <AvatarFallback className="rounded-lg bg-primary/10 text-xs">RF</AvatarFallback>
-                  </Avatar>
-                  <div className="flex flex-col gap-0.5 leading-none">
-                    <span className="text-sm font-semibold">Rafi</span>
-                    <span className="text-xs text-muted-foreground">rafi@email.com</span>
-                  </div>
-                </SidebarMenuButton>
+              <DropdownMenuTrigger render={<SidebarMenuButton size="lg" />}>
+                <Avatar className="size-8 rounded-lg">
+                  <AvatarImage src="/avatars/user.png" alt="User" />
+                  <AvatarFallback className="rounded-lg bg-primary/10 text-xs">RF</AvatarFallback>
+                </Avatar>
+                <div className="flex flex-col gap-0.5 leading-none">
+                  <span className="text-sm font-semibold">Rafi</span>
+                  <span className="text-xs text-muted-foreground">rafi@email.com</span>
+                </div>
               </DropdownMenuTrigger>
               <DropdownMenuContent className="w-56" align="end" side="right" sideOffset={4}>
                 <DropdownMenuLabel>My Account</DropdownMenuLabel>

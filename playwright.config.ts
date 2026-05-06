@@ -5,7 +5,7 @@ import { join } from "node:path";
 loadEnvConfig(process.cwd());
 
 const port = Number(process.env.E2E_PORT ?? 3100);
-const baseURL = process.env.E2E_BASE_URL ?? `http://127.0.0.1:${port}`;
+const baseURL = process.env.E2E_BASE_URL ?? `http://localhost:${port}`;
 const authEmailFile = join(process.cwd(), ".e2e/auth-emails.jsonl");
 
 export default defineConfig({
@@ -32,6 +32,7 @@ export default defineConfig({
       AUTH_EMAIL_DELIVERY: "file",
       AUTH_EMAIL_FILE: authEmailFile,
       AUTH_URL: baseURL,
+      NEXTAUTH_URL: baseURL,
       NEXT_PUBLIC_APP_URL: baseURL,
     },
     gracefulShutdown: { signal: "SIGTERM", timeout: 500 },

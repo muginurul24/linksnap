@@ -619,3 +619,50 @@ Added focused unit coverage for password hashing and JWT/session token mapping, 
 - ✅ No raw SQL or secrets were added.
 
 **Next Task:** 1.8 — Auth E2E flow / 1.5 — Google OAuth end-to-end browser test
+
+### 1.8 — Auth E2E Flow
+- **Date:** 2026-05-06 21:38 GMT+7
+- **Duration:** 0 hours 55 minutes
+- **Status:** ✅ Complete
+
+**What I Did:**
+Completed the browser E2E coverage for the credentials auth flow: unauthenticated dashboard access redirects to login, registration creates an OTP, email verification succeeds, login creates a session, and the user reaches `/links`. Tightened dashboard markup issues found during the E2E run so the tested dashboard route no longer emits nested interactive-element hydration warnings.
+
+**Files Changed:**
+- `playwright.config.ts` — Aligned E2E base URL and NextAuth URL handling on `localhost`.
+- `tests/e2e/auth.spec.ts` — Stabilized the auth flow test with register-page wait, exact password selectors, credentials callback wait, and dashboard assertion.
+- `src/components/dashboard/app-sidebar.tsx` — Used render props for sidebar links and account dropdown trigger to avoid nested interactive elements.
+- `src/components/dashboard/app-header.tsx` — Rendered breadcrumb separators as list-item siblings instead of nested list items.
+- `src/app/(dashboard)/links/page.tsx` — Used render prop for the row action dropdown trigger to avoid nested buttons.
+- `src/app/layout.tsx` — Declared smooth scroll behavior on `<html>` for the existing global smooth-scroll CSS.
+- `src/components/landing/landing-page.tsx` — Removed unused animation code and replaced loose icon prop types with `LucideIcon` so full lint passes.
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Checked off the Auth E2E item.
+- `_bmad-output/implementation-artifacts/JOURNAL.md` — Recorded this completion entry.
+
+**Decisions Made:**
+- Kept Google OAuth E2E separate because it still requires an interactive Google consent flow and provider account access.
+- Used the existing file-only E2E email capture path instead of adding a public test API endpoint for OTP retrieval.
+- Cleaned E2E test users and related auth rate-limit keys after each run to avoid persistent test data and flaky rate limits.
+
+**Tests:**
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Unit/Integration: `rtk bun run test` — 9 files passed, 21 tests passed.
+- ✅ E2E: `rtk bun run test:e2e` — 1 Playwright test passed.
+- ✅ Build: `rtk bun run build` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+
+**Issues Encountered:**
+- Playwright initially filled the login form before the register navigation finished → Added an explicit `/register` URL wait.
+- Password label matched both password and confirm password fields → Switched password selectors to exact label matching.
+- NextAuth returned/navigated through `localhost` while the test used `127.0.0.1` → Standardized the E2E base URL on `localhost`.
+- Dashboard E2E surfaced nested `<button>` and `<li>` hydration warnings → Fixed the relevant sidebar, breadcrumb, and link-table trigger markup.
+- Full lint failed on committed landing page code after the branch advanced → Removed unused imports/code and typed icon props with `LucideIcon`.
+
+**Security Checks:**
+- ✅ E2E OTP capture uses local file delivery only outside production.
+- ✅ Test user is deleted after the E2E flow.
+- ✅ Auth rate-limit keys used by the E2E flow are cleaned up.
+- ✅ No secrets or OTPs are printed in test output.
+- ✅ No raw SQL was added; cleanup uses Drizzle.
+
+**Next Task:** 1.5 — Google OAuth end-to-end browser test, or Phase 2.1 — Create Link API if OAuth interaction remains unavailable.

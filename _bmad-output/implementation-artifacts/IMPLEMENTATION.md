@@ -153,7 +153,7 @@ src/
 ### TASK 1.8 — Auth Tests
 - [x] Unit: password hashing, OTP generation, token validation
 - [x] Integration: register → verify → login → access protected route
-- [ ] E2E: full auth flow (register → verify → login → dashboard)
+- [x] E2E: full auth flow (register → verify → login → dashboard)
 
 ---
 

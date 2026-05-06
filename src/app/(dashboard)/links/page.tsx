@@ -49,7 +49,9 @@ export default function LinksPage() {
                 <TableCell className="hidden lg:table-cell"><Badge variant={link.active ? "default" : "secondary"}>{link.active ? "Active" : "Paused"}</Badge></TableCell>
                 <TableCell>
                   <DropdownMenu>
-                    <DropdownMenuTrigger><Button variant="ghost" size="icon" className="size-8"><MoreHorizontal className="size-4" /></Button></DropdownMenuTrigger>
+                    <DropdownMenuTrigger render={<Button variant="ghost" size="icon" className="size-8" />}>
+                      <MoreHorizontal className="size-4" />
+                    </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" className="w-48">
                       <DropdownMenuItem><Edit className="mr-2 size-4" /> Edit</DropdownMenuItem>
                       <DropdownMenuItem><ExternalLink className="mr-2 size-4" /> Open</DropdownMenuItem>

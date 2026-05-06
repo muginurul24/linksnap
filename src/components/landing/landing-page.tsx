@@ -1,13 +1,10 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useRef } from "react";
 import Link from "next/link";
 import {
     motion,
-    useScroll,
-    useTransform,
     useInView,
-    AnimatePresence,
 } from "framer-motion";
 import {
     Zap,
@@ -25,6 +22,7 @@ import {
     Copy,
     Layers,
     Link2,
+    type LucideIcon,
 } from "lucide-react";
 
 /* ── Stagger helpers ── */
@@ -39,15 +37,6 @@ const itemVariants = {
         y: 0,
         filter: "blur(0px)",
         transition: { duration: 0.6, ease: "easeOut" as const },
-    },
-};
-
-const fadeUp = {
-    hidden: { opacity: 0, y: 32 },
-    visible: {
-        opacity: 1,
-        y: 0,
-        transition: { duration: 0.8, ease: "easeOut" as const },
     },
 };
 
@@ -120,21 +109,6 @@ function Container({
         <div className={`mx-auto max-w-7xl px-6 lg:px-8 ${className}`}>
             {children}
         </div>
-    );
-}
-
-/* ── Glowing badge ── */
-function GlowBadge({ children }: { children: React.ReactNode }) {
-    return (
-        <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2, duration: 0.6 }}
-            className="mx-auto mb-8 inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-4 py-1.5 text-sm font-medium text-primary backdrop-blur-sm"
-        >
-            <Sparkles className="size-4" />
-            {children}
-        </motion.div>
     );
 }
 
@@ -265,12 +239,10 @@ function FeatureCard({
     icon: Icon,
     title,
     desc,
-    delay = 0,
 }: {
-    icon: any;
+    icon: LucideIcon;
     title: string;
     desc: string;
-    delay?: number;
 }) {
     return (
         <motion.div
@@ -296,7 +268,7 @@ function StatCard({
 }: {
     value: string;
     label: string;
-    icon: any;
+    icon: LucideIcon;
 }) {
     const ref = useRef(null);
     const inView = useInView(ref, { once: true });
@@ -327,7 +299,7 @@ function StepCard({
     step: string;
     title: string;
     desc: string;
-    icon: any;
+    icon: LucideIcon;
 }) {
     return (
         <motion.div
