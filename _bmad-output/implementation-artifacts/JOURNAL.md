@@ -1181,3 +1181,46 @@ Implemented `GET` and `POST /api/v1/links/[id]/page` for authenticated Link Page
 - ✅ No raw SQL, secrets, plaintext IP, or sensitive logging added.
 
 **Next Task:** 3.2 — Link Page Public Renderer
+
+### 3.2 — Link Page Public Renderer
+- **Date:** 2026-05-06 23:56 GMT+7
+- **Duration:** 0h 25m
+- **Status:** ✅ Complete
+
+**What I Did:**
+Extracted the public Link Page UI into `src/components/link-page/link-page-renderer.tsx` and wired the public `/:slug` route to render it when `hasLinkPage` is enabled. The renderer now shows brand identity, title, description, optional OG image, custom-color CTA, countdown target copy, social proof, generated QR code, theme variants, and the LinkSnap footer inside a mobile-first 480px card.
+
+**Files Changed:**
+- `src/components/link-page/link-page-renderer.tsx` — Added the public Link Page renderer, QR generation, theme handling, social proof formatting, and CTA color contrast helpers.
+- `src/app/[slug]/page.tsx` — Replaced inline Link Page markup with the shared renderer and passed destination, short URL, and click count.
+- `src/lib/db/queries/links.ts` — Expanded public Link Page and redirect queries with theme, QR, social proof, and click count fields.
+- `src/lib/links/redirect.ts` — Added `clickCount` to redirect cache serialization.
+- `tests/unit/link-page-renderer.test.tsx` — Added renderer and helper coverage.
+- `tests/unit/redirect.test.ts` — Updated redirect fixture for cached click counts.
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Checked off Task 3.2.
+- `_bmad-output/planning-artifacts/SECURITY.md` — Updated Link Page rendering security notes.
+- `_bmad-output/implementation-artifacts/JOURNAL.md` — Recorded this completion entry.
+
+**Decisions Made:**
+- Kept Link Page rendering server-side so user-provided config stays escaped by JSX and the public page ships minimal client JavaScript.
+- Generated the QR code directly in the renderer for this task because the dedicated QR endpoint is scoped to Phase 5.
+- Used a validated runtime CTA color with computed text contrast because user-selected colors cannot be represented safely as static Tailwind classes.
+- Kept live countdown behavior for Task 3.3 while rendering the configured countdown target in this public renderer.
+
+**Tests:**
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Unit/Integration: `rtk bun run test` — 30 files passed, 139 tests passed.
+- ✅ Build: `rtk bun run build` — Passed; `/:slug` remains dynamic and Link Page renderer compiles.
+
+**Issues Encountered:**
+- Adding social proof required redirect cache payloads to carry `clickCount` → Updated the redirect type, cache serializer, query, and test fixture.
+
+**Security Checks:**
+- ✅ User-provided Link Page text renders through JSX escaping.
+- ✅ CTA color is validated against a strict hex pattern before rendering.
+- ✅ Public image URLs remain constrained by Link Page API validation.
+- ✅ Public renderer does not expose owner data or secrets.
+- ✅ No raw SQL, plaintext IP, or sensitive logging added.
+
+**Next Task:** 3.3 — Countdown Timer Component

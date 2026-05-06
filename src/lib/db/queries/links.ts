@@ -45,6 +45,9 @@ export type PublicLinkPage = {
   description: string | null;
   ogImage: string | null;
   showCountdown: boolean | null;
+  showQrCode: boolean | null;
+  showSocialProof: boolean | null;
+  theme: string;
   title: string;
 };
 
@@ -192,6 +195,7 @@ export async function findRedirectLinkBySlug(
 ): Promise<RedirectLink | null> {
   const link = await db.query.links.findFirst({
     columns: {
+      clickCount: true,
       destinationUrl: true,
       expiresAt: true,
       hasLinkPage: true,
@@ -219,6 +223,9 @@ export async function findPublicLinkPageByLinkId(
       description: true,
       ogImage: true,
       showCountdown: true,
+      showQrCode: true,
+      showSocialProof: true,
+      theme: true,
       title: true,
     },
     where: eq(linkPages.linkId, linkId),

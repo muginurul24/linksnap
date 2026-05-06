@@ -252,19 +252,19 @@ src/
 - [x] Auth: required, ownership check
 
 ### TASK 3.2 — Link Page Public Renderer
-- File: `src/components/link-page/link-page-renderer.tsx`
-- Read Link Page config from API
-- Render:
-  - Brand logo + name (header)
-  - Title + description
-  - OG image (if provided)
-  - CTA button with custom text/color → redirect to destination
-  - Countdown timer (if enabled, countdown to target date)
-  - Social proof: "X people clicked this link"
-  - QR code display
-  - Footer: "Powered by LinkSnap"
-- Theme: auto (system), dark, light
-- Responsive: mobile-first, max-width 480px centered card
+- [x] File: `src/components/link-page/link-page-renderer.tsx`
+- [x] Read Link Page config from API
+- [x] Render:
+  - [x] Brand logo + name (header)
+  - [x] Title + description
+  - [x] OG image (if provided)
+  - [x] CTA button with custom text/color → redirect to destination
+  - [x] Countdown timer (if enabled, countdown to target date)
+  - [x] Social proof: "X people clicked this link"
+  - [x] QR code display
+  - [x] Footer: "Powered by LinkSnap"
+- [x] Theme: auto (system), dark, light
+- [x] Responsive: mobile-first, max-width 480px centered card
 
 ### TASK 3.3 — Countdown Timer Component
 - File: `src/components/link-page/countdown-timer.tsx`

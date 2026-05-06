@@ -52,7 +52,7 @@
   rtk grep -r "dangerouslySetInnerHTML" src/
   # Must be zero, or documented with DOMPurify sanitization
   ```
-- [x] **Link Page content** — Public redirect renderer displays user-provided brandName, title, and description through JSX escaping.
+- [x] **Link Page content** — Public redirect renderer displays user-provided brandName, title, description, CTA text, social proof, and image URLs through JSX escaping; dynamic CTA color is validated as a hex value before rendering.
 - [ ] **URL validation** — All user-submitted URLs validated with Zod `.url()` before storage
 - [ ] **SVG sanitization** — If accepting SVG uploads for logos, sanitize with DOMPurify
 - [ ] **Content-Security-Policy header** — Implemented in `next.config.ts`:

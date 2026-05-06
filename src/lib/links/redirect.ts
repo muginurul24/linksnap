@@ -1,4 +1,5 @@
 export type RedirectLink = {
+  clickCount: number;
   destinationUrl: string;
   expiresAt: Date | null;
   hasLinkPage: boolean;
@@ -9,6 +10,7 @@ export type RedirectLink = {
 };
 
 export type RedirectLinkCachePayload = {
+  clickCount: number;
   destinationUrl: string;
   expiresAt: string | null;
   hasLinkPage: boolean;
@@ -44,6 +46,7 @@ export function toRedirectLinkCachePayload(
   link: RedirectLink,
 ): RedirectLinkCachePayload {
   return {
+    clickCount: link.clickCount,
     destinationUrl: link.destinationUrl,
     expiresAt: link.expiresAt?.toISOString() ?? null,
     hasLinkPage: link.hasLinkPage,
@@ -58,6 +61,7 @@ export function fromRedirectLinkCachePayload(
   payload: RedirectLinkCachePayload,
 ): RedirectLink {
   return {
+    clickCount: payload.clickCount,
     destinationUrl: payload.destinationUrl,
     expiresAt: payload.expiresAt ? new Date(payload.expiresAt) : null,
     hasLinkPage: payload.hasLinkPage,

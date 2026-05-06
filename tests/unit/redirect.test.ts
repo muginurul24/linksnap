@@ -10,6 +10,7 @@ import {
 
 function createRedirectLink(overrides: Partial<RedirectLink> = {}): RedirectLink {
   return {
+    clickCount: 0,
     destinationUrl: "https://example.com",
     expiresAt: null,
     hasLinkPage: false,
