@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent,
@@ -14,7 +15,6 @@ import {
   LayoutDashboard, Link2, Globe, Megaphone, BarChart3, Settings, QrCode, Zap,
   LogOut, User, CreditCard, Sparkles,
 } from "lucide-react";
-import { ButtonLink } from "@/components/ui/button-link";
 
 const mainNav = [
   { title: "Overview", url: "/", icon: LayoutDashboard },
@@ -43,7 +43,7 @@ export function AppSidebar() {
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
-            <a href="/" className="flex items-center gap-2 px-2 py-1.5">
+            <Link href="/" className="flex items-center gap-2 px-2 py-1.5">
               <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
                 <Zap className="size-4" />
               </div>
@@ -51,7 +51,7 @@ export function AppSidebar() {
                 <span className="font-semibold">LinkSnap</span>
                 <span className="text-xs text-muted-foreground">Free Plan</span>
               </div>
-            </a>
+            </Link>
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarHeader>
@@ -64,10 +64,10 @@ export function AppSidebar() {
               {mainNav.map((item) => (
                 <SidebarMenuItem key={item.url}>
                   <SidebarMenuButton isActive={isActive(item.url)} tooltip={item.title}>
-                    <a href={item.url} className="flex w-full items-center gap-2">
+                    <Link href={item.url} className="flex w-full items-center gap-2">
                       <item.icon className="size-4" />
                       <span>{item.title}</span>
-                    </a>
+                    </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
@@ -82,10 +82,10 @@ export function AppSidebar() {
               {accountNav.map((item) => (
                 <SidebarMenuItem key={item.url}>
                   <SidebarMenuButton isActive={isActive(item.url)} tooltip={item.title}>
-                    <a href={item.url} className="flex w-full items-center gap-2">
+                    <Link href={item.url} className="flex w-full items-center gap-2">
                       <item.icon className="size-4" />
                       <span>{item.title}</span>
-                    </a>
+                    </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
@@ -103,12 +103,12 @@ export function AppSidebar() {
               <p className="mb-3 text-xs text-muted-foreground">
                 Unlock Link Pages, Smart Rules, and unlimited links.
               </p>
-              <a
+              <Link
                 href="/settings/billing"
                 className="inline-flex w-full items-center justify-center rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90"
               >
                 Upgrade Now
-              </a>
+              </Link>
             </div>
           </SidebarGroupContent>
         </SidebarGroup>
@@ -133,16 +133,16 @@ export function AppSidebar() {
               <DropdownMenuContent className="w-56" align="end" side="right" sideOffset={4}>
                 <DropdownMenuLabel>My Account</DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <a href="/settings">
+                <Link href="/settings">
                   <DropdownMenuItem>
                     <User className="mr-2 size-4" /> Settings
                   </DropdownMenuItem>
-                </a>
-                <a href="/settings/billing">
+                </Link>
+                <Link href="/settings/billing">
                   <DropdownMenuItem>
                     <CreditCard className="mr-2 size-4" /> Billing
                   </DropdownMenuItem>
-                </a>
+                </Link>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem className="text-destructive">
                   <LogOut className="mr-2 size-4" /> Sign Out

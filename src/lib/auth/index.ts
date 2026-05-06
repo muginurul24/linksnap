@@ -5,6 +5,15 @@ import { db } from "@/lib/db";
 import { users } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import bcrypt from "bcryptjs";
+import { slidingWindowRateLimit } from "@/lib/redis/rate-limit";
+
+function getRequestIp(request: Request): string {
+  return (
+    request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
+    request.headers.get("x-real-ip") ??
+    "unknown"
+  );
+}
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   session: { strategy: "jwt" },
@@ -49,8 +58,16 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         email: { label: "Email", type: "email" },
         password: { label: "Password", type: "password" },
       },
-      async authorize(credentials) {
+      async authorize(credentials, request) {
         if (!credentials?.email || !credentials?.password) return null;
+
+        const rateLimit = await slidingWindowRateLimit({
+          key: `auth:login:${getRequestIp(request)}`,
+          limit: 5,
+          windowSeconds: 15 * 60,
+        });
+
+        if (rateLimit.limited) return null;
 
         const [user] = await db
           .select()
@@ -87,8 +104,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       return token;
     },
     async session({ session, token }) {
-      if (session.user) {
-        (session.user as any).id = token.id;
+      if (session.user && typeof token.id === "string") {
+        (session.user as typeof session.user & { id?: string }).id = token.id;
       }
       return session;
     },

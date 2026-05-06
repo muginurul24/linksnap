@@ -8,7 +8,7 @@
 ## 🛡️ OWASP Top 10 Coverage
 
 ### SEC-01: Broken Access Control
-- [ ] **Middleware auth gate** — All `/dashboard/*` and `/api/v1/*` (except public) gated via `middleware.ts`
+- [x] **Middleware auth gate** — Dashboard surfaces protected via `src/proxy.ts`; public auth/static routes excluded. Future user-data `/api/v1/*` routes still need per-route auth/ownership.
 - [ ] **Ownership verification** — Every API route that returns user data must verify `session.user.id === resource.userId`
 - [ ] **Role-based access** — Admin routes (`/api/v1/admin/*`) check `session.user.role === "admin"`
 - [ ] **Plan-gated features** — Check user plan before allowing premium features (Smart Rules, Link Pages, API access)
@@ -16,8 +16,8 @@
 - [ ] **Direct object reference test** — Try accessing `/api/v1/links/{another-users-link-id}` → must return 403
 
 ### SEC-02: Cryptographic Failures
-- [ ] **Password hashing** — bcryptjs with cost factor ≥ 12 (verify in `src/lib/auth/index.ts`)
-- [ ] **JWT secret** — `AUTH_SECRET` ≥ 32 characters, generated via `openssl rand -base64 32`
+- [x] **Password hashing** — bcryptjs with cost factor ≥ 12 (implemented in `src/app/api/v1/auth/register/route.ts`)
+- [x] **JWT secret** — `AUTH_SECRET` ≥ 32 characters, generated via `openssl rand -base64 32`
 - [ ] **TLS everywhere** — Force HTTPS in production via Vercel + Cloudflare
 - [ ] **Sensitive data encryption** — API keys, tokens stored hashed (not plaintext)
 - [ ] **IP hashing** — SHA256(IP + salt) for analytics; salt rotated periodically
@@ -62,7 +62,7 @@
   ```
 
 ### SEC-05: Cross-Site Request Forgery (CSRF / XSRF)
-- [ ] **NextAuth CSRF protection** — Built-in via NextAuth.js (double-submit cookie pattern)
+- [x] **NextAuth CSRF protection** — Built-in via NextAuth.js (double-submit cookie pattern)
 - [ ] **SameSite cookies** — JWT cookies set with `SameSite=Strict` (verify in auth config)
 - [ ] **State-changing operations** — All POST/PATCH/DELETE require valid session
 - [ ] **Origin/Referer header check** — Add middleware to validate Origin header on API routes:
@@ -73,7 +73,7 @@
     return new Response("Forbidden", { status: 403 });
   }
   ```
-- [ ] **Custom header requirement** — API clients must send `X-Requested-With: XMLHttpRequest` (prevents form-based CSRF)
+- [ ] **Custom header requirement** — API clients must send `X-Requested-With: XMLHttpRequest` (auth UI clients already send it; server-side enforcement still pending)
 
 ### SEC-06: Security Misconfiguration
 - [ ] **Security headers** — All implemented in `next.config.ts`:
@@ -86,15 +86,15 @@
 - [ ] **No verbose errors** — Production errors return generic messages, not stack traces
 - [ ] **No directory listing** — Vercel/Next.js prevents by default
 - [ ] **CORS configuration** — Only allow `app.linksnap.id` and `linksnap.id` origins
-- [ ] **Environment variables** — `.env` in `.gitignore`; `.env.example` committed without values
+- [x] **Environment variables** — `.env` in `.gitignore`; `.env.example` committed without values
 
 ### SEC-07: DDoS Protection & Rate Limiting
 
 #### Rate Limiting
 - [ ] **Global rate limit** — 100 requests/15min per IP (Redis sliding window)
-- [ ] **Auth endpoints** — 5 login attempts/15min per IP
-- [ ] **Register endpoint** — 3 registrations/hour per IP
-- [ ] **OTP resend** — 3 OTPs/hour per email
+- [x] **Auth endpoints** — 5 login attempts/15min per IP
+- [x] **Register endpoint** — 3 registrations/hour per IP
+- [x] **OTP resend** — 3 OTPs/hour per email
 - [ ] **Link creation** — Tier-based (Free: 10/min, Pro: 30/min, Business: 60/min)
 - [ ] **API endpoints** — Tier-based (Free: 30/min, Pro: 60/min, Business: 120/min)
 - [ ] **Redirect endpoint** — 1000 requests/min per IP (abuse prevention)
@@ -134,17 +134,17 @@
   ```
 
 ### SEC-09: Input Validation & Sanitization
-- [ ] **Zod schemas** on ALL API inputs (never trust `req.json()` raw)
+- [x] **Zod schemas** on ALL API inputs implemented so far (auth API routes); future API routes must continue this pattern.
 - [ ] **Slug validation** — `/^[a-z0-9-]{3,50}$/` (no special chars, no Unicode tricks)
 - [ ] **URL validation** — Use Zod `.url()` with additional checks:
   - Reject `javascript:` protocol
   - Reject `data:` protocol
   - Reject `file:` protocol
   - Reject localhost/127.0.0.1/internal IPs
-- [ ] **Email validation** — Zod `.email()` + Resend verification
-- [ ] **String length limits** — ALL text fields have max lengths in both Zod schema AND database schema
-- [ ] **Unknown field stripping** — Zod `.strict()` or `.strip()` to reject/ignore extra fields
-- [ ] **Null/undefined handling** — Every API route handles missing fields gracefully
+- [x] **Email validation** — Zod `.email()` + Resend verification
+- [x] **String length limits** — Auth text fields have max lengths in both Zod schema AND database schema; future feature fields must continue this pattern.
+- [x] **Unknown field stripping** — Auth schemas use Zod `.strict()` to reject extra fields.
+- [x] **Null/undefined handling** — Auth API routes handle missing/invalid JSON bodies gracefully.
 
 ### SEC-10: SSRF Prevention
 - [ ] **URL destination validation** — Reject internal URLs:
@@ -168,7 +168,7 @@
 
 ### SEC-11: Authentication Security
 - [ ] **Account lockout** — 5 failed login attempts → 15-minute lockout
-- [ ] **Password policy** — Minimum 8 characters, at least 1 letter + 1 number
+- [x] **Password policy** — Minimum 8 characters, at least 1 letter + 1 number
 - [ ] **Session timeout** — JWT access token expires in 15 minutes
 - [ ] **Refresh token rotation** — Each refresh issues new token, invalidates old
 - [ ] **Concurrent session limit** — Max 5 active sessions per user

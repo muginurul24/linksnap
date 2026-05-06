@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Area, AreaChart, Bar, BarChart, CartesianGrid, XAxis, YAxis, ResponsiveContainer, PieChart, Pie, Cell, Legend } from "recharts";
-import { Download, Calendar, Filter } from "lucide-react";
+import { Download, Calendar } from "lucide-react";
 
 const dailyClicks = [
   { date: "May 1", clicks: 980 },  { date: "May 2", clicks: 2100 },
