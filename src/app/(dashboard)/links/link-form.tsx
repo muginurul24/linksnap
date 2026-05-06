@@ -40,6 +40,7 @@ import {
   updateLinkSchema,
   type CreateLinkInput,
 } from "@/lib/validations/link";
+import { upsertLinkPageSchema } from "@/lib/validations/link-page";
 
 type LinkFormField = keyof CreateLinkInput;
 type FieldErrors = Partial<Record<LinkFormField, string>>;
@@ -70,6 +71,10 @@ type LinkMutationResponse = {
   shortUrl: string;
   slug: string;
   title?: string | null;
+};
+
+type LinkPageMutationResponse = {
+  linkId: string;
 };
 
 type SlugAvailabilityResponse = {
@@ -168,6 +173,11 @@ function apiErrorMessage(
   };
 
   return messages[code] ?? fallback ?? "Unable to create link.";
+}
+
+function nullableText(value: string): string | null {
+  const trimmed = value.trim();
+  return trimmed || null;
 }
 
 function isAbortError(error: unknown): boolean {
@@ -388,6 +398,25 @@ export function CreateLinkForm({ initialLink }: LinkFormProps) {
 
     if (!assertSlugCanSubmit()) return;
 
+    const parsedLinkPage = enableLinkPage
+      ? upsertLinkPageSchema.safeParse({
+          brandName: linkPageBrandName,
+          ctaColor: linkPageCtaColor,
+          ctaText: linkPageCtaText,
+          description: nullableText(linkPageDescription),
+          showCountdown: false,
+          showQrCode: true,
+          showSocialProof: true,
+          theme: "auto",
+          title: linkPageTitle,
+        })
+      : null;
+
+    if (parsedLinkPage && !parsedLinkPage.success) {
+      setFormError("Check the Link Page fields and try again.");
+      return;
+    }
+
     setIsSubmitting(true);
     setFieldErrors({});
     setFormError(null);
@@ -422,6 +451,30 @@ export function CreateLinkForm({ initialLink }: LinkFormProps) {
           setFormError(message);
         }
         return;
+      }
+
+      if (parsedLinkPage?.success) {
+        const pageResponse = await fetch(`/api/v1/links/${body.data.id}/page`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-Requested-With": "XMLHttpRequest",
+          },
+          body: JSON.stringify(parsedLinkPage.data),
+        });
+        const pageBody =
+          (await pageResponse.json()) as ApiEnvelope<LinkPageMutationResponse>;
+
+        if (!pageBody.success) {
+          setFormError(
+            apiErrorMessage(
+              pageBody.error.code,
+              pageBody.error.message,
+              pageBody.error.details,
+            ),
+          );
+          return;
+        }
       }
 
       toast.success(isEditMode ? "Link updated." : "Link created.", {

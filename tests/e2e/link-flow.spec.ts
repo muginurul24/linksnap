@@ -37,6 +37,8 @@ async function cleanupLinkFlowState(email: string, userId?: string): Promise<voi
     ...(userId
       ? [
           `rate-limit:api:links:list:${userId}`,
+          `rate-limit:api:links:page:get:${userId}`,
+          `rate-limit:api:links:page:post:${userId}`,
           `rate-limit:api:links:slug:get:${userId}`,
           `rate-limit:links:create:${userId}`,
         ]
@@ -203,8 +205,55 @@ test("should preview a Link Page from the dashboard links table", async ({ page 
     );
   } finally {
     await cleanupLinkFlowState(email, userId);
-    if (userId) {
-      await redis.del(`rate-limit:api:links:page:get:${userId}`);
-    }
+  }
+});
+
+test("should configure a Link Page then render the public page and CTA redirect", async ({
+  page,
+}) => {
+  const email = `e2e-page-${Date.now()}@example.com`;
+  const password = "Password1";
+  const slug = `page-${Date.now()}`;
+  let userId: string | undefined;
+
+  try {
+    userId = await createVerifiedUser(email, password);
+
+    await signIn(page, { email, password });
+    await expect(page).toHaveURL(/\/links$/, { timeout: 15_000 });
+
+    await page.getByRole("link", { name: "Create link", exact: true }).click();
+    await page.getByLabel("Destination URL").fill("https://example.com/e2e-page");
+    await page.getByLabel("Custom slug").fill(slug);
+    await expect(page.getByText("Slug available.")).toBeVisible({
+      timeout: 10_000,
+    });
+    await page.getByLabel("Title").fill("E2E page promo");
+    await page.getByRole("switch", { name: "Enable Link Page" }).click();
+    await page.getByLabel("Brand name").fill("E2E Brand");
+    await page.getByLabel("Page title").fill("E2E Link Page");
+    await page.getByLabel("Description").fill("Public Link Page body.");
+    await page.getByLabel("CTA text").fill("Open offer");
+    await page.getByRole("button", { name: "Create link" }).click();
+
+    await expect(page).toHaveURL(/\/links$/, { timeout: 15_000 });
+    const linkId = await getLinkIdBySlug(slug);
+    await page.goto(`/${slug}`);
+
+    await expect(page.getByText("E2E Brand")).toBeVisible();
+    await expect(page.getByText("E2E Link Page")).toBeVisible();
+    await expect(page.getByText("Public Link Page body.")).toBeVisible();
+
+    await page.getByRole("link", { name: "Open offer" }).click();
+    await page.waitForURL("https://example.com/e2e-page", { timeout: 15_000 });
+
+    await expect
+      .poll(() => countClicksForLink(linkId), {
+        message: "Link Page view and CTA click should be logged",
+        timeout: 10_000,
+      })
+      .toBeGreaterThanOrEqual(2);
+  } finally {
+    await cleanupLinkFlowState(email, userId);
   }
 });

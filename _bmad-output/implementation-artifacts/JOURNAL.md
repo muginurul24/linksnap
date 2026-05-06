@@ -1351,3 +1351,40 @@ Added Link Page analytics event tracking across direct redirects, Link Page view
 - ✅ No raw SQL, secrets, or sensitive logging added.
 
 **Next Task:** 3.6 — Link Page Tests
+
+### 3.6 — Link Page Tests
+- **Date:** 2026-05-07 00:18 GMT+7
+- **Duration:** 0h 25m
+- **Status:** ✅ Complete
+
+**What I Did:**
+Completed the Link Page test coverage required for Phase 3. The dashboard create/edit form now persists Link Page config through the authenticated Link Page API, which enables the E2E flow to configure a Link Page from the dashboard, visit the public short URL, verify the public renderer, click the tracked CTA, and confirm analytics events are stored before cleanup.
+
+**Files Changed:**
+- `src/app/(dashboard)/links/link-form.tsx` — Persists Link Page config after successful link create/update when Link Page is enabled.
+- `tests/e2e/link-flow.spec.ts` — Added dashboard-configured Link Page public rendering and CTA redirect coverage; waits for background click logging before cleanup.
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Checked off Task 3.6.
+- `_bmad-output/implementation-artifacts/JOURNAL.md` — Recorded this completion entry.
+
+**Decisions Made:**
+- Used the existing `upsertLinkPageSchema` client-side before saving the link so missing required Link Page fields fail before a partial create where possible.
+- Kept countdown/QR/social-proof defaults in the dashboard form because the current form only exposes the core Link Page fields.
+- Waited for click-event persistence in E2E before deleting the test user so Next.js `after()` background logging does not race test cleanup.
+
+**Tests:**
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Unit/Integration: `rtk bun run test` — 32 files passed, 147 tests passed.
+- ✅ Build: `rtk bun run build` — Passed.
+- ✅ E2E: `rtk bun run test:e2e` — 4 specs passed.
+
+**Issues Encountered:**
+- E2E cleanup initially raced CTA background logging and produced a foreign-key log after the test passed → Added a poll for persisted click events before cleanup.
+
+**Security Checks:**
+- ✅ Link Page dashboard saves go through the authenticated owner-scoped Link Page API.
+- ✅ Link Page inputs are validated with Zod before client submission and again by the API.
+- ✅ Public CTA redirect continues to use hashed IP logging only.
+- ✅ No raw SQL, secrets, plaintext IP, or sensitive logging added.
+
+**Next Task:** 4.1 — Smart Rules API

@@ -286,9 +286,9 @@ src/
 - [x] Add to link analytics API
 
 ### TASK 3.6 — Link Page Tests
-- Unit: countdown timer logic, CTA URL construction
-- Integration: create Link Page → visit slug → verify page renders → click CTA → verify redirect
-- E2E: configure Link Page from dashboard → verify public rendering
+- [x] Unit: countdown timer logic, CTA URL construction
+- [x] Integration: create Link Page → visit slug → verify page renders → click CTA → verify redirect
+- [x] E2E: configure Link Page from dashboard → verify public rendering
 
 ---
 
