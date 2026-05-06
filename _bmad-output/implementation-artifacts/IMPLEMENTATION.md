@@ -280,10 +280,10 @@ src/
 - [x] Mobile/desktop toggle in preview
 
 ### TASK 3.5 — Link Page Analytics
-- Page views (when Link Page is shown vs direct redirect)
-- CTA click-through rate
-- Countdown effectiveness (views with timer vs without)
-- Add to link analytics API
+- [x] Page views (when Link Page is shown vs direct redirect)
+- [x] CTA click-through rate
+- [x] Countdown effectiveness (views with timer vs without)
+- [x] Add to link analytics API
 
 ### TASK 3.6 — Link Page Tests
 - Unit: countdown timer logic, CTA URL construction

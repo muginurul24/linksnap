@@ -6,8 +6,10 @@ type InsertedClick = {
   city: string | null;
   country: string | null;
   device: string;
+  eventType: string;
   ipHash: string | null;
   linkId: string;
+  linkPageHasCountdown: boolean;
   os: string;
   referrer: string | null;
   userAgent: string | null;
@@ -74,10 +76,17 @@ describe("click logger", () => {
       "x-vercel-ip-country": "ID",
     });
 
-    expect(buildRedirectClickInput("link-1", headers)).toEqual({
+    expect(
+      buildRedirectClickInput("link-1", headers, {
+        eventType: "LINK_PAGE_VIEW",
+        linkPageHasCountdown: true,
+      }),
+    ).toEqual({
       edgeGeo: { city: "Jakarta", country: "ID" },
+      eventType: "LINK_PAGE_VIEW",
       ipAddress: "203.0.113.10",
       linkId: "link-1",
+      linkPageHasCountdown: true,
       referrer: "https://referrer.example",
       userAgent: "Mozilla/5.0",
     });
@@ -89,8 +98,10 @@ describe("click logger", () => {
 
     await logRedirectClick({
       edgeGeo: { city: "Jakarta", country: "ID" },
+      eventType: "DIRECT_REDIRECT",
       ipAddress: "203.0.113.10",
       linkId: "link-1",
+      linkPageHasCountdown: false,
       referrer: "https://referrer.example",
       userAgent,
     });
@@ -101,8 +112,10 @@ describe("click logger", () => {
         city: "Jakarta",
         country: "ID",
         device: "mobile",
+        eventType: "DIRECT_REDIRECT",
         ipHash: hashIpAddress("203.0.113.10", "test-salt"),
         linkId: "link-1",
+        linkPageHasCountdown: false,
         os: "iOS",
         referrer: "https://referrer.example",
         userAgent,
@@ -118,8 +131,10 @@ describe("click logger", () => {
     await expect(
       logRedirectClick({
         edgeGeo: { city: null, country: null },
+        eventType: "DIRECT_REDIRECT",
         ipAddress: null,
         linkId: "link-1",
+        linkPageHasCountdown: false,
         referrer: null,
         userAgent: null,
       }),

@@ -24,6 +24,22 @@ export type LinkAnalyticsSummary = {
   browserBreakdown: CountMetric[];
   clicksPerDay: ClicksPerDayMetric[];
   deviceBreakdown: CountMetric[];
+  linkPageAnalytics: {
+    ctaClickThroughRate: number;
+    ctaClicks: number;
+    countdown: {
+      ctaClickThroughRate: number;
+      ctaClicks: number;
+      views: number;
+    };
+    directRedirects: number;
+    pageViews: number;
+    withoutCountdown: {
+      ctaClickThroughRate: number;
+      ctaClicks: number;
+      views: number;
+    };
+  };
   topCities: CountMetric[];
   topCountries: CountMetric[];
   topReferrers: CountMetric[];
@@ -101,6 +117,12 @@ function buildDayBuckets(range: AnalyticsDateRange): Map<string, number> {
   return buckets;
 }
 
+function rate(numerator: number, denominator: number): number {
+  if (denominator === 0) return 0;
+
+  return Number((numerator / denominator).toFixed(4));
+}
+
 export function summarizeClickEvents(
   events: ClickEventForAnalytics[],
   range: AnalyticsDateRange,
@@ -112,8 +134,36 @@ export function summarizeClickEvents(
   const deviceCounts = new Map<string, number>();
   const referrerCounts = new Map<string, number>();
   const uniqueIpHashes = new Set<string>();
+  let countdownCtaClicks = 0;
+  let countdownViews = 0;
+  let ctaClicks = 0;
+  let directRedirects = 0;
+  let pageViews = 0;
+  let withoutCountdownCtaClicks = 0;
+  let withoutCountdownViews = 0;
 
   for (const event of events) {
+    if (event.eventType === "LINK_PAGE_CTA_CLICK") {
+      ctaClicks += 1;
+      if (event.linkPageHasCountdown) {
+        countdownCtaClicks += 1;
+      } else {
+        withoutCountdownCtaClicks += 1;
+      }
+      continue;
+    }
+
+    if (event.eventType === "LINK_PAGE_VIEW") {
+      pageViews += 1;
+      if (event.linkPageHasCountdown) {
+        countdownViews += 1;
+      } else {
+        withoutCountdownViews += 1;
+      }
+    } else {
+      directRedirects += 1;
+    }
+
     if (event.ipHash) uniqueIpHashes.add(event.ipHash);
 
     increment(dayCounts, formatUtcDate(event.timestamp));
@@ -131,10 +181,26 @@ export function summarizeClickEvents(
       totalClicks,
     })),
     deviceBreakdown: topMetrics(deviceCounts),
+    linkPageAnalytics: {
+      ctaClickThroughRate: rate(ctaClicks, pageViews),
+      ctaClicks,
+      countdown: {
+        ctaClickThroughRate: rate(countdownCtaClicks, countdownViews),
+        ctaClicks: countdownCtaClicks,
+        views: countdownViews,
+      },
+      directRedirects,
+      pageViews,
+      withoutCountdown: {
+        ctaClickThroughRate: rate(withoutCountdownCtaClicks, withoutCountdownViews),
+        ctaClicks: withoutCountdownCtaClicks,
+        views: withoutCountdownViews,
+      },
+    },
     topCities: topMetrics(cityCounts),
     topCountries: topMetrics(countryCounts),
     topReferrers: topMetrics(referrerCounts),
-    totalClicks: events.length,
+    totalClicks: directRedirects + pageViews,
     uniqueClicks: uniqueIpHashes.size,
   };
 }

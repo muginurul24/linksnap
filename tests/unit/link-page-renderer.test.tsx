@@ -30,7 +30,7 @@ describe("LinkPageRenderer", () => {
     const markup = renderToStaticMarkup(
       await LinkPageRenderer({
         clickCount: 1234,
-        destinationUrl: "https://example.com/promo",
+        ctaUrl: "https://linksnap.test/promo/go",
         page: basePage,
         shortUrl: "https://linksnap.test/promo",
       }),
@@ -42,14 +42,14 @@ describe("LinkPageRenderer", () => {
     expect(markup).toContain("Shop now");
     expect(markup).toContain("1,234 people clicked this link");
     expect(markup).toContain("Powered by LinkSnap");
-    expect(markup).toContain('href="https://example.com/promo"');
+    expect(markup).toContain('href="https://linksnap.test/promo/go"');
   });
 
   it("should render a QR code when enabled", async () => {
     const markup = renderToStaticMarkup(
       await LinkPageRenderer({
         clickCount: 0,
-        destinationUrl: "https://example.com/promo",
+        ctaUrl: "https://linksnap.test/promo/go",
         page: { ...basePage, showQrCode: true },
         shortUrl: "https://linksnap.test/promo",
       }),

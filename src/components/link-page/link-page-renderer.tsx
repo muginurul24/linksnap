@@ -75,7 +75,7 @@ export type LinkPageRendererConfig = {
 
 type LinkPageRendererProps = {
   clickCount: number;
-  destinationUrl: string;
+  ctaUrl: string;
   page: LinkPageRendererConfig;
   shortUrl: string;
 };
@@ -105,7 +105,7 @@ async function buildQrCodeDataUrl(value: string): Promise<string | null> {
 
 export async function LinkPageRenderer({
   clickCount,
-  destinationUrl,
+  ctaUrl,
   page,
   shortUrl,
 }: LinkPageRendererProps) {
@@ -182,7 +182,7 @@ export async function LinkPageRenderer({
             </div>
 
             <a
-              href={destinationUrl}
+              href={ctaUrl}
               className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg px-4 text-sm font-medium transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
               style={{ backgroundColor: ctaColor, color: ctaTextColor }}
             >

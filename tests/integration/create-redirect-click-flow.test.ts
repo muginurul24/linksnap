@@ -8,6 +8,7 @@ type MockSession = {
 } | null;
 
 type MockLink = {
+  clickCount: number;
   destinationUrl: string;
   expiresAt: Date | null;
   hasLinkPage: boolean;
@@ -19,6 +20,21 @@ type MockLink = {
   userId: string;
 };
 
+type MockLinkPage = {
+  brandLogo: string | null;
+  brandName: string;
+  countdownTarget: Date | null;
+  ctaColor: string;
+  ctaText: string;
+  description: string | null;
+  ogImage: string | null;
+  showCountdown: boolean | null;
+  showQrCode: boolean | null;
+  showSocialProof: boolean | null;
+  theme: string;
+  title: string;
+};
+
 type CreateLinkRecordInput = {
   destinationUrl: string;
   slug: string;
@@ -27,7 +43,9 @@ type CreateLinkRecordInput = {
 };
 
 type RedirectClickInput = {
+  eventType: string;
   linkId: string;
+  linkPageHasCountdown: boolean;
   referrer: string | null;
   userAgent: string | null;
 };
@@ -50,6 +68,7 @@ type CreateLinkResponse = {
 
 const mockState = vi.hoisted(() => ({
   cache: new Map<string, unknown>(),
+  linkPages: new Map<string, MockLinkPage>(),
   links: [] as MockLink[],
   loggedClicks: [] as RedirectClickInput[],
   session: { user: { id: "user-1" } } as MockSession,
@@ -74,6 +93,7 @@ vi.mock("@/lib/db/queries/links", () => ({
   countLinksByUserId: async () => mockState.links.length,
   createLinkRecord: async (input: CreateLinkRecordInput) => {
     const link: MockLink = {
+      clickCount: 0,
       destinationUrl: input.destinationUrl,
       expiresAt: null,
       hasLinkPage: false,
@@ -93,7 +113,8 @@ vi.mock("@/lib/db/queries/links", () => ({
   },
   findLinkBySlug: async (slug: string) =>
     mockState.links.find((link) => link.slug === slug) ?? null,
-  findPublicLinkPageByLinkId: async () => null,
+  findPublicLinkPageByLinkId: async (linkId: string) =>
+    mockState.linkPages.get(linkId) ?? null,
   findRedirectLinkBySlug: async (slug: string) =>
     mockState.links.find((link) => link.slug === slug) ?? null,
   getUserPlanById: async () => "PRO",
@@ -102,8 +123,14 @@ vi.mock("@/lib/db/queries/links", () => ({
 }));
 
 vi.mock("@/lib/analytics/click-logger", () => ({
-  buildRedirectClickInput: (linkId: string, headers: Headers): RedirectClickInput => ({
+  buildRedirectClickInput: (
+    linkId: string,
+    headers: Headers,
+    options?: { eventType?: string; linkPageHasCountdown?: boolean },
+  ): RedirectClickInput => ({
+    eventType: options?.eventType ?? "DIRECT_REDIRECT",
     linkId,
+    linkPageHasCountdown: options?.linkPageHasCountdown ?? false,
     referrer: headers.get("referer"),
     userAgent: headers.get("user-agent"),
   }),
@@ -140,6 +167,7 @@ vi.mock("next/navigation", () => ({
 }));
 
 import RedirectPage from "../../src/app/[slug]/page";
+import { GET as GETLinkPageCta } from "../../src/app/[slug]/go/route";
 import { POST } from "../../src/app/api/v1/links/route";
 
 const previousBaseUrl = process.env.NEXT_PUBLIC_APP_URL;
@@ -160,6 +188,7 @@ describe("create redirect click flow", () => {
   beforeEach(() => {
     process.env.NEXT_PUBLIC_APP_URL = "https://linksnap.test";
     mockState.cache = new Map();
+    mockState.linkPages = new Map();
     mockState.links = [];
     mockState.loggedClicks = [];
     mockState.session = { user: { id: "user-1" } };
@@ -197,7 +226,68 @@ describe("create redirect click flow", () => {
 
     expect(mockState.loggedClicks).toEqual([
       {
+        eventType: "DIRECT_REDIRECT",
         linkId: "link-1",
+        linkPageHasCountdown: false,
+        referrer: "https://referrer.example",
+        userAgent: "Vitest",
+      },
+    ]);
+  });
+
+  it("should render a Link Page view then log CTA click-through redirects", async () => {
+    mockState.links = [
+      {
+        clickCount: 7,
+        destinationUrl: "https://example.com/page",
+        expiresAt: null,
+        hasLinkPage: true,
+        id: "link-page-1",
+        isActive: true,
+        scheduledAt: null,
+        slug: "page-flow",
+        title: "Page flow",
+        userId: "user-1",
+      },
+    ];
+    mockState.linkPages.set("link-page-1", {
+      brandLogo: null,
+      brandName: "Brand",
+      countdownTarget: new Date("2026-05-08T10:00:00.000Z"),
+      ctaColor: "#111827",
+      ctaText: "Continue",
+      description: "Link Page description",
+      ogImage: null,
+      showCountdown: true,
+      showQrCode: false,
+      showSocialProof: true,
+      theme: "light",
+      title: "Link Page title",
+    });
+
+    await expect(
+      RedirectPage({ params: Promise.resolve({ slug: "page-flow" }) }),
+    ).resolves.toBeTruthy();
+
+    const ctaResponse = await GETLinkPageCta(
+      new Request("http://localhost:3000/page-flow/go"),
+      { params: Promise.resolve({ slug: "page-flow" }) },
+    );
+
+    expect(ctaResponse.status).toBe(308);
+    expect(ctaResponse.headers.get("location")).toBe("https://example.com/page");
+    expect(mockState.loggedClicks).toEqual([
+      {
+        eventType: "LINK_PAGE_VIEW",
+        linkId: "link-page-1",
+        linkPageHasCountdown: true,
+        referrer: "https://referrer.example",
+        userAgent: "Vitest",
+      },
+      {
+        eventType: "LINK_PAGE_CTA_CLICK",
+        linkId: "link-page-1",
+        linkPageHasCountdown: true,
         referrer: "https://referrer.example",
         userAgent: "Vitest",
       },

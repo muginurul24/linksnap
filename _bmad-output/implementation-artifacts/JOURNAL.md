@@ -1302,3 +1302,52 @@ Added a Link Page preview action to the dashboard links table. The preview opens
 - ✅ No raw SQL, secrets, plaintext IP, or sensitive logging added.
 
 **Next Task:** 3.5 — Link Page Analytics
+
+### 3.5 — Link Page Analytics
+- **Date:** 2026-05-07 00:13 GMT+7
+- **Duration:** 0h 45m
+- **Status:** ✅ Complete
+
+**What I Did:**
+Added Link Page analytics event tracking across direct redirects, Link Page views, and Link Page CTA clicks. The public Link Page CTA now routes through `/:slug/go`, logs CTA click-through metadata, and returns a 308 redirect to the destination. Link analytics now reports page views, direct redirects, CTA clicks, CTA click-through rate, and countdown vs non-countdown effectiveness.
+
+**Files Changed:**
+- `src/lib/db/schema.ts` — Added click event type enum plus Link Page countdown metadata on click events.
+- `src/lib/analytics/click-logger.ts` — Added event type and countdown context to click logging.
+- `src/lib/analytics/summary.ts` — Added Link Page analytics aggregation without inflating existing total click counts with CTA events.
+- `src/lib/db/queries/click-events.ts` — Selected new analytics fields for summary calculation.
+- `src/app/[slug]/page.tsx` — Logs Link Page views separately from direct redirects and points public CTA to the tracked go route.
+- `src/app/[slug]/go/route.ts` — Added tracked CTA click-through route with 308 redirect.
+- `src/components/link-page/link-page-renderer.tsx` — Switched CTA href to the tracked CTA URL.
+- `tests/unit/analytics-summary.test.ts` — Added Link Page analytics summary coverage.
+- `tests/unit/click-logger.test.ts` — Added event type metadata coverage.
+- `tests/unit/click-events-query.test.ts` — Updated click event query coverage for new fields.
+- `tests/integration/create-redirect-click-flow.test.ts` — Added Link Page view and CTA redirect logging coverage.
+- `tests/integration/link-analytics-api.test.ts` — Added API response coverage for Link Page analytics.
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Checked off Task 3.5.
+- `_bmad-output/implementation-artifacts/JOURNAL.md` — Recorded this completion entry.
+
+**Decisions Made:**
+- CTA clicks are tracked as a separate event type and excluded from `totalClicks`, preserving the existing meaning of total short-link visits.
+- CTA click-through rate is returned as a ratio from 0 to 1 so the dashboard can format it as a percentage without losing precision.
+- Countdown effectiveness is computed from view and CTA events that record whether the Link Page displayed a countdown at the time.
+- The CTA route uses HTTP 308 via `NextResponse.redirect(..., 308)` to keep redirect behavior aligned with the project’s redirect best practice.
+
+**Tests:**
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Unit/Integration: `rtk bun run test` — 32 files passed, 147 tests passed.
+- ✅ Database: `rtk bun run db:push` — Applied click event schema changes.
+- ✅ Build: `rtk bun run build` — Passed; `/:slug/go` is registered.
+- ✅ E2E: `rtk bun run test:e2e` — 3 specs passed after rerunning without concurrent build contention.
+
+**Issues Encountered:**
+- Running `next build` in parallel with Playwright’s dev server caused temporary API responses to return HTML during the first E2E attempt → Reran Playwright after build completed and all specs passed.
+
+**Security Checks:**
+- ✅ CTA route validates public slug format and link availability before redirecting.
+- ✅ CTA route logs hashed IP metadata through the existing click logger; no plaintext IP is stored.
+- ✅ Analytics API remains authenticated, owner-scoped, and rate limited.
+- ✅ No raw SQL, secrets, or sensitive logging added.
+
+**Next Task:** 3.6 — Link Page Tests

@@ -61,21 +61,39 @@ export default async function RedirectPage({ params }: RedirectPageProps) {
 
   if (!link || !isRedirectLinkAvailable(link)) notFound();
 
-  scheduleClickLog(buildRedirectClickInput(link.id, headersList));
-
   if (link.hasLinkPage) {
     const page = await findPublicLinkPageByLinkId(link.id);
     if (page) {
+      const linkPageHasCountdown =
+        page.showCountdown === true && page.countdownTarget !== null;
+      const shortUrl = buildShortUrlPreview(
+        process.env.NEXT_PUBLIC_APP_URL,
+        link.slug,
+      );
+
+      scheduleClickLog(
+        buildRedirectClickInput(link.id, headersList, {
+          eventType: "LINK_PAGE_VIEW",
+          linkPageHasCountdown,
+        }),
+      );
+
       return (
         <LinkPageRenderer
           clickCount={link.clickCount}
-          destinationUrl={link.destinationUrl}
+          ctaUrl={`${shortUrl}/go`}
           page={page}
-          shortUrl={buildShortUrlPreview(process.env.NEXT_PUBLIC_APP_URL, link.slug)}
+          shortUrl={shortUrl}
         />
       );
     }
   }
+
+  scheduleClickLog(
+    buildRedirectClickInput(link.id, headersList, {
+      eventType: "DIRECT_REDIRECT",
+    }),
+  );
 
   permanentRedirect(link.destinationUrl);
 }

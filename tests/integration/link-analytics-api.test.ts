@@ -55,6 +55,22 @@ type LinkAnalyticsResponse = {
   browserBreakdown: { count: number; label: string }[];
   clicksPerDay: { date: string; totalClicks: number }[];
   deviceBreakdown: { count: number; label: string }[];
+  linkPageAnalytics: {
+    ctaClickThroughRate: number;
+    ctaClicks: number;
+    countdown: {
+      ctaClickThroughRate: number;
+      ctaClicks: number;
+      views: number;
+    };
+    directRedirects: number;
+    pageViews: number;
+    withoutCountdown: {
+      ctaClickThroughRate: number;
+      ctaClicks: number;
+      views: number;
+    };
+  };
   linkId: string;
   range: {
     from: string;
@@ -142,7 +158,9 @@ function createClickEvent(
     city: "Jakarta",
     country: "ID",
     device: "desktop",
+    eventType: "DIRECT_REDIRECT",
     ipHash: "hash-1",
+    linkPageHasCountdown: false,
     referrer: "https://referrer.example",
     timestamp: new Date("2026-05-06T10:00:00.000Z"),
     ...overrides,
@@ -200,6 +218,22 @@ describe("link analytics API", () => {
         { count: 2, label: "desktop" },
         { count: 1, label: "mobile" },
       ],
+      linkPageAnalytics: {
+        ctaClickThroughRate: 0,
+        ctaClicks: 0,
+        countdown: {
+          ctaClickThroughRate: 0,
+          ctaClicks: 0,
+          views: 0,
+        },
+        directRedirects: 3,
+        pageViews: 0,
+        withoutCountdown: {
+          ctaClickThroughRate: 0,
+          ctaClicks: 0,
+          views: 0,
+        },
+      },
       linkId,
       topReferrers: [
         { count: 2, label: "https://referrer.example" },
@@ -216,6 +250,53 @@ describe("link analytics API", () => {
     expect(mockState.rateLimitOptions).toEqual([
       { key: "api:links:analytics:get:user-1", limit: 60, windowSeconds: 60 },
     ]);
+  });
+
+  it("should include Link Page view and CTA metrics", async () => {
+    mockState.clickEvents = [
+      createClickEvent({
+        eventType: "LINK_PAGE_VIEW",
+        linkPageHasCountdown: true,
+      }),
+      createClickEvent({
+        eventType: "LINK_PAGE_VIEW",
+        ipHash: "hash-2",
+        linkPageHasCountdown: true,
+      }),
+      createClickEvent({
+        eventType: "LINK_PAGE_CTA_CLICK",
+        linkPageHasCountdown: true,
+      }),
+    ];
+
+    const response = await GET(
+      createRequest("?from=2026-05-05T00:00:00.000Z&to=2026-05-06T23:59:59.000Z"),
+      createContext(),
+    );
+    const body = await readJson<LinkAnalyticsResponse>(response);
+
+    expect(response.status).toBe(200);
+    expect(body.success).toBe(true);
+    if (!body.success) return;
+
+    expect(body.data.linkPageAnalytics).toEqual({
+      ctaClickThroughRate: 0.5,
+      ctaClicks: 1,
+      countdown: {
+        ctaClickThroughRate: 0.5,
+        ctaClicks: 1,
+        views: 2,
+      },
+      directRedirects: 0,
+      pageViews: 2,
+      withoutCountdown: {
+        ctaClickThroughRate: 0,
+        ctaClicks: 0,
+        views: 0,
+      },
+    });
+    expect(body.data.totalClicks).toBe(2);
+    expect(body.data.uniqueClicks).toBe(2);
   });
 
   it("should reject direct object reference access for another user's link", async () => {

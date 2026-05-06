@@ -9,7 +9,9 @@ export type ClickEventForAnalytics = {
   city: string | null;
   country: string | null;
   device: string | null;
+  eventType: typeof clickEvents.$inferSelect["eventType"];
   ipHash: string | null;
+  linkPageHasCountdown: boolean;
   referrer: string | null;
   timestamp: Date;
 };
@@ -37,7 +39,9 @@ export async function listClickEventsForLink({
       city: clickEvents.city,
       country: clickEvents.country,
       device: clickEvents.device,
+      eventType: clickEvents.eventType,
       ipHash: clickEvents.ipHash,
+      linkPageHasCountdown: clickEvents.linkPageHasCountdown,
       referrer: clickEvents.referrer,
       timestamp: clickEvents.timestamp,
     })
