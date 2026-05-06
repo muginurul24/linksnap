@@ -1478,3 +1478,42 @@ Implemented the Smart Rules evaluation engine and wired it into public redirects
 - ✅ MaxMind MMDB files and `.env` remain ignored and are not committed.
 
 **Next Task:** 4.3 — Geo IP Lookup
+
+### 4.3 — Geo IP Lookup
+- **Date:** 2026-05-07 06:36 GMT+7
+- **Duration:** 0h 35m
+- **Status:** ✅ Complete
+
+**What I Did:**
+Added a dedicated GeoIP lookup module backed by MaxMind GeoLite2 and Redis. Public IP lookups now cache `{ country, city, region }` for 24 hours, local/private IPs return `null` without cache or database reads, and the existing edge-header wrapper now prefers MaxMind data while preserving edge fallback behavior.
+
+**Files Changed:**
+- `src/lib/geo/geoip.ts` — Added MaxMind reader management, public/private IP detection, Redis cache keys, 24-hour TTL caching, and GeoIP lookup output.
+- `src/lib/geo/ip-lookup.ts` — Refactored to combine cached MaxMind results with decoded edge geo headers.
+- `tests/unit/geoip.test.ts` — Added coverage for private IP fallback, MaxMind result caching, missing DB path, and address-not-found behavior.
+- `tests/unit/geo-ip-lookup.test.ts` — Updated wrapper coverage for region headers, MaxMind preference, edge fallback, and empty results.
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Checked off Task 4.3.
+- `_bmad-output/implementation-artifacts/JOURNAL.md` — Recorded this completion entry.
+
+**Decisions Made:**
+- Kept `ip-lookup.ts` as the compatibility wrapper for existing analytics and rule-engine callers, while `geoip.ts` owns MaxMind and Redis concerns.
+- Cached only successful public-IP MaxMind lookups so private/local traffic and missing database configurations do not create noisy cache entries.
+- Used the configured `MAXMIND_DB_PATH` from `.env`; the local value points at `/home/mugiew/projects/linksnap/src/database/geolite/city.mmdb`.
+
+**Tests:**
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Unit/Integration: `rtk bun run test` — 36 files passed, 176 tests passed.
+- ✅ Build: `rtk bun run build` — Passed.
+- ✅ E2E: `rtk bun run test:e2e` — 4 specs passed after rerun.
+
+**Issues Encountered:**
+- First E2E attempt failed because a previous `next dev` process was still running for this repo → verified the process, stopped it, reran E2E successfully.
+
+**Security Checks:**
+- ✅ Private, localhost, link-local, and unique-local IPs are not sent to MaxMind or cached.
+- ✅ Geo lookup failures do not break redirects or click logging; callers continue to fall back to edge headers or empty geo data.
+- ✅ `.env` and local MMDB files remain ignored and were not committed.
+- ✅ No raw SQL, secrets, plaintext IP storage, or sensitive logging added.
+
+**Next Task:** 4.4 — Device Detection

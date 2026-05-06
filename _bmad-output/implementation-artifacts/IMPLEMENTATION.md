@@ -319,11 +319,11 @@ src/
   5. [x] If no rules match, return null → use default destination
 
 ### TASK 4.3 — Geo IP Lookup
-- File: `src/lib/geo/geoip.ts`
-- Use MaxMind GeoLite2 database (download to `data/GeoLite2-City.mmdb`)
-- Cache results in Redis: `geo:{ip}` → `{ country, city, region }`
-- TTL: 24 hours
-- Fallback: if IP is localhost/private → return null
+- [x] File: `src/lib/geo/geoip.ts`
+- [x] Use MaxMind GeoLite2 database (download to `data/GeoLite2-City.mmdb`)
+- [x] Cache results in Redis: `geo:{ip}` → `{ country, city, region }`
+- [x] TTL: 24 hours
+- [x] Fallback: if IP is localhost/private → return null
 
 ### TASK 4.4 — Device Detection
 - File: `src/lib/geo/device-detector.ts`
