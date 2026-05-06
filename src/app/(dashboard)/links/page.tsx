@@ -36,6 +36,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { EmptyState } from "@/components/dashboard/empty-state";
+import { LinkPagePreviewDialog } from "@/app/(dashboard)/links/link-page-preview-dialog";
 
 const PAGE_LIMIT = 20;
 
@@ -105,6 +106,18 @@ function LinkRows({ links }: { links: ListedLink[] }) {
             <Badge variant={link.isActive ? "default" : "secondary"}>
               {link.isActive ? "Active" : "Paused"}
             </Badge>
+          </TableCell>
+          <TableCell className="w-10">
+            <LinkPagePreviewDialog
+              link={{
+                clickCount: link.clickCount,
+                destinationUrl: link.destinationUrl,
+                hasLinkPage: link.hasLinkPage,
+                id: link.id,
+                shortUrl: getShortUrl(link.slug),
+                slug: link.slug,
+              }}
+            />
           </TableCell>
           <TableCell>
             <DropdownMenu>
@@ -193,6 +206,9 @@ export default async function LinksPage() {
                   <TableHead className="hidden sm:table-cell">Features</TableHead>
                   <TableHead className="text-right">Clicks</TableHead>
                   <TableHead className="hidden lg:table-cell">Status</TableHead>
+                  <TableHead className="w-10">
+                    <span className="sr-only">Preview</span>
+                  </TableHead>
                   <TableHead className="w-10" />
                 </TableRow>
               </TableHeader>

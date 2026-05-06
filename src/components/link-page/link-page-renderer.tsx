@@ -7,10 +7,12 @@ import {
   UsersRound,
 } from "lucide-react";
 import { CountdownTimer } from "@/components/link-page/countdown-timer";
+import {
+  formatClickCount,
+  getReadableTextColor,
+  getSafeHexColor,
+} from "@/components/link-page/link-page-utils";
 import { cn } from "@/lib/utils";
-
-const DEFAULT_CTA_COLOR = "#6366f1";
-const HEX_COLOR_PATTERN = /^#[0-9a-fA-F]{6}$/;
 
 type LinkPageTheme = "auto" | "dark" | "light";
 
@@ -77,29 +79,6 @@ type LinkPageRendererProps = {
   page: LinkPageRendererConfig;
   shortUrl: string;
 };
-
-export function getSafeHexColor(value: string | null | undefined): string {
-  return value && HEX_COLOR_PATTERN.test(value) ? value : DEFAULT_CTA_COLOR;
-}
-
-export function getReadableTextColor(hexColor: string): "#111827" | "#ffffff" {
-  const safeColor = getSafeHexColor(hexColor).replace("#", "");
-  const value = Number.parseInt(safeColor, 16);
-  const red = (value >> 16) & 255;
-  const green = (value >> 8) & 255;
-  const blue = value & 255;
-  const luminance = (0.299 * red + 0.587 * green + 0.114 * blue) / 255;
-
-  return luminance > 0.62 ? "#111827" : "#ffffff";
-}
-
-export function formatClickCount(clickCount: number): string {
-  const count = Math.max(0, clickCount);
-  const formatted = new Intl.NumberFormat("en").format(count);
-  const noun = count === 1 ? "person" : "people";
-
-  return `${formatted} ${noun} clicked this link`;
-}
 
 function normalizeTheme(theme: string): LinkPageTheme {
   if (theme === "dark" || theme === "light") return theme;

@@ -1,12 +1,14 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import {
-  formatClickCount,
-  getReadableTextColor,
-  getSafeHexColor,
   LinkPageRenderer,
   type LinkPageRendererConfig,
 } from "../../src/components/link-page/link-page-renderer";
+import {
+  formatClickCount,
+  getReadableTextColor,
+  getSafeHexColor,
+} from "../../src/components/link-page/link-page-utils";
 
 const basePage: LinkPageRendererConfig = {
   brandLogo: null,

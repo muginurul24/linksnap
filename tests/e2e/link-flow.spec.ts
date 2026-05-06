@@ -1,8 +1,8 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 import { loadEnvConfig } from "@next/env";
 import { count, eq } from "drizzle-orm";
 import { db } from "../../src/lib/db";
-import { clickEvents, links, users } from "../../src/lib/db/schema";
+import { clickEvents, linkPages, links, users } from "../../src/lib/db/schema";
 import { hashPassword } from "../../src/lib/auth/password";
 import { redis } from "../../src/lib/redis";
 
@@ -65,6 +65,65 @@ async function countClicksForLink(linkId: string): Promise<number> {
   return row?.value ?? 0;
 }
 
+async function createLinkPageFixture({
+  slug,
+  userId,
+}: {
+  slug: string;
+  userId: string;
+}): Promise<void> {
+  const [link] = await db
+    .insert(links)
+    .values({
+      clickCount: 42,
+      destinationUrl: "https://example.com/preview",
+      hasLinkPage: true,
+      slug,
+      title: "Preview promo",
+      userId,
+    })
+    .returning({ id: links.id });
+
+  if (!link) throw new Error("Unable to create preview link.");
+
+  await db.insert(linkPages).values({
+    brandName: "Acme Preview",
+    countdownTarget: new Date(Date.now() + 86_400_000),
+    ctaColor: "#0f766e",
+    ctaText: "Open offer",
+    description: "Dashboard preview copy.",
+    linkId: link.id,
+    showCountdown: true,
+    showQrCode: false,
+    showSocialProof: true,
+    theme: "light",
+    title: "Preview Launch",
+  });
+}
+
+async function signIn(page: Page, {
+  email,
+  password,
+}: {
+  email: string;
+  password: string;
+}): Promise<void> {
+  await page.goto("/login");
+  await page.getByLabel("Email").fill(email);
+  await page.getByLabel("Password", { exact: true }).fill(password);
+
+  const credentialsResponsePromise = page.waitForResponse(
+    (response) =>
+      response.url().includes("/api/auth/callback/credentials") &&
+      response.request().method() === "POST",
+    { timeout: 20_000 },
+  );
+
+  await page.getByRole("button", { name: /^Sign in$/ }).click();
+  const credentialsResponse = await credentialsResponsePromise;
+  expect(credentialsResponse.ok()).toBe(true);
+}
+
 test.use({
   extraHTTPHeaders: {
     "x-forwarded-for": testIp,
@@ -80,20 +139,7 @@ test("should create link from dashboard then log redirect analytics", async ({ p
   try {
     userId = await createVerifiedUser(email, password);
 
-    await page.goto("/login");
-    await page.getByLabel("Email").fill(email);
-    await page.getByLabel("Password", { exact: true }).fill(password);
-
-    const credentialsResponsePromise = page.waitForResponse(
-      (response) =>
-        response.url().includes("/api/auth/callback/credentials") &&
-        response.request().method() === "POST",
-      { timeout: 20_000 },
-    );
-
-    await page.getByRole("button", { name: /^Sign in$/ }).click();
-    const credentialsResponse = await credentialsResponsePromise;
-    expect(credentialsResponse.ok()).toBe(true);
+    await signIn(page, { email, password });
 
     await expect(page).toHaveURL(/\/links$/, { timeout: 15_000 });
     await expect(
@@ -126,5 +172,39 @@ test("should create link from dashboard then log redirect analytics", async ({ p
       .toBeGreaterThan(0);
   } finally {
     await cleanupLinkFlowState(email, userId);
+  }
+});
+
+test("should preview a Link Page from the dashboard links table", async ({ page }) => {
+  const email = `e2e-preview-${Date.now()}@example.com`;
+  const password = "Password1";
+  const slug = `preview-${Date.now()}`;
+  let userId: string | undefined;
+
+  try {
+    userId = await createVerifiedUser(email, password);
+    await createLinkPageFixture({ slug, userId });
+
+    await signIn(page, { email, password });
+    await expect(page).toHaveURL(/\/links$/, { timeout: 15_000 });
+
+    await page.getByRole("button", { name: `Preview Link Page for ${slug}` }).click();
+
+    await expect(page.getByText("Link Page preview")).toBeVisible();
+    await expect(page.getByText("Preview Launch")).toBeVisible();
+    await expect(page.getByText("Dashboard preview copy.")).toBeVisible();
+    await expect(page.getByText("Open offer")).toBeVisible();
+    await expect(page.getByText("42 people clicked this link")).toBeVisible();
+
+    await page.getByRole("button", { name: "Desktop" }).click();
+    await expect(page.getByRole("button", { name: "Desktop" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+  } finally {
+    await cleanupLinkFlowState(email, userId);
+    if (userId) {
+      await redis.del(`rate-limit:api:links:page:get:${userId}`);
+    }
   }
 });

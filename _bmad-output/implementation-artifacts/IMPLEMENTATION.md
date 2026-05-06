@@ -275,9 +275,9 @@ src/
 - [x] Client component (useEffect timer)
 
 ### TASK 3.4 — Link Page Preview (Dashboard)
-- Add preview button in links table
-- Open modal showing live Link Page rendering
-- Mobile/desktop toggle in preview
+- [x] Add preview button in links table
+- [x] Open modal showing live Link Page rendering
+- [x] Mobile/desktop toggle in preview
 
 ### TASK 3.5 — Link Page Analytics
 - Page views (when Link Page is shown vs direct redirect)

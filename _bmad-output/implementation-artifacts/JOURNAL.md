@@ -1260,3 +1260,45 @@ Added a dedicated client-side countdown timer for Link Pages. It calculates rema
 - ✅ No secrets, raw SQL, plaintext IP, or sensitive logging added.
 
 **Next Task:** 3.4 — Link Page Preview (Dashboard)
+
+### 3.4 — Link Page Preview (Dashboard)
+- **Date:** 2026-05-07 00:06 GMT+7
+- **Duration:** 0h 35m
+- **Status:** ✅ Complete
+
+**What I Did:**
+Added a Link Page preview action to the dashboard links table. The preview opens an authenticated modal, fetches the saved Link Page config from `/api/v1/links/{id}/page`, renders the current page content, and provides mobile/desktop viewport modes without hitting the public redirect URL or inflating analytics.
+
+**Files Changed:**
+- `src/app/(dashboard)/links/page.tsx` — Added the preview action column to the links table.
+- `src/app/(dashboard)/links/link-page-preview-dialog.tsx` — Added authenticated preview modal, API loading states, viewport toggle, QR preview generation, and preview surface.
+- `src/components/link-page/link-page-utils.ts` — Added shared CTA color and social proof helpers.
+- `src/components/link-page/link-page-renderer.tsx` — Reused shared Link Page helper utilities.
+- `tests/unit/link-page-preview-dialog.test.ts` — Added preview config parsing coverage.
+- `tests/unit/link-page-renderer.test.tsx` — Updated helper imports after extracting shared utilities.
+- `tests/e2e/link-flow.spec.ts` — Added dashboard preview E2E coverage.
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Checked off Task 3.4.
+- `_bmad-output/implementation-artifacts/JOURNAL.md` — Recorded this completion entry.
+
+**Decisions Made:**
+- The dashboard preview fetches the owner-protected Link Page API instead of embedding the public slug in an iframe, preventing preview opens from being counted as public clicks.
+- The preview uses a local rendering surface with the same shared helpers as the public renderer while keeping the public renderer server-side.
+- QR rendering in the modal is client-side because it is preview-only and avoids adding a new public QR endpoint before Phase 5.
+
+**Tests:**
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed after moving synchronous loading/reset state out of effects.
+- ✅ Unit/Integration: `rtk bun run test` — 32 files passed, 144 tests passed.
+- ✅ Build: `rtk bun run build` — Passed.
+- ✅ E2E: `rtk bun run test:e2e` — 3 specs passed, including the Link Page preview modal flow.
+
+**Issues Encountered:**
+- React Compiler lint rejected synchronous `setState` inside `useEffect` → Moved modal loading/reset state into the dialog open-change event handler and left effects for async work only.
+
+**Security Checks:**
+- ✅ Preview API requires the existing authenticated Link Page endpoint with ownership checks and rate limiting.
+- ✅ Preview does not call the public redirect route, so it does not create click-event analytics noise.
+- ✅ User-provided text renders through JSX escaping.
+- ✅ No raw SQL, secrets, plaintext IP, or sensitive logging added.
+
+**Next Task:** 3.5 — Link Page Analytics
