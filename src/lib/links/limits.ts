@@ -8,6 +8,12 @@ const LINK_QUOTAS: Record<UserPlan, number> = {
   BUSINESS: Number.POSITIVE_INFINITY,
 };
 
+const LINK_PAGE_QUOTAS: Record<UserPlan, number> = {
+  FREE: 3,
+  PRO: 50,
+  BUSINESS: Number.POSITIVE_INFINITY,
+};
+
 const LINK_CREATION_RATE_LIMITS: Record<UserPlan, number> = {
   FREE: 10,
   PRO: 30,
@@ -28,6 +34,10 @@ export function getLinkQuota(plan: UserPlan): number {
   return LINK_QUOTAS[plan];
 }
 
+export function getLinkPageQuota(plan: UserPlan): number {
+  return LINK_PAGE_QUOTAS[plan];
+}
+
 export function getLinkCreationRateLimit(plan: UserPlan): number {
   return LINK_CREATION_RATE_LIMITS[plan];
 }
@@ -38,4 +48,11 @@ export function getApiEndpointRateLimit(plan: UserPlan): number {
 
 export function hasReachedLinkQuota(plan: UserPlan, linkCount: number): boolean {
   return linkCount >= getLinkQuota(plan);
+}
+
+export function hasReachedLinkPageQuota(
+  plan: UserPlan,
+  linkPageCount: number,
+): boolean {
+  return linkPageCount >= getLinkPageQuota(plan);
 }

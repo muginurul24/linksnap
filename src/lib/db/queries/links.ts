@@ -56,6 +56,23 @@ export type EditableLinkPage = {
   title: string;
 };
 
+export type LinkPageRecord = {
+  brandName: string;
+  countdownTarget: Date | null;
+  ctaColor: string;
+  ctaText: string;
+  description: string | null;
+  id: string;
+  linkId: string;
+  ogImage: string | null;
+  showCountdown: boolean | null;
+  showQrCode: boolean | null;
+  showSocialProof: boolean | null;
+  theme: string;
+  title: string;
+  updatedAt: Date;
+};
+
 export type EditableSmartRule = {
   condition: unknown;
   destinationUrl: string;
@@ -84,6 +101,38 @@ type UpdateLinkRecordInput = {
   title?: string | null;
   userId: string;
 };
+
+type UpsertLinkPageRecordInput = {
+  brandName: string;
+  countdownTarget?: Date | null;
+  ctaColor: string;
+  ctaText: string;
+  description?: string | null;
+  linkId: string;
+  ogImage?: string | null;
+  showCountdown: boolean;
+  showQrCode: boolean;
+  showSocialProof: boolean;
+  theme: string;
+  title: string;
+};
+
+const linkPageRecordColumns = {
+  brandName: true,
+  countdownTarget: true,
+  ctaColor: true,
+  ctaText: true,
+  description: true,
+  id: true,
+  linkId: true,
+  ogImage: true,
+  showCountdown: true,
+  showQrCode: true,
+  showSocialProof: true,
+  theme: true,
+  title: true,
+  updatedAt: true,
+} as const;
 
 const linkDetailColumns = {
   campaignId: true,
@@ -114,6 +163,16 @@ export async function countLinksByUserId(userId: string): Promise<number> {
   const [row] = await db
     .select({ value: count() })
     .from(links)
+    .where(eq(links.userId, userId));
+
+  return row?.value ?? 0;
+}
+
+export async function countLinkPagesByUserId(userId: string): Promise<number> {
+  const [row] = await db
+    .select({ value: count() })
+    .from(linkPages)
+    .innerJoin(links, eq(linkPages.linkId, links.id))
     .where(eq(links.userId, userId));
 
   return row?.value ?? 0;
@@ -162,6 +221,17 @@ export async function findPublicLinkPageByLinkId(
       showCountdown: true,
       title: true,
     },
+    where: eq(linkPages.linkId, linkId),
+  });
+
+  return page ?? null;
+}
+
+export async function findLinkPageByLinkId(
+  linkId: string,
+): Promise<LinkPageRecord | null> {
+  const page = await db.query.linkPages.findFirst({
+    columns: linkPageRecordColumns,
     where: eq(linkPages.linkId, linkId),
   });
 
@@ -277,6 +347,95 @@ export async function updateLinkRecordForUser({
     });
 
   return link ?? null;
+}
+
+export async function setLinkPageEnabledForUser({
+  enabled,
+  id,
+  userId,
+}: {
+  enabled: boolean;
+  id: string;
+  userId: string;
+}): Promise<{ id: string } | null> {
+  const [link] = await db
+    .update(links)
+    .set({ hasLinkPage: enabled, updatedAt: new Date() })
+    .where(and(eq(links.id, id), eq(links.userId, userId)))
+    .returning({ id: links.id });
+
+  return link ?? null;
+}
+
+export async function upsertLinkPageForLink({
+  brandName,
+  countdownTarget,
+  ctaColor,
+  ctaText,
+  description,
+  linkId,
+  ogImage,
+  showCountdown,
+  showQrCode,
+  showSocialProof,
+  theme,
+  title,
+}: UpsertLinkPageRecordInput): Promise<LinkPageRecord> {
+  const now = new Date();
+  const [page] = await db
+    .insert(linkPages)
+    .values({
+      brandName,
+      countdownTarget,
+      ctaColor,
+      ctaText,
+      description,
+      linkId,
+      ogImage,
+      showCountdown,
+      showQrCode,
+      showSocialProof,
+      theme,
+      title,
+      updatedAt: now,
+    })
+    .onConflictDoUpdate({
+      target: linkPages.linkId,
+      set: {
+        brandName,
+        countdownTarget,
+        ctaColor,
+        ctaText,
+        description,
+        ogImage,
+        showCountdown,
+        showQrCode,
+        showSocialProof,
+        theme,
+        title,
+        updatedAt: now,
+      },
+    })
+    .returning({
+      brandName: linkPages.brandName,
+      countdownTarget: linkPages.countdownTarget,
+      ctaColor: linkPages.ctaColor,
+      ctaText: linkPages.ctaText,
+      description: linkPages.description,
+      id: linkPages.id,
+      linkId: linkPages.linkId,
+      ogImage: linkPages.ogImage,
+      showCountdown: linkPages.showCountdown,
+      showQrCode: linkPages.showQrCode,
+      showSocialProof: linkPages.showSocialProof,
+      theme: linkPages.theme,
+      title: linkPages.title,
+      updatedAt: linkPages.updatedAt,
+    });
+
+  if (!page) throw new Error("Unable to upsert link page.");
+
+  return page;
 }
 
 export async function softDeleteLinkForUser(

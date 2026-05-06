@@ -1135,3 +1135,49 @@ Completed Phase 2 link test coverage with quota/limit unit tests, an integration
 - ✅ No raw SQL, secrets, plaintext IP, or sensitive logging added.
 
 **Next Task:** 3.1 — Link Page API
+
+### 3.1 — Link Page API
+- **Date:** 2026-05-06 23:50 GMT+7
+- **Duration:** 0h 30m
+- **Status:** ✅ Complete
+
+**What I Did:**
+Implemented `GET` and `POST /api/v1/links/[id]/page` for authenticated Link Page config retrieval and create/update. Added strict Link Page input validation, ownership checks, tiered API rate limiting, plan-based Link Page quotas, redirect cache invalidation, and `hasLinkPage` enablement after save.
+
+**Files Changed:**
+- `src/app/api/v1/links/[id]/page/route.ts` — Added authenticated Link Page GET/POST route handlers.
+- `src/lib/validations/link-page.ts` — Added strict Link Page upsert schema with URL, color, countdown, and theme validation.
+- `src/lib/db/queries/links.ts` — Added Link Page count, lookup, upsert, and enablement query helpers.
+- `src/lib/links/limits.ts` — Added Link Page quotas and quota helpers.
+- `tests/integration/link-page-api.test.ts` — Added route coverage for create, get, IDOR, validation, quota, auth, invalid ID, rate limit, and missing link cases.
+- `tests/unit/link-page-validation.test.ts` — Added Link Page validation coverage.
+- `tests/unit/link-limits.test.ts` — Added Link Page quota coverage.
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Checked off Task 3.1.
+- `_bmad-output/planning-artifacts/SECURITY.md` — Updated Link Page quota, rate-limit, and Zod coverage notes.
+- `_bmad-output/implementation-artifacts/JOURNAL.md` — Recorded this completion entry.
+
+**Decisions Made:**
+- Link Page quota follows the PRD plan table: Free 3, Pro 50, Business unlimited.
+- `GET` returns `{ linkId, linkPage: null }` when a link has no Link Page yet, which keeps missing config distinct from missing/forbidden links.
+- `POST` always invalidates the redirect cache because the public redirect decision depends on `hasLinkPage`.
+- Countdown config requires `countdownTarget` only when `showCountdown=true`.
+
+**Tests:**
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Unit/Integration: `rtk bun run test` — 29 files passed, 134 tests passed.
+- ✅ Build: `rtk bun run build` — Passed; `/api/v1/links/[id]/page` is registered.
+
+**Issues Encountered:**
+- None.
+
+**Security Checks:**
+- ✅ Params and body validated with strict Zod schemas.
+- ✅ Auth required before Link Page access or mutation.
+- ✅ Ownership checked before returning or upserting Link Page config.
+- ✅ IDOR test verifies another user's link returns 403.
+- ✅ Tiered API rate limiting and plan-based Link Page quota enforced.
+- ✅ Public image URLs are limited to HTTP/HTTPS.
+- ✅ No raw SQL, secrets, plaintext IP, or sensitive logging added.
+
+**Next Task:** 3.2 — Link Page Public Renderer

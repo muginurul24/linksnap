@@ -245,11 +245,11 @@ src/
 ## 🔵 Phase 3: Link Pages (6 tasks)
 
 ### TASK 3.1 — Link Page API
-- File: `src/app/api/v1/links/[id]/page/route.ts`
-- POST: create/update Link Page config
+- [x] File: `src/app/api/v1/links/[id]/page/route.ts`
+- [x] POST: create/update Link Page config
   - Input: `{ brandName, title, description, ogImage, ctaText, ctaColor, showCountdown, countdownTarget, showSocialProof, showQrCode, theme }`
-- GET: get Link Page config
-- Auth: required, ownership check
+- [x] GET: get Link Page config
+- [x] Auth: required, ownership check
 
 ### TASK 3.2 — Link Page Public Renderer
 - File: `src/components/link-page/link-page-renderer.tsx`
