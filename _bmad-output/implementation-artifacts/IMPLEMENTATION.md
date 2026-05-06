@@ -202,16 +202,16 @@ src/
 - [x] Batch insert path: click insert helper accepts batches; Vercel Cron/Redis queueing remains the production scaling path
 
 ### TASK 2.6 — Link Analytics API
-- File: `src/app/api/v1/links/[id]/analytics/route.ts`
-- Auth: required, ownership check
-- Return:
+- [x] File: `src/app/api/v1/links/[id]/analytics/route.ts`
+- [x] Auth: required, ownership check
+- [x] Return:
   - Total clicks, unique clicks (by IP hash)
   - Clicks per day (last 30 days)
   - Top 5 countries, cities
   - Top 5 referrers
   - Device breakdown (mobile/desktop/tablet)
   - Browser breakdown
-- Query params: `from`, `to` (date range)
+- [x] Query params: `from`, `to` (date range)
 
 ### TASK 2.7 — Create Link Form (Dashboard)
 - File: `src/app/(dashboard)/links/new/page.tsx`

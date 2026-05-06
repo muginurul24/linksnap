@@ -909,3 +909,54 @@ Expanded redirect click logging to capture hashed IP, country, city, referrer, u
 - ✅ No raw SQL, secrets, or sensitive logging added.
 
 **Next Task:** 2.6 — Link Analytics API
+
+### 2.6 — Link Analytics API
+- **Date:** 2026-05-06 23:08 GMT+7
+- **Duration:** 0h 35m
+- **Status:** ✅ Complete
+
+**What I Did:**
+Implemented `GET /api/v1/links/[id]/analytics` with UUID param validation, strict `from`/`to` query validation, 30-day range cap, session auth, ownership checks, tiered API rate limiting, one bounded click-event query, and TypeScript aggregation for link analytics.
+
+**Files Changed:**
+- `src/app/api/v1/links/[id]/analytics/route.ts` — Added authenticated owner-scoped analytics API route.
+- `src/lib/analytics/summary.ts` — Added date-range normalization and analytics aggregation helpers.
+- `src/lib/db/queries/click-events.ts` — Added owner-route analytics query helper for click event rows.
+- `src/lib/validations/link.ts` — Added analytics query schema.
+- `tests/integration/link-analytics-api.test.ts` — Added route coverage for success, IDOR, range validation, unknown params, auth, rate limit, and invalid ID.
+- `tests/unit/analytics-summary.test.ts` — Added aggregation and range validation coverage.
+- `tests/unit/link-validation.test.ts` — Added analytics query validation coverage.
+- `tests/unit/click-events-query.test.ts` — Added analytics query helper coverage.
+- `_bmad-output/planning-artifacts/spec-link-analytics-api.md` — Added quick-dev tech spec and marked acceptance criteria complete.
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Checked off Task 2.6.
+- `_bmad-output/planning-artifacts/SECURITY.md` — Marked analytics query complexity limit implemented.
+- `_bmad-output/implementation-artifacts/JOURNAL.md` — Recorded this completion entry.
+
+**Decisions Made:**
+- Aggregation happens in TypeScript over one 30-day click-event query to keep the implementation raw-SQL-free while still avoiding N+1 queries.
+- `uniqueClicks` counts distinct non-null `ipHash` values, matching the requirement to compute uniqueness by hashed IP.
+- Missing countries, cities, browsers, and devices are grouped under `Unknown`; missing referrers are grouped under `Direct`.
+- Default analytics range is the last 30 UTC days ending at request time.
+
+**Tests:**
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Unit/Integration: `rtk bun run test` — 22 files passed, 101 tests passed.
+- ✅ Build: `rtk bun run build` — Passed.
+- ✅ Next runtime diagnostics: `get_errors` on port 3000 returned no config/session errors.
+- ✅ Security grep: no raw SQL, user-controlled fetch, or obvious async loop/N+1 patterns in `src`.
+
+**Issues Encountered:**
+- Aggregating in TypeScript is acceptable with the 30-day cap, but high-volume production analytics should eventually move to rollups/materialized summaries.
+- Security grep still reports existing `dangerouslySetInnerHTML` in `src/components/ui/chart.tsx`; this task did not add or modify that code.
+
+**Security Checks:**
+- ✅ Params and query strings validated with strict Zod schemas.
+- ✅ Auth required before analytics access.
+- ✅ Ownership checked before returning analytics data.
+- ✅ IDOR test verifies cross-user access returns 403.
+- ✅ Tiered API rate limiting applied.
+- ✅ Query range capped to 30 days.
+- ✅ No raw SQL, secrets, plaintext IP, or sensitive logging added.
+
+**Next Task:** 2.7 — Create Link Form (Dashboard)

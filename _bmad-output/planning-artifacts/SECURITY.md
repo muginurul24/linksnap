@@ -111,7 +111,7 @@
 - [ ] **Redis connection pooling** — Upstash connection limit configured  
 - [ ] **Request timeout** — API routes timeout at 10 seconds
 - [ ] **Payload size limit** — Max request body 1MB (configured in `next.config.ts`)
-- [ ] **Query complexity limit** — Analytics queries limited to 30-day range
+- [x] **Query complexity limit** — Link analytics API validates and caps query ranges to 30 days.
 
 ### SEC-08: N+1 Problem Prevention
 - [ ] **Drizzle Relations** — Use Drizzle's `.relations` and `.findMany({ with: {...} })` for eager loading

@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   createLinkSchema,
   isSafeDestinationUrl,
+  linkAnalyticsQuerySchema,
   listLinksQuerySchema,
   updateLinkSchema,
 } from "../../src/lib/validations/link";
@@ -118,6 +119,26 @@ describe("link validation", () => {
 
   it("should reject empty update input", () => {
     const parsed = updateLinkSchema.safeParse({});
+
+    expect(parsed.success).toBe(false);
+  });
+
+  it("should parse analytics date range query params", () => {
+    const parsed = linkAnalyticsQuerySchema.safeParse({
+      from: "2026-05-01T00:00:00.000Z",
+      to: "2026-05-06T00:00:00.000Z",
+    });
+
+    expect(parsed.success).toBe(true);
+    if (!parsed.success) return;
+    expect(parsed.data).toEqual({
+      from: new Date("2026-05-01T00:00:00.000Z"),
+      to: new Date("2026-05-06T00:00:00.000Z"),
+    });
+  });
+
+  it("should reject unknown analytics query params", () => {
+    const parsed = linkAnalyticsQuerySchema.safeParse({ range: "all" });
 
     expect(parsed.success).toBe(false);
   });

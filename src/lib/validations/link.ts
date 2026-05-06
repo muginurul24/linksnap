@@ -155,3 +155,21 @@ export const listLinksQuerySchema = z
   .strict();
 
 export type ListLinksQuery = z.infer<typeof listLinksQuerySchema>;
+
+function emptyStringToDate(value: unknown): unknown {
+  if (typeof value !== "string") return value;
+  const trimmed = value.trim();
+  if (!trimmed) return undefined;
+
+  const date = new Date(trimmed);
+  return Number.isNaN(date.getTime()) ? value : date;
+}
+
+export const linkAnalyticsQuerySchema = z
+  .object({
+    from: z.preprocess(emptyStringToDate, z.date().optional()),
+    to: z.preprocess(emptyStringToDate, z.date().optional()),
+  })
+  .strict();
+
+export type LinkAnalyticsQuery = z.infer<typeof linkAnalyticsQuerySchema>;
