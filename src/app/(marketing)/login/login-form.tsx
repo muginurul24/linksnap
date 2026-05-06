@@ -37,6 +37,7 @@ function signInErrorMessage(error: string): string {
     CredentialsSignin: "Invalid email or password.",
     AccessDenied: "Email is not verified.",
     EmailNotVerified: "Email is not verified.",
+    email_not_verified: "Email is not verified.",
   };
 
   return messages[error] ?? "Unable to sign in.";
@@ -48,10 +49,11 @@ export function LoginForm() {
   const callbackUrl = searchParams.get("callbackUrl") ?? "/links";
   const isVerified = searchParams.get("verified") === "true";
   const initialError = searchParams.get("error");
+  const initialCode = searchParams.get("code");
   const [form, setForm] = useState<LoginInput>(initialForm);
   const [errors, setErrors] = useState<LoginErrors>({});
   const [formError, setFormError] = useState<string | null>(
-    initialError ? signInErrorMessage(initialError) : null,
+    initialError ? signInErrorMessage(initialCode ?? initialError) : null,
   );
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
@@ -83,7 +85,7 @@ export function LoginForm() {
       });
 
       if (result?.error) {
-        setFormError(signInErrorMessage(result.error));
+        setFormError(signInErrorMessage(result.code ?? result.error));
         return;
       }
 

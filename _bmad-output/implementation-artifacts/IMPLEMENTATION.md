@@ -151,8 +151,8 @@ src/
 - [x] Return: `{ limited: true, retryAfter: seconds }` or `{ limited: false }`
 
 ### TASK 1.8 — Auth Tests
-- [ ] Unit: password hashing, OTP generation, token validation (OTP helper tests added; password/token tests pending)
-- [ ] Integration: register → verify → login → access protected route
+- [x] Unit: password hashing, OTP generation, token validation
+- [x] Integration: register → verify → login → access protected route
 - [ ] E2E: full auth flow (register → verify → login → dashboard)
 
 ---

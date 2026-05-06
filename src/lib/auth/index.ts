@@ -4,16 +4,11 @@ import Credentials from "next-auth/providers/credentials";
 import { db } from "@/lib/db";
 import { users } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
-import bcrypt from "bcryptjs";
-import { slidingWindowRateLimit } from "@/lib/redis/rate-limit";
-
-function getRequestIp(request: Request): string {
-  return (
-    request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
-    request.headers.get("x-real-ip") ??
-    "unknown"
-  );
-}
+import { authorizeCredentials } from "@/lib/auth/credentials";
+import {
+  applyJwtTokenToSession,
+  applyUserToJwtToken,
+} from "@/lib/auth/session-token";
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   session: { strategy: "jwt" },
@@ -59,55 +54,16 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials, request) {
-        if (!credentials?.email || !credentials?.password) return null;
-
-        const rateLimit = await slidingWindowRateLimit({
-          key: `auth:login:${getRequestIp(request)}`,
-          limit: 5,
-          windowSeconds: 15 * 60,
-        });
-
-        if (rateLimit.limited) return null;
-
-        const [user] = await db
-          .select()
-          .from(users)
-          .where(eq(users.email, credentials.email as string))
-          .limit(1);
-
-        if (!user?.passwordHash) return null;
-
-        const valid = await bcrypt.compare(
-          credentials.password as string,
-          user.passwordHash,
-        );
-
-        if (!valid) return null;
-
-        return {
-          id: user.id,
-          email: user.email,
-          name: user.name ?? undefined,
-          image: user.avatarUrl ?? undefined,
-        };
+        return authorizeCredentials(credentials, request);
       },
     }),
   ],
   callbacks: {
     async jwt({ token, user, account }) {
-      if (user) {
-        token.id = user.id;
-      }
-      if (account?.provider === "google") {
-        token.googleId = account.providerAccountId;
-      }
-      return token;
+      return applyUserToJwtToken(token, user, account);
     },
     async session({ session, token }) {
-      if (session.user && typeof token.id === "string") {
-        (session.user as typeof session.user & { id?: string }).id = token.id;
-      }
-      return session;
+      return applyJwtTokenToSession(session, token);
     },
   },
 });

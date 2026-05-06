@@ -569,3 +569,53 @@ Updated the implementation checklist after the Google Cloud Console authorized c
 - ✅ No Google OAuth secrets were written to tracked files.
 
 **Next Task:** 1.5 — Google OAuth end-to-end browser test
+
+### 1.8 — Auth Tests
+- **Date:** 2026-05-06 21:23 GMT+7
+- **Duration:** 0 hours 45 minutes
+- **Status:** ⚠️ Partial
+
+**What I Did:**
+Added focused unit coverage for password hashing and JWT/session token mapping, then added an integration test for register → verify → credentials login → protected-route matching. Refactored auth internals into small testable helpers while preserving NextAuth as the runtime auth entrypoint.
+
+**Files Changed:**
+- `src/lib/auth/password.ts` — Added bcrypt password hash/verify helpers.
+- `src/lib/auth/request-ip.ts` — Added shared request IP extraction helper.
+- `src/lib/auth/credentials.ts` — Added testable credentials authorization with rate limit, password verification, and verified-email enforcement.
+- `src/lib/auth/session-token.ts` — Added testable JWT/session mapping helpers.
+- `src/lib/auth/index.ts` — Reused the new credentials and token/session helpers from NextAuth config.
+- `src/app/api/v1/auth/register/route.ts` — Reused shared password hashing and request IP helpers.
+- `src/app/(marketing)/login/login-form.tsx` — Displayed the custom unverified-email credentials error code.
+- `vitest.config.ts` — Added Vitest alias resolution for `@/*` imports.
+- `tests/unit/password.test.ts` — Added password hashing and verification tests.
+- `tests/unit/session-token.test.ts` — Added token/session mapping tests.
+- `tests/integration/auth-flow.test.ts` — Added mocked auth flow integration tests.
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Checked off completed unit and integration auth test items.
+- `_bmad-output/implementation-artifacts/JOURNAL.md` — Recorded this progress entry.
+
+**Decisions Made:**
+- Kept E2E unchecked because full browser auth still requires an end-to-end session flow and Google OAuth remains pending interactive sign-in.
+- Used `@auth/core/errors` for the custom credentials error so unit/integration tests do not need to load the NextAuth runtime module.
+- Enforced verified email before credentials login; the custom code only appears after credentials are valid.
+
+**Tests:**
+- ✅ Unit: `rtk bun run test` — 9 files passed, 21 tests passed.
+- ✅ Integration: `tests/integration/auth-flow.test.ts` — register → verify → login helper → protected route passed.
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Build: `rtk bun run build` — Passed.
+- ✅ Scoped lint: changed auth/test/config files passed ESLint.
+- ⚠️ Full lint: `rtk bun run lint` failed on pre-existing dirty `src/components/landing/landing-page.tsx` issues unrelated to this auth task.
+- ⬜ E2E: full browser auth flow pending.
+
+**Issues Encountered:**
+- Vitest could not load `next-auth` runtime from the credentials helper → Resolved by importing `CredentialsSignin` from `@auth/core/errors`.
+- Full lint is blocked by unrelated local landing-page edits that already existed before this task → Left untouched to avoid overwriting user work.
+
+**Security Checks:**
+- ✅ Password hashing uses bcrypt cost factor 12 through the shared helper.
+- ✅ Credentials login remains rate-limited by IP.
+- ✅ Credentials login now requires verified email after valid password verification.
+- ✅ OTP values are only asserted through mocked test state and are not logged.
+- ✅ No raw SQL or secrets were added.
+
+**Next Task:** 1.8 — Auth E2E flow / 1.5 — Google OAuth end-to-end browser test
