@@ -1,28 +1,21 @@
 import { NextRequest } from "next/server";
-import bcrypt from "bcryptjs";
 import { eq } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { users } from "@/lib/db/schema";
 import { createRequestId, errorResponse, successResponse } from "@/lib/api/response";
 import { generateOtp, getOtpExpiresAt } from "@/lib/auth/otp";
+import { hashPassword } from "@/lib/auth/password";
+import { getRequestIp } from "@/lib/auth/request-ip";
 import { sendVerificationEmail } from "@/lib/email/auth-emails";
 import { slidingWindowRateLimit } from "@/lib/redis/rate-limit";
 import { registerApiSchema } from "@/lib/validations/auth";
-
-function getClientIp(request: NextRequest): string {
-  return (
-    request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
-    request.headers.get("x-real-ip") ??
-    "unknown"
-  );
-}
 
 export async function POST(request: NextRequest) {
   const requestId = createRequestId();
 
   try {
     const rateLimit = await slidingWindowRateLimit({
-      key: `auth:register:${getClientIp(request)}`,
+      key: `auth:register:${getRequestIp(request)}`,
       limit: 3,
       windowSeconds: 60 * 60,
     });
@@ -63,7 +56,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const passwordHash = await bcrypt.hash(parsed.data.password, 12);
+    const passwordHash = await hashPassword(parsed.data.password);
     const otp = generateOtp();
     const [newUser] = await db
       .insert(users)

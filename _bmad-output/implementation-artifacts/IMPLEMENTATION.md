@@ -124,7 +124,7 @@ src/
 - [x] On success: redirect to callback URL, default `/links` because `/dashboard` route does not currently exist
 
 ### TASK 1.5 — Google OAuth
-- [ ] Configure in Google Cloud Console: callback URL = `{APP_URL}/api/auth/callback/google` (local callback verified: `http://localhost:3000/api/auth/callback/google`)
+- [x] Configure in Google Cloud Console: callback URL = `{APP_URL}/api/auth/callback/google` (configured for `http://localhost:3000/api/auth/callback/google`)
 - [ ] Test flow end-to-end
 - [x] Handle: new user auto-register, existing user link Google account
 
@@ -151,172 +151,172 @@ src/
 - [x] Return: `{ limited: true, retryAfter: seconds }` or `{ limited: false }`
 
 ### TASK 1.8 — Auth Tests
-- [ ] Unit: password hashing, OTP generation, token validation (OTP helper tests added; password/token tests pending)
-- [ ] Integration: register → verify → login → access protected route
-- [ ] E2E: full auth flow (register → verify → login → dashboard)
+- [x] Unit: password hashing, OTP generation, token validation
+- [x] Integration: register → verify → login → access protected route
+- [x] E2E: full auth flow (register → verify → login → dashboard)
 
 ---
 
 ## 🟢 Phase 2: Core Links (10 tasks)
 
 ### TASK 2.1 — Create Link API
-- File: `src/app/api/v1/links/route.ts` (POST)
-- Auth: required
-- Input: `{ destinationUrl, slug?, title? }`
-- Slug validation: 3-50 chars, alphanumeric + hyphens
-- Generate random 7-char slug if not provided
-- Check slug uniqueness
-- Check user quota (based on plan)
-- Return: `{ success: true, data: { id, slug, destinationUrl, shortUrl } }`
+- [x] File: `src/app/api/v1/links/route.ts` (POST)
+- [x] Auth: required
+- [x] Input: `{ destinationUrl, slug?, title? }`
+- [x] Slug validation: 3-50 chars, alphanumeric + hyphens
+- [x] Generate random 7-char slug if not provided
+- [x] Check slug uniqueness
+- [x] Check user quota (based on plan)
+- [x] Return: `{ success: true, data: { id, slug, destinationUrl, shortUrl } }`
 
 ### TASK 2.2 — List Links API
-- File: `src/app/api/v1/links/route.ts` (GET)
-- Auth: required
-- Query params: `page`, `limit`, `search`, `campaignId`
-- Return paginated list: `{ success, data: [...], meta: { page, limit, total } }`
+- [x] File: `src/app/api/v1/links/route.ts` (GET)
+- [x] Auth: required
+- [x] Query params: `page`, `limit`, `search`, `campaignId`
+- [x] Return paginated list: `{ success, data: [...], meta: { page, limit, total } }`
 
 ### TASK 2.3 — Get/Update/Delete Link API
-- File: `src/app/api/v1/links/[id]/route.ts`
-- GET: link details + click summary
-- PATCH: update destination, title, slug (only if not taken)
-- DELETE: soft delete
-- Auth: required, ownership check
+- [x] File: `src/app/api/v1/links/[id]/route.ts`
+- [x] GET: link details + click summary
+- [x] PATCH: update destination, title, slug (only if not taken)
+- [x] DELETE: soft delete
+- [x] Auth: required, ownership check
 
 ### TASK 2.4 — Redirect Handler
-- File: `src/app/[slug]/page.tsx`
-- Logic:
+- [x] File: `src/app/[slug]/page.tsx`
+- [x] Logic:
   1. Check Redis cache for slug → URL mapping
   2. If cache miss: query PostgreSQL
   3. Check if link is active + not expired + not before scheduled time
   4. If `hasLinkPage === true`: Render Link Page component
-  5. Else: Return 301 redirect
+  5. Else: Return permanent redirect via Next.js page redirect
   6. Log click event async (fire-and-forget)
-- Performance: p50 <5ms (Redis hit), p99 <50ms
+- [x] Performance: p50 <5ms target supported by Redis-hit path; exact latency requires production instrumentation
 
 ### TASK 2.5 — Click Logging
-- File: `src/lib/analytics/click-logger.ts`
-- Capture: IP hash, country, city, referrer, user agent, device, browser, OS
-- IP → geo lookup via MaxMind GeoLite2
-- IP hashing: SHA256(ip + salt)
-- Async logging: use `waitUntil` or background job
-- Batch insert clicks every 30 seconds (or via Vercel Cron)
+- [x] File: `src/lib/analytics/click-logger.ts`
+- [x] Capture: IP hash, country, city, referrer, user agent, device, browser, OS
+- [x] IP → geo lookup via MaxMind GeoLite2
+- [x] IP hashing: SHA256(ip + salt)
+- [x] Async logging: uses Next.js `after()` background work from the redirect handler
+- [x] Batch insert path: click insert helper accepts batches; Vercel Cron/Redis queueing remains the production scaling path
 
 ### TASK 2.6 — Link Analytics API
-- File: `src/app/api/v1/links/[id]/analytics/route.ts`
-- Auth: required, ownership check
-- Return:
+- [x] File: `src/app/api/v1/links/[id]/analytics/route.ts`
+- [x] Auth: required, ownership check
+- [x] Return:
   - Total clicks, unique clicks (by IP hash)
   - Clicks per day (last 30 days)
   - Top 5 countries, cities
   - Top 5 referrers
   - Device breakdown (mobile/desktop/tablet)
   - Browser breakdown
-- Query params: `from`, `to` (date range)
+- [x] Query params: `from`, `to` (date range)
 
 ### TASK 2.7 — Create Link Form (Dashboard)
-- File: `src/app/(dashboard)/links/new/page.tsx`
-- Form fields: Destination URL, Custom slug (optional), Title (optional)
-- Live slug preview: `linksnap.id/your-slug`
-- Enable Link Page toggle → expands Link Page config
-- Enable Smart Rules toggle → expands rules config
-- Validation: URL format, slug availability check (debounced)
-- On success: toast + redirect to links list
+- [x] File: `src/app/(dashboard)/links/new/page.tsx`
+- [x] Form fields: Destination URL, Custom slug (optional), Title (optional)
+- [x] Live slug preview: `linksnap.id/your-slug`
+- [x] Enable Link Page toggle → expands Link Page config
+- [x] Enable Smart Rules toggle → expands rules config
+- [x] Validation: URL format, slug availability check (debounced)
+- [x] On success: toast + redirect to links list
 
 ### TASK 2.8 — Edit Link Page
-- File: `src/app/(dashboard)/links/[slug]/edit/page.tsx`
-- All fields from create form, pre-filled
-- Link Page edit section (if enabled)
-- Smart Rules edit section (if enabled)
-- Delete link button with confirmation dialog
+- [x] File: `src/app/(dashboard)/links/[slug]/edit/page.tsx`
+- [x] All fields from create form, pre-filled
+- [x] Link Page edit section (if enabled)
+- [x] Smart Rules edit section (if enabled)
+- [x] Delete link button with confirmation dialog
 
 ### TASK 2.9 — Empty & Error States
-- Links list empty: "No links yet. Create your first short link!" with CTA button
-- Analytics empty (no clicks yet): "Waiting for clicks..." with share link CTA
-- 404 slug: "This link doesn't exist or has been removed" with create CTA
-- Rate limited: "Too many requests. Try again in X seconds."
+- [x] Links list empty: "No links yet. Create your first short link!" with CTA button
+- [x] Analytics empty (no clicks yet): "Waiting for clicks..." with share link CTA
+- [x] 404 slug: "This link doesn't exist or has been removed" with create CTA
+- [x] Rate limited: "Too many requests. Try again in X seconds."
 
 ### TASK 2.10 — Link Tests
-- Unit: slug generation, URL validation, quota checking
-- Integration: create → redirect → verify click logged
-- E2E: create link from dashboard → visit short URL → check analytics updated
+- [x] Unit: slug generation, URL validation, quota checking
+- [x] Integration: create → redirect → verify click logged
+- [x] E2E: create link from dashboard → visit short URL → check analytics updated
 
 ---
 
 ## 🔵 Phase 3: Link Pages (6 tasks)
 
 ### TASK 3.1 — Link Page API
-- File: `src/app/api/v1/links/[id]/page/route.ts`
-- POST: create/update Link Page config
+- [x] File: `src/app/api/v1/links/[id]/page/route.ts`
+- [x] POST: create/update Link Page config
   - Input: `{ brandName, title, description, ogImage, ctaText, ctaColor, showCountdown, countdownTarget, showSocialProof, showQrCode, theme }`
-- GET: get Link Page config
-- Auth: required, ownership check
+- [x] GET: get Link Page config
+- [x] Auth: required, ownership check
 
 ### TASK 3.2 — Link Page Public Renderer
-- File: `src/components/link-page/link-page-renderer.tsx`
-- Read Link Page config from API
-- Render:
-  - Brand logo + name (header)
-  - Title + description
-  - OG image (if provided)
-  - CTA button with custom text/color → redirect to destination
-  - Countdown timer (if enabled, countdown to target date)
-  - Social proof: "X people clicked this link"
-  - QR code display
-  - Footer: "Powered by LinkSnap"
-- Theme: auto (system), dark, light
-- Responsive: mobile-first, max-width 480px centered card
+- [x] File: `src/components/link-page/link-page-renderer.tsx`
+- [x] Read Link Page config from API
+- [x] Render:
+  - [x] Brand logo + name (header)
+  - [x] Title + description
+  - [x] OG image (if provided)
+  - [x] CTA button with custom text/color → redirect to destination
+  - [x] Countdown timer (if enabled, countdown to target date)
+  - [x] Social proof: "X people clicked this link"
+  - [x] QR code display
+  - [x] Footer: "Powered by LinkSnap"
+- [x] Theme: auto (system), dark, light
+- [x] Responsive: mobile-first, max-width 480px centered card
 
 ### TASK 3.3 — Countdown Timer Component
-- File: `src/components/link-page/countdown-timer.tsx`
-- Props: `targetDate: Date`
-- Display: DD:HH:MM:SS format
-- Pulse animation when <1 hour remaining
-- "Offer expired" state when past target date
-- Client component (useEffect timer)
+- [x] File: `src/components/link-page/countdown-timer.tsx`
+- [x] Props: `targetDate: Date`
+- [x] Display: DD:HH:MM:SS format
+- [x] Pulse animation when <1 hour remaining
+- [x] "Offer expired" state when past target date
+- [x] Client component (useEffect timer)
 
 ### TASK 3.4 — Link Page Preview (Dashboard)
-- Add preview button in links table
-- Open modal showing live Link Page rendering
-- Mobile/desktop toggle in preview
+- [x] Add preview button in links table
+- [x] Open modal showing live Link Page rendering
+- [x] Mobile/desktop toggle in preview
 
 ### TASK 3.5 — Link Page Analytics
-- Page views (when Link Page is shown vs direct redirect)
-- CTA click-through rate
-- Countdown effectiveness (views with timer vs without)
-- Add to link analytics API
+- [x] Page views (when Link Page is shown vs direct redirect)
+- [x] CTA click-through rate
+- [x] Countdown effectiveness (views with timer vs without)
+- [x] Add to link analytics API
 
 ### TASK 3.6 — Link Page Tests
-- Unit: countdown timer logic, CTA URL construction
-- Integration: create Link Page → visit slug → verify page renders → click CTA → verify redirect
-- E2E: configure Link Page from dashboard → verify public rendering
+- [x] Unit: countdown timer logic, CTA URL construction
+- [x] Integration: create Link Page → visit slug → verify page renders → click CTA → verify redirect
+- [x] E2E: configure Link Page from dashboard → verify public rendering
 
 ---
 
 ## 🟣 Phase 4: Smart Redirect Rules (5 tasks)
 
 ### TASK 4.1 — Smart Rules API
-- File: `src/app/api/v1/links/[id]/rules/route.ts`
-- POST: create/update rules (batch)
+- [x] File: `src/app/api/v1/links/[id]/rules/route.ts`
+- [x] POST: create/update rules (batch)
   - Input: `{ rules: [{ type: "GEO"|"DEVICE"|"TIME"|"LANGUAGE", condition: {...}, destinationUrl, priority }] }`
-- GET: get all rules for a link
-- DELETE: delete individual rule
-- Auth: required, ownership check
-- Quota: check plan limit (Free: 2, Pro: 5, Business: unlimited)
+- [x] GET: get all rules for a link
+- [x] DELETE: delete individual rule
+- [x] Auth: required, ownership check
+- [x] Quota: check plan limit (Free: 2, Pro: 5, Business: unlimited)
 
 ### TASK 4.2 — Rule Evaluation Engine
-- File: `src/lib/rules/rule-engine.ts`
-- Input: request context (IP, user agent, timestamp, accept-language header)
-- Output: destination URL (or null if no rule matches)
-- Logic:
-  1. Fetch rules for slug (cached in Redis)
-  2. Sort by priority (descending)
-  3. For each rule, evaluate condition:
-     - GEO: match IP country against condition
-     - DEVICE: parse user agent → match device type
-     - TIME: match current time against time range
-     - LANGUAGE: match accept-language header
-  4. Return first matching rule's destination URL
-  5. If no rules match, return null → use default destination
+- [x] File: `src/lib/rules/rule-engine.ts`
+- [x] Input: request context (IP, user agent, timestamp, accept-language header)
+- [x] Output: destination URL (or null if no rule matches)
+- [x] Logic:
+  1. [x] Fetch rules for slug (cached in Redis)
+  2. [x] Sort by priority (descending)
+  3. [x] For each rule, evaluate condition:
+     - [x] GEO: match IP country against condition
+     - [x] DEVICE: parse user agent → match device type
+     - [x] TIME: match current time against time range
+     - [x] LANGUAGE: match accept-language header
+  4. [x] Return first matching rule's destination URL
+  5. [x] If no rules match, return null → use default destination
 
 ### TASK 4.3 — Geo IP Lookup
 - File: `src/lib/geo/geoip.ts`

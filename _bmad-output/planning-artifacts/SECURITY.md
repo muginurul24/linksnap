@@ -9,18 +9,18 @@
 
 ### SEC-01: Broken Access Control
 - [x] **Middleware auth gate** — Dashboard surfaces protected via `src/proxy.ts`; public auth/static routes excluded. Future user-data `/api/v1/*` routes still need per-route auth/ownership.
-- [ ] **Ownership verification** — Every API route that returns user data must verify `session.user.id === resource.userId`
+- [x] **Ownership verification** — User-data API routes implemented so far verify `session.user.id === resource.userId`; future user-data routes must continue this pattern.
 - [ ] **Role-based access** — Admin routes (`/api/v1/admin/*`) check `session.user.role === "admin"`
-- [ ] **Plan-gated features** — Check user plan before allowing premium features (Smart Rules, Link Pages, API access)
-- [ ] **IDOR prevention** — Never use sequential IDs in URLs without ownership check; UUIDs are used but still verify ownership
-- [ ] **Direct object reference test** — Try accessing `/api/v1/links/{another-users-link-id}` → must return 403
+- [ ] **Plan-gated features** — Link Page and Smart Rules quotas are enforced by plan; broader API-access plan gates still pending.
+- [x] **IDOR prevention** — Link item routes use UUID params and explicit ownership checks before returning, updating, or deleting.
+- [x] **Direct object reference test** — `tests/integration/link-item-api.test.ts` verifies another user's `/api/v1/links/{id}` returns 403.
 
 ### SEC-02: Cryptographic Failures
 - [x] **Password hashing** — bcryptjs with cost factor ≥ 12 (implemented in `src/app/api/v1/auth/register/route.ts`)
 - [x] **JWT secret** — `AUTH_SECRET` ≥ 32 characters, generated via `openssl rand -base64 32`
 - [ ] **TLS everywhere** — Force HTTPS in production via Vercel + Cloudflare
 - [ ] **Sensitive data encryption** — API keys, tokens stored hashed (not plaintext)
-- [ ] **IP hashing** — SHA256(IP + salt) for analytics; salt rotated periodically
+- [x] **IP hashing** — Analytics hashes IPs with SHA256(IP + `IP_HASH_SALT`) before persistence.
 - [ ] **No hardcoded secrets** — Verify zero secrets in source code: `rtk grep -r "sk-|api_key|secret|password" src/ --include="*.ts" --include="*.tsx"`
 
 ### SEC-03: Injection Attacks
@@ -52,7 +52,7 @@
   rtk grep -r "dangerouslySetInnerHTML" src/
   # Must be zero, or documented with DOMPurify sanitization
   ```
-- [ ] **Link Page content** — User-provided brandName, title, description escaped by React
+- [x] **Link Page content** — Public redirect renderer displays user-provided brandName, title, description, CTA text, social proof, and image URLs through JSX escaping; dynamic CTA color is validated as a hex value before rendering.
 - [ ] **URL validation** — All user-submitted URLs validated with Zod `.url()` before storage
 - [ ] **SVG sanitization** — If accepting SVG uploads for logos, sanitize with DOMPurify
 - [ ] **Content-Security-Policy header** — Implemented in `next.config.ts`:
@@ -95,8 +95,8 @@
 - [x] **Auth endpoints** — 5 login attempts/15min per IP
 - [x] **Register endpoint** — 3 registrations/hour per IP
 - [x] **OTP resend** — 3 OTPs/hour per email
-- [ ] **Link creation** — Tier-based (Free: 10/min, Pro: 30/min, Business: 60/min)
-- [ ] **API endpoints** — Tier-based (Free: 30/min, Pro: 60/min, Business: 120/min)
+- [x] **Link creation** — Tier-based (Free: 10/min, Pro: 30/min, Business: 60/min) implemented in `src/app/api/v1/links/route.ts`
+- [x] **API endpoints** — Tier-based (Free: 30/min, Pro: 60/min, Business: 120/min) implemented for Link list/item/analytics/slug/Link Page/Smart Rules endpoints; future user-data APIs must continue this pattern.
 - [ ] **Redirect endpoint** — 1000 requests/min per IP (abuse prevention)
 
 #### DDoS Mitigation
@@ -111,7 +111,7 @@
 - [ ] **Redis connection pooling** — Upstash connection limit configured  
 - [ ] **Request timeout** — API routes timeout at 10 seconds
 - [ ] **Payload size limit** — Max request body 1MB (configured in `next.config.ts`)
-- [ ] **Query complexity limit** — Analytics queries limited to 30-day range
+- [x] **Query complexity limit** — Link analytics API validates and caps query ranges to 30 days.
 
 ### SEC-08: N+1 Problem Prevention
 - [ ] **Drizzle Relations** — Use Drizzle's `.relations` and `.findMany({ with: {...} })` for eager loading
@@ -134,9 +134,9 @@
   ```
 
 ### SEC-09: Input Validation & Sanitization
-- [x] **Zod schemas** on ALL API inputs implemented so far (auth API routes); future API routes must continue this pattern.
-- [ ] **Slug validation** — `/^[a-z0-9-]{3,50}$/` (no special chars, no Unicode tricks)
-- [ ] **URL validation** — Use Zod `.url()` with additional checks:
+- [x] **Zod schemas** on ALL API inputs implemented so far (auth API routes, link create/update bodies, link list query, link item params, link slug availability params, Link Page body, Smart Rules batch/delete inputs); future API routes must continue this pattern.
+- [x] **Slug validation** — `/^[a-z0-9-]{3,50}$/` for create-link input, slug availability params, and public redirect params (no special chars, no Unicode tricks)
+- [x] **URL validation** — Link create/update inputs use Zod `.url()` with additional checks:
   - Reject `javascript:` protocol
   - Reject `data:` protocol
   - Reject `file:` protocol
@@ -147,7 +147,7 @@
 - [x] **Null/undefined handling** — Auth API routes handle missing/invalid JSON bodies gracefully.
 
 ### SEC-10: SSRF Prevention
-- [ ] **URL destination validation** — Reject internal URLs:
+- [x] **URL destination validation** — Link create/update inputs reject internal URLs:
   ```typescript
   function isValidDestination(url: string): boolean {
     const parsed = new URL(url);
@@ -184,7 +184,7 @@
 ### SEC-13: Data Protection
 - [ ] **GDPR compliance** — Users can request data export/deletion
 - [ ] **Data retention policy** — Analytics data purged after plan-specific period
-- [ ] **IP anonymization** — Raw IPs hashed immediately, never stored plaintext
+- [x] **IP anonymization** — Redirect click logging hashes IPs immediately and never stores plaintext IPs.
 - [ ] **PII minimization** — Only collect essential user data
 - [ ] **Encryption at rest** — Neon.tech encrypts data at rest by default
 - [ ] **Encryption in transit** — TLS 1.3 everywhere

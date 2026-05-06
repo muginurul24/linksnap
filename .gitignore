@@ -12,6 +12,9 @@
 
 # testing
 /coverage
+/playwright-report
+/test-results
+/.e2e
 
 # next.js
 /.next/
@@ -31,7 +34,10 @@ yarn-error.log*
 .pnpm-debug.log*
 
 # env files (can opt-in for committing if needed)
-.env*
+.env
+
+# local GeoLite databases
+src/database/geolite/*.mmdb
 
 # vercel
 .vercel

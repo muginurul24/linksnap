@@ -15,7 +15,7 @@ import { Search, Bell, Sun, Moon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useTheme } from "next-themes";
-import { useSyncExternalStore } from "react";
+import { Fragment, useSyncExternalStore } from "react";
 
 const subscribeToClientMount = () => () => {};
 const getClientMountSnapshot = () => true;
@@ -50,16 +50,18 @@ export function AppHeader() {
       <Breadcrumb>
         <BreadcrumbList>
           {crumbs.map((crumb, i) => (
-            <BreadcrumbItem key={crumb.label}>
-              {i === crumbs.length - 1 ? (
-                <BreadcrumbPage>{crumb.label}</BreadcrumbPage>
-              ) : (
-                <>
+            <Fragment key={crumb.label}>
+              <BreadcrumbItem>
+                {i === crumbs.length - 1 ? (
+                  <BreadcrumbPage>{crumb.label}</BreadcrumbPage>
+                ) : (
                   <BreadcrumbLink href={crumb.href ?? "#"}>{crumb.label}</BreadcrumbLink>
-                  <BreadcrumbSeparator />
-                </>
+                )}
+              </BreadcrumbItem>
+              {i < crumbs.length - 1 && (
+                <BreadcrumbSeparator />
               )}
-            </BreadcrumbItem>
+            </Fragment>
           ))}
         </BreadcrumbList>
       </Breadcrumb>

@@ -4,28 +4,19 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { EmptyState } from "@/components/dashboard/empty-state";
 import { Area, AreaChart, Bar, BarChart, CartesianGrid, XAxis, YAxis, ResponsiveContainer, PieChart, Pie, Cell, Legend } from "recharts";
-import { Download, Calendar } from "lucide-react";
+import { Download, Calendar, MousePointerClick } from "lucide-react";
 
-const dailyClicks = [
-  { date: "May 1", clicks: 980 },  { date: "May 2", clicks: 2100 },
-  { date: "May 3", clicks: 1800 },  { date: "May 4", clicks: 2400 },
-  { date: "May 5", clicks: 3100 },  { date: "May 6", clicks: 8921 },
-];
+const dailyClicks: { date: string; clicks: number }[] = [];
 
-const deviceData = [
-  { name: "Mobile", value: 65, color: "hsl(var(--chart-1))" },
-  { name: "Desktop", value: 25, color: "hsl(var(--chart-2))" },
-  { name: "Tablet", value: 10, color: "hsl(var(--chart-3))" },
-];
+const deviceData: { name: string; value: number; color: string }[] = [];
 
-const referrerData = [
-  { source: "Direct", clicks: 4521 }, { source: "Instagram", clicks: 2310 },
-  { source: "WhatsApp", clicks: 1890 }, { source: "Twitter", clicks: 890 },
-  { source: "Facebook", clicks: 560 }, { source: "Email", clicks: 340 },
-];
+const referrerData: { source: string; clicks: number }[] = [];
 
 export default function AnalyticsPage() {
+  const hasClicks = dailyClicks.some((item) => item.clicks > 0);
+
   return (
     <>
       <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
@@ -43,6 +34,17 @@ export default function AnalyticsPage() {
         </div>
       </div>
 
+      {!hasClicks ? (
+        <EmptyState
+          actionHref="/links"
+          actionLabel="Share link"
+          icon={<MousePointerClick className="size-5" />}
+          title="Waiting for clicks..."
+          description="Analytics will appear after someone opens one of your short links."
+        />
+      ) : null}
+
+      {hasClicks ? (
       <Tabs defaultValue="overview" className="w-full">
         <TabsList>
           <TabsTrigger value="overview">Overview</TabsTrigger>
@@ -115,6 +117,7 @@ export default function AnalyticsPage() {
           </Card>
         </TabsContent>
       </Tabs>
+      ) : null}
     </>
   );
 }

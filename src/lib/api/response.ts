@@ -1,14 +1,21 @@
 import { NextResponse } from "next/server";
 
 type ErrorDetails = Record<string, unknown> | unknown[] | string | number;
+type ResponseMeta = Record<string, unknown>;
 
 export function createRequestId(): string {
   return crypto.randomUUID();
 }
 
-export function successResponse<T>(data?: T, status = 200): NextResponse {
+export function successResponse<T>(
+  data?: T,
+  status = 200,
+  meta?: ResponseMeta,
+): NextResponse {
   const body =
-    data === undefined ? { success: true } : { success: true, data };
+    data === undefined
+      ? { success: true }
+      : { success: true, data, ...(meta === undefined ? {} : { meta }) };
 
   return NextResponse.json(body, { status });
 }

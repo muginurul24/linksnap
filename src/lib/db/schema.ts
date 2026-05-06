@@ -28,6 +28,11 @@ export const ruleTypeEnum = pgEnum("rule_type", [
   "TIME",
   "LANGUAGE",
 ]);
+export const clickEventTypeEnum = pgEnum("click_event_type", [
+  "DIRECT_REDIRECT",
+  "LINK_PAGE_VIEW",
+  "LINK_PAGE_CTA_CLICK",
+]);
 
 // ─── Users ───
 export const users = pgTable("users", {
@@ -129,6 +134,8 @@ export const clickEvents = pgTable(
     ruleId: uuid("rule_id").references(() => smartRules.id, {
       onDelete: "set null",
     }),
+    eventType: clickEventTypeEnum("event_type").default("DIRECT_REDIRECT").notNull(),
+    linkPageHasCountdown: boolean("link_page_has_countdown").default(false).notNull(),
     timestamp: timestamp("timestamp").defaultNow().notNull(),
     ipHash: varchar("ip_hash", { length: 64 }),
     country: varchar("country", { length: 100 }),
