@@ -126,7 +126,7 @@
         @apply bg-background text-foreground;
     }
     html {
-        @apply font-sans bg-white dark:bg-black text-black dark:text-white scheme-light dark:scheme-dark scroll-smooth;
+        @apply font-sans scroll-smooth;
     }
     button:not(:disabled),
     [role="button"]:not(:disabled) {
