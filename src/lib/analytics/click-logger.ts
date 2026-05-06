@@ -19,6 +19,7 @@ export type RedirectClickInput = {
   linkId: string;
   linkPageHasCountdown: boolean;
   referrer: string | null;
+  ruleId?: string | null;
   userAgent: string | null;
 };
 
@@ -28,6 +29,7 @@ export function buildRedirectClickInput(
   options: {
     eventType?: RedirectClickEventType;
     linkPageHasCountdown?: boolean;
+    ruleId?: string | null;
   } = {},
 ): RedirectClickInput {
   return {
@@ -37,6 +39,7 @@ export function buildRedirectClickInput(
     linkId,
     linkPageHasCountdown: options.linkPageHasCountdown ?? false,
     referrer: headers.get("referer"),
+    ruleId: options.ruleId ?? null,
     userAgent: headers.get("user-agent"),
   };
 }
@@ -48,6 +51,7 @@ export async function logRedirectClick({
   linkId,
   linkPageHasCountdown,
   referrer,
+  ruleId = null,
   userAgent,
 }: RedirectClickInput): Promise<void> {
   try {
@@ -64,6 +68,7 @@ export async function logRedirectClick({
         ipHash: hashIpAddress(ipAddress),
         linkId,
         linkPageHasCountdown,
+        ruleId,
         os: parsedUserAgent.os,
         referrer,
         userAgent,

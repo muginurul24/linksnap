@@ -1432,3 +1432,49 @@ Implemented the authenticated Smart Rules API for owned links. The route support
 - ✅ No raw SQL, secrets, plaintext IP, or sensitive logging added.
 
 **Next Task:** 4.2 — Rule Evaluation Engine
+
+### 4.2 — Rule Evaluation Engine
+- **Date:** 2026-05-07 06:30 GMT+7
+- **Duration:** 0h 50m
+- **Status:** ✅ Complete
+
+**What I Did:**
+Implemented the Smart Rules evaluation engine and wired it into public redirects. Direct redirects and Link Page CTA redirects now evaluate cached rules by slug, select the highest-priority matching rule, redirect with HTTP 308 semantics through the existing redirect APIs, and persist the matched rule ID on click events when applicable.
+
+**Files Changed:**
+- `src/lib/rules/rule-engine.ts` — Added rule context creation, Redis-backed rule loading, priority sorting, and GEO/DEVICE/TIME/LANGUAGE condition evaluation.
+- `src/app/[slug]/page.tsx` — Applies Smart Rules before direct public redirects and logs matched rule IDs.
+- `src/app/[slug]/go/route.ts` — Applies Smart Rules before Link Page CTA redirects and keeps explicit 308 redirects.
+- `src/app/api/v1/links/[id]/rules/route.ts` — Invalidates both redirect and Smart Rules caches after rule mutations.
+- `src/lib/analytics/click-logger.ts` — Persists optional Smart Rule IDs with redirect click events.
+- `tests/unit/rule-engine.test.ts` — Added rule engine coverage for context parsing, priority, GEO, DEVICE, TIME, LANGUAGE, cache hits, and no-match fallback.
+- `tests/unit/click-logger.test.ts` — Updated click logging expectations for nullable rule IDs.
+- `tests/integration/create-redirect-click-flow.test.ts` — Added public redirect integration coverage for Smart Rule destination overrides.
+- `tests/integration/smart-rules-api.test.ts` — Updated cache invalidation coverage for Smart Rules cache keys.
+- `.env.example` — Added the portable MaxMind City MMDB path example.
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Checked off Task 4.2.
+- `_bmad-output/implementation-artifacts/JOURNAL.md` — Recorded this completion entry.
+
+**Decisions Made:**
+- Rule cache keys are slug-based (`smart-rules:{slug}`) so public redirect evaluation does not need an extra cache lookup indirection.
+- The engine returns the matched rule ID alongside the destination URL so analytics can attribute rule-driven clicks without re-evaluating conditions later.
+- `.env` uses the absolute local MMDB path provided by the owner, while `.env.example` uses a relative project path to avoid committing machine-specific paths.
+
+**Tests:**
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Unit/Integration: `rtk bun run test` — 35 files passed, 169 tests passed.
+- ✅ Build: `rtk bun run build` — Passed; `/[slug]`, `/[slug]/go`, and `/api/v1/links/[id]/rules` are registered.
+- ✅ E2E: `rtk bun run test:e2e` — 4 specs passed.
+
+**Issues Encountered:**
+- Existing in-progress Task 4.2 edits made the worktree dirty, so I skipped `git pull --rebase` during this continuation to avoid mixing a rebase into unfinished local changes.
+
+**Security Checks:**
+- ✅ Smart Rule mutations remain authenticated, owner-scoped, validated with Zod, quota checked, and rate limited.
+- ✅ Rule destinations continue to use existing safe URL validation before they can be stored.
+- ✅ Public redirects validate slug format and link availability before evaluating rules.
+- ✅ Click logging stores hashed IP metadata and nullable rule IDs only; no plaintext IP or sensitive logging added.
+- ✅ MaxMind MMDB files and `.env` remain ignored and are not committed.
+
+**Next Task:** 4.3 — Geo IP Lookup

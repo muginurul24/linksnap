@@ -20,6 +20,10 @@ import {
   type RedirectLinkCachePayload,
 } from "@/lib/links/redirect";
 import { cacheGet, cacheSet } from "@/lib/redis";
+import {
+  buildRuleEvaluationContext,
+  evaluateSmartRulesForLink,
+} from "@/lib/rules/rule-engine";
 
 type LinkPageCtaRouteContext = {
   params: Promise<{ slug: string }>;
@@ -66,13 +70,23 @@ export async function GET(_request: Request, context: LinkPageCtaRouteContext) {
   if (!page) return notFoundResponse();
 
   const headersList = await headers();
+  const ruleResult = await evaluateSmartRulesForLink({
+    context: buildRuleEvaluationContext(headersList),
+    linkId: link.id,
+    slug: link.slug,
+  });
+
   scheduleClickLog(
     buildRedirectClickInput(link.id, headersList, {
       eventType: "LINK_PAGE_CTA_CLICK",
       linkPageHasCountdown:
         page.showCountdown === true && page.countdownTarget !== null,
+      ruleId: ruleResult?.ruleId ?? null,
     }),
   );
 
-  return NextResponse.redirect(link.destinationUrl, 308);
+  return NextResponse.redirect(
+    ruleResult?.destinationUrl ?? link.destinationUrl,
+    308,
+  );
 }

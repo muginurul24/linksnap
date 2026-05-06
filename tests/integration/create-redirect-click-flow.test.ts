@@ -47,6 +47,7 @@ type RedirectClickInput = {
   linkId: string;
   linkPageHasCountdown: boolean;
   referrer: string | null;
+  ruleId: string | null;
   userAgent: string | null;
 };
 
@@ -71,6 +72,7 @@ const mockState = vi.hoisted(() => ({
   linkPages: new Map<string, MockLinkPage>(),
   links: [] as MockLink[],
   loggedClicks: [] as RedirectClickInput[],
+  ruleResult: null as { destinationUrl: string; ruleId: string } | null,
   session: { user: { id: "user-1" } } as MockSession,
 }));
 
@@ -126,17 +128,27 @@ vi.mock("@/lib/analytics/click-logger", () => ({
   buildRedirectClickInput: (
     linkId: string,
     headers: Headers,
-    options?: { eventType?: string; linkPageHasCountdown?: boolean },
+    options?: {
+      eventType?: string;
+      linkPageHasCountdown?: boolean;
+      ruleId?: string | null;
+    },
   ): RedirectClickInput => ({
     eventType: options?.eventType ?? "DIRECT_REDIRECT",
     linkId,
     linkPageHasCountdown: options?.linkPageHasCountdown ?? false,
     referrer: headers.get("referer"),
+    ruleId: options?.ruleId ?? null,
     userAgent: headers.get("user-agent"),
   }),
   logRedirectClick: async (input: RedirectClickInput) => {
     mockState.loggedClicks.push(input);
   },
+}));
+
+vi.mock("@/lib/rules/rule-engine", () => ({
+  buildRuleEvaluationContext: () => ({}),
+  evaluateSmartRulesForLink: async () => mockState.ruleResult,
 }));
 
 vi.mock("next/headers", () => ({
@@ -191,6 +203,7 @@ describe("create redirect click flow", () => {
     mockState.linkPages = new Map();
     mockState.links = [];
     mockState.loggedClicks = [];
+    mockState.ruleResult = null;
     mockState.session = { user: { id: "user-1" } };
   });
 
@@ -230,6 +243,44 @@ describe("create redirect click flow", () => {
         linkId: "link-1",
         linkPageHasCountdown: false,
         referrer: "https://referrer.example",
+        ruleId: null,
+        userAgent: "Vitest",
+      },
+    ]);
+  });
+
+  it("should apply a matching Smart Rule destination during direct redirect", async () => {
+    mockState.ruleResult = {
+      destinationUrl: "https://example.com/mobile",
+      ruleId: "rule-mobile",
+    };
+
+    const response = await POST(
+      createJsonRequest({
+        destinationUrl: "https://example.com/default",
+        slug: "rule-flow",
+      }),
+    );
+    const body = await readJson<CreateLinkResponse>(response);
+
+    expect(response.status).toBe(201);
+    expect(body.success).toBe(true);
+    if (!body.success) return;
+
+    await expect(
+      RedirectPage({ params: Promise.resolve({ slug: "rule-flow" }) }),
+    ).rejects.toMatchObject({
+      message: "NEXT_REDIRECT",
+      url: "https://example.com/mobile",
+    });
+
+    expect(mockState.loggedClicks).toEqual([
+      {
+        eventType: "DIRECT_REDIRECT",
+        linkId: "link-1",
+        linkPageHasCountdown: false,
+        referrer: "https://referrer.example",
+        ruleId: "rule-mobile",
         userAgent: "Vitest",
       },
     ]);
@@ -282,6 +333,7 @@ describe("create redirect click flow", () => {
         linkId: "link-page-1",
         linkPageHasCountdown: true,
         referrer: "https://referrer.example",
+        ruleId: null,
         userAgent: "Vitest",
       },
       {
@@ -289,6 +341,7 @@ describe("create redirect click flow", () => {
         linkId: "link-page-1",
         linkPageHasCountdown: true,
         referrer: "https://referrer.example",
+        ruleId: null,
         userAgent: "Vitest",
       },
     ]);

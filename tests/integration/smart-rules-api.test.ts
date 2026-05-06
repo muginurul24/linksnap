@@ -73,9 +73,11 @@ vi.mock("@/lib/redis/rate-limit", () => ({
 }));
 
 vi.mock("@/lib/redis", () => ({
+  cacheGet: async () => null,
   cacheDelete: async (key: string) => {
     mockState.cacheDeleteKeys.push(key);
   },
+  cacheSet: async () => {},
 }));
 
 vi.mock("@/lib/db/queries/links", () => ({
@@ -195,7 +197,10 @@ describe("Smart Rules API", () => {
         type: "DEVICE",
       },
     ]);
-    expect(mockState.cacheDeleteKeys).toEqual(["redirect:promo"]);
+    expect(mockState.cacheDeleteKeys).toEqual([
+      "redirect:promo",
+      "smart-rules:promo",
+    ]);
     expect(mockState.rateLimitOptions).toEqual([
       { key: "api:links:rules:post:user-1", limit: 60, windowSeconds: 60 },
     ]);
@@ -245,7 +250,10 @@ describe("Smart Rules API", () => {
     if (!body.success) return;
     expect(body.data).toEqual({ deleted: true, ruleId });
     expect(mockState.rules).toEqual([]);
-    expect(mockState.cacheDeleteKeys).toEqual(["redirect:promo"]);
+    expect(mockState.cacheDeleteKeys).toEqual([
+      "redirect:promo",
+      "smart-rules:promo",
+    ]);
   });
 
   it("should reject Smart Rule quota overages", async () => {

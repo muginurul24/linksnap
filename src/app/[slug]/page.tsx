@@ -23,6 +23,10 @@ import {
   type RedirectLinkCachePayload,
 } from "@/lib/links/redirect";
 import { cacheGet, cacheSet } from "@/lib/redis";
+import {
+  buildRuleEvaluationContext,
+  evaluateSmartRulesForLink,
+} from "@/lib/rules/rule-engine";
 
 type RedirectPageProps = {
   params: Promise<{ slug: string }>;
@@ -89,11 +93,18 @@ export default async function RedirectPage({ params }: RedirectPageProps) {
     }
   }
 
+  const ruleResult = await evaluateSmartRulesForLink({
+    context: buildRuleEvaluationContext(headersList),
+    linkId: link.id,
+    slug: link.slug,
+  });
+
   scheduleClickLog(
     buildRedirectClickInput(link.id, headersList, {
       eventType: "DIRECT_REDIRECT",
+      ruleId: ruleResult?.ruleId ?? null,
     }),
   );
 
-  permanentRedirect(link.destinationUrl);
+  permanentRedirect(ruleResult?.destinationUrl ?? link.destinationUrl);
 }

@@ -12,6 +12,7 @@ type InsertedClick = {
   linkPageHasCountdown: boolean;
   os: string;
   referrer: string | null;
+  ruleId: string | null;
   userAgent: string | null;
 };
 
@@ -88,6 +89,7 @@ describe("click logger", () => {
       linkId: "link-1",
       linkPageHasCountdown: true,
       referrer: "https://referrer.example",
+      ruleId: null,
       userAgent: "Mozilla/5.0",
     });
   });
@@ -118,6 +120,7 @@ describe("click logger", () => {
         linkPageHasCountdown: false,
         os: "iOS",
         referrer: "https://referrer.example",
+        ruleId: null,
         userAgent,
       },
     ]);

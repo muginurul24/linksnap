@@ -304,19 +304,19 @@ src/
 - [x] Quota: check plan limit (Free: 2, Pro: 5, Business: unlimited)
 
 ### TASK 4.2 — Rule Evaluation Engine
-- File: `src/lib/rules/rule-engine.ts`
-- Input: request context (IP, user agent, timestamp, accept-language header)
-- Output: destination URL (or null if no rule matches)
-- Logic:
-  1. Fetch rules for slug (cached in Redis)
-  2. Sort by priority (descending)
-  3. For each rule, evaluate condition:
-     - GEO: match IP country against condition
-     - DEVICE: parse user agent → match device type
-     - TIME: match current time against time range
-     - LANGUAGE: match accept-language header
-  4. Return first matching rule's destination URL
-  5. If no rules match, return null → use default destination
+- [x] File: `src/lib/rules/rule-engine.ts`
+- [x] Input: request context (IP, user agent, timestamp, accept-language header)
+- [x] Output: destination URL (or null if no rule matches)
+- [x] Logic:
+  1. [x] Fetch rules for slug (cached in Redis)
+  2. [x] Sort by priority (descending)
+  3. [x] For each rule, evaluate condition:
+     - [x] GEO: match IP country against condition
+     - [x] DEVICE: parse user agent → match device type
+     - [x] TIME: match current time against time range
+     - [x] LANGUAGE: match accept-language header
+  4. [x] Return first matching rule's destination URL
+  5. [x] If no rules match, return null → use default destination
 
 ### TASK 4.3 — Geo IP Lookup
 - File: `src/lib/geo/geoip.ts`

@@ -23,6 +23,7 @@ import {
   type DeleteSmartRuleQuery,
   type UpsertSmartRulesInput,
 } from "@/lib/validations/smart-rule";
+import { getSmartRulesCacheKey } from "@/lib/rules/rule-engine";
 
 type SmartRulesRouteContext = {
   params: Promise<{ id: string }>;
@@ -208,6 +209,13 @@ function handleKnownError(error: unknown, requestId: string): Response | null {
   return null;
 }
 
+async function invalidateSmartRuleCaches(slug: string): Promise<void> {
+  await Promise.all([
+    cacheDelete(getRedirectCacheKey(slug)),
+    cacheDelete(getSmartRulesCacheKey(slug)),
+  ]);
+}
+
 export async function GET(_request: NextRequest, context: SmartRulesRouteContext) {
   const requestId = createRequestId();
 
@@ -260,7 +268,7 @@ export async function POST(request: NextRequest, context: SmartRulesRouteContext
       linkId: link.id,
       rules: parsedBody.data.rules,
     });
-    await cacheDelete(getRedirectCacheKey(link.slug));
+    await invalidateSmartRuleCaches(link.slug);
 
     return successResponse({ linkId: link.id, rules });
   } catch (error) {
@@ -292,7 +300,7 @@ export async function DELETE(request: NextRequest, context: SmartRulesRouteConte
     });
     if (!deleted) throw new SmartRuleNotFoundError();
 
-    await cacheDelete(getRedirectCacheKey(link.slug));
+    await invalidateSmartRuleCaches(link.slug);
 
     return successResponse({ deleted: true, ruleId: deleted.id });
   } catch (error) {
