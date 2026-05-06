@@ -666,3 +666,50 @@ Completed the browser E2E coverage for the credentials auth flow: unauthenticate
 - ✅ No raw SQL was added; cleanup uses Drizzle.
 
 **Next Task:** 1.5 — Google OAuth end-to-end browser test, or Phase 2.1 — Create Link API if OAuth interaction remains unavailable.
+
+### 2.1 — Create Link API
+- **Date:** 2026-05-06 21:49 GMT+7
+- **Duration:** 0h 25m
+- **Status:** ✅ Complete
+
+**What I Did:**
+Implemented `POST /api/v1/links` with session auth, strict Zod validation, SSRF-safe destination URL checks, tiered link-creation rate limits, free/pro/business quota checks, custom-slug plan gating, duplicate slug handling, generated 7-character slugs, and standard API responses with `shortUrl`.
+
+**Files Changed:**
+- `src/app/api/v1/links/route.ts` — Added authenticated create-link API route.
+- `src/lib/db/queries/links.ts` — Added Drizzle query helpers for user plan, quota count, slug lookup, and link insert.
+- `src/lib/validations/link.ts` — Added create-link schema, slug validation, and destination URL safety checks.
+- `src/lib/links/limits.ts` — Added plan quotas, rate limits, and custom-slug gating helper.
+- `src/lib/links/slug.ts` — Added random slug generator.
+- `tests/integration/create-link-api.test.ts` — Added route behavior coverage for success, auth, validation, duplicate slug, plan gating, quota, and rate limit.
+- `tests/unit/link-validation.test.ts` — Added slug and destination URL validation coverage.
+- `tests/unit/slug.test.ts` — Added slug generator coverage.
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Checked off Task 2.1.
+- `_bmad-output/planning-artifacts/SECURITY.md` — Marked link-create-specific rate limit, slug validation, and destination URL validation items complete.
+- `_bmad-output/implementation-artifacts/JOURNAL.md` — Recorded this completion entry.
+
+**Decisions Made:**
+- Free users can create random short links only; custom slugs return `PLAN_UPGRADE_REQUIRED`.
+- Link quotas follow the billing page limits: Free 25, Pro 500, Business unlimited.
+- Destination URLs are normalized before storage and blocked for localhost, private IPv4 ranges, local hostnames, loopback IPv6, ULA, and link-local IPv6.
+
+**Tests:**
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Unit/Integration: `rtk bun run test` — 12 files passed, 45 tests passed.
+- ✅ Build: `rtk bun run build` — Passed.
+- ✅ Security grep: no raw SQL or user-controlled `fetch(req/body/params...)` matches in `src`.
+
+**Issues Encountered:**
+- Security grep still reports an existing `dangerouslySetInnerHTML` usage in `src/components/ui/chart.tsx`; this task did not add or modify that code.
+
+**Security Checks:**
+- ✅ Input validated with strict Zod schema.
+- ✅ Auth required before link creation.
+- ✅ Plan-based quota and custom-slug authorization enforced.
+- ✅ Tiered Redis rate limiting applied to link creation.
+- ✅ Slug uniqueness checked before insert and protected against unique-constraint races.
+- ✅ Destination URL SSRF guard blocks unsafe protocols and internal hosts.
+- ✅ No raw SQL, secrets, or sensitive logging added.
+
+**Next Task:** 2.2 — List Links API

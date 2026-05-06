@@ -95,7 +95,7 @@
 - [x] **Auth endpoints** — 5 login attempts/15min per IP
 - [x] **Register endpoint** — 3 registrations/hour per IP
 - [x] **OTP resend** — 3 OTPs/hour per email
-- [ ] **Link creation** — Tier-based (Free: 10/min, Pro: 30/min, Business: 60/min)
+- [x] **Link creation** — Tier-based (Free: 10/min, Pro: 30/min, Business: 60/min) implemented in `src/app/api/v1/links/route.ts`
 - [ ] **API endpoints** — Tier-based (Free: 30/min, Pro: 60/min, Business: 120/min)
 - [ ] **Redirect endpoint** — 1000 requests/min per IP (abuse prevention)
 
@@ -135,8 +135,8 @@
 
 ### SEC-09: Input Validation & Sanitization
 - [x] **Zod schemas** on ALL API inputs implemented so far (auth API routes); future API routes must continue this pattern.
-- [ ] **Slug validation** — `/^[a-z0-9-]{3,50}$/` (no special chars, no Unicode tricks)
-- [ ] **URL validation** — Use Zod `.url()` with additional checks:
+- [x] **Slug validation** — `/^[a-z0-9-]{3,50}$/` for create-link input (no special chars, no Unicode tricks)
+- [x] **URL validation** — Create-link input uses Zod `.url()` with additional checks:
   - Reject `javascript:` protocol
   - Reject `data:` protocol
   - Reject `file:` protocol
@@ -147,7 +147,7 @@
 - [x] **Null/undefined handling** — Auth API routes handle missing/invalid JSON bodies gracefully.
 
 ### SEC-10: SSRF Prevention
-- [ ] **URL destination validation** — Reject internal URLs:
+- [x] **URL destination validation** — Create-link input rejects internal URLs:
   ```typescript
   function isValidDestination(url: string): boolean {
     const parsed = new URL(url);

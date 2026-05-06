@@ -160,14 +160,14 @@ src/
 ## 🟢 Phase 2: Core Links (10 tasks)
 
 ### TASK 2.1 — Create Link API
-- File: `src/app/api/v1/links/route.ts` (POST)
-- Auth: required
-- Input: `{ destinationUrl, slug?, title? }`
-- Slug validation: 3-50 chars, alphanumeric + hyphens
-- Generate random 7-char slug if not provided
-- Check slug uniqueness
-- Check user quota (based on plan)
-- Return: `{ success: true, data: { id, slug, destinationUrl, shortUrl } }`
+- [x] File: `src/app/api/v1/links/route.ts` (POST)
+- [x] Auth: required
+- [x] Input: `{ destinationUrl, slug?, title? }`
+- [x] Slug validation: 3-50 chars, alphanumeric + hyphens
+- [x] Generate random 7-char slug if not provided
+- [x] Check slug uniqueness
+- [x] Check user quota (based on plan)
+- [x] Return: `{ success: true, data: { id, slug, destinationUrl, shortUrl } }`
 
 ### TASK 2.2 — List Links API
 - File: `src/app/api/v1/links/route.ts` (GET)
