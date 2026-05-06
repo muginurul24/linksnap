@@ -1517,3 +1517,42 @@ Added a dedicated GeoIP lookup module backed by MaxMind GeoLite2 and Redis. Publ
 - ✅ No raw SQL, secrets, plaintext IP storage, or sensitive logging added.
 
 **Next Task:** 4.4 — Device Detection
+
+### 4.4 — Device Detection
+- **Date:** 2026-05-07 06:41 GMT+7
+- **Duration:** 0h 25m
+- **Status:** ✅ Complete
+
+**What I Did:**
+Replaced the hand-rolled user agent regex parser with a dedicated `ua-parser-js` based detector. Existing analytics and Smart Rule code keep using `parseUserAgent`, while the new detector module owns mobile/tablet/desktop/bot classification plus browser and OS normalization.
+
+**Files Changed:**
+- `package.json` — Added `ua-parser-js`.
+- `bun.lock` — Locked `ua-parser-js` and its transitive dependencies.
+- `src/lib/geo/device-detector.ts` — Added device, browser, OS, and bot detection.
+- `src/lib/analytics/user-agent.ts` — Re-exported the new detector through the existing `parseUserAgent` contract.
+- `tests/unit/device-detector.test.ts` — Added direct detector coverage for mobile, tablet, desktop, bot, and unknown user agents.
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Checked off Task 4.4.
+- `_bmad-output/implementation-artifacts/JOURNAL.md` — Recorded this completion entry.
+
+**Decisions Made:**
+- Kept the analytics-facing `parseUserAgent` API stable so click logging and rule evaluation did not need broad call-site churn.
+- Normalized `Mobile Safari` to `Safari`, `Mac OS` to `macOS`, and `Chrome WebView` to `Chrome` to preserve existing analytics labels.
+- Kept explicit bot detection before device normalization because crawlers do not reliably map to mobile/tablet/desktop device types.
+
+**Tests:**
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Unit/Integration: `rtk bun run test` — 37 files passed, 181 tests passed.
+- ✅ Build: `rtk bun run build` — Passed.
+- ✅ E2E: `rtk bun run test:e2e` — 4 specs passed.
+
+**Issues Encountered:**
+- None.
+
+**Security Checks:**
+- ✅ User agent parsing is deterministic and does not execute user-controlled input.
+- ✅ No user agent strings are logged outside existing hashed click analytics flow.
+- ✅ No raw SQL, secrets, plaintext IP storage, or sensitive logging added.
+
+**Next Task:** 4.5 — Smart Rules Tests

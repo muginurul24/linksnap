@@ -326,12 +326,12 @@ src/
 - [x] Fallback: if IP is localhost/private → return null
 
 ### TASK 4.4 — Device Detection
-- File: `src/lib/geo/device-detector.ts`
-- Parse user agent string
-- Detect: mobile, tablet, desktop
-- Detect: browser (Chrome, Safari, Firefox, etc.)
-- Detect: OS (Windows, macOS, iOS, Android, Linux)
-- Use `ua-parser-js` library
+- [x] File: `src/lib/geo/device-detector.ts`
+- [x] Parse user agent string
+- [x] Detect: mobile, tablet, desktop
+- [x] Detect: browser (Chrome, Safari, Firefox, etc.)
+- [x] Detect: OS (Windows, macOS, iOS, Android, Linux)
+- [x] Use `ua-parser-js` library
 
 ### TASK 4.5 — Smart Rules Tests
 - Unit: rule evaluation for each type, device parsing
