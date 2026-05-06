@@ -1,4 +1,4 @@
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type Browser, type Page } from "@playwright/test";
 import { loadEnvConfig } from "@next/env";
 import { count, eq } from "drizzle-orm";
 import { db } from "../../src/lib/db";
@@ -9,6 +9,10 @@ import { redis } from "../../src/lib/redis";
 loadEnvConfig(process.cwd());
 
 const testIp = "198.51.100.28";
+const mobileUserAgent =
+  "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 Version/17.0 Mobile/15E148 Safari/604.1";
+const desktopUserAgent =
+  "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120.0.0.0 Safari/537.36";
 
 async function createVerifiedUser(email: string, password: string): Promise<string> {
   await db.delete(users).where(eq(users.email, email));
@@ -28,7 +32,11 @@ async function createVerifiedUser(email: string, password: string): Promise<stri
   return user.id;
 }
 
-async function cleanupLinkFlowState(email: string, userId?: string): Promise<void> {
+async function cleanupLinkFlowState(
+  email: string,
+  userId?: string,
+  slugs: string[] = [],
+): Promise<void> {
   await db.delete(users).where(eq(users.email, email));
 
   await redis.del(
@@ -39,10 +47,15 @@ async function cleanupLinkFlowState(email: string, userId?: string): Promise<voi
           `rate-limit:api:links:list:${userId}`,
           `rate-limit:api:links:page:get:${userId}`,
           `rate-limit:api:links:page:post:${userId}`,
+          `rate-limit:api:links:rules:post:${userId}`,
           `rate-limit:api:links:slug:get:${userId}`,
           `rate-limit:links:create:${userId}`,
         ]
       : []),
+    ...slugs.flatMap((slug) => [
+      `linksnap:redirect:${slug}`,
+      `linksnap:smart-rules:${slug}`,
+    ]),
   );
 }
 
@@ -124,6 +137,35 @@ async function signIn(page: Page, {
   await page.getByRole("button", { name: /^Sign in$/ }).click();
   const credentialsResponse = await credentialsResponsePromise;
   expect(credentialsResponse.ok()).toBe(true);
+}
+
+async function visitSlugWithUserAgent({
+  baseURL,
+  browser,
+  slug,
+  userAgent,
+}: {
+  baseURL: string;
+  browser: Browser;
+  slug: string;
+  userAgent: string;
+}): Promise<string> {
+  const context = await browser.newContext({
+    extraHTTPHeaders: {
+      "x-forwarded-for": testIp,
+    },
+    userAgent,
+  });
+  const page = await context.newPage();
+
+  try {
+    await page.goto(`${baseURL}/${slug}`);
+    await page.waitForLoadState("domcontentloaded").catch(() => {});
+
+    return page.url();
+  } finally {
+    await context.close();
+  }
 }
 
 test.use({
@@ -255,5 +297,84 @@ test("should configure a Link Page then render the public page and CTA redirect"
       .toBeGreaterThanOrEqual(2);
   } finally {
     await cleanupLinkFlowState(email, userId);
+  }
+});
+
+test("should configure Smart Rules then redirect by browser user agent", async ({
+  baseURL,
+  browser,
+  page,
+}) => {
+  const email = `e2e-rules-${Date.now()}@example.com`;
+  const password = "Password1";
+  const slug = `rules-${Date.now()}`;
+  const appBaseUrl = baseURL ?? "http://127.0.0.1:3100";
+  let userId: string | undefined;
+
+  try {
+    userId = await createVerifiedUser(email, password);
+
+    await signIn(page, { email, password });
+    await expect(page).toHaveURL(/\/links$/, { timeout: 15_000 });
+
+    await page.getByRole("link", { name: "Create link", exact: true }).click();
+    await page.getByLabel("Destination URL").fill("https://example.com/default");
+    await page.getByLabel("Custom slug").fill(slug);
+    await expect(page.getByText("Slug available.")).toBeVisible({
+      timeout: 10_000,
+    });
+    await page.getByLabel("Title").fill("E2E Smart Rule promo");
+    await page.getByRole("button", { name: "Create link" }).click();
+    await expect(page).toHaveURL(/\/links$/, { timeout: 15_000 });
+
+    const linkId = await getLinkIdBySlug(slug);
+    const rulesResponse = await page.request.post(`/api/v1/links/${linkId}/rules`, {
+      data: {
+        rules: [
+          {
+            condition: { device: "mobile" },
+            destinationUrl: "https://example.com/mobile-rule",
+            priority: 10,
+            type: "DEVICE",
+          },
+        ],
+      },
+    });
+    expect(rulesResponse.ok()).toBe(true);
+
+    await expect
+      .poll(
+        () =>
+          visitSlugWithUserAgent({
+            baseURL: appBaseUrl,
+            browser,
+            slug,
+            userAgent: mobileUserAgent,
+          }),
+        { message: "mobile user agent should match Smart Rule", timeout: 15_000 },
+      )
+      .toBe("https://example.com/mobile-rule");
+
+    await expect
+      .poll(
+        () =>
+          visitSlugWithUserAgent({
+            baseURL: appBaseUrl,
+            browser,
+            slug,
+            userAgent: desktopUserAgent,
+          }),
+        { message: "desktop user agent should use default destination", timeout: 15_000 },
+      )
+      .toBe("https://example.com/default");
+
+    await expect
+      .poll(() => countClicksForLink(linkId), {
+        message: "Smart Rule redirects should be logged",
+        timeout: 10_000,
+      })
+      .toBeGreaterThanOrEqual(2);
+  } finally {
+    await cleanupLinkFlowState(email, userId, [slug]);
   }
 });

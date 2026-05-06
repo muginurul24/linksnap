@@ -1556,3 +1556,41 @@ Replaced the hand-rolled user agent regex parser with a dedicated `ua-parser-js`
 - ✅ No raw SQL, secrets, plaintext IP storage, or sensitive logging added.
 
 **Next Task:** 4.5 — Smart Rules Tests
+
+### 4.5 — Smart Rules Tests
+- **Date:** 2026-05-07 06:48 GMT+7
+- **Duration:** 0h 45m
+- **Status:** ✅ Complete
+
+**What I Did:**
+Completed Smart Rules test coverage across unit, integration, and E2E layers. Added a mocked integration flow that creates rules through the API and verifies mobile vs desktop public redirects, plus an E2E flow that creates a link from the dashboard, saves a Smart Rule through the authenticated API, and verifies browser user-agent based redirects with Playwright context overrides.
+
+**Files Changed:**
+- `tests/integration/smart-rule-redirect-flow.test.ts` — Added create-rules-to-public-redirect integration coverage for different user agents.
+- `tests/e2e/link-flow.spec.ts` — Added Smart Rules E2E coverage using dashboard-authenticated rule creation and browser user-agent overrides.
+- `src/lib/db/queries/smart-rules.ts` — Replaced unsupported Neon HTTP transaction usage in rule replacement with driver-compatible delete/insert operations.
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Checked off Task 4.5.
+- `_bmad-output/implementation-artifacts/JOURNAL.md` — Recorded this completion entry.
+
+**Decisions Made:**
+- Kept Smart Rules E2E setup API-driven after dashboard link creation because there is not yet a dedicated dashboard Smart Rules UI.
+- Verified both matching and non-matching user agents so fallback to the default destination remains covered.
+- Removed `db.transaction()` from Smart Rule replacement because the project’s Neon HTTP driver does not support transactions in the E2E/runtime environment.
+
+**Tests:**
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Unit/Integration: `rtk bun run test` — 38 files passed, 182 tests passed.
+- ✅ Build: `rtk bun run build` — Passed.
+- ✅ E2E: `rtk bun run test:e2e` — 5 specs passed.
+
+**Issues Encountered:**
+- E2E exposed `No transactions support in neon-http driver` in `replaceSmartRulesForLink` → Updated the query helper to use Neon HTTP compatible delete/insert operations and reran all verification successfully.
+
+**Security Checks:**
+- ✅ Smart Rules E2E uses an authenticated user and owner-scoped API mutation.
+- ✅ Rule input remains validated by the production API before redirect behavior is exercised.
+- ✅ Redirect assertions cover the default destination fallback when no rule matches.
+- ✅ No raw SQL, secrets, plaintext IP storage, or sensitive logging added.
+
+**Next Task:** 5.1 — QR Generation API

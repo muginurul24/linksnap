@@ -334,9 +334,9 @@ src/
 - [x] Use `ua-parser-js` library
 
 ### TASK 4.5 — Smart Rules Tests
-- Unit: rule evaluation for each type, device parsing
-- Integration: create rules → visit with different IPs/UAs → verify correct redirect
-- E2E: configure rules from dashboard → test with browser dev tools user agent override
+- [x] Unit: rule evaluation for each type, device parsing
+- [x] Integration: create rules → visit with different IPs/UAs → verify correct redirect
+- [x] E2E: configure rules from dashboard → test with browser dev tools user agent override
 
 ---
 
