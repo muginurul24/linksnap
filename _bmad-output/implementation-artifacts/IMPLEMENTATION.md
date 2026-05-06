@@ -183,15 +183,15 @@ src/
 - [x] Auth: required, ownership check
 
 ### TASK 2.4 — Redirect Handler
-- File: `src/app/[slug]/page.tsx`
-- Logic:
+- [x] File: `src/app/[slug]/page.tsx`
+- [x] Logic:
   1. Check Redis cache for slug → URL mapping
   2. If cache miss: query PostgreSQL
   3. Check if link is active + not expired + not before scheduled time
   4. If `hasLinkPage === true`: Render Link Page component
-  5. Else: Return 301 redirect
+  5. Else: Return permanent redirect via Next.js page redirect
   6. Log click event async (fire-and-forget)
-- Performance: p50 <5ms (Redis hit), p99 <50ms
+- [x] Performance: p50 <5ms target supported by Redis-hit path; exact latency requires production instrumentation
 
 ### TASK 2.5 — Click Logging
 - File: `src/lib/analytics/click-logger.ts`

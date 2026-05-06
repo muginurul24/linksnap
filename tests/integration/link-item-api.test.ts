@@ -77,6 +77,7 @@ type DeleteLinkResponse = {
 };
 
 const mockState = vi.hoisted(() => ({
+  cacheDeleteKeys: [] as string[],
   links: [] as MockLink[],
   rateLimitOptions: [] as RateLimitOptions[],
   rateLimitResult: { limited: false as const, remaining: 99 } as RateLimitResult,
@@ -92,6 +93,12 @@ vi.mock("@/lib/redis/rate-limit", () => ({
   slidingWindowRateLimit: async (options: RateLimitOptions) => {
     mockState.rateLimitOptions.push(options);
     return mockState.rateLimitResult;
+  },
+}));
+
+vi.mock("@/lib/redis", () => ({
+  cacheDelete: async (key: string) => {
+    mockState.cacheDeleteKeys.push(key);
   },
 }));
 
@@ -185,6 +192,7 @@ describe("link item API", () => {
   beforeEach(() => {
     process.env.NEXT_PUBLIC_APP_URL = "https://linksnap.test/";
     mockState.links = [createMockLink()];
+    mockState.cacheDeleteKeys = [];
     mockState.rateLimitOptions.length = 0;
     mockState.rateLimitResult = { limited: false, remaining: 99 };
     mockState.session = { user: { id: "user-1" } };
@@ -256,6 +264,10 @@ describe("link item API", () => {
       slug: "updated",
       title: null,
     });
+    expect(mockState.cacheDeleteKeys).toEqual([
+      "redirect:original",
+      "redirect:updated",
+    ]);
   });
 
   it("should reject duplicate slug updates", async () => {
@@ -326,6 +338,7 @@ describe("link item API", () => {
     if (!body.success) return;
     expect(body.data).toEqual({ deleted: true, id: linkId });
     expect(mockState.links[0]?.isActive).toBe(false);
+    expect(mockState.cacheDeleteKeys).toEqual(["redirect:original"]);
   });
 
   it("should reject unauthenticated requests", async () => {

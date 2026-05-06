@@ -1,7 +1,8 @@
 import { and, count, desc, eq, ilike, or, type SQL } from "drizzle-orm";
 import { db } from "@/lib/db";
-import { links, users } from "@/lib/db/schema";
+import { linkPages, links, users } from "@/lib/db/schema";
 import type { UserPlan } from "@/lib/links/limits";
+import type { RedirectLink } from "@/lib/links/redirect";
 
 export type CreatedLink = {
   destinationUrl: string;
@@ -33,6 +34,18 @@ export type LinkDetail = ListedLink & {
   expiresAt: Date | null;
   scheduledAt: Date | null;
   userId: string;
+};
+
+export type PublicLinkPage = {
+  brandLogo: string | null;
+  brandName: string;
+  countdownTarget: Date | null;
+  ctaColor: string;
+  ctaText: string;
+  description: string | null;
+  ogImage: string | null;
+  showCountdown: boolean | null;
+  title: string;
 };
 
 type ListLinksInput = {
@@ -92,6 +105,46 @@ export async function findLinkBySlug(slug: string): Promise<{ id: string } | nul
   });
 
   return link ?? null;
+}
+
+export async function findRedirectLinkBySlug(
+  slug: string,
+): Promise<RedirectLink | null> {
+  const link = await db.query.links.findFirst({
+    columns: {
+      destinationUrl: true,
+      expiresAt: true,
+      hasLinkPage: true,
+      id: true,
+      isActive: true,
+      scheduledAt: true,
+      slug: true,
+    },
+    where: eq(links.slug, slug),
+  });
+
+  return link ?? null;
+}
+
+export async function findPublicLinkPageByLinkId(
+  linkId: string,
+): Promise<PublicLinkPage | null> {
+  const page = await db.query.linkPages.findFirst({
+    columns: {
+      brandLogo: true,
+      brandName: true,
+      countdownTarget: true,
+      ctaColor: true,
+      ctaText: true,
+      description: true,
+      ogImage: true,
+      showCountdown: true,
+      title: true,
+    },
+    where: eq(linkPages.linkId, linkId),
+  });
+
+  return page ?? null;
 }
 
 export async function findLinkById(id: string): Promise<LinkDetail | null> {

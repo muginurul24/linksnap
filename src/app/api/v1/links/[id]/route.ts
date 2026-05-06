@@ -15,6 +15,8 @@ import {
   getApiEndpointRateLimit,
   type UserPlan,
 } from "@/lib/links/limits";
+import { getRedirectCacheKey } from "@/lib/links/redirect";
+import { cacheDelete } from "@/lib/redis";
 import { slidingWindowRateLimit } from "@/lib/redis/rate-limit";
 import {
   linkIdParamsSchema,
@@ -221,6 +223,13 @@ function handleKnownError(error: unknown, requestId: string): Response | null {
   return null;
 }
 
+async function invalidateRedirectCaches(...slugs: string[]): Promise<void> {
+  const uniqueSlugs = [...new Set(slugs)];
+  await Promise.all(
+    uniqueSlugs.map((slug) => cacheDelete(getRedirectCacheKey(slug))),
+  );
+}
+
 export async function GET(request: NextRequest, context: LinkRouteContext) {
   const requestId = createRequestId();
 
@@ -266,14 +275,17 @@ export async function PATCH(request: NextRequest, context: LinkRouteContext) {
     }
 
     const existingLink = await getAuthorizedLink(parsedParams.params.id, authResult.userId);
+    const existingSlug = existingLink.slug;
     await ensureSlugCanBeUsed({
-      currentSlug: existingLink.slug,
+      currentSlug: existingSlug,
       slug: parsedBody.data.slug,
       userPlan: authResult.userPlan,
     });
 
     const updated = await updateLink(parsedParams.params.id, authResult.userId, parsedBody.data);
     if (!updated) throw new LinkNotFoundError();
+
+    await invalidateRedirectCaches(existingSlug, updated.slug);
 
     return successResponse(formatLinkDetail(request, updated));
   } catch (error) {
@@ -304,10 +316,12 @@ export async function DELETE(_request: NextRequest, context: LinkRouteContext) {
     const parsedParams = await parseParams(context, requestId);
     if ("response" in parsedParams) return parsedParams.response;
 
-    await getAuthorizedLink(parsedParams.params.id, authResult.userId);
+    const existingLink = await getAuthorizedLink(parsedParams.params.id, authResult.userId);
 
     const deleted = await softDeleteLinkForUser(parsedParams.params.id, authResult.userId);
     if (!deleted) throw new LinkNotFoundError();
+
+    await invalidateRedirectCaches(existingLink.slug);
 
     return successResponse({ deleted: true, id: deleted.id });
   } catch (error) {

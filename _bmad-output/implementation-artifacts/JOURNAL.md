@@ -807,3 +807,54 @@ Implemented `GET`, `PATCH`, and `DELETE` for `/api/v1/links/[id]` with UUID para
 - ✅ No raw SQL, secrets, or sensitive logging added.
 
 **Next Task:** 2.4 — Redirect Handler
+
+### 2.4 — Redirect Handler
+- **Date:** 2026-05-06 22:37 GMT+7
+- **Duration:** 0h 35m
+- **Status:** ✅ Complete
+
+**What I Did:**
+Implemented the public `/{slug}` handler with Redis-first lookup, PostgreSQL fallback, active/scheduled/expiry gating, public Link Page rendering, permanent redirect fallback, and async fire-and-forget click logging. Added redirect cache invalidation when a link is updated or soft-deleted.
+
+**Files Changed:**
+- `src/app/[slug]/page.tsx` — Added public slug handler, Link Page renderer, cache lookup, availability checks, and redirect path.
+- `src/lib/links/redirect.ts` — Added public slug validation, redirect availability checks, cache key helper, and cache payload conversion.
+- `src/lib/db/queries/links.ts` — Added minimal public redirect and Link Page query helpers.
+- `src/lib/analytics/click-logger.ts` — Added minimal click event insert for referrer and user agent.
+- `src/app/api/v1/links/[id]/route.ts` — Invalidates redirect cache after updates and soft deletes.
+- `tests/unit/redirect.test.ts` — Added redirect helper coverage.
+- `tests/unit/click-logger.test.ts` — Added click logger success/failure coverage.
+- `tests/integration/link-item-api.test.ts` — Added cache invalidation assertions for update/delete.
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Checked off Task 2.4.
+- `_bmad-output/planning-artifacts/SECURITY.md` — Updated Link Page JSX escaping and public slug validation status.
+- `_bmad-output/implementation-artifacts/JOURNAL.md` — Recorded this completion entry.
+
+**Decisions Made:**
+- Redirect cache TTL is 300 seconds to keep Redis-hit redirects fast while limiting stale URL exposure.
+- Link Page content uses JSX escaping and validates dynamic CTA color as a strict hex value before applying inline style.
+- If a link has `hasLinkPage=true` but no Link Page record exists, the handler falls back to redirect rather than breaking the short link.
+- The minimal click logger does not store IP address yet; IP hashing, geo lookup, and device parsing remain scoped to Task 2.5.
+- Next.js `page.tsx` supports `permanentRedirect`, which returns a permanent 308 redirect. A literal 301 response would require a route handler instead of the requested page file.
+
+**Tests:**
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Unit/Integration: `rtk bun run test` — 16 files passed, 75 tests passed.
+- ✅ Build: `rtk bun run build` — Passed.
+- ✅ Browser verification: loaded `/not-a-real-slug` in Playwright and received the expected 404 page.
+- ✅ Next runtime diagnostics: `get_errors` on port 3000 returned no config/session errors after browser session cleanup.
+- ✅ Security grep: no raw SQL, user-controlled fetch, or obvious async loop/N+1 patterns in `src`.
+
+**Issues Encountered:**
+- A test caught that the old slug could be lost if the link object is mutated during update; fixed by snapshotting the old slug before update and invalidating both old/new cache keys.
+- Security grep still reports the existing `dangerouslySetInnerHTML` usage in `src/components/ui/chart.tsx`; this task did not add or modify that code.
+
+**Security Checks:**
+- ✅ Public slug params validated with the same lowercase alphanumeric/hyphen rules as link creation.
+- ✅ Inactive, expired, and future-scheduled links return 404 before redirect/render.
+- ✅ User-generated Link Page text is rendered through JSX, not raw HTML.
+- ✅ No plaintext IP collection added before Task 2.5 hashing work.
+- ✅ Redis cache invalidated after link update/delete.
+- ✅ No raw SQL, secrets, or sensitive logging added.
+
+**Next Task:** 2.5 — Click Logging
