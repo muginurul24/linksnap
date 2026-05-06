@@ -6,6 +6,7 @@ import {
   QrCode,
   UsersRound,
 } from "lucide-react";
+import { CountdownTimer } from "@/components/link-page/countdown-timer";
 import { cn } from "@/lib/utils";
 
 const DEFAULT_CTA_COLOR = "#6366f1";
@@ -106,15 +107,6 @@ function normalizeTheme(theme: string): LinkPageTheme {
   return "auto";
 }
 
-function formatCountdownTarget(value: Date | null): string | null {
-  if (!value) return null;
-
-  return new Intl.DateTimeFormat("en", {
-    dateStyle: "medium",
-    timeStyle: "short",
-  }).format(value);
-}
-
 async function buildQrCodeDataUrl(value: string): Promise<string | null> {
   try {
     return await QRCode.toDataURL(value, {
@@ -143,7 +135,7 @@ export async function LinkPageRenderer({
   const ctaColor = getSafeHexColor(page.ctaColor);
   const ctaTextColor = getReadableTextColor(ctaColor);
   const countdownTarget =
-    page.showCountdown === true ? formatCountdownTarget(page.countdownTarget) : null;
+    page.showCountdown === true ? page.countdownTarget : null;
   const qrCodeDataUrl =
     page.showQrCode === false ? null : await buildQrCodeDataUrl(shortUrl);
   const brandInitial = page.brandName.trim().charAt(0).toUpperCase() || "L";
@@ -229,7 +221,9 @@ export async function LinkPageRenderer({
                     )}
                   >
                     <CalendarClock className="size-4 shrink-0" aria-hidden="true" />
-                    <p className="min-w-0 break-words">Offer ends {countdownTarget}</p>
+                    <p className="min-w-0 break-words">
+                      Offer ends in <CountdownTimer targetDate={countdownTarget} />
+                    </p>
                   </div>
                 ) : null}
 

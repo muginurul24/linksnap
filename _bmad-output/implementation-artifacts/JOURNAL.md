@@ -1224,3 +1224,39 @@ Extracted the public Link Page UI into `src/components/link-page/link-page-rende
 - ✅ No raw SQL, plaintext IP, or sensitive logging added.
 
 **Next Task:** 3.3 — Countdown Timer Component
+
+### 3.3 — Countdown Timer Component
+- **Date:** 2026-05-06 23:59 GMT+7
+- **Duration:** 0h 15m
+- **Status:** ✅ Complete
+
+**What I Did:**
+Added a dedicated client-side countdown timer for Link Pages. It calculates remaining time in `DD:HH:MM:SS`, refreshes every second with `useEffect`, pulses during the final hour, and switches to the required expired state when the target has passed.
+
+**Files Changed:**
+- `src/components/link-page/countdown-timer.tsx` — Added client countdown component plus pure formatting/state helpers.
+- `src/components/link-page/link-page-renderer.tsx` — Replaced static countdown copy with the live countdown component.
+- `tests/unit/countdown-timer.test.ts` — Added coverage for formatting, urgent state, and expired state.
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Checked off Task 3.3.
+- `_bmad-output/implementation-artifacts/JOURNAL.md` — Recorded this completion entry.
+
+**Decisions Made:**
+- Kept countdown calculations in exported pure helpers so edge cases can be tested without a browser timer harness.
+- Passed `Date` as the component prop to match the implementation contract and kept the interactive timer isolated to the smallest client component.
+- Used existing Tailwind utilities for pulse and destructive color instead of adding new CSS.
+
+**Tests:**
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Unit/Integration: `rtk bun run test` — 31 files passed, 142 tests passed.
+- ✅ Build: `rtk bun run build` — Passed; the public slug route still compiles with the client countdown boundary.
+
+**Issues Encountered:**
+- None.
+
+**Security Checks:**
+- ✅ Countdown target comes from the validated Link Page config.
+- ✅ No user HTML rendering or dangerous DOM APIs added.
+- ✅ No secrets, raw SQL, plaintext IP, or sensitive logging added.
+
+**Next Task:** 3.4 — Link Page Preview (Dashboard)

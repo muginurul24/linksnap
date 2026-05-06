@@ -267,12 +267,12 @@ src/
 - [x] Responsive: mobile-first, max-width 480px centered card
 
 ### TASK 3.3 — Countdown Timer Component
-- File: `src/components/link-page/countdown-timer.tsx`
-- Props: `targetDate: Date`
-- Display: DD:HH:MM:SS format
-- Pulse animation when <1 hour remaining
-- "Offer expired" state when past target date
-- Client component (useEffect timer)
+- [x] File: `src/components/link-page/countdown-timer.tsx`
+- [x] Props: `targetDate: Date`
+- [x] Display: DD:HH:MM:SS format
+- [x] Pulse animation when <1 hour remaining
+- [x] "Offer expired" state when past target date
+- [x] Client component (useEffect timer)
 
 ### TASK 3.4 — Link Page Preview (Dashboard)
 - Add preview button in links table
