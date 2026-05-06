@@ -343,12 +343,12 @@ src/
 ## 🟠 Phase 5: QR Codes (3 tasks)
 
 ### TASK 5.1 — QR Generation API
-- File: `src/app/api/v1/qr/[slug]/route.ts`
-- No auth required (public endpoint)
-- Generate QR code as PNG or SVG (query param `?format=png|svg`)
-- Cache in Redis: `qr:{slug}:{format}` → base64 image
-- TTL: 24 hours (or until link updated)
-- Size: 300x300 default, configurable `?size=300`
+- [x] File: `src/app/api/v1/qr/[slug]/route.ts`
+- [x] No auth required (public endpoint)
+- [x] Generate QR code as PNG or SVG (query param `?format=png|svg`)
+- [x] Cache in Redis: `qr:{slug}:{format}` → base64 image
+- [x] TTL: 24 hours (or until link updated)
+- [x] Size: 300x300 default, configurable `?size=300`
 
 ### TASK 5.2 — QR Download
 - Add download buttons in links table and QR codes page

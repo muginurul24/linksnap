@@ -1594,3 +1594,41 @@ Completed Smart Rules test coverage across unit, integration, and E2E layers. Ad
 - ✅ No raw SQL, secrets, plaintext IP storage, or sensitive logging added.
 
 **Next Task:** 5.1 — QR Generation API
+
+### 5.1 — QR Generation API
+- **Date:** 2026-05-07 06:52 GMT+7
+- **Duration:** 0h 30m
+- **Status:** ✅ Complete
+
+**What I Did:**
+Implemented the public QR generation endpoint for short links. The API validates slug and query params, verifies the link exists and is currently available before serving cached content, generates PNG or SVG QR codes for the short URL, caches base64 image output in Redis for 24 hours, and rate limits public QR generation by client IP.
+
+**Files Changed:**
+- `src/app/api/v1/qr/[slug]/route.ts` — Added public QR generation route with PNG/SVG output, size validation, Redis caching, rate limiting, and active-link checks.
+- `src/lib/validations/qr.ts` — Added QR query validation for format and size.
+- `tests/integration/qr-api.test.ts` — Added integration coverage for PNG/SVG generation, cache hits, invalid queries, unavailable links, and rate limiting.
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Checked off Task 5.1.
+- `_bmad-output/implementation-artifacts/JOURNAL.md` — Recorded this completion entry.
+
+**Decisions Made:**
+- QR codes encode the public short URL, not the destination URL, so scans continue through LinkSnap analytics and Smart Rules.
+- Cache keys include size (`qr:{slug}:{format}:{size}`) to avoid serving a cached 300px image for a later custom-size request.
+- The route checks link availability before reading QR cache so stale cached QR content cannot be served for deleted, inactive, scheduled, or expired links.
+
+**Tests:**
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Unit/Integration: `rtk bun run test` — 39 files passed, 188 tests passed.
+- ✅ Build: `rtk bun run build` — Passed; `/api/v1/qr/[slug]` is registered.
+
+**Issues Encountered:**
+- None.
+
+**Security Checks:**
+- ✅ Slug and query params validated with Zod.
+- ✅ Public endpoint checks link availability before image generation or cache serving.
+- ✅ Public QR generation is rate limited by client IP.
+- ✅ QR output encodes only the short URL; no secrets or sensitive user data are embedded.
+- ✅ No raw SQL, secrets, plaintext IP storage, or sensitive logging added.
+
+**Next Task:** 5.2 — QR Download
