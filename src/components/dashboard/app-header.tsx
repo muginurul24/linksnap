@@ -15,7 +15,11 @@ import { Search, Bell, Sun, Moon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useTheme } from "next-themes";
-import { useEffect, useState } from "react";
+import { useSyncExternalStore } from "react";
+
+const subscribeToClientMount = () => () => {};
+const getClientMountSnapshot = () => true;
+const getServerMountSnapshot = () => false;
 
 const breadcrumbMap: Record<string, { label: string; href?: string }[]> = {
   "/": [{ label: "Dashboard" }],
@@ -31,8 +35,11 @@ const breadcrumbMap: Record<string, { label: string; href?: string }[]> = {
 export function AppHeader() {
   const pathname = usePathname();
   const { theme, setTheme } = useTheme();
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
+  const mounted = useSyncExternalStore(
+    subscribeToClientMount,
+    getClientMountSnapshot,
+    getServerMountSnapshot,
+  );
 
   const crumbs = breadcrumbMap[pathname] ?? [{ label: "Dashboard" }];
 

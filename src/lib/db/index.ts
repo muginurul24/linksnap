@@ -18,6 +18,6 @@ export function getDb(): DB {
 // Convenience alias for most use cases
 export const db = new Proxy({} as DB, {
   get(_, prop) {
-    return (getDb() as any)[prop];
+    return getDb()[prop as keyof DB];
   },
 });

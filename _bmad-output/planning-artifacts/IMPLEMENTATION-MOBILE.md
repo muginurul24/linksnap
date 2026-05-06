@@ -3,6 +3,7 @@
 > **Stack:** React Native 0.78 + Expo SDK 54 + TypeScript + NativeWind (Tailwind)
 > **Target:** iOS 16+ and Android 13+
 > **Build:** EAS Build + EAS Submit
+> **Current status:** Not started. No mobile checklist tasks have been completed yet.
 
 ---
 

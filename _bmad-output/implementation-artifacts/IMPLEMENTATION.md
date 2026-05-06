@@ -64,96 +64,96 @@ src/
 
 ### TASK 0.1 — Environment Setup
 - [x] Copy `.env.example` to `.env`
-- [ ] Fill in ALL environment variables:
+- [x] Fill in ALL environment variables:
   - `DATABASE_URL` from Neon.tech
   - `AUTH_SECRET` — `openssl rand -base64 32`
   - `AUTH_GOOGLE_ID` + `AUTH_GOOGLE_SECRET` from Google Cloud Console
   - `UPSTASH_REDIS_URL` + `UPSTASH_REDIS_TOKEN` from Upstash
   - `RESEND_API_KEY` from Resend
   - `MIDTRANS_SERVER_KEY` + `MIDTRANS_CLIENT_KEY` + `MIDTRANS_MERCHANT_ID`
-- [ ] Verify: `rtk bun run dev` starts without errors
+- [x] Verify: `rtk bun run dev` starts without errors
 
 ### TASK 0.2 — Database Setup
-- [ ] Create Neon.tech database (or local PostgreSQL)
-- [ ] Push schema: `rtk bun run db:push`
-- [ ] Verify tables exist: `rtk bun run db:studio`
-- [ ] Tables to verify: `users`, `links`, `link_pages`, `smart_rules`, `click_events`, `campaigns`, `split_tests`, `split_test_variants`, `subscriptions`, `transactions`, `settings`
+- [x] Create Neon.tech database (or local PostgreSQL)
+- [x] Push schema: `rtk bun run db:push`
+- [x] Verify tables exist: direct `information_schema.tables` query
+- [x] Tables to verify: `users`, `links`, `link_pages`, `smart_rules`, `click_events`, `campaigns`, `split_tests`, `split_test_variants`, `subscriptions`, `transactions`, `settings`
 
 ### TASK 0.3 — Redis Setup
-- [ ] Create Upstash Redis database
-- [ ] Verify connection: browser console `redis.ping()`
-- [ ] Test cache set/get: `await redis.set("test", "ok")` → `await redis.get("test")`
+- [x] Create Upstash Redis database
+- [x] Verify connection: `redis.ping()` returned `PONG`
+- [x] Test cache set/get: `await redis.set("test", "ok")` → `await redis.get("test")`
 
 ### TASK 0.4 — CI/CD Pipeline
-- [ ] Create `.github/workflows/ci.yml`
-- [ ] Steps: lint → typecheck → test → build → (staging deploy)
-- [ ] Add Vercel deployment hook
+- [x] Create `.github/workflows/ci.yml`
+- [x] Steps: lint → typecheck → test → build → (staging deploy)
+- [x] Add Vercel deployment hook
 
 ---
 
 ## 🟡 Phase 1: Authentication (8 tasks)
 
 ### TASK 1.1 — Auth Middleware
-- File: `src/middleware.ts`
-- Export NextAuth middleware, protect `/dashboard/*` routes
-- Exclude: `/api/auth/*`, `/api/v1/auth/*`, `/_next/*`, static files
-- Redirect unauthenticated to `/login`
+- [x] File: `src/proxy.ts` (Next.js 16 replacement for deprecated `src/middleware.ts`)
+- [x] Export NextAuth proxy, protect `/dashboard/*` plus current dashboard paths (`/links`, `/analytics`, `/settings`, etc.)
+- [x] Exclude: `/api/auth/*`, `/api/v1/auth/*`, `/_next/*`, static files
+- [x] Redirect unauthenticated to `/login`
 
 ### TASK 1.2 — Register Page
-- File: `src/app/(marketing)/register/page.tsx`
-- Form: Email, Password, Confirm Password
-- Validation: Zod schema (email format, password ≥8 chars)
-- On submit: `POST /api/v1/auth/register` → redirect to verify page
-- Error states: duplicate email, weak password, rate limit
-- Loading state: button spinner
+- [x] File: `src/app/(marketing)/register/page.tsx`
+- [x] Form: Email, Password, Confirm Password
+- [x] Validation: Zod schema (email format, password ≥8 chars)
+- [x] On submit: `POST /api/v1/auth/register` → redirect to verify page
+- [x] Error states: duplicate email, weak password, rate limit
+- [x] Loading state: button spinner
 
 ### TASK 1.3 — Email Verification
-- File: `src/app/(marketing)/verify/page.tsx`
-- Accept `?email=` query param
-- OTP input (6 digits)
-- Auto-submit after 6 digits
-- Resend OTP button (with cooldown timer)
-- On success: redirect to `/login?verified=true`
+- [x] File: `src/app/(marketing)/verify/page.tsx`
+- [x] Accept `?email=` query param
+- [x] OTP input (6 digits)
+- [x] Auto-submit after 6 digits
+- [x] Resend OTP button (with cooldown timer)
+- [x] On success: redirect to `/login?verified=true`
 
 ### TASK 1.4 — Login Page
-- File: `src/app/(marketing)/login/page.tsx`
-- Form: Email, Password
-- "Sign in with Google" button
-- "Forgot password?" link
-- Error states: invalid credentials, email not verified
-- On success: redirect to `/dashboard`
+- [x] File: `src/app/(marketing)/login/page.tsx`
+- [x] Form: Email, Password
+- [x] "Sign in with Google" button
+- [x] "Forgot password?" link
+- [x] Error states: invalid credentials, email not verified
+- [x] On success: redirect to callback URL, default `/links` because `/dashboard` route does not currently exist
 
 ### TASK 1.5 — Google OAuth
-- Configure in Google Cloud Console: callback URL = `{APP_URL}/api/auth/callback/google`
-- Test flow end-to-end
-- Handle: new user auto-register, existing user link Google account
+- [ ] Configure in Google Cloud Console: callback URL = `{APP_URL}/api/auth/callback/google` (local callback verified: `http://localhost:3000/api/auth/callback/google`)
+- [ ] Test flow end-to-end
+- [x] Handle: new user auto-register, existing user link Google account
 
 ### TASK 1.6 — API Routes: Auth
-- File: `src/app/api/v1/auth/register/route.ts`
-  - Validate input (Zod)
-  - Check email not taken
-  - Hash password (bcryptjs)
-  - Generate OTP (6-digit)
-  - Send email via Resend
-  - Return `{ success: true }`
-- File: `src/app/api/v1/auth/verify/route.ts`
-  - Accept email + OTP
-  - Set `emailVerified` timestamp
-  - Return `{ success: true }`
-- File: `src/app/api/v1/auth/resend-otp/route.ts`
-  - Rate limit: 3 OTP/email/hour
-  - Generate new OTP, send email
+- [x] File: `src/app/api/v1/auth/register/route.ts`
+  - [x] Validate input (Zod)
+  - [x] Check email not taken
+  - [x] Hash password (bcryptjs)
+  - [x] Generate OTP (6-digit)
+  - [x] Send email via Resend
+  - [x] Return `{ success: true }`
+- [x] File: `src/app/api/v1/auth/verify/route.ts`
+  - [x] Accept email + OTP
+  - [x] Set `emailVerified` timestamp
+  - [x] Return `{ success: true }`
+- [x] File: `src/app/api/v1/auth/resend-otp/route.ts`
+  - [x] Rate limit: 3 OTP/email/hour
+  - [x] Generate new OTP, send email
 
 ### TASK 1.7 — Rate Limiting
-- File: `src/lib/redis/rate-limit.ts`
-- Implement: sliding window rate limiter
-- Apply to: login (5/IP/15min), register (3/IP/hour), OTP resend (3/email/hour)
-- Return: `{ limited: true, retryAfter: seconds }` or `{ limited: false }`
+- [x] File: `src/lib/redis/rate-limit.ts`
+- [x] Implement: sliding window rate limiter
+- [x] Apply to: login (5/IP/15min), register (3/IP/hour), OTP resend (3/email/hour)
+- [x] Return: `{ limited: true, retryAfter: seconds }` or `{ limited: false }`
 
 ### TASK 1.8 — Auth Tests
-- Unit: password hashing, OTP generation, token validation
-- Integration: register → verify → login → access protected route
-- E2E: full auth flow (register → verify → login → dashboard)
+- [ ] Unit: password hashing, OTP generation, token validation (OTP helper tests added; password/token tests pending)
+- [ ] Integration: register → verify → login → access protected route
+- [ ] E2E: full auth flow (register → verify → login → dashboard)
 
 ---
 
