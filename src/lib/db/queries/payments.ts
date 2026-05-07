@@ -1,4 +1,4 @@
-import { and, eq, inArray, lte } from "drizzle-orm";
+import { and, count, desc, eq, inArray, lte } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { subscriptions, transactions, users } from "@/lib/db/schema";
 import type { UserPlan } from "@/lib/links/limits";
@@ -40,6 +40,20 @@ export type ExpiredSubscriptionCandidate = {
   userId: string;
 };
 
+export type BillingTransaction = {
+  createdAt: Date;
+  duration: string;
+  grossAmountIdr: number;
+  grossAmountUsd: number;
+  id: string;
+  orderId: string;
+  paidAt: Date | null;
+  paymentMethod: string | null;
+  plan: UserPlan;
+  status: PaymentStatus;
+  updatedAt: Date;
+};
+
 type CreatePendingTransactionInput = {
   duration: PaymentDuration;
   grossAmountIdr: number;
@@ -55,6 +69,12 @@ type UpdatePaymentTransactionStatusInput = {
   paidAt?: Date | null;
   paymentMethod?: string | null;
   status: PaymentStatus;
+};
+
+type ListPaymentTransactionsInput = {
+  limit: number;
+  page: number;
+  userId: string;
 };
 
 export async function findBillingUserById(
@@ -350,4 +370,45 @@ export async function updateUserPlansToFree(userIds: string[]): Promise<number> 
     .returning({ id: users.id });
 
   return updated.length;
+}
+
+export async function listPaymentTransactionsByUserId({
+  limit,
+  page,
+  userId,
+}: ListPaymentTransactionsInput): Promise<{
+  items: BillingTransaction[];
+  total: number;
+}> {
+  const offset = (page - 1) * limit;
+  const [items, totalRows] = await Promise.all([
+    db
+      .select({
+        createdAt: transactions.createdAt,
+        duration: transactions.duration,
+        grossAmountIdr: transactions.grossAmountIdr,
+        grossAmountUsd: transactions.grossAmountUsd,
+        id: transactions.id,
+        orderId: transactions.orderId,
+        paidAt: transactions.paidAt,
+        paymentMethod: transactions.paymentMethod,
+        plan: transactions.plan,
+        status: transactions.status,
+        updatedAt: transactions.updatedAt,
+      })
+      .from(transactions)
+      .where(eq(transactions.userId, userId))
+      .orderBy(desc(transactions.createdAt))
+      .limit(limit)
+      .offset(offset),
+    db
+      .select({ value: count() })
+      .from(transactions)
+      .where(eq(transactions.userId, userId)),
+  ]);
+
+  return {
+    items,
+    total: totalRows[0]?.value ?? 0,
+  };
 }

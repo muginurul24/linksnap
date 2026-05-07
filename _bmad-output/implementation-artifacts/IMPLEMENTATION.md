@@ -450,10 +450,10 @@ src/
 - [x] Handle renewal cron job (Vercel Cron)
 
 ### TASK 8.4 — Billing Page (API + Frontend)
-- File: `src/app/api/v1/payments/history/route.ts`
-- Return user's transaction history (paginated)
-- Dashboard billing page already created — connect to real data
-- Show: current plan, billing history, next billing date, upgrade CTA
+- [x] File: `src/app/api/v1/payments/history/route.ts`
+- [x] Return user's transaction history (paginated)
+- [x] Dashboard billing page already created — connect to real data
+- [x] Show: current plan, billing history, next billing date, upgrade CTA
 
 ### TASK 8.5 — Payment Tests
 - Unit: Midtrans signature verification, amount calculation

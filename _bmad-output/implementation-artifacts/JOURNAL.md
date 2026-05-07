@@ -2163,3 +2163,45 @@ Added subscription lifecycle management. Successful payment settlement now flows
 - ✅ No payment secrets or sensitive values logged.
 
 **Next Task:** 8.4 — Billing Page (API + Frontend)
+
+### 8.4 — Billing Page (API + Frontend)
+- **Date:** 2026-05-07 08:13 GMT+7
+- **Duration:** 0h 25m
+- **Status:** ✅ Complete
+
+**What I Did:**
+Connected billing to real payment and subscription data. Added a paginated payment history API, rendered the current plan and next billing date from the database, showed recent billing history, and added upgrade buttons that start a Midtrans checkout session through the create-payment endpoint.
+
+**Files Changed:**
+- `src/app/api/v1/payments/history/route.ts` — Added authenticated, rate-limited paginated payment history endpoint.
+- `src/app/(dashboard)/settings/billing/page.tsx` — Replaced static billing content with real plan, subscription, and transaction data.
+- `src/app/(dashboard)/settings/billing/upgrade-button.tsx` — Added client upgrade CTA that creates a Snap payment and redirects to Midtrans.
+- `src/lib/db/queries/payments.ts` — Added paginated payment transaction history query.
+- `src/lib/validations/payment.ts` — Added payment history query validation.
+- `tests/integration/payment-history-api.test.ts` — Added history API coverage for success, auth, validation, and rate limiting.
+- `tests/unit/payment-pricing-validation.test.ts` — Added history pagination validation coverage.
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Checked off Task 8.4.
+- `_bmad-output/implementation-artifacts/JOURNAL.md` — Recorded this completion entry.
+
+**Decisions Made:**
+- Billing page reads directly from server-side query helpers while exposing the separate API route for external/API consumers.
+- Upgrade CTA uses the existing create-payment route and redirects to Midtrans `redirectUrl`; no payment secrets are exposed to the client.
+- Billing history shows the most recent 10 transactions in the dashboard and leaves full pagination to the API.
+
+**Tests:**
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Unit/Integration: `rtk bun run test` — 59 files passed, 273 tests passed.
+- ✅ Build: `rtk bun run build` — Passed; `/api/v1/payments/history` is registered.
+
+**Issues Encountered:**
+- None.
+
+**Security Checks:**
+- ✅ Payment history input validated with Zod.
+- ✅ API route requires authentication.
+- ✅ API route applies plan-based rate limiting.
+- ✅ Billing page only loads data for the authenticated user.
+- ✅ Upgrade CTA calls server-side payment creation; no Midtrans server key reaches the browser.
+
+**Next Task:** 8.5 — Payment Tests

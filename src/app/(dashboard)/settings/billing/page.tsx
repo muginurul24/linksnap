@@ -1,86 +1,300 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { redirect } from "next/navigation";
+import { Building, Check, CreditCard, Sparkles, Zap } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { Check, Sparkles, Zap, Building } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { auth } from "@/lib/auth";
+import {
+  findBillingUserById,
+  findSubscriptionByUserId,
+  listPaymentTransactionsByUserId,
+  type BillingTransaction,
+} from "@/lib/db/queries/payments";
+import { syncSubscriptionStatusForUser } from "@/lib/payments/subscription";
+import type { UserPlan } from "@/lib/links/limits";
+import type { PaidPlan } from "@/lib/validations/payment";
+import { UpgradeButton } from "./upgrade-button";
 
-const plans = [
+type SessionWithUserId = {
+  user?: {
+    id?: unknown;
+  } | null;
+} | null;
+
+type PlanCard = {
+  description: string;
+  features: string[];
+  icon: typeof Zap;
+  name: string;
+  period: string;
+  plan: UserPlan;
+  price: string;
+};
+
+const plans: PlanCard[] = [
   {
-    name: "Free", price: "$0", period: "forever", icon: Zap,
-    description: "Perfect for getting started.", features: ["25 short links", "3 Link Pages", "2 Smart Rules per link", "10 QR codes", "30-day analytics", "Basic support"], current: true,
+    description: "For personal use and early experiments.",
+    features: ["25 short links", "3 Link Pages", "2 Smart Rules per link"],
+    icon: Zap,
+    name: "Free",
+    period: "forever",
+    plan: "FREE",
+    price: "$0",
   },
   {
-    name: "Pro", price: "$8", period: "per month", icon: Sparkles, highlighted: true,
-    description: "For power marketers and growing businesses.", features: ["500 short links", "50 Link Pages", "5 Smart Rules per link", "100 QR codes", "180-day analytics", "10 campaigns", "UTM auto-builder", "A/B split testing", "Link scheduler", "API access (500 req/hr)", "Custom branding", "Priority support"], current: false,
+    description: "For power marketers and growing teams.",
+    features: [
+      "500 short links",
+      "50 Link Pages",
+      "10 campaigns",
+      "A/B split testing",
+      "Priority support",
+    ],
+    icon: Sparkles,
+    name: "Pro",
+    period: "per month",
+    plan: "PRO",
+    price: "$8",
   },
   {
-    name: "Business", price: "$19", period: "per month", icon: Building,
-    description: "For teams and agencies at scale.", features: ["Unlimited short links", "Unlimited Link Pages", "Unlimited Smart Rules", "500 QR codes", "365-day analytics", "Unlimited campaigns", "Unlimited A/B variants", "Webhook callbacks", "API access (5000 req/hr)", "Export PDF + API"], current: false,
+    description: "For agencies and teams operating at scale.",
+    features: [
+      "Unlimited links",
+      "Unlimited campaigns",
+      "Unlimited A/B variants",
+      "Webhook callbacks",
+      "PDF and API exports",
+    ],
+    icon: Building,
+    name: "Business",
+    period: "per month",
+    plan: "BUSINESS",
+    price: "$19",
   },
 ];
 
-export default function BillingPage() {
+function getSessionUserId(session: SessionWithUserId): string | null {
+  return typeof session?.user?.id === "string" ? session.user.id : null;
+}
+
+function formatDate(date: Date | null): string {
+  if (!date) return "Not scheduled";
+
+  return new Intl.DateTimeFormat("en", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  }).format(date);
+}
+
+function formatCurrencyIdr(amount: number): string {
+  return new Intl.NumberFormat("id-ID", {
+    currency: "IDR",
+    maximumFractionDigits: 0,
+    style: "currency",
+  }).format(amount);
+}
+
+function formatPaymentStatus(status: BillingTransaction["status"]): string {
+  return status
+    .toLowerCase()
+    .split("_")
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
+}
+
+function getStatusVariant(
+  status: BillingTransaction["status"],
+): "default" | "destructive" | "outline" | "secondary" {
+  if (status === "SETTLEMENT") return "default";
+  if (status === "PENDING") return "secondary";
+  if (status === "CANCEL" || status === "DENY" || status === "EXPIRE") {
+    return "destructive";
+  }
+
+  return "outline";
+}
+
+function getCurrentPlanConfig(plan: UserPlan): PlanCard {
+  return plans.find((item) => item.plan === plan) ?? plans[0];
+}
+
+export default async function BillingPage() {
+  const session = await auth();
+  const userId = getSessionUserId(session);
+
+  if (!userId) redirect("/login");
+
+  await syncSubscriptionStatusForUser(userId);
+
+  const [billingUser, subscription, history] = await Promise.all([
+    findBillingUserById(userId),
+    findSubscriptionByUserId(userId),
+    listPaymentTransactionsByUserId({ limit: 10, page: 1, userId }),
+  ]);
+
+  if (!billingUser) redirect("/login");
+
+  const currentPlan = getCurrentPlanConfig(billingUser.plan);
+  const isActivePaidSubscription =
+    subscription?.status === "ACTIVE" && billingUser.plan !== "FREE";
+
   return (
     <>
       <div>
         <h1 className="text-2xl font-bold tracking-tight">Billing</h1>
-        <p className="text-sm text-muted-foreground">Manage your subscription and billing details.</p>
+        <p className="text-sm text-muted-foreground">
+          Manage your subscription and billing details.
+        </p>
       </div>
 
       <Card>
         <CardHeader>
           <CardTitle className="text-base">Current Plan</CardTitle>
-          <CardDescription>You are on the Free plan.</CardDescription>
+          <CardDescription>
+            {isActivePaidSubscription
+              ? `Renews on ${formatDate(subscription.currentPeriodEnd)}.`
+              : "You are currently on the Free plan."}
+          </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center justify-between rounded-lg border bg-muted/50 p-4">
+          <div className="flex flex-col gap-4 rounded-lg border bg-muted/50 p-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-3">
               <div className="flex aspect-square size-10 items-center justify-center rounded-lg bg-primary/10">
-                <Zap className="size-5 text-primary" />
+                <currentPlan.icon className="size-5 text-primary" />
               </div>
               <div>
-                <p className="font-medium">Free Plan</p>
-                <p className="text-xs text-muted-foreground">25 links · 3 Link Pages · 10 QR codes</p>
+                <p className="font-medium">{currentPlan.name} Plan</p>
+                <p className="text-xs text-muted-foreground">
+                  Next billing date:{" "}
+                  {isActivePaidSubscription
+                    ? formatDate(subscription.currentPeriodEnd)
+                    : "Not scheduled"}
+                </p>
               </div>
             </div>
-            <Badge>Active</Badge>
+            <Badge variant={isActivePaidSubscription ? "default" : "secondary"}>
+              {subscription?.status === "ACTIVE" ? "Active" : "Free"}
+            </Badge>
           </div>
         </CardContent>
       </Card>
 
       <div className="grid gap-4 lg:grid-cols-3">
-        {plans.map((plan) => (
-          <Card key={plan.name} className={plan.highlighted ? "border-primary shadow-lg ring-1 ring-primary" : ""}>
-            <CardHeader>
-              <div className="flex items-center gap-2 mb-2">
-                <plan.icon className="size-5 text-primary" />
-                <CardTitle>{plan.name}</CardTitle>
-              </div>
-              <div className="flex items-baseline gap-1">
-                <span className="text-3xl font-bold">{plan.price}</span>
-                <span className="text-sm text-muted-foreground">/{plan.period}</span>
-              </div>
-              <CardDescription>{plan.description}</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <ul className="space-y-2 mb-6">
-                {plan.features.map((f) => (
-                  <li key={f} className="flex items-start gap-2 text-sm">
-                    <Check className="mt-0.5 size-4 text-emerald-500 shrink-0" />
-                    {f}
-                  </li>
-                ))}
-              </ul>
-              <Button
-                className="w-full"
-                variant={plan.highlighted ? "default" : "outline"}
-                disabled={plan.current}
-              >
-                {plan.current ? "Current Plan" : `Upgrade to ${plan.name}`}
-              </Button>
-            </CardContent>
-          </Card>
-        ))}
+        {plans.map((plan) => {
+          const isCurrent = plan.plan === billingUser.plan;
+
+          return (
+            <Card
+              key={plan.name}
+              className={isCurrent ? "border-primary ring-1 ring-primary" : ""}
+            >
+              <CardHeader>
+                <div className="mb-2 flex items-center gap-2">
+                  <plan.icon className="size-5 text-primary" />
+                  <CardTitle>{plan.name}</CardTitle>
+                </div>
+                <div className="flex items-baseline gap-1">
+                  <span className="text-3xl font-bold">{plan.price}</span>
+                  <span className="text-sm text-muted-foreground">
+                    /{plan.period}
+                  </span>
+                </div>
+                <CardDescription>{plan.description}</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ul className="mb-6 space-y-2">
+                  {plan.features.map((feature) => (
+                    <li key={feature} className="flex items-start gap-2 text-sm">
+                      <Check className="mt-0.5 size-4 shrink-0 text-emerald-500" />
+                      {feature}
+                    </li>
+                  ))}
+                </ul>
+                {plan.plan === "FREE" ? (
+                  <Button className="w-full" disabled variant="secondary">
+                    <CreditCard className="size-4" />
+                    {isCurrent ? "Current Plan" : "Included"}
+                  </Button>
+                ) : (
+                  <UpgradeButton current={isCurrent} plan={plan.plan as PaidPlan} />
+                )}
+              </CardContent>
+            </Card>
+          );
+        })}
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Billing History</CardTitle>
+          <CardDescription>
+            Latest {history.items.length} of {history.total} payment transactions.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {history.items.length === 0 ? (
+            <div className="rounded-lg border border-dashed p-6 text-sm text-muted-foreground">
+              No payments yet.
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Order</TableHead>
+                    <TableHead>Plan</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Method</TableHead>
+                    <TableHead className="text-right">Amount</TableHead>
+                    <TableHead className="text-right">Paid</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {history.items.map((transaction) => (
+                    <TableRow key={transaction.id}>
+                      <TableCell className="font-mono text-xs">
+                        {transaction.orderId}
+                      </TableCell>
+                      <TableCell>
+                        {transaction.plan} / {transaction.duration}
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={getStatusVariant(transaction.status)}>
+                          {formatPaymentStatus(transaction.status)}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-muted-foreground">
+                        {transaction.paymentMethod ?? "Pending"}
+                      </TableCell>
+                      <TableCell className="text-right font-medium tabular-nums">
+                        {formatCurrencyIdr(transaction.grossAmountIdr)}
+                      </TableCell>
+                      <TableCell className="text-right text-muted-foreground">
+                        {formatDate(transaction.paidAt)}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </>
   );
 }

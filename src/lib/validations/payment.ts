@@ -10,6 +10,13 @@ export const createPaymentSchema = z
   })
   .strict();
 
+export const paymentHistoryQuerySchema = z
+  .object({
+    limit: z.coerce.number().int().min(1).max(100).default(20),
+    page: z.coerce.number().int().min(1).default(1),
+  })
+  .strict();
+
 export const midtransWebhookNotificationSchema = z
   .object({
     fraud_status: z.string().optional(),
@@ -25,6 +32,7 @@ export const midtransWebhookNotificationSchema = z
   .passthrough();
 
 export type CreatePaymentInput = z.infer<typeof createPaymentSchema>;
+export type PaymentHistoryQuery = z.infer<typeof paymentHistoryQuerySchema>;
 export type MidtransWebhookNotification = z.infer<
   typeof midtransWebhookNotificationSchema
 >;

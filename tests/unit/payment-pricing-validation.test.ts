@@ -5,7 +5,10 @@ import {
   getUsdIdrRate,
   PaymentConfigurationError,
 } from "../../src/lib/payments/pricing";
-import { createPaymentSchema } from "../../src/lib/validations/payment";
+import {
+  createPaymentSchema,
+  paymentHistoryQuerySchema,
+} from "../../src/lib/validations/payment";
 
 const originalUsdIdrRate = process.env.USD_IDR_RATE;
 
@@ -57,5 +60,22 @@ describe("payment validation and pricing", () => {
     process.env.USD_IDR_RATE = "0";
 
     expect(() => getUsdIdrRate()).toThrow(PaymentConfigurationError);
+  });
+
+  it("should validate payment history pagination", () => {
+    const parsed = paymentHistoryQuerySchema.safeParse({
+      limit: "10",
+      page: "2",
+    });
+
+    expect(parsed.success).toBe(true);
+    if (!parsed.success) return;
+    expect(parsed.data).toEqual({
+      limit: 10,
+      page: 2,
+    });
+    expect(paymentHistoryQuerySchema.safeParse({ limit: "101" }).success).toBe(
+      false,
+    );
   });
 });
