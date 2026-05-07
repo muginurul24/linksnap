@@ -5335,3 +5335,35 @@ Improved password-change UX with per-field show/hide toggles, a visible success 
 - ✅ No secrets, raw SQL, or `dangerouslySetInnerHTML` introduced.
 
 **Next Task:** 16.5 — Notification Persistence
+
+### 16.5 — Notification Persistence
+- **Date:** 2026-05-07 23:18 GMT+7
+- **Duration:** 0h 15m
+- **Status:** ✅ Complete
+
+**What I Did:**
+Verified that notification preferences already save through the settings API, update local form state from the API response, and load back through settings page data. Added integration coverage for save → reload so JSON preference persistence is locked down.
+
+**Files Changed:**
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Checked off Task 16.5.
+- `tests/integration/settings-api.test.ts` — Added save-and-reload notification preference coverage through `loadSettingsPageData`.
+
+**Decisions Made:**
+- Kept production code unchanged because the form already applies the saved response immediately and the query layer already loads the JSON column with null fallback.
+- Tested reload through the page data loader instead of duplicating route assertions, because that matches the settings page data path users hit after navigation.
+
+**Tests:**
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Targeted Integration: `rtk bun run test -- tests/integration/settings-api.test.ts tests/integration/settings-page-data.test.ts` — 2 files passed, 10 tests passed.
+- ✅ Unit/Integration: `rtk bun run test` — 111 files passed, 500 tests passed.
+
+**Issues Encountered:**
+- None.
+
+**Security Checks:**
+- ✅ Notification updates remain authenticated and validated.
+- ✅ No secrets, raw SQL, or `dangerouslySetInnerHTML` introduced.
+- ✅ The test keeps ownership scoped to the authenticated user fixture.
+
+**Next Task:** 16.6 — Change Email Flow

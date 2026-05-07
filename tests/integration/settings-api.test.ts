@@ -13,6 +13,7 @@ type MockSettingsUser = {
   email: string;
   name: string | null;
   notifications: UserNotificationPreferences;
+  twoFactorEnabled: boolean;
 };
 
 type RateLimitOptions = {
@@ -57,6 +58,7 @@ const mockState = vi.hoisted(() => ({
       productUpdates: true,
       weeklyAnalyticsReport: true,
     },
+    twoFactorEnabled: false,
   } as MockSettingsUser | null,
 }));
 
@@ -78,7 +80,12 @@ vi.mock("@/lib/redis/rate-limit", () => ({
   },
 }));
 
+vi.mock("@/lib/db/queries/api-keys", () => ({
+  listApiKeysByUserId: async () => [],
+}));
+
 vi.mock("@/lib/db/queries/settings", () => ({
+  findSettingsUserById: async () => mockState.user,
   updateSettingsUserNotifications: async ({
     notifications,
   }: {
@@ -103,6 +110,7 @@ vi.mock("@/lib/db/queries/settings", () => ({
 
 import { PATCH as patchNotifications } from "../../src/app/api/v1/settings/notifications/route";
 import { PATCH as patchProfile } from "../../src/app/api/v1/settings/profile/route";
+import { loadSettingsPageData } from "../../src/app/(dashboard)/settings/settings-page-data";
 
 function createJsonRequest(path: string, body: unknown): NextRequest {
   return new Request(`http://localhost:3000${path}`, {
@@ -129,6 +137,7 @@ describe("settings API", () => {
       email: "user@example.com",
       name: "User",
       notifications: { ...defaultNotifications },
+      twoFactorEnabled: false,
     };
   });
 
@@ -192,6 +201,31 @@ describe("settings API", () => {
     if (!body.success) return;
     expect(body.data.notifications).toEqual(notifications);
     expect(mockState.user?.notifications).toEqual(notifications);
+  });
+
+  it("should keep notification preferences intact after save and reload", async () => {
+    const notifications: UserNotificationPreferences = {
+      linkPerformanceAlerts: false,
+      paymentConfirmations: false,
+      productUpdates: true,
+      weeklyAnalyticsReport: false,
+    };
+
+    const response = await patchNotifications(
+      createJsonRequest("/api/v1/settings/notifications", notifications),
+    );
+    const body = await readJson<{
+      notifications: UserNotificationPreferences;
+    }>(response);
+
+    expect(response.status).toBe(200);
+    expect(body.success).toBe(true);
+
+    const pageData = await loadSettingsPageData(USER_ID);
+
+    expect(pageData.status).toBe("ready");
+    if (pageData.status !== "ready") return;
+    expect(pageData.settingsUser.notifications).toEqual(notifications);
   });
 
   it("should reject unauthenticated settings updates", async () => {

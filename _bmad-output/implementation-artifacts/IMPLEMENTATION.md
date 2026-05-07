@@ -1302,9 +1302,9 @@ rtk bun run db:studio    # Open Drizzle Studio (in another terminal)
 - [x] Tests: unit (password toggle, success UX)
 
 ### TASK 16.5 — Notification Persistence
-- [ ] Verify `notifications` JSON column loads correctly from DB
-- [ ] After save, update local state immediately (no page reload needed)
-- [ ] Tests: integration (save → reload → preferences intact)
+- [x] Verify `notifications` JSON column loads correctly from DB
+- [x] After save, update local state immediately (no page reload needed)
+- [x] Tests: integration (save → reload → preferences intact)
 
 ### TASK 16.6 — Change Email Flow
 - [ ] Create `src/app/api/v1/auth/change-email/route.ts` — POST: require password, send OTP to new email
