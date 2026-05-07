@@ -1313,11 +1313,11 @@ rtk bun run db:studio    # Open Drizzle Studio (in another terminal)
 - [x] Tests: integration (change email full flow)
 
 ### TASK 16.7 — Delete Account
-- [ ] Create `src/app/api/v1/auth/delete-account/route.ts` — POST: require password, soft-delete user + cascade
-- [ ] Add `deletedAt` to users table
-- [ ] Settings Security tab bottom: red warning card + "Delete My Account" → confirm dialog → password → final
-- [ ] After delete: sign out all sessions, redirect to landing
-- [ ] Tests: integration (delete account → login rejected)
+- [x] Create `src/app/api/v1/auth/delete-account/route.ts` — POST: require password, soft-delete user + cascade
+- [x] Add `deletedAt` to users table
+- [x] Settings Security tab bottom: red warning card + "Delete My Account" → confirm dialog → password → final
+- [x] After delete: sign out all sessions, redirect to landing
+- [x] Tests: integration (delete account → login rejected)
 
 ### TASK 16.8 — Logout Loading State
 - [ ] File: `src/components/dashboard/app-sidebar.tsx`

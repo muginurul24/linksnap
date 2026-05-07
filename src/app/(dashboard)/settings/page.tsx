@@ -16,6 +16,7 @@ import {
 } from "@/app/(dashboard)/settings/api-keys-panel";
 import {
   ChangeEmailForm,
+  DeleteAccountPanel,
   NotificationsSettingsForm,
   ProfileSettingsForm,
   SecuritySettingsForm,
@@ -158,6 +159,19 @@ export default async function SettingsPage({ searchParams }: SettingsPageProps) 
                 <TwoFactorSettingsPanel
                   initialEnabled={settingsData.settingsUser.twoFactorEnabled}
                 />
+              </CardContent>
+            </Card>
+            <Card className="border-destructive/40 bg-destructive/5">
+              <CardHeader>
+                <CardTitle className="text-base text-destructive">
+                  Danger Zone
+                </CardTitle>
+                <CardDescription>
+                  Delete your account and remove account-owned data.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <DeleteAccountPanel />
               </CardContent>
             </Card>
           </TabsContent>

@@ -5407,3 +5407,44 @@ Added a password-confirmed email change flow that sends an OTP to the requested 
 - ✅ No secrets, raw SQL, or `dangerouslySetInnerHTML` introduced.
 
 **Next Task:** 16.7 — Delete Account
+
+### 16.7 — Delete Account
+- **Date:** 2026-05-07 23:25 GMT+7
+- **Duration:** 0h 45m
+- **Status:** ✅ Complete
+
+**What I Did:**
+Added password-confirmed account deletion with a soft-deleted user row, anonymized login identifiers, and cleanup of account-owned records. Added the Settings danger zone UI and signs the user out to the landing page after deletion.
+
+**Files Changed:**
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Checked off Task 16.7.
+- `src/lib/db/schema.ts` — Added `deletedAt` to users.
+- `src/lib/db/queries/account-deletion.ts` — Added account deletion lookup and soft-delete cleanup transaction.
+- `src/app/api/v1/auth/delete-account/route.ts` — Added password-confirmed delete account endpoint.
+- `src/app/(dashboard)/settings/page.tsx` — Added Danger Zone card in the Security tab.
+- `src/app/(dashboard)/settings/settings-forms.tsx` — Added delete account dialog and sign-out flow.
+- `src/lib/auth/credentials.ts`, `src/lib/auth/index.ts`, `src/lib/db/queries/two-factor.ts` — Prevented deleted accounts from signing in.
+- `src/lib/validations/auth.ts` — Added delete account schema.
+- `tests/integration/delete-account-flow.test.ts` — Added delete account and login rejection coverage.
+
+**Decisions Made:**
+- Kept the user row for auditability while anonymizing email, Google ID, name, avatar, and password so future login and uniqueness conflicts are blocked.
+- Deleted account-owned operational data through Drizzle inside a transaction instead of hard-deleting the user row.
+
+**Tests:**
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Database: `rtk bun run db:push` — Changes applied.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Targeted Integration: `rtk bun run test -- tests/integration/delete-account-flow.test.ts tests/integration/two-factor-auth-flow.test.ts tests/integration/auth-flow.test.ts` — 3 files passed, 6 tests passed.
+- ✅ Unit/Integration: `rtk bun run test` — 113 files passed, 504 tests passed.
+
+**Issues Encountered:**
+- None.
+
+**Security Checks:**
+- ✅ Account deletion requires authenticated session and current password verification.
+- ✅ Deleted users cannot sign in with credentials or Google OAuth.
+- ✅ Account-owned data cleanup uses Drizzle queries, not raw SQL.
+- ✅ No secrets or `dangerouslySetInnerHTML` introduced.
+
+**Next Task:** 16.8 — Logout Loading State

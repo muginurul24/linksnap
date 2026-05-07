@@ -26,6 +26,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           where: eq(users.email, profile.email),
         });
         if (existing) {
+          if (existing.deletedAt) {
+            throw new Error("Account has been deleted.");
+          }
           if (!existing.googleId) {
             await db
               .update(users)

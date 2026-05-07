@@ -4,6 +4,7 @@ import { users } from "@/lib/db/schema";
 
 export type TwoFactorLoginUser = {
   avatarUrl: string | null;
+  deletedAt: Date | null;
   email: string;
   emailVerified: Date | null;
   id: string;
@@ -16,6 +17,7 @@ export type TwoFactorLoginUser = {
 
 const loginUserColumns = {
   avatarUrl: users.avatarUrl,
+  deletedAt: users.deletedAt,
   email: users.email,
   emailVerified: users.emailVerified,
   id: users.id,

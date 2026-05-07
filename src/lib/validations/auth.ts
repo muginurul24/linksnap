@@ -129,6 +129,14 @@ export const verifyNewEmailSchema = z
 
 export type VerifyNewEmailInput = z.infer<typeof verifyNewEmailSchema>;
 
+export const deleteAccountSchema = z
+  .object({
+    password: z.string().min(1, "Password is required"),
+  })
+  .strict();
+
+export type DeleteAccountInput = z.infer<typeof deleteAccountSchema>;
+
 export const forgotPasswordSchema = z
   .object({
     email: emailSchema,

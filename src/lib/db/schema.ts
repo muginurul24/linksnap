@@ -72,6 +72,7 @@ export const users = pgTable("users", {
     .notNull(),
   plan: planEnum("plan").default("FREE").notNull(),
   role: varchar("role", { length: 20 }).default("user").notNull(),
+  deletedAt: timestamp("deleted_at"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });

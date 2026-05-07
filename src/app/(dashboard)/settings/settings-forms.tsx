@@ -1,11 +1,20 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { signOut } from "next-auth/react";
 import { type FormEvent, useEffect, useRef, useState } from "react";
-import { Eye, EyeOff, Loader2, Save } from "lucide-react";
+import { Eye, EyeOff, Loader2, Save, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { PasswordStrengthIndicator } from "@/components/auth/password-strength-indicator";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
@@ -708,5 +717,107 @@ export function SecuritySettingsForm() {
         Update Password
       </Button>
     </form>
+  );
+}
+
+export function DeleteAccountPanel() {
+  const [open, setOpen] = useState(false);
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  async function deleteAccount(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setError(null);
+    setIsDeleting(true);
+
+    try {
+      const response = await fetch("/api/v1/auth/delete-account", {
+        body: JSON.stringify({ password }),
+        headers: {
+          "content-type": "application/json",
+          "X-Requested-With": "XMLHttpRequest",
+        },
+        method: "POST",
+      });
+      const body = await readResponse<undefined>(response);
+
+      if (!body.success) {
+        setError(body.error.message);
+        return;
+      }
+
+      toast.success("Account deleted");
+      await signOut({ callbackUrl: "/" });
+    } catch {
+      setError("Unable to delete account.");
+    } finally {
+      setIsDeleting(false);
+    }
+  }
+
+  return (
+    <>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <p className="text-sm font-medium text-destructive">Delete My Account</p>
+          <p className="text-xs text-muted-foreground">
+            This removes your links, campaigns, API keys, billing records, and login access.
+          </p>
+        </div>
+        <Button
+          onClick={() => setOpen(true)}
+          size="sm"
+          type="button"
+          variant="destructive"
+        >
+          <Trash2 className="size-4" />
+          Delete My Account
+        </Button>
+      </div>
+
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete account</DialogTitle>
+            <DialogDescription>
+              Confirm your password to permanently disable login and remove account data.
+            </DialogDescription>
+          </DialogHeader>
+          <form className="space-y-4" onSubmit={(event) => void deleteAccount(event)}>
+            <div className="space-y-1.5">
+              <Label htmlFor="delete-account-password">Password</Label>
+              <Input
+                autoComplete="current-password"
+                disabled={isDeleting}
+                id="delete-account-password"
+                onChange={(event) => {
+                  setPassword(event.target.value);
+                  setError(null);
+                }}
+                type="password"
+                value={password}
+              />
+            </div>
+            {error ? (
+              <div className="rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+                {error}
+              </div>
+            ) : null}
+            <DialogFooter>
+              <Button
+                aria-busy={isDeleting}
+                disabled={!password || isDeleting}
+                type="submit"
+                variant="destructive"
+              >
+                {isDeleting ? <Loader2 className="size-4 animate-spin" /> : null}
+                Delete account
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }

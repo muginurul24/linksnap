@@ -69,7 +69,7 @@ async function authorizeChallengeCredentials(
   if (!challenge) return null;
 
   const user = await findTwoFactorLoginUserById(challenge.userId);
-  if (!user?.emailVerified) return null;
+  if (!user?.emailVerified || user.deletedAt) return null;
 
   if (challenge.kind === "password") {
     await deleteTwoFactorChallenge(challengeId);
@@ -135,7 +135,7 @@ export async function authorizeCredentials(
 
   const user = await findTwoFactorLoginUserByEmail(email);
 
-  if (!user?.passwordHash) return null;
+  if (!user?.passwordHash || user.deletedAt) return null;
 
   const valid = await verifyPassword(password, user.passwordHash);
   if (!valid) return null;
