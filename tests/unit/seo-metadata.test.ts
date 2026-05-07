@@ -71,6 +71,8 @@ describe("SEO metadata routes", () => {
       "https://www.justqiu.cloud/",
       "https://www.justqiu.cloud/pricing",
       "https://www.justqiu.cloud/blog",
+      "https://www.justqiu.cloud/terms",
+      "https://www.justqiu.cloud/privacy",
     ]);
     expect(urls).not.toContain("https://www.justqiu.cloud/login");
   });

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, CalendarDays, Clock, Zap } from "lucide-react";
+import { MarketingFooter } from "@/components/landing/marketing-footer";
 import {
   getBlogPostBySlug,
   getBlogPostSlugs,
@@ -228,6 +229,7 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
           <div className="space-y-7">{articleBlocks.map(renderBlock)}</div>
         </Container>
       </article>
+      <MarketingFooter />
     </main>
   );
 }
