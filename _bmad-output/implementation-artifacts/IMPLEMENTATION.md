@@ -938,23 +938,23 @@ rtk bun run db:studio    # Open Drizzle Studio (in another terminal)
 - [x] Tests: unit (form validation, add/remove/reorder rules, condition rendering)
 
 ### TASK 13.3 — Rule Engine Logic (Ordered Priority)
-- [ ] File: `src/lib/rules/rule-engine.ts`
-- [ ] Rules are evaluated in display order (first rule = highest priority)
-- [ ] Logic per rule:
+- [x] File: `src/lib/rules/rule-engine.ts`
+- [x] Rules are evaluated in display order (first rule = highest priority)
+- [x] Logic per rule:
   1. Check if `isActive === false` → skip to next rule
   2. Check ALL conditions with AND logic (all must match)
   3. If all conditions match → return rule's destination URL (first-match-wins)
   4. If no conditions match → continue to next rule
-- [ ] If smart rules toggle is OFF (inactive for entire link): ALL visitors → moneysite (normal redirect, ignore rules)
-- [ ] If smart rules toggle is ON but NO rules match:
+- [x] If smart rules toggle is OFF (inactive for entire link): ALL visitors → moneysite (normal redirect, ignore rules)
+- [x] If smart rules toggle is ON but NO rules match:
   - If fallback/default destination URL is set → redirect there
   - If no fallback → redirect to moneysite (default destination)
-- [ ] Bot detection: parse `user-agent` header against predefined pattern list
+- [x] Bot detection: parse `user-agent` header against predefined pattern list
   - Predefined bots: Googlebot, Bingbot, FacebookExternalHit, Twitterbot, Slurp, DuckDuckBot, Baiduspider, YandexBot, AhrefsBot, SemrushBot, GPTBot, Claude-Web, CCBot
   - Case-insensitive substring match (simpler than regex for bot detection, handles UA variations)
-- [ ] Country detection: already handled by `src/lib/geo/geoip.ts` (MaxMind GeoLite2)
-- [ ] Device detection: already handled by `src/lib/geo/device-detector.ts`
-- [ ] Tests: unit (rule matching, priority order, bot detection, inactive rules, no-match fallback)
+- [x] Country detection: already handled by `src/lib/geo/geoip.ts` (MaxMind GeoLite2)
+- [x] Device detection: already handled by `src/lib/geo/device-detector.ts`
+- [x] Tests: unit (rule matching, priority order, bot detection, inactive rules, no-match fallback)
 
 ### TASK 13.4 — Smart Rules API Update
 - [ ] File: `src/app/api/v1/links/[id]/rules/route.ts`

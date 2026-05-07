@@ -3974,3 +3974,81 @@ Added a reusable visual Smart Rule builder with active toggles, per-rule destina
 - ✅ Bot custom patterns remain local form strings and are not executed as regex.
 
 **Next Task:** 13.3 — Rule Engine Logic (Ordered Priority)
+
+### 13.3 — Rule Engine Logic (Ordered Priority)
+- **Date:** 2026-05-07 18:41 GMT+7
+- **Duration:** 0h 30m
+- **Status:** ✅ Complete
+
+**What I Did:**
+Extended the Smart Rules engine for V2 ordered rule evaluation. V2 rules now support active/inactive state, AND condition matching, first-match-wins display order, bot user-agent matching, fallback destinations, and default-destination behavior when Smart Rules are disabled or no rules match.
+
+**Files Changed:**
+- `_bmad-output/planning-artifacts/spec-smart-rules-ordered-engine.md` — Added task spec and risk notes.
+- `src/lib/rules/rule-engine.ts` — Added V2 rule payload detection, ordered evaluation, inactive-rule skip logic, bot/country/device/time condition matching, and fallback/default destination handling.
+- `tests/unit/rule-engine.test.ts` — Added coverage for display order, inactive rules, AND matching, bot detection, fallback/default destinations, and disabled Smart Rules.
+- `src/lib/rules/rule-builder.ts` — Aligned builder helper naming and V2 time-range values with the engine contract.
+- `src/components/smart-rules/rule-builder.tsx` — Updated builder state wiring to the aligned helper API.
+- `tests/unit/rule-builder.test.ts` — Updated builder helper coverage for the aligned V2 draft model.
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Checked off Task 13.3.
+- `_bmad-output/implementation-artifacts/JOURNAL.md` — Recorded this completion entry.
+
+**Decisions Made:**
+- V2 rules are detected by a `condition.conditions` payload, so legacy single-condition rules remain readable by the same engine.
+- Display order uses ascending priority because API task 13.4 will store the visible rule order as priority.
+- Bot matching uses case-insensitive substring checks against predefined/custom values, not regex execution.
+- Fallback handling returns `ruleId: null` so click logging can distinguish direct fallback/default redirects from rule matches.
+
+**Tests:**
+- ✅ Targeted: `rtk bun run test -- tests/unit/rule-builder.test.ts tests/unit/rule-engine.test.ts` — 2 files passed, 20 tests passed.
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+
+**Issues Encountered:**
+- The current branch already contained Task 13.2 work; I kept the builder changes aligned with the V2 rule engine contract instead of changing persistence or link-form integration in this task.
+
+**Security Checks:**
+- ✅ No database schema or ownership surface changed in this task.
+- ✅ No raw SQL, secrets, or `dangerouslySetInnerHTML` introduced.
+- ✅ Custom bot values are matched as plain substrings and are not executed as regex.
+- ✅ URL fallback values remain validated at the API/UI boundary; engine only evaluates already-stored rule data.
+
+**Next Task:** 13.4 — Smart Rules API Update
+
+### 13.3 — Rule Engine Logic (Ordered Priority)
+- **Date:** 2026-05-07 18:40 GMT+7
+- **Duration:** 0h 25m
+- **Status:** ✅ Complete
+
+**What I Did:**
+Updated the Smart Rules engine to evaluate rules in saved display order and added V2 multi-condition support. V2 rules now support inactive skips, AND condition logic, first-match-wins behavior, country/device/time matching, bot user-agent matching, configured fallback destinations, and default-destination behavior when Smart Rules are disabled or no V2 rule matches.
+
+**Files Changed:**
+- `_bmad-output/planning-artifacts/spec-smart-rules-ordered-engine.md` — Added engine spec and compatibility risk.
+- `src/lib/rules/rule-engine.ts` — Added V2 payload detection, ordered evaluation, inactive-rule skips, AND condition matching, bot detection, fallback/default destination handling, and nullable rule IDs for non-rule fallback redirects.
+- `tests/unit/rule-engine.test.ts` — Updated ordering expectation and added V2 active, AND, bot, fallback, and disabled-rule tests.
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Checked off Task 13.3.
+- `_bmad-output/implementation-artifacts/JOURNAL.md` — Recorded this completion entry.
+
+**Decisions Made:**
+- Kept legacy GEO/DEVICE/TIME/LANGUAGE rule matching intact while detecting V2 rules from the existing JSON `condition` payload.
+- Changed priority semantics to ascending display order to match Phase 13; the first stored rule now has highest precedence.
+- Fallback/default redirects return `ruleId: null` so analytics do not attribute non-rule fallback traffic to a Smart Rule row.
+
+**Tests:**
+- ✅ Targeted: `rtk bun run test -- tests/unit/rule-engine.test.ts` — 1 file passed, 12 tests passed.
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Unit/Integration: `rtk bun run test` — 92 files passed, 422 tests passed.
+
+**Issues Encountered:**
+- Cached rule test state caused mid-test rule mutations to reuse the previous cached rules → Reset the test cache where the test intentionally changes mocked database rules.
+- TypeScript required the optional fallback URL field to use `undefined` instead of `null` → Normalized that field in the V2 payload parser.
+
+**Security Checks:**
+- ✅ Bot patterns are case-insensitive substring checks, not executable regex supplied by users.
+- ✅ Country and device detection use existing trusted parser/lookup helpers.
+- ✅ No raw SQL, secrets, or `dangerouslySetInnerHTML` introduced.
+- ✅ Fallback behavior does not bypass existing redirect availability checks in the route handlers.
+
+**Next Task:** 13.4 — Smart Rules API Update
