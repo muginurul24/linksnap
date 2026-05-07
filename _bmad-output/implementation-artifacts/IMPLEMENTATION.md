@@ -747,12 +747,12 @@ rtk bun run db:studio    # Open Drizzle Studio (in another terminal)
 ```
 
 ### TASK 12.11 — Fix Sidebar Active Route for Settings
-- [ ] File: `src/components/dashboard/app-sidebar.tsx`
-- [ ] The `isActive` function uses `pathname.startsWith(url)` for all routes
-- [ ] Bug: when on `/settings/billing`, both "Settings" AND "Billing" highlight because `/settings/billing` starts with `/settings`
-- [ ] Fix: add special case like dashboard: `if (url === "/settings") return pathname === "/settings"`
-- [ ] This ensures `/settings/billing` only highlights "Billing", not "Settings"
-- [ ] Tests: unit (sidebar active state for `/settings` vs `/settings/billing`)
+- [x] File: `src/components/dashboard/app-sidebar.tsx`
+- [x] The `isActive` function uses `pathname.startsWith(url)` for all routes
+- [x] Bug: when on `/settings/billing`, both "Settings" AND "Billing" highlight because `/settings/billing` starts with `/settings`
+- [x] Fix: add special case like dashboard: `if (url === "/settings") return pathname === "/settings"`
+- [x] This ensures `/settings/billing` only highlights "Billing", not "Settings"
+- [x] Tests: unit (sidebar active state for `/settings` vs `/settings/billing`)
 
 ### TASK 12.12 — API Documentation Page (Paid Users)
 - [ ] Create `src/app/(dashboard)/docs/page.tsx` — API reference page
