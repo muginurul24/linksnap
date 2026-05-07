@@ -1,13 +1,12 @@
 import type { Metadata } from "next";
-import { after } from "next/server";
 import { headers } from "next/headers";
 import { notFound, permanentRedirect } from "next/navigation";
 import { LinkPageRenderer } from "@/components/link-page/link-page-renderer";
 import {
   buildRedirectClickInput,
-  logRedirectClick,
   type RedirectClickInput,
 } from "@/lib/analytics/click-logger";
+import { recordRedirectClick } from "@/lib/analytics/click-queue";
 import {
   findPublicLinkPageByLinkId,
   findRedirectLinkBySlug,
@@ -53,10 +52,8 @@ async function getRedirectLink(slug: string): Promise<RedirectLink | null> {
   return link;
 }
 
-function scheduleClickLog(input: RedirectClickInput): void {
-  after(() => {
-    void logRedirectClick(input);
-  });
+async function recordClickLog(input: RedirectClickInput): Promise<void> {
+  await recordRedirectClick(input);
 }
 
 export async function generateMetadata({
@@ -91,7 +88,7 @@ export default async function RedirectPage({ params }: RedirectPageProps) {
         link.slug,
       );
 
-      scheduleClickLog(
+      await recordClickLog(
         buildRedirectClickInput(link.id, headersList, {
           eventType: "LINK_PAGE_VIEW",
           linkPageHasCountdown,
@@ -122,7 +119,7 @@ export default async function RedirectPage({ params }: RedirectPageProps) {
         linkId: link.id,
       });
 
-  scheduleClickLog(
+  await recordClickLog(
     buildRedirectClickInput(link.id, headersList, {
       eventType: "DIRECT_REDIRECT",
       ruleId: ruleResult?.ruleId ?? null,

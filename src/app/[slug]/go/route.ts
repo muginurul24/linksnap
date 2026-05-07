@@ -1,10 +1,10 @@
 import { headers } from "next/headers";
-import { after, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import {
   buildRedirectClickInput,
-  logRedirectClick,
   type RedirectClickInput,
 } from "@/lib/analytics/click-logger";
+import { recordRedirectClick } from "@/lib/analytics/click-queue";
 import {
   findPublicLinkPageByLinkId,
   findRedirectLinkBySlug,
@@ -52,10 +52,8 @@ async function getRedirectLink(slug: string): Promise<RedirectLink | null> {
   return link;
 }
 
-function scheduleClickLog(input: RedirectClickInput): void {
-  after(() => {
-    void logRedirectClick(input);
-  });
+async function recordClickLog(input: RedirectClickInput): Promise<void> {
+  await recordRedirectClick(input);
 }
 
 function notFoundResponse(): Response {
@@ -94,7 +92,7 @@ export async function GET(request: Request, context: LinkPageCtaRouteContext) {
         linkId: link.id,
       });
 
-  scheduleClickLog(
+  await recordClickLog(
     buildRedirectClickInput(link.id, headersList, {
       eventType: "LINK_PAGE_CTA_CLICK",
       linkPageHasCountdown:

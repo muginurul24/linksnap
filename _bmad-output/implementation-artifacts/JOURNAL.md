@@ -5776,3 +5776,45 @@ Replaced the static CSP header with a request-scoped nonce policy generated in `
 - ✅ No secrets, raw SQL, or `dangerouslySetInnerHTML` introduced.
 
 **Next Task:** 17.3 — Mitigate `after()` Experimental API Risk for Click Logging
+
+### 17.3 — Mitigate `after()` Experimental API Risk for Click Logging
+- **Date:** 2026-05-08 05:40 GMT+7
+- **Duration:** 0h 35m
+- **Status:** ✅ Complete
+
+**What I Did:**
+Replaced redirect click logging's dependency on Next.js `after()` with a Redis-backed queue. Direct short-link redirects and Link Page CTA redirects now enqueue click events before returning the redirect response. Added a cron-protected processor endpoint that drains the queue into the existing click persistence path, with a direct DB fallback when Redis enqueue fails.
+
+**Files Changed:**
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Checked off Task 17.3 with implementation notes for evaluated options.
+- `_bmad-output/implementation-artifacts/JOURNAL.md` — Logged this task.
+- `src/app/[slug]/page.tsx` — Replaced `after()` click logging with awaited queue recording.
+- `src/app/[slug]/go/route.ts` — Replaced `after()` CTA click logging with awaited queue recording.
+- `src/lib/analytics/click-logger.ts` — Split throwing persistence into `persistRedirectClick()` while preserving safe `logRedirectClick()`.
+- `src/lib/analytics/click-queue.ts` — Added Redis enqueue, direct persistence fallback, queue processor, dead-letter handling, and failure-rate telemetry.
+- `src/app/api/v1/analytics/click-queue/process/route.ts` — Added `CRON_SECRET`-protected queue processor endpoint.
+- `tests/unit/click-queue.test.ts` — Covered enqueue, fallback persistence, processing, and dead-letter behavior.
+- `tests/integration/click-queue-cron-api.test.ts` — Covered cron auth and processing response.
+- Redirect flow tests — Updated mocks to verify queued click behavior.
+
+**Decisions Made:**
+- Used Redis queue first so a failed background processor no longer loses click events.
+- Kept a direct DB fallback for Redis failures because analytics loss is worse than a small redirect latency hit during outages.
+- Added log-based failure-rate telemetry because no Sentry/OpenTelemetry SDK is configured yet; Phase 17.4 can route these through the standardized logger.
+
+**Tests:**
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Targeted Unit/Integration: `rtk bun run test -- tests/unit/click-queue.test.ts tests/unit/click-logger.test.ts tests/integration/click-queue-cron-api.test.ts tests/integration/create-redirect-click-flow.test.ts tests/integration/smart-rule-redirect-flow.test.ts tests/integration/split-test-redirect-distribution.test.ts` — 6 files passed, 18 tests passed.
+- ✅ Unit/Integration: `rtk bun run test` — 120 files passed, 533 tests passed.
+- ✅ Build: `rtk bun run build` — Passed.
+
+**Issues Encountered:**
+- No Sentry/OpenTelemetry SDK exists in the project yet, so the >5% failure alert is implemented as structured log telemetry for now.
+
+**Security Checks:**
+- ✅ Cron processor requires `Authorization: Bearer ${CRON_SECRET}`.
+- ✅ Redirect click payloads are serialized server-side only and dead-lettered on invalid payloads.
+- ✅ No secrets, raw SQL, or `dangerouslySetInnerHTML` introduced.
+
+**Next Task:** 17.4 — Standardize Error Logging

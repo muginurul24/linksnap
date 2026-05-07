@@ -139,6 +139,13 @@ vi.mock("@/lib/analytics/click-logger", () => ({
   },
 }));
 
+vi.mock("@/lib/analytics/click-queue", () => ({
+  recordRedirectClick: async (input: RedirectClickInput) => {
+    mockState.loggedClicks.push(input);
+    return { status: "queued" };
+  },
+}));
+
 vi.mock("next/headers", () => ({
   headers: async () => mockState.requestHeaders,
 }));

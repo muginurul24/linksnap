@@ -55,26 +55,48 @@ export async function logRedirectClick({
   userAgent,
 }: RedirectClickInput): Promise<void> {
   try {
-    const geo = await lookupGeoLocation({ edgeGeo, ipAddress });
-    const parsedUserAgent = parseUserAgent(userAgent);
-
-    await insertClickEvents([
-      {
-        browser: parsedUserAgent.browser,
-        city: geo.city,
-        country: geo.country,
-        device: parsedUserAgent.device,
-        eventType,
-        ipHash: hashIpAddress(ipAddress),
-        linkId,
-        linkPageHasCountdown,
-        ruleId,
-        os: parsedUserAgent.os,
-        referrer,
-        userAgent,
-      },
-    ]);
+    await persistRedirectClick({
+      edgeGeo,
+      eventType,
+      ipAddress,
+      linkId,
+      linkPageHasCountdown,
+      referrer,
+      ruleId,
+      userAgent,
+    });
   } catch (error) {
     console.error("[click-logger] failed to log redirect click", error);
   }
+}
+
+export async function persistRedirectClick({
+  edgeGeo,
+  eventType,
+  ipAddress,
+  linkId,
+  linkPageHasCountdown,
+  referrer,
+  ruleId = null,
+  userAgent,
+}: RedirectClickInput): Promise<void> {
+  const geo = await lookupGeoLocation({ edgeGeo, ipAddress });
+  const parsedUserAgent = parseUserAgent(userAgent);
+
+  await insertClickEvents([
+    {
+      browser: parsedUserAgent.browser,
+      city: geo.city,
+      country: geo.country,
+      device: parsedUserAgent.device,
+      eventType,
+      ipHash: hashIpAddress(ipAddress),
+      linkId,
+      linkPageHasCountdown,
+      ruleId,
+      os: parsedUserAgent.os,
+      referrer,
+      userAgent,
+    },
+  ]);
 }

@@ -1392,14 +1392,14 @@ rtk bun run db:studio    # Open Drizzle Studio (in another terminal)
 - [x] Tests: unit (CSP header contains nonce, no unsafe-inline)
 
 ### TASK 17.3 — Mitigate `after()` Experimental API Risk for Click Logging
-- [ ] Files: `src/app/[slug]/page.tsx` and `src/app/[slug]/go/route.ts`
-- [ ] Current: click logging uses `after(() => { void logRedirectClick(input) })` — experimental Next.js 16 API
-- [ ] Risk: if `after()` silently fails, ALL click events are lost
-- [ ] Option A (preferred): Replace with Upstash Redis queue — push click event to Redis list, process via cron/worker
-- [ ] Option B: Add try/catch inside `after()` + structured error telemetry to detect failures
-- [ ] Option C: Use `waitUntil()` from Vercel Edge if deployed there
-- [ ] Add Sentry/OpenTelemetry alert when click logging fails > 5% of requests
-- [ ] Tests: unit (click event enqueued to Redis), integration (event persistence verified)
+- [x] Files: `src/app/[slug]/page.tsx` and `src/app/[slug]/go/route.ts`
+- [x] Current: click logging uses `after(() => { void logRedirectClick(input) })` — experimental Next.js 16 API
+- [x] Risk: if `after()` silently fails, ALL click events are lost
+- [x] Option A (preferred): Replace with Upstash Redis queue — push click event to Redis list, process via cron/worker
+- [x] Option B: Add try/catch inside `after()` + structured error telemetry to detect failures (superseded by queue fallback + structured failure logs)
+- [x] Option C: Use `waitUntil()` from Vercel Edge if deployed there (evaluated; not needed with Node.js Redis queue + cron processor)
+- [x] Add Sentry/OpenTelemetry alert when click logging fails > 5% of requests (implemented as log-based threshold telemetry; no Sentry SDK configured)
+- [x] Tests: unit (click event enqueued to Redis), integration (event persistence verified)
 
 ### 🟡 MEDIUM — Should Fix Within Week 1
 

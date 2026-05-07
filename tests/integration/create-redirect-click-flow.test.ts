@@ -166,6 +166,13 @@ vi.mock("@/lib/analytics/click-logger", () => ({
   },
 }));
 
+vi.mock("@/lib/analytics/click-queue", () => ({
+  recordRedirectClick: async (input: RedirectClickInput) => {
+    mockState.loggedClicks.push(input);
+    return { status: "queued" };
+  },
+}));
+
 vi.mock("@/lib/rules/rule-engine", () => ({
   buildRuleEvaluationContext: () => ({}),
   evaluateSmartRulesForLink: async () => mockState.ruleResult,
