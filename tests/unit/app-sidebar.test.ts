@@ -3,6 +3,7 @@ import {
   getSidebarMainNavItems,
   getSidebarDisplayUser,
   isSidebarItemActive,
+  shouldShowSidebarUpgradeCard,
 } from "../../src/components/dashboard/app-sidebar";
 
 describe("app sidebar user display", () => {
@@ -62,5 +63,11 @@ describe("app sidebar user display", () => {
     expect(getSidebarMainNavItems("BUSINESS").map((item) => item.title)).toContain(
       "API Docs",
     );
+  });
+
+  it("should show the upgrade card only for free users", () => {
+    expect(shouldShowSidebarUpgradeCard("FREE")).toBe(true);
+    expect(shouldShowSidebarUpgradeCard("PRO")).toBe(false);
+    expect(shouldShowSidebarUpgradeCard("BUSINESS")).toBe(false);
   });
 });

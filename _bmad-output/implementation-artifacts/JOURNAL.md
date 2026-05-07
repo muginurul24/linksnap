@@ -4324,6 +4324,40 @@ Added a reusable `PlanGate` component for plan-gated controls and a `PlanGate.Qu
 
 **Next Task:** 15.3 — Hide Upgrade Card for Paid Users
 
+### 15.3 — Hide Upgrade Card for Paid Users
+- **Date:** 2026-05-07 20:49 GMT+7
+- **Duration:** 0 hours 10 minutes
+- **Status:** ✅ Complete
+
+**What I Did:**
+Updated the dashboard sidebar so the "Upgrade to Pro" card renders only for Free users. Added a focused helper for upgrade-card visibility and unit coverage for Free, Pro, and Business plans.
+
+**Files Changed:**
+- `_bmad-output/planning-artifacts/spec-phase-15-sidebar-upgrade-card.md` — Added the sidebar card mini-spec.
+- `src/components/dashboard/app-sidebar.tsx` — Added `shouldShowSidebarUpgradeCard` and gated the upgrade card wrapper.
+- `tests/unit/app-sidebar.test.ts` — Added visibility coverage for each plan.
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Checked off Task 15.3.
+- `_bmad-output/implementation-artifacts/JOURNAL.md` — Recorded this completion entry.
+
+**Decisions Made:**
+- Wrapped the entire `SidebarGroup` instead of only the card contents so paid users do not see empty sidebar spacing.
+- Kept the existing Free-user upgrade card copy and styling unchanged to reduce unrelated UI churn.
+
+**Tests:**
+- ✅ Unit: `rtk bun run test -- tests/unit/app-sidebar.test.ts` — 1 file passed, 7 tests passed.
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Unit/Integration: `rtk bun run test` — 97 files passed, 450 tests passed.
+
+**Issues Encountered:**
+- None.
+
+**Security Checks:**
+- ✅ No auth or API behavior changed.
+- ✅ No user input, persistence, secrets, raw SQL, or unsafe rendering introduced.
+
+**Next Task:** 15.4 — Plan-Gate Smart Rules & Link Page Toggles
+
 ### 13.3 — Rule Engine Logic (Ordered Priority)
 - **Date:** 2026-05-07 18:41 GMT+7
 - **Duration:** 0h 30m

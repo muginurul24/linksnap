@@ -91,6 +91,10 @@ export function getSidebarMainNavItems(plan: UserPlan) {
   return plan === "FREE" ? mainNav : [...mainNav, apiDocsNavItem];
 }
 
+export function shouldShowSidebarUpgradeCard(plan: UserPlan): boolean {
+  return plan === "FREE";
+}
+
 export function AppSidebar({ user }: { user: AppSidebarUser }) {
   const pathname = usePathname();
   const displayUser = getSidebarDisplayUser(user);
@@ -157,25 +161,27 @@ export function AppSidebar({ user }: { user: AppSidebarUser }) {
           </SidebarGroupContent>
         </SidebarGroup>
 
-        <SidebarGroup>
-          <SidebarGroupContent>
-            <div className="rounded-lg border bg-card p-3 text-card-foreground shadow-sm group-data-[collapsible=icon]:hidden">
-              <div className="mb-2 flex items-center gap-2">
-                <Sparkles className="size-4 text-primary" />
-                <span className="text-sm font-medium">Upgrade to Pro</span>
+        {shouldShowSidebarUpgradeCard(user.plan) && (
+          <SidebarGroup>
+            <SidebarGroupContent>
+              <div className="rounded-lg border bg-card p-3 text-card-foreground shadow-sm group-data-[collapsible=icon]:hidden">
+                <div className="mb-2 flex items-center gap-2">
+                  <Sparkles className="size-4 text-primary" />
+                  <span className="text-sm font-medium">Upgrade to Pro</span>
+                </div>
+                <p className="mb-3 text-xs text-muted-foreground">
+                  Unlock Link Pages, Smart Rules, and unlimited links.
+                </p>
+                <Link
+                  href="/settings/billing"
+                  className="inline-flex w-full items-center justify-center rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90"
+                >
+                  Upgrade Now
+                </Link>
               </div>
-              <p className="mb-3 text-xs text-muted-foreground">
-                Unlock Link Pages, Smart Rules, and unlimited links.
-              </p>
-              <Link
-                href="/settings/billing"
-                className="inline-flex w-full items-center justify-center rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90"
-              >
-                Upgrade Now
-              </Link>
-            </div>
-          </SidebarGroupContent>
-        </SidebarGroup>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
       </SidebarContent>
 
       <SidebarFooter>

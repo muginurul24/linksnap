@@ -1115,11 +1115,11 @@ rtk bun run db:studio    # Open Drizzle Studio (in another terminal)
 - [x] Tests: unit (render children when allowed, show gate when not, quota display)
 
 ### TASK 15.3 — Hide Upgrade Card for Paid Users
-- [ ] File: `src/components/dashboard/app-sidebar.tsx`
-- [ ] The "Upgrade to Pro" card is currently shown for ALL users (including PRO and BUSINESS)
-- [ ] Fix: wrap the upgrade card in `{plan === "FREE" && (...)}`
-- [ ] The card should only render when `plan === "FREE"`
-- [ ] Tests: unit (sidebar upgrade card visibility per plan)
+- [x] File: `src/components/dashboard/app-sidebar.tsx`
+- [x] The "Upgrade to Pro" card is currently shown for ALL users (including PRO and BUSINESS)
+- [x] Fix: wrap the upgrade card in `{plan === "FREE" && (...)}`
+- [x] The card should only render when `plan === "FREE"`
+- [x] Tests: unit (sidebar upgrade card visibility per plan)
 
 ### TASK 15.4 — Plan-Gate Smart Rules & Link Page Toggles
 - [ ] File: `src/app/(dashboard)/links/link-form.tsx`
