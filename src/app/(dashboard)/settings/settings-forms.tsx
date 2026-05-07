@@ -40,6 +40,12 @@ const notificationItems: Array<{
   { key: "productUpdates", label: "Product updates & tips" },
 ];
 
+export const settingsSuccessMessages = {
+  notifications: "Preferences saved",
+  password: "Password changed",
+  profile: "Profile updated",
+} as const;
+
 async function readResponse<T>(response: Response): Promise<ApiEnvelope<T>> {
   return response.json() as Promise<ApiEnvelope<T>>;
 }
@@ -74,7 +80,7 @@ export function ProfileSettingsForm({
       }
 
       setName(body.data.name ?? "");
-      toast.success("Profile saved.");
+      toast.success(settingsSuccessMessages.profile);
     } catch {
       toast.error("Unable to save profile.");
     } finally {
@@ -149,7 +155,7 @@ export function NotificationsSettingsForm({
       }
 
       setPreferences(body.data.notifications);
-      toast.success("Preferences saved.");
+      toast.success(settingsSuccessMessages.notifications);
     } catch {
       toast.error("Unable to save preferences.");
     } finally {
@@ -218,7 +224,7 @@ export function SecuritySettingsForm() {
       setCurrentPassword("");
       setPassword("");
       setConfirmPassword("");
-      toast.success("Password updated.");
+      toast.success(settingsSuccessMessages.password);
     } catch {
       toast.error("Unable to update password.");
     } finally {

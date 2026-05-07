@@ -258,6 +258,20 @@ function GatedToggle({
   );
 }
 
+export function getLinkSubmitSuccessFeedback({
+  isEditMode,
+  shortUrl,
+}: {
+  isEditMode: boolean;
+  shortUrl: string;
+}): { description: string; message: string; redirectTo: string | null } {
+  return {
+    description: shortUrl,
+    message: isEditMode ? "Link updated" : "Link created",
+    redirectTo: isEditMode ? null : "/links",
+  };
+}
+
 export function CreateLinkForm({ initialLink, userPlan }: LinkFormProps) {
   const router = useRouter();
   const isEditMode = initialLink !== undefined;
@@ -565,10 +579,12 @@ export function CreateLinkForm({ initialLink, userPlan }: LinkFormProps) {
         }
       }
 
-      toast.success(isEditMode ? "Link updated." : "Link created.", {
-        description: body.data.shortUrl,
+      const feedback = getLinkSubmitSuccessFeedback({
+        isEditMode,
+        shortUrl: body.data.shortUrl,
       });
-      router.push("/links");
+      toast.success(feedback.message, { description: feedback.description });
+      if (feedback.redirectTo) router.push(feedback.redirectTo);
       router.refresh();
     } catch {
       setFormError("Unable to reach the link service.");

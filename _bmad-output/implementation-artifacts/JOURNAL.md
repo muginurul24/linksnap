@@ -4433,6 +4433,42 @@ Replaced the outline back buttons on link and campaign create/edit pages with co
 
 **Next Task:** 15.6 — Form Submit Success UX
 
+### 15.6 — Form Submit Success UX
+- **Date:** 2026-05-07 20:56 GMT+7
+- **Duration:** 0 hours 15 minutes
+- **Status:** ✅ Complete
+
+**What I Did:**
+Standardized success feedback for link, campaign, and settings forms. Link creation now redirects to `/links`, link editing stays on the edit page after showing "Link updated", campaign saves redirect to `/campaigns`, and settings forms use the requested success messages.
+
+**Files Changed:**
+- `_bmad-output/planning-artifacts/spec-phase-15-form-success-ux.md` — Added the form success UX mini-spec.
+- `src/app/(dashboard)/links/link-form.tsx` — Added success feedback helper and removed edit-mode redirect.
+- `src/app/(dashboard)/campaigns/campaign-form.tsx` — Added campaign success feedback helper and normalized toast copy.
+- `src/app/(dashboard)/settings/settings-forms.tsx` — Updated profile, notification, and password success toast messages.
+- `tests/unit/form-success-feedback.test.ts` — Added toast copy and redirect behavior coverage.
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Checked off Task 15.6.
+- `_bmad-output/implementation-artifacts/JOURNAL.md` — Recorded this completion entry.
+
+**Decisions Made:**
+- Updated the settings client form file instead of `settings/page.tsx` because that is where the actual `sonner` toasts are emitted.
+- Kept `router.refresh()` after link edit so the current edit page can reflect saved server data without navigating away.
+
+**Tests:**
+- ✅ Unit: `rtk bun run test -- tests/unit/form-success-feedback.test.ts` — 1 file passed, 4 tests passed.
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Unit/Integration: `rtk bun run test` — 100 files passed, 460 tests passed.
+
+**Issues Encountered:**
+- None.
+
+**Security Checks:**
+- ✅ No API, auth, ownership, or validation behavior changed.
+- ✅ No new user input, secrets, raw SQL, or unsafe rendering introduced.
+
+**Next Task:** 15.7 — Dashboard Analytics Empty State UX
+
 ### 13.3 — Rule Engine Logic (Ordered Priority)
 - **Date:** 2026-05-07 18:41 GMT+7
 - **Duration:** 0h 30m

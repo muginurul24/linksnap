@@ -1142,18 +1142,18 @@ rtk bun run db:studio    # Open Drizzle Studio (in another terminal)
 - [x] Tests: unit (back link renders with correct href)
 
 ### TASK 15.6 — Form Submit Success UX
-- [ ] File: `src/app/(dashboard)/links/link-form.tsx`
+- [x] File: `src/app/(dashboard)/links/link-form.tsx`
   - After creating a new link: toast "Link created" + redirect to `/links`
   - After editing a link: toast "Link updated" + stay on edit page (user may want to edit more)
-- [ ] File: `src/app/(dashboard)/campaigns/campaign-form.tsx`
+- [x] File: `src/app/(dashboard)/campaigns/campaign-form.tsx`
   - After creating: toast + redirect to `/campaigns`
   - After editing: toast + redirect to `/campaigns`
-- [ ] File: `src/app/(dashboard)/settings/page.tsx`
+- [x] File: `src/app/(dashboard)/settings/page.tsx`
   - Profile save: toast "Profile updated"
   - Password change: toast "Password changed"
   - Notification save: toast "Preferences saved"
-- [ ] All toasts use `sonner` (already installed) with `richColors`
-- [ ] Tests: unit (toast messages, redirect behavior)
+- [x] All toasts use `sonner` (already installed) with `richColors`
+- [x] Tests: unit (toast messages, redirect behavior)
 
 ### TASK 15.7 — Dashboard Analytics Empty State UX
 - [ ] File: `src/app/(dashboard)/analytics/page.tsx`

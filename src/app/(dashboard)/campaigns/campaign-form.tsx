@@ -98,6 +98,20 @@ function apiErrorMessage(
   return messages[code] ?? fallback ?? "Unable to save campaign.";
 }
 
+export function getCampaignSubmitSuccessFeedback({
+  isEditMode,
+  name,
+}: {
+  isEditMode: boolean;
+  name: string;
+}): { description: string; message: string; redirectTo: "/campaigns" } {
+  return {
+    description: name,
+    message: isEditMode ? "Campaign updated" : "Campaign created",
+    redirectTo: "/campaigns",
+  };
+}
+
 export function CampaignForm({ initialCampaign }: CampaignFormProps) {
   const router = useRouter();
   const isEditMode = initialCampaign !== undefined;
@@ -187,10 +201,12 @@ export function CampaignForm({ initialCampaign }: CampaignFormProps) {
         return;
       }
 
-      toast.success(isEditMode ? "Campaign updated." : "Campaign created.", {
-        description: body.data.name,
+      const feedback = getCampaignSubmitSuccessFeedback({
+        isEditMode,
+        name: body.data.name,
       });
-      router.push("/campaigns");
+      toast.success(feedback.message, { description: feedback.description });
+      router.push(feedback.redirectTo);
       router.refresh();
     } catch {
       setFormError("Unable to reach the campaign service.");
