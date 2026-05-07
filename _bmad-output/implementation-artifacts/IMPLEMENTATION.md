@@ -718,11 +718,11 @@ For EVERY interactive component, implement these states:
 - [x] Tests: unit (quota boundary checks), integration (quota enforcement in API)
 
 ### TASK 12.8 — Landing Page Hero Stats
-- [ ] File: `src/components/landing/landing-page.tsx`
-- [ ] Either make the hero component `async` and query real aggregate stats from DB
-- [ ] Or keep as static but update to realistic numbers (avoid pre-launch inflation like "1M+ redirects")
-- [ ] Replace "308" redirect count with a meaningful feature-based stat
-- [ ] Tests: if dynamic, integration test the stats query
+- [x] File: `src/components/landing/landing-page.tsx`
+- [x] Either make the hero component `async` and query real aggregate stats from DB
+- [x] Or keep as static but update to realistic numbers (avoid pre-launch inflation like "1M+ redirects")
+- [x] Replace "308" redirect count with a meaningful feature-based stat
+- [x] Tests: if dynamic, integration test the stats query
 
 ### TASK 12.9 — API Rate Limit Documentation Fix
 - [ ] File: `src/lib/plans/definitions.ts` (created in 12.4)

@@ -3127,3 +3127,40 @@ the owner's available QR slots.
 - ✅ No raw SQL, unsafe HTML, or secrets added.
 
 **Next Task:** 12.8 — Landing Page Hero Stats
+
+### 12.8 — Landing Page Hero Stats
+- **Date:** 2026-05-07 14:49 GMT+7
+- **Duration:** 0h 15m
+- **Status:** ✅ Complete
+
+**What I Did:**
+Replaced the ambiguous "308" landing hero stat with realistic, feature-backed
+stats. The landing page remains static and fast, while the hero now highlights
+actual rule types, API limit, analytics retention, and QR quota.
+
+**Files Changed:**
+- `src/components/landing/landing-page.tsx` — Replaced hero stats with exported realistic stat definitions.
+- `tests/unit/landing-hero-stats.test.ts` — Added coverage to prevent inflated or ambiguous stats from returning.
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Checked off Task 12.8.
+- `_bmad-output/implementation-artifacts/JOURNAL.md` — Recorded this completion entry.
+
+**Decisions Made:**
+- Kept the hero stats static instead of querying aggregate DB counts so the marketing landing page remains static/prerenderable.
+- Used feature-backed stats instead of customer-scale claims because production usage data is not yet a stable marketing source.
+- Replaced the "308" count-style stat with "4 Smart rule types"; HTTP 308 remains represented elsewhere as technical redirect behavior, not as a misleading count.
+
+**Tests:**
+- ✅ Targeted: `rtk bun run test -- tests/unit/landing-hero-stats.test.ts` — 1 file passed, 2 tests passed.
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Unit/Integration: `rtk bun run test` — 75 files passed, 328 tests passed.
+- ✅ Build: `rtk bun run build` — Passed.
+
+**Issues Encountered:**
+- None.
+
+**Security Checks:**
+- ✅ No user input, auth, ownership, or data access changes.
+- ✅ No secrets were printed or committed.
+
+**Next Task:** 12.9 — API Rate Limit Documentation Fix
