@@ -2,13 +2,17 @@ import { describe, expect, it } from "vitest";
 import {
   canUseCustomSlug,
   getApiEndpointRateLimit,
+  getCampaignQuota,
   getLinkCreationRateLimit,
   getLinkPageQuota,
   getLinkQuota,
+  getQrQuota,
   getSmartRuleQuota,
   exceedsSmartRuleQuota,
+  hasReachedCampaignQuota,
   hasReachedLinkPageQuota,
   hasReachedLinkQuota,
+  hasReachedQrQuota,
 } from "../../src/lib/links/limits";
 
 describe("link limits", () => {
@@ -30,6 +34,15 @@ describe("link limits", () => {
     expect(getSmartRuleQuota("BUSINESS")).toBe(Number.POSITIVE_INFINITY);
   });
 
+  it("should expose plan quotas for Campaigns and QR codes", () => {
+    expect(getCampaignQuota("FREE")).toBe(1);
+    expect(getCampaignQuota("PRO")).toBe(10);
+    expect(getCampaignQuota("BUSINESS")).toBe(Number.POSITIVE_INFINITY);
+    expect(getQrQuota("FREE")).toBe(10);
+    expect(getQrQuota("PRO")).toBe(100);
+    expect(getQrQuota("BUSINESS")).toBe(500);
+  });
+
   it("should identify when a plan has reached its link quota", () => {
     expect(hasReachedLinkQuota("FREE", 24)).toBe(false);
     expect(hasReachedLinkQuota("FREE", 25)).toBe(true);
@@ -42,6 +55,16 @@ describe("link limits", () => {
     expect(hasReachedLinkPageQuota("FREE", 3)).toBe(true);
     expect(hasReachedLinkPageQuota("PRO", 50)).toBe(true);
     expect(hasReachedLinkPageQuota("BUSINESS", 50_000)).toBe(false);
+  });
+
+  it("should identify when a plan has reached Campaign and QR quotas", () => {
+    expect(hasReachedCampaignQuota("FREE", 0)).toBe(false);
+    expect(hasReachedCampaignQuota("FREE", 1)).toBe(true);
+    expect(hasReachedCampaignQuota("PRO", 10)).toBe(true);
+    expect(hasReachedCampaignQuota("BUSINESS", 50_000)).toBe(false);
+    expect(hasReachedQrQuota("FREE", 9)).toBe(false);
+    expect(hasReachedQrQuota("FREE", 10)).toBe(true);
+    expect(hasReachedQrQuota("BUSINESS", 500)).toBe(true);
   });
 
   it("should identify Smart Rule quota overages", () => {

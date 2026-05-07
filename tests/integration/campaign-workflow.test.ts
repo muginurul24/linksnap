@@ -88,6 +88,8 @@ vi.mock("@/lib/redis/rate-limit", () => ({
 }));
 
 vi.mock("@/lib/db/queries/campaigns", () => ({
+  countCampaignsByUserId: async (userId: string) =>
+    mockState.campaigns.filter((campaign) => campaign.userId === userId).length,
   createCampaignRecord: async (input: {
     description?: string | null;
     name: string;

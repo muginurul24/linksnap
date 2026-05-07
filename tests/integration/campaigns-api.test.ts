@@ -94,6 +94,8 @@ vi.mock("@/lib/db/queries/links", () => ({
 }));
 
 vi.mock("@/lib/db/queries/campaigns", () => ({
+  countCampaignsByUserId: async (userId: string) =>
+    mockState.campaigns.filter((campaign) => campaign.userId === userId).length,
   createCampaignRecord: async (input: CreateCampaignRecordInput) => {
     if (
       mockState.campaigns.some(
@@ -267,6 +269,24 @@ describe("campaigns API", () => {
     expect(mockState.rateLimitOptions).toEqual([
       { key: "api:campaigns:post:user-1", limit: 60, windowSeconds: 60 },
     ]);
+  });
+
+  it("should reject campaign creation when plan quota has been reached", async () => {
+    mockState.userPlan = "FREE";
+
+    const response = await POSTCampaign(
+      createRequest("/api/v1/campaigns", "POST", {
+        name: "Launch Q2",
+        slug: "launch-q2",
+      }),
+    );
+    const body = await readJson<CampaignResponse>(response);
+
+    expect(response.status).toBe(403);
+    expect(body.success).toBe(false);
+    if (body.success) return;
+    expect(body.error.code).toBe("CAMPAIGN_QUOTA_EXCEEDED");
+    expect(mockState.campaigns).toHaveLength(1);
   });
 
   it("should list campaigns with link counts and pagination metadata", async () => {

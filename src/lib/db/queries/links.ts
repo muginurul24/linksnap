@@ -1,4 +1,14 @@
-import { and, count, desc, eq, ilike, inArray, or, type SQL } from "drizzle-orm";
+import {
+  and,
+  count,
+  desc,
+  eq,
+  ilike,
+  inArray,
+  lt,
+  or,
+  type SQL,
+} from "drizzle-orm";
 import { db } from "@/lib/db";
 import { linkPages, links, smartRules, users } from "@/lib/db/schema";
 import type { UserPlan } from "@/lib/links/limits";
@@ -54,6 +64,11 @@ export type PublicLinkPage = {
   showSocialProof: boolean | null;
   theme: string;
   title: string;
+};
+
+export type QrGenerationLink = RedirectLink & {
+  qrCodeCountBefore: number;
+  userPlan: UserPlan;
 };
 
 export type EditableLinkPage = {
@@ -226,6 +241,55 @@ export async function findRedirectLinkBySlug(
   });
 
   return link ?? null;
+}
+
+export async function findQrGenerationLinkBySlug(
+  slug: string,
+): Promise<QrGenerationLink | null> {
+  const [link] = await db
+    .select({
+      clickCount: links.clickCount,
+      createdAt: links.createdAt,
+      destinationUrl: links.destinationUrl,
+      expiresAt: links.expiresAt,
+      hasLinkPage: links.hasLinkPage,
+      id: links.id,
+      isActive: links.isActive,
+      scheduledAt: links.scheduledAt,
+      slug: links.slug,
+      userId: links.userId,
+      userPlan: users.plan,
+    })
+    .from(links)
+    .innerJoin(users, eq(users.id, links.userId))
+    .where(eq(links.slug, slug))
+    .limit(1);
+
+  if (!link) return null;
+
+  const [countBefore] = await db
+    .select({ value: count() })
+    .from(links)
+    .where(
+      and(
+        eq(links.userId, link.userId),
+        eq(links.isActive, true),
+        lt(links.createdAt, link.createdAt),
+      ),
+    );
+
+  return {
+    clickCount: link.clickCount,
+    destinationUrl: link.destinationUrl,
+    expiresAt: link.expiresAt,
+    hasLinkPage: link.hasLinkPage,
+    id: link.id,
+    isActive: link.isActive,
+    qrCodeCountBefore: countBefore?.value ?? 0,
+    scheduledAt: link.scheduledAt,
+    slug: link.slug,
+    userPlan: link.userPlan,
+  };
 }
 
 export async function findPublicLinkPageByLinkId(
