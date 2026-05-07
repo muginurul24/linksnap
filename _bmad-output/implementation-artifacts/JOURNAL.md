@@ -2653,3 +2653,64 @@ Verified launch prerequisites that can be checked locally, added missing Auth.js
 - ✅ Database index verification did not expose connection strings or credentials.
 
 **Next Task:** None — remaining launch items require production infrastructure access
+
+### 10.5a — Domain Deploy Smoke Test
+- **Date:** 2026-05-07 11:59 GMT+7
+- **Duration:** 0h 45m
+- **Status:** ✅ Complete
+
+**What I Did:**
+Aligned the production canonical domain to `https://www.justqiu.cloud`, pushed
+the fix through PR #6, merged it to `main`, confirmed the main CI deployment hook
+ran, and smoke tested the production domain after deployment.
+
+**Files Changed:**
+- `src/lib/seo/metadata.ts` — Updated canonical production site URL.
+- `src/lib/links/preview.ts` — Updated short-link fallback domain.
+- `src/lib/security/api-request.ts` — Allowed `justqiu.cloud` production origins.
+- `src/app/(dashboard)/**` — Updated visible/fallback short-link domains.
+- `src/components/landing/demo-generator.tsx` — Updated demo short-link domain.
+- `src/app/(marketing)/landing-preview-image.tsx` — Updated preview image text.
+- `tests/unit/*` — Updated domain assertions.
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Marked domain and SSL checks complete.
+- `_bmad-output/planning-artifacts/launch-readiness-2026-05-07.md` — Added deployment and smoke-test evidence.
+- `_bmad-output/implementation-artifacts/JOURNAL.md` — Recorded this completion entry.
+
+**Decisions Made:**
+- Used `https://www.justqiu.cloud` as canonical because the apex domain redirects
+  to `www`.
+- Kept `linksnap.id` origins in the API allowlist temporarily for backward
+  compatibility while switching all production-facing fallbacks to `justqiu.cloud`.
+- Merged via PR because production deployment is wired to `main`, not feature
+  branch pushes.
+
+**Tests:**
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Unit/Integration: `rtk bun run test` — 66 files passed, 296 tests passed.
+- ✅ Build: `rtk bun run build` — Passed.
+- ✅ PR CI: GitHub Actions PR run passed.
+- ✅ Main CI: GitHub Actions push run `25476850023` passed and ran the Vercel
+  deployment hook.
+- ✅ Domain: `https://justqiu.cloud` redirects to `https://www.justqiu.cloud/`.
+- ✅ Public routes: `/`, `/pricing`, `/blog`, `/login`, `/register`, `/verify`,
+  `/sitemap.xml`, and `/robots.txt` return `200`.
+- ✅ SEO routes: sitemap and robots now reference `https://www.justqiu.cloud`.
+- ✅ API guard: missing custom header and untrusted origin return `403`; trusted
+  production origin reaches the route and returns the expected `INVALID_OTP`.
+- ✅ Browser smoke: home canonical URL is production `www`, register page is
+  `noindex, nofollow`, and there were zero browser console errors.
+
+**Issues Encountered:**
+- Initial feature-branch push did not update production because the workflow only
+  deploys from `main`.
+- GitHub MCP PR creation was not authenticated, so `gh` CLI was used as the
+  fallback.
+
+**Security Checks:**
+- ✅ No secrets were printed or committed.
+- ✅ `.env` remained untracked and unchanged.
+- ✅ Mutating API origin and custom-header protections were verified in production.
+- ✅ Production security headers remain active on `https://www.justqiu.cloud`.
+
+**Next Task:** Remaining launch operations — production env verification, monitoring, backups, cache warming, load test, and penetration test
