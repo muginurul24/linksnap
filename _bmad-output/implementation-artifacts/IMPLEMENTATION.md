@@ -850,11 +850,11 @@ rtk bun run db:studio    # Open Drizzle Studio (in another terminal)
 - [x] Tests: unit (pages render correctly)
 
 ### TASK 12.21 — Midtrans Redirect URL Configuration
-- [ ] File: `src/app/api/v1/payments/create/route.ts`
-- [ ] Update `createMidtransSnapTransaction` payload to include `callbacks.finish` → `{APP_URL}/checkout/success?order_id={order_id}`
-- [ ] Add `callbacks.error` and `callbacks.unfinish` URLs
-- [ ] Ensure redirect URLs work with production domain
-- [ ] Tests: verify Snap payload includes correct callback URLs
+- [x] File: `src/app/api/v1/payments/create/route.ts`
+- [x] Update `createMidtransSnapTransaction` payload to include `callbacks.finish` → `{APP_URL}/checkout/success?order_id={order_id}`
+- [x] Add `callbacks.error` and `callbacks.unfinish` URLs
+- [x] Ensure redirect URLs work with production domain
+- [x] Tests: verify Snap payload includes correct callback URLs
 
 ### TASK 12.22 — Search Implementation
 - [ ] File: `src/components/dashboard/app-header.tsx`

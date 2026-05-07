@@ -3729,3 +3729,41 @@ surfaces, and added both legal routes to the sitemap.
 - ✅ No secrets introduced.
 
 **Next Task:** 12.21 — Midtrans Redirect URL Configuration
+
+### 12.21 — Midtrans Redirect URL Configuration
+- **Date:** 2026-05-07 17:14 GMT+7
+- **Duration:** 0h 10m
+- **Status:** ✅ Complete
+
+**What I Did:**
+Audited and confirmed the Midtrans redirect URL configuration added during the
+checkout return pages work. Payment creation now derives production-safe
+finish, error, and unfinish URLs and passes them into the Midtrans Snap client.
+
+**Files Changed:**
+- `_bmad-output/planning-artifacts/spec-midtrans-redirect-url-configuration.md` — Added redirect configuration spec and provider decision.
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Checked off Task 12.21.
+- `_bmad-output/implementation-artifacts/JOURNAL.md` — Recorded this completion entry.
+
+**Decisions Made:**
+- `APP_URL` is preferred for production-domain redirects, with `NEXT_PUBLIC_APP_URL` and request origin as fallbacks.
+- Snap API payload remains limited to the documented `callbacks.finish` field.
+- Error and unfinish URLs are generated and tested for Snap Preference / Redirection Settings configuration.
+
+**Tests:**
+- ✅ Targeted: `rtk bun run test -- tests/unit/payment-redirects.test.ts tests/unit/midtrans-client.test.ts tests/integration/create-payment-api.test.ts` — 3 files passed, 14 tests passed.
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Unit/Integration: `rtk bun run test` — 89 files passed, 396 tests passed.
+- ✅ Build: `rtk bun run build` — Passed.
+
+**Issues Encountered:**
+- None.
+
+**Security Checks:**
+- ✅ Redirect base URL is normalized to HTTP(S) origins only.
+- ✅ Payment create route remains authenticated and rate limited before provider calls.
+- ✅ Raw SQL scan returned no matches.
+- ✅ No secrets introduced.
+
+**Next Task:** 12.22 — Search Implementation
