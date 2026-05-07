@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
+import { redirect } from "next/navigation";
 import { createPublicMetadata } from "@/lib/seo/metadata";
+import { auth } from "@/lib/auth";
 import { ResetPasswordForm } from "./reset-password-form";
 
 const description = "Choose a new password for your LinkSnap account.";
@@ -20,6 +22,9 @@ type ResetPasswordPageProps = {
 export default async function ResetPasswordPage({
   searchParams,
 }: ResetPasswordPageProps) {
+  const session = await auth();
+  if (session?.user) redirect("/dashboard");
+
   const params = await searchParams;
   const token = Array.isArray(params.token) ? params.token[0] : params.token;
 

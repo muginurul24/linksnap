@@ -4249,6 +4249,46 @@ Added a reusable visual Smart Rule builder with active toggles, per-rule destina
 
 **Next Task:** 13.3 — Rule Engine Logic (Ordered Priority)
 
+### 15.1 — Redirect Logged-In Users from Auth Pages
+- **Date:** 2026-05-07 20:44 GMT+7
+- **Duration:** 0 hours 20 minutes
+- **Status:** ✅ Complete
+
+**What I Did:**
+Added server-side auth guards to the marketing auth pages so active sessions do not see login, register, forgot-password, or reset-password forms. The verify page now checks the signed-in user's email verification status and redirects only when verification is already complete.
+
+**Files Changed:**
+- `_bmad-output/planning-artifacts/spec-phase-15-auth-redirects.md` — Added the Phase 15.1 mini-spec.
+- `src/app/(marketing)/login/page.tsx` — Redirects authenticated users to the dashboard before rendering.
+- `src/app/(marketing)/register/page.tsx` — Redirects authenticated users to the dashboard before rendering.
+- `src/app/(marketing)/verify/page.tsx` — Redirects verified authenticated users while allowing unverified users to complete OTP.
+- `src/app/(marketing)/forgot-password/page.tsx` — Redirects authenticated users to the dashboard before rendering.
+- `src/app/(marketing)/reset-password/page.tsx` — Redirects authenticated users before parsing reset tokens.
+- `src/lib/db/queries/users.ts` — Added a focused verification-status user query.
+- `tests/unit/auth-page-redirects.test.tsx` — Added auth page redirect behavior coverage.
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Checked off Task 15.1.
+
+**Decisions Made:**
+- Used server-side `redirect("/dashboard")` guards to prevent auth form flashes for signed-in users.
+- Queried verification status only on `/verify` because unverified sessions still need access to the OTP flow.
+
+**Tests:**
+- ✅ Unit: `rtk bun run test -- tests/unit/auth-page-redirects.test.tsx` — 1 file passed, 7 tests passed.
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Unit/Integration: `rtk bun run test` — 96 files passed, 445 tests passed.
+
+**Issues Encountered:**
+- `rtk git pull --rebase` could not run because `IMPLEMENTATION.md` already had local Phase 15 edits → Kept those local changes and continued without reverting them.
+
+**Security Checks:**
+- ✅ No new user input accepted.
+- ✅ Verification lookup uses Drizzle through `lib/db/queries`.
+- ✅ No secrets, raw SQL, or `dangerouslySetInnerHTML` introduced.
+- ✅ Auth pages now expose less authenticated-user surface.
+
+**Next Task:** 15.2 — Create Reusable `PlanGate` Component
+
 ### 13.3 — Rule Engine Logic (Ordered Priority)
 - **Date:** 2026-05-07 18:41 GMT+7
 - **Duration:** 0h 30m

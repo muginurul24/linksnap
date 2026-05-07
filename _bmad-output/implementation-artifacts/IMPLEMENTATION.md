@@ -1060,6 +1060,193 @@ rtk bun run db:studio    # Open Drizzle Studio (in another terminal)
 
 **Priority order:** 14.1 → 14.2 → 14.3 → 14.4
 
-**Estimated total:** 81 + 4 = 85 tasks
+**Estimated total:** 85 + 12 = 97 tasks
+
+---
+
+## 🔴 Phase 15: UX Hardening — User-Friendly Refinements
+
+> **Source:** Rafi + Claw Kun UX audit — 2026-05-07. Fix authentication redirects, plan-gate features visually, disable/hide controls for FREE users, and improve overall UX polish.
+
+### TASK 15.1 — Redirect Logged-In Users from Auth Pages
+- [x] File: `src/app/(marketing)/login/page.tsx`
+  - Make `async` server component
+  - Call `auth()` — if session exists → `redirect("/dashboard")`
+- [x] File: `src/app/(marketing)/register/page.tsx`
+  - Same: if session exists → `redirect("/dashboard")`
+- [x] File: `src/app/(marketing)/verify/page.tsx`
+  - If session exists AND user is verified → `redirect("/dashboard")`
+  - If session exists but not verified → allow verify page
+- [x] File: `src/app/(marketing)/forgot-password/page.tsx`
+  - If session exists → `redirect("/dashboard")`
+- [x] File: `src/app/(marketing)/reset-password/page.tsx`
+  - If session exists → `redirect("/dashboard")`
+- [x] Tests: unit (redirect behavior for authed users on each auth page)
+
+### TASK 15.2 — Create Reusable `PlanGate` Component
+- [ ] Create `src/components/plan-gate.tsx` — reusable component for plan-gated features:
+  ```tsx
+  <PlanGate
+    allowed={userPlan !== "FREE"}
+    upgradeMessage="Custom slugs require Pro or Business plan"
+    upgradeUrl="/settings/billing?upgrade=custom-slug"
+  >
+    <Input id="slug" ... />
+  </PlanGate>
+  ```
+- [ ] Behavior:
+  - If `allowed === true` → render children normally
+  - If `allowed === false` → wrap children in a disabled container:
+    - Show lock icon (🔒) next to label
+    - Show `upgradeMessage` as muted text below the control
+    - Show "Upgrade →" link pointing to `upgradeUrl`
+    - Children inputs get `disabled` prop applied
+- [ ] Also support `PlanGate.Quota` variant for quota-exhausted cases:
+  ```tsx
+  <PlanGate.Quota
+    used={3}
+    limit={3}
+    upgradeMessage="Link Page quota reached (3/3)"
+    upgradeUrl="/settings/billing"
+  >
+    <Switch ... />
+  </PlanGate.Quota>
+  ```
+- [ ] Tests: unit (render children when allowed, show gate when not, quota display)
+
+### TASK 15.3 — Hide Upgrade Card for Paid Users
+- [ ] File: `src/components/dashboard/app-sidebar.tsx`
+- [ ] The "Upgrade to Pro" card is currently shown for ALL users (including PRO and BUSINESS)
+- [ ] Fix: wrap the upgrade card in `{plan === "FREE" && (...)}`
+- [ ] The card should only render when `plan === "FREE"`
+- [ ] Tests: unit (sidebar upgrade card visibility per plan)
+
+### TASK 15.4 — Plan-Gate Smart Rules & Link Page Toggles
+- [ ] File: `src/app/(dashboard)/links/link-form.tsx`
+- [ ] Pass `userPlan` from parent to LinkForm
+- [ ] For FREE users:
+  - "Enable Link Page" toggle → disabled with tooltip: "Link Pages require Pro plan"
+  - "Enable Smart Rules" toggle → disabled with tooltip: "Smart Rules require Pro plan"
+  - Greyed out, not clickable
+- [ ] For PRO/BUSINESS: toggles work as normal
+- [ ] File: `src/app/(dashboard)/links/new/page.tsx` — pass `userPlan` to form
+- [ ] File: `src/app/(dashboard)/links/[slug]/edit/page.tsx` — pass `userPlan` to form
+- [ ] Tests: unit (toggle states per plan)
+
+### TASK 15.5 — Add Back Navigation to Create/Edit Pages
+- [ ] File: `src/app/(dashboard)/links/new/page.tsx` — add "← Back to Links" link at top
+- [ ] File: `src/app/(dashboard)/links/[slug]/edit/page.tsx` — add "← Back to Links" link
+- [ ] File: `src/app/(dashboard)/campaigns/new/page.tsx` — add "← Back to Campaigns" link
+- [ ] File: `src/app/(dashboard)/campaigns/[id]/edit/page.tsx` — add "← Back to Campaigns" link
+- [ ] Use consistent styling: small text link with arrow, positioned above the form title
+- [ ] Tests: unit (back link renders with correct href)
+
+### TASK 15.6 — Form Submit Success UX
+- [ ] File: `src/app/(dashboard)/links/link-form.tsx`
+  - After creating a new link: toast "Link created" + redirect to `/links`
+  - After editing a link: toast "Link updated" + stay on edit page (user may want to edit more)
+- [ ] File: `src/app/(dashboard)/campaigns/campaign-form.tsx`
+  - After creating: toast + redirect to `/campaigns`
+  - After editing: toast + redirect to `/campaigns`
+- [ ] File: `src/app/(dashboard)/settings/page.tsx`
+  - Profile save: toast "Profile updated"
+  - Password change: toast "Password changed"
+  - Notification save: toast "Preferences saved"
+- [ ] All toasts use `sonner` (already installed) with `richColors`
+- [ ] Tests: unit (toast messages, redirect behavior)
+
+### TASK 15.7 — Dashboard Analytics Empty State UX
+- [ ] File: `src/app/(dashboard)/analytics/page.tsx`
+- [ ] When user has 0 clicks: show useful empty state, not empty charts
+- [ ] Empty state message: "No click data yet. Share your links to start seeing analytics."
+- [ ] Add "Copy a link" button that goes to `/links`
+- [ ] Tests: unit (empty state rendering)
+
+### TASK 15.8 — Confirm Before Delete (All Delete Actions)
+- [ ] File: `src/app/(dashboard)/links/page.tsx` — delete link action
+- [ ] File: `src/app/(dashboard)/campaigns/campaign-actions.tsx` — delete campaign
+- [ ] File: `src/app/(dashboard)/settings/api-keys-panel.tsx` — revoke API key
+- [ ] All delete actions must show a confirmation dialog (already using shadcn Dialog):
+  - "Are you sure you want to delete [name]?"
+  - "This action cannot be undone."
+  - Cancel + Delete buttons
+- [ ] Verify: existing delete confirmations work, add where missing
+- [ ] Tests: unit (dialog renders, confirm/cancel callbacks)
+
+### TASK 15.9 — Loading State for All Interactive Actions
+- [ ] Scan all forms across the app for missing loading states:
+  - Buttons should show spinner + disable during submit
+  - Use `isSubmitting` state pattern consistently
+- [ ] Check: login, register, verify, forgot-password, reset-password, create link, edit link, create campaign, edit campaign, settings save, upgrade button
+- [ ] All must have: `disabled={isSubmitting}` + `<Loader2 className="animate-spin" />` when submitting
+- [ ] Tests: unit (button disabled state during submit)
+
+### TASK 15.10 — Mobile Navigation Polish
+- [ ] File: `src/components/dashboard/app-header.tsx`
+  - Breadcrumbs on mobile: truncate to current page only (hide parent breadcrumbs)
+- [ ] File: `src/components/dashboard/app-sidebar.tsx`
+  - Sidebar collapsed by default on mobile (`defaultOpen={false}` for mobile via media query or responsive prop)
+- [ ] File: `src/app/(dashboard)/links/page.tsx`
+  - Links table: on mobile, hide some columns, show essential info only
+- [ ] File: `src/app/(dashboard)/settings/billing/page.tsx`
+  - Billing plan cards: stack vertically on mobile
+- [ ] Tests: unit (responsive behavior verification where testable)
+
+### TASK 15.11 — Form Validation UX Improvements
+- [ ] All forms: show inline field errors immediately on blur (not just on submit)
+- [ ] All forms: clear field error when user starts typing in that field
+- [ ] Highlight invalid fields with red border (`aria-invalid` attribute)
+- [ ] File specific checks:
+  - Link form: validate URL format with helpful message
+  - Campaign form: validate slug format
+  - Auth forms: password strength indicator ("Weak / Fair / Strong")
+- [ ] Tests: unit (validation error display, field-level clearing)
+
+### TASK 15.12 — End-to-End Tests for Critical Flows
+- [ ] E2E: auth flow (register → verify → login → dashboard → logout)
+- [ ] E2E: link flow (create link → visit short URL → check analytics)
+- [ ] E2E: campaign flow (create campaign → add link → delete campaign)
+- [ ] E2E: billing flow (visit billing → upgrade button → verify redirect)
+- [ ] E2E: settings flow (change profile → change password)
+- [ ] All E2E tests pass; update any that broke from Phase 15 changes
+- [ ] Run full test suite, typecheck, lint — all must pass
+
+### TASK 15.13 — Apply PlanGate to ALL Gated Features
+> **Principle:** Never show an error after the fact. Disable the control upfront with a clear reason and upgrade path.
+
+- [ ] Pass `userPlan` to `CreateLinkForm` from `NewLinkPage` and `EditLinkPage`
+- [ ] Apply `PlanGate` to custom slug input (FREE users)
+- [ ] Apply `PlanGate` to "Enable Link Page" toggle (FREE users)
+- [ ] Apply `PlanGate` to "Enable Smart Rules" toggle (FREE users)
+- [ ] Apply `PlanGate.Quota` to "Enable Link Page" toggle when quota exhausted (PRO/BUSINESS with quota)
+- [ ] Apply `PlanGate.Quota` to "Enable Smart Rules" toggle when quota exhausted
+- [ ] Apply `PlanGate.Quota` to "New Campaign" button on `/campaigns` page (when quota reached)
+- [ ] Apply `PlanGate` to "API Keys" tab content in Settings (FREE users already gated via upgrade prompt, but make input area use PlanGate for consistency)
+- [ ] Apply `PlanGate` to "API Docs" sidebar nav item (already hidden for FREE — verify it works)
+- [ ] Scan ALL pages for any remaining plan-gated features without proper UX gating
+- [ ] Tests: unit (each gated control renders correctly per plan), integration (full flow with FREE user hitting gates)
+
+### TASK 15.14 — Pass userPlan Through Dashboard Hierarchy
+- [ ] `DashboardLayout` already has `billingUser.plan` — pass to `AppSidebar` (✅ done) and `AppHeader`
+- [ ] Create `src/lib/auth/plan-context.ts` — React Context for `UserPlan` (avoids prop drilling)
+- [ ] Wrap dashboard children in `PlanProvider` with `userPlan` value
+- [ ] All dashboard components read plan from context instead of props
+- [ ] Refactor existing components that take `plan` prop to use context
+- [ ] Tests: unit (context provides correct plan value)
+
+---
+
+## 🚀 Ready to Start?
+
+```bash
+cd ~/projects/linksnap
+rtk bun run dev          # Start development
+rtk bun run db:studio    # Open Drizzle Studio (in another terminal)
+```
+
+**Priority order:** 15.1 → 15.2 → 15.3 → 15.4 → 15.5 → 15.6 → 15.7 → 15.8 → 15.9 → 15.10 → 15.11 → 15.12 → 15.13 → 15.14
+
+**Estimated total:** 85 + 14 = 99 tasks
+**Estimated timeline:** 12 weeks (3 months) for 1 full-time developer
 
 Good luck. Ship it. 🚀

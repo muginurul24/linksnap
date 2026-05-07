@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
+import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { createPublicMetadata } from "@/lib/seo/metadata";
+import { auth } from "@/lib/auth";
 import { LoginForm } from "./login-form";
 
 const description =
@@ -15,7 +17,10 @@ export const metadata: Metadata = {
   }),
 };
 
-export default function LoginPage() {
+export default async function LoginPage() {
+  const session = await auth();
+  if (session?.user) redirect("/dashboard");
+
   return (
     <Suspense
       fallback={

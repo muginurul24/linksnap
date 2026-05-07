@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
+import { redirect } from "next/navigation";
 import { createPublicMetadata } from "@/lib/seo/metadata";
+import { auth } from "@/lib/auth";
 import { ForgotPasswordForm } from "./forgot-password-form";
 
 const description =
@@ -14,6 +16,9 @@ export const metadata: Metadata = {
   }),
 };
 
-export default function ForgotPasswordPage() {
+export default async function ForgotPasswordPage() {
+  const session = await auth();
+  if (session?.user) redirect("/dashboard");
+
   return <ForgotPasswordForm />;
 }

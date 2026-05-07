@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
+import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { createPublicMetadata } from "@/lib/seo/metadata";
+import { auth } from "@/lib/auth";
+import { findUserVerificationStatusById } from "@/lib/db/queries/users";
 import { VerifyEmailForm } from "./verify-email-form";
 
 const description =
@@ -15,7 +18,25 @@ export const metadata: Metadata = {
   }),
 };
 
-export default function VerifyPage() {
+type SessionWithUserId = {
+  user?: {
+    id?: unknown;
+  } | null;
+} | null;
+
+function getSessionUserId(session: SessionWithUserId): string | null {
+  return typeof session?.user?.id === "string" ? session.user.id : null;
+}
+
+export default async function VerifyPage() {
+  const session = await auth();
+  const userId = getSessionUserId(session);
+
+  if (userId) {
+    const user = await findUserVerificationStatusById(userId);
+    if (user?.emailVerified) redirect("/dashboard");
+  }
+
   return (
     <Suspense
       fallback={
