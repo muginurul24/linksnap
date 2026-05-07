@@ -5,22 +5,17 @@ import type {
 import {
   findPaymentTransactionByOrderId,
   updatePaymentTransactionStatus,
-  updateUserPlanForPayment,
-  upsertActiveSubscriptionForUser,
 } from "@/lib/db/queries/payments";
-import { sendPaymentInvoiceEmail } from "@/lib/email/payment-emails";
+import {
+  InvalidSubscriptionPaymentError,
+  createOrRenewSubscriptionForPayment,
+} from "@/lib/payments/subscription";
 import {
   mapMidtransStatus,
   parseMidtransGrossAmount,
   parseMidtransTimestamp,
 } from "@/lib/payments/webhook";
-import {
-  paidPlanSchema,
-  paymentDurationSchema,
-  type MidtransWebhookNotification,
-  type PaidPlan,
-  type PaymentDuration,
-} from "@/lib/validations/payment";
+import type { MidtransWebhookNotification } from "@/lib/validations/payment";
 
 const TERMINAL_PAYMENT_STATUSES = new Set<PaymentStatus>([
   "CANCEL",
@@ -54,35 +49,6 @@ export class InvalidPaymentPlanError extends Error {
   }
 }
 
-function parsePaidPlan(plan: string, orderId: string): PaidPlan {
-  const parsed = paidPlanSchema.safeParse(plan);
-  if (!parsed.success) throw new InvalidPaymentPlanError(orderId);
-
-  return parsed.data;
-}
-
-function parsePaymentDuration(duration: string, orderId: string): PaymentDuration {
-  const parsed = paymentDurationSchema.safeParse(duration);
-  if (!parsed.success) throw new InvalidPaymentPlanError(orderId);
-
-  return parsed.data;
-}
-
-function calculateSubscriptionPeriodEnd(
-  start: Date,
-  duration: PaymentDuration,
-): Date {
-  const end = new Date(start);
-
-  if (duration === "YEARLY") {
-    end.setFullYear(end.getFullYear() + 1);
-    return end;
-  }
-
-  end.setMonth(end.getMonth() + 1);
-  return end;
-}
-
 function shouldIgnoreStatusTransition(
   currentStatus: PaymentStatus,
   nextStatus: PaymentStatus,
@@ -101,42 +67,6 @@ function assertNotificationAmountMatches(
 
   if (notifiedAmount !== transaction.grossAmountIdr) {
     throw new PaymentAmountMismatchError(transaction.orderId);
-  }
-}
-
-async function activateSubscriptionFromTransaction(
-  transaction: PaymentTransactionForWebhook,
-): Promise<void> {
-  const plan = parsePaidPlan(transaction.plan, transaction.orderId);
-  const duration = parsePaymentDuration(transaction.duration, transaction.orderId);
-  const currentPeriodStart = transaction.paidAt ?? new Date();
-  const currentPeriodEnd = calculateSubscriptionPeriodEnd(
-    currentPeriodStart,
-    duration,
-  );
-
-  await upsertActiveSubscriptionForUser({
-    currentPeriodEnd,
-    currentPeriodStart,
-    plan,
-    userId: transaction.userId,
-  });
-  await updateUserPlanForPayment({ plan, userId: transaction.userId });
-
-  try {
-    await sendPaymentInvoiceEmail({
-      duration,
-      grossAmountIdr: transaction.grossAmountIdr,
-      grossAmountUsd: transaction.grossAmountUsd,
-      orderId: transaction.orderId,
-      plan,
-      to: transaction.userEmail,
-    });
-  } catch (error) {
-    console.error("[payments:webhook] Unable to send invoice email", {
-      error,
-      orderId: transaction.orderId,
-    });
   }
 }
 
@@ -191,7 +121,15 @@ export async function handleMidtransPaymentWebhook(
   }
 
   if (statusAction.activateSubscription) {
-    await activateSubscriptionFromTransaction(updatedTransaction);
+    try {
+      await createOrRenewSubscriptionForPayment(updatedTransaction);
+    } catch (error) {
+      if (error instanceof InvalidSubscriptionPaymentError) {
+        throw new InvalidPaymentPlanError(updatedTransaction.orderId);
+      }
+
+      throw error;
+    }
   }
 
   return {

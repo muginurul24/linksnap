@@ -1,10 +1,11 @@
-import { and, eq } from "drizzle-orm";
+import { and, eq, inArray, lte } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { subscriptions, transactions, users } from "@/lib/db/schema";
 import type { UserPlan } from "@/lib/links/limits";
 import type { PaidPlan, PaymentDuration } from "@/lib/validations/payment";
 
 export type PaymentStatus = typeof transactions.$inferSelect["status"];
+export type SubscriptionRecord = typeof subscriptions.$inferSelect;
 
 export type BillingUser = {
   email: string;
@@ -32,6 +33,11 @@ export type PaymentTransactionForWebhook = {
   userEmail: string;
   userId: string;
   userName: string | null;
+};
+
+export type ExpiredSubscriptionCandidate = {
+  id: string;
+  userId: string;
 };
 
 type CreatePendingTransactionInput = {
@@ -242,4 +248,106 @@ export async function updateUserPlanForPayment({
     .returning({ id: users.id });
 
   return user ?? null;
+}
+
+export async function findSubscriptionByUserId(
+  userId: string,
+): Promise<SubscriptionRecord | null> {
+  const subscription = await db.query.subscriptions.findFirst({
+    where: eq(subscriptions.userId, userId),
+  });
+
+  return subscription ?? null;
+}
+
+export async function expireSubscriptionForUser({
+  expiredAt,
+  userId,
+}: {
+  expiredAt: Date;
+  userId: string;
+}): Promise<{ id: string } | null> {
+  const [subscription] = await db
+    .update(subscriptions)
+    .set({
+      canceledAt: expiredAt,
+      status: "EXPIRED",
+      updatedAt: new Date(),
+    })
+    .where(and(eq(subscriptions.userId, userId), eq(subscriptions.status, "ACTIVE")))
+    .returning({ id: subscriptions.id });
+
+  return subscription ?? null;
+}
+
+export async function listExpiredActiveSubscriptions({
+  limit,
+  now,
+}: {
+  limit: number;
+  now: Date;
+}): Promise<ExpiredSubscriptionCandidate[]> {
+  return db
+    .select({
+      id: subscriptions.id,
+      userId: subscriptions.userId,
+    })
+    .from(subscriptions)
+    .where(
+      and(
+        eq(subscriptions.status, "ACTIVE"),
+        lte(subscriptions.currentPeriodEnd, now),
+      ),
+    )
+    .limit(limit);
+}
+
+export async function expireSubscriptionsByIds({
+  expiredAt,
+  ids,
+}: {
+  expiredAt: Date;
+  ids: string[];
+}): Promise<number> {
+  if (ids.length === 0) return 0;
+
+  const expired = await db
+    .update(subscriptions)
+    .set({
+      canceledAt: expiredAt,
+      status: "EXPIRED",
+      updatedAt: new Date(),
+    })
+    .where(inArray(subscriptions.id, ids))
+    .returning({ id: subscriptions.id });
+
+  return expired.length;
+}
+
+export async function updateUserPlanForSubscription({
+  plan,
+  userId,
+}: {
+  plan: UserPlan;
+  userId: string;
+}): Promise<{ id: string } | null> {
+  const [user] = await db
+    .update(users)
+    .set({ plan, updatedAt: new Date() })
+    .where(eq(users.id, userId))
+    .returning({ id: users.id });
+
+  return user ?? null;
+}
+
+export async function updateUserPlansToFree(userIds: string[]): Promise<number> {
+  if (userIds.length === 0) return 0;
+
+  const updated = await db
+    .update(users)
+    .set({ plan: "FREE", updatedAt: new Date() })
+    .where(inArray(users.id, userIds))
+    .returning({ id: users.id });
+
+  return updated.length;
 }

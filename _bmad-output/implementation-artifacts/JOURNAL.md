@@ -2118,3 +2118,48 @@ Implemented the Midtrans payment webhook. Notifications are validated, signature
 - ✅ No secrets, raw SQL, or sensitive payload logging added.
 
 **Next Task:** 8.3 — Subscription Management
+
+### 8.3 — Subscription Management
+- **Date:** 2026-05-07 08:09 GMT+7
+- **Duration:** 0h 30m
+- **Status:** ✅ Complete
+
+**What I Did:**
+Added subscription lifecycle management. Successful payment settlement now flows through a dedicated subscription module, dashboard loads sync subscription expiry, expired users are downgraded to Free, and a secured Vercel Cron route processes due expirations daily.
+
+**Files Changed:**
+- `src/lib/payments/subscription.ts` — Added subscription creation/renewal, expiry sync, period calculation, and batch expiry processing.
+- `src/lib/payments/webhook-handler.ts` — Moved settlement activation into the subscription module.
+- `src/lib/db/queries/payments.ts` — Added subscription lookup, expiry, batch expiry, and Free-plan downgrade helpers.
+- `src/app/(dashboard)/layout.tsx` — Converted dashboard layout to server-side subscription status sync on load.
+- `src/app/api/v1/payments/subscriptions/renew/route.ts` — Added secured cron endpoint for subscription expiry processing.
+- `vercel.json` — Added daily Vercel Cron schedule for subscription renewal/expiry checks.
+- `.env.example` — Documented `CRON_SECRET`.
+- `.env` — Added local `CRON_SECRET` value without staging or committing it.
+- `tests/unit/subscription.test.ts` — Added period calculation, renewal, dashboard expiry sync, and batch cron coverage.
+- `tests/integration/subscription-renew-cron-api.test.ts` — Added cron auth and success coverage.
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Checked off Task 8.3.
+- `_bmad-output/implementation-artifacts/JOURNAL.md` — Recorded this completion entry.
+
+**Decisions Made:**
+- Cron route requires `Authorization: Bearer $CRON_SECRET`, matching current Vercel Cron security guidance.
+- The cron runs once daily at `0 0 * * *` UTC to remain compatible with Hobby plan daily cron limits.
+- Dashboard status sync downgrades expired subscriptions opportunistically, while cron handles batch expiry as the background safety net.
+
+**Tests:**
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Unit/Integration: `rtk bun run test` — 58 files passed, 268 tests passed.
+- ✅ Build: `rtk bun run build` — Passed; `/api/v1/payments/subscriptions/renew` is registered.
+
+**Issues Encountered:**
+- None.
+
+**Security Checks:**
+- ✅ Cron endpoint requires `CRON_SECRET`.
+- ✅ Dashboard sync only uses authenticated session user ID.
+- ✅ Expiry processing updates users in batches and avoids raw SQL.
+- ✅ `.env` was updated locally but not staged or committed.
+- ✅ No payment secrets or sensitive values logged.
+
+**Next Task:** 8.4 — Billing Page (API + Frontend)

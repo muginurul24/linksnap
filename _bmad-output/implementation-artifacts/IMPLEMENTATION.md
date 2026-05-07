@@ -443,11 +443,11 @@ src/
 - [x] Send invoice email via Resend
 
 ### TASK 8.3 — Subscription Management
-- File: `src/lib/payments/subscription.ts`
-- Create subscription on successful payment
-- Check subscription status on dashboard load
-- Handle expiry: downgrade to Free plan
-- Handle renewal cron job (Vercel Cron)
+- [x] File: `src/lib/payments/subscription.ts`
+- [x] Create subscription on successful payment
+- [x] Check subscription status on dashboard load
+- [x] Handle expiry: downgrade to Free plan
+- [x] Handle renewal cron job (Vercel Cron)
 
 ### TASK 8.4 — Billing Page (API + Frontend)
 - File: `src/app/api/v1/payments/history/route.ts`
