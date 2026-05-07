@@ -3379,3 +3379,58 @@ API requests through `Authorization: Bearer lsnap_sk_...`.
 - ✅ No raw SQL detected in source.
 
 **Next Task:** 12.14 — Connect Settings Tabs to Real APIs
+
+### 12.14 — Connect Settings Tabs to Real APIs
+- **Date:** 2026-05-07 15:51 GMT+7
+- **Duration:** 0h 35m
+- **Status:** ✅ Complete
+
+**What I Did:**
+Connected Settings profile, notifications, and password-change tabs to real
+authenticated APIs. Profile now loads and saves the user's real name/email,
+notifications persist to the user record, and password changes verify the
+current password before storing a new hash.
+
+**Files Changed:**
+- `_bmad-output/planning-artifacts/spec-settings-real-apis.md` — Added quick-dev spec for settings APIs.
+- `src/lib/db/schema.ts` — Added typed `users.notifications` JSON preferences with static defaults.
+- `src/lib/db/queries/settings.ts` — Added settings profile, notifications, and password hash query helpers.
+- `src/lib/validations/auth.ts` — Exported password schema and added change-password validation.
+- `src/lib/validations/settings.ts` — Added profile and notification preference validation.
+- `src/app/(dashboard)/settings/page.tsx` — Loaded real settings data and replaced inert controls with client forms.
+- `src/app/(dashboard)/settings/settings-forms.tsx` — Added profile, notifications, and password forms.
+- `src/app/api/v1/settings/profile/route.ts` — Added authenticated profile update endpoint.
+- `src/app/api/v1/settings/notifications/route.ts` — Added authenticated notification update endpoint.
+- `src/app/api/v1/auth/change-password/route.ts` — Added authenticated password change endpoint.
+- `src/lib/api-docs/spec.ts` — Documented new settings and password endpoints.
+- `tests/unit/settings-validation.test.ts` — Added form validation coverage.
+- `tests/integration/settings-api.test.ts` — Added profile and notifications API coverage.
+- `tests/integration/change-password-api.test.ts` — Added password change flow coverage.
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Checked off Task 12.14.
+- `_bmad-output/implementation-artifacts/JOURNAL.md` — Recorded this completion entry.
+
+**Decisions Made:**
+- Blank profile names are stored as `null`, matching the existing nullable user name column.
+- OAuth-only accounts without a password hash return `PASSWORD_CHANGE_UNAVAILABLE` instead of silently creating a password.
+- Notification preferences use four explicit booleans in JSONB so the UI and API stay typed without adding several narrow columns.
+
+**Tests:**
+- ✅ Targeted: `rtk bun run test -- tests/unit/settings-validation.test.ts tests/integration/settings-api.test.ts tests/integration/change-password-api.test.ts tests/unit/db-schema.test.ts tests/integration/api-docs-route.test.ts` — 5 files passed, 20 tests passed.
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Unit/Integration: `rtk bun run test` — 82 files passed, 369 tests passed.
+- ✅ Build: `rtk bun run build` — Passed.
+- ✅ Database: `rtk bun run db:push` — Applied schema changes.
+
+**Issues Encountered:**
+- None.
+
+**Security Checks:**
+- ✅ Profile, notification, and password inputs are validated with Zod `.strict()`.
+- ✅ Settings updates require an authenticated session.
+- ✅ Mutating settings and password routes are rate limited.
+- ✅ Password change verifies the current password before hashing and storing the new password.
+- ✅ No raw SQL detected in source.
+- ✅ Hardcoded settings values (`Rafi`, `rafi@email.com`) were removed from the Settings page/forms.
+
+**Next Task:** 12.15 — Connect Link Pages Dashboard to Real Data
