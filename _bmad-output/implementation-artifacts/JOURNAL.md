@@ -5510,3 +5510,37 @@ Updated the sidebar upgrade card copy to match actual product limits and remove 
 - ✅ No secrets, raw SQL, or `dangerouslySetInnerHTML` introduced.
 
 **Next Task:** 16.10 — Help / Support Page
+
+### 16.10 — Help / Support Page
+- **Date:** 2026-05-07 23:32 GMT+7
+- **Duration:** 0h 20m
+- **Status:** ✅ Complete
+
+**What I Did:**
+Added a protected dashboard Help page with FAQ, support contact, and security reporting sections. Added Help to the Account sidebar navigation and dashboard breadcrumbs.
+
+**Files Changed:**
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Checked off Task 16.10.
+- `src/app/(dashboard)/help/page.tsx` — Added Help page content.
+- `src/components/dashboard/app-sidebar.tsx` — Added Help sidebar navigation item.
+- `src/components/dashboard/app-header.tsx` — Added Help breadcrumb.
+- `tests/unit/help-page.test.tsx` — Added Help page render coverage.
+
+**Decisions Made:**
+- Kept the Help page inside the dashboard route group so it inherits existing auth protection and shell navigation.
+
+**Tests:**
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Targeted Unit: `rtk bun run test -- tests/unit/help-page.test.tsx tests/unit/app-sidebar.test.ts` — 2 files passed, 10 tests passed.
+- ✅ Unit/Integration: `rtk bun run test` — 114 files passed, 507 tests passed.
+
+**Issues Encountered:**
+- None.
+
+**Security Checks:**
+- ✅ Help page inherits dashboard auth protection.
+- ✅ Contact links are static mailto links and no user input is rendered.
+- ✅ No secrets, raw SQL, or `dangerouslySetInnerHTML` introduced.
+
+**Next Task:** 16.11 — Session Timeout Warning

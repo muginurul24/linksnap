@@ -1330,9 +1330,9 @@ rtk bun run db:studio    # Open Drizzle Studio (in another terminal)
 - [x] Tests: unit (card copy)
 
 ### TASK 16.10 — Help / Support Page
-- [ ] Create `src/app/(dashboard)/help/page.tsx` — FAQ + contact
-- [ ] Add "Help" to sidebar Account nav with `HelpCircle` icon
-- [ ] Tests: unit (page renders)
+- [x] Create `src/app/(dashboard)/help/page.tsx` — FAQ + contact
+- [x] Add "Help" to sidebar Account nav with `HelpCircle` icon
+- [x] Tests: unit (page renders)
 
 ### TASK 16.11 — Session Timeout Warning
 - [ ] Create `src/components/dashboard/session-timeout.tsx`

@@ -76,6 +76,7 @@ const breadcrumbMap: Record<string, DashboardBreadcrumb[]> = {
     { label: "Settings", href: "/settings" },
     { label: "Billing" },
   ],
+  "/help": [{ label: "Dashboard", href: "/dashboard" }, { label: "Help" }],
 };
 
 export function getDashboardBreadcrumbs(pathname: string): DashboardBreadcrumb[] {

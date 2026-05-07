@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import {
   LayoutDashboard, Link2, Globe, Megaphone, BarChart3, Settings, QrCode, Zap,
-  LogOut, User, CreditCard, Sparkles, BookOpen, Loader2,
+  LogOut, User, CreditCard, Sparkles, BookOpen, Loader2, HelpCircle,
 } from "lucide-react";
 import { usePlan } from "@/lib/auth/plan-context";
 import type { UserPlan } from "@/lib/links/limits";
@@ -50,6 +50,7 @@ const apiDocsNavItem = { title: "API Docs", url: "/docs", icon: BookOpen };
 const accountNav = [
   { title: "Settings", url: "/settings", icon: Settings },
   { title: "Billing", url: "/settings/billing", icon: CreditCard },
+  { title: "Help", url: "/help", icon: HelpCircle },
 ];
 
 function normalizeText(value: string | null | undefined): string | null {
