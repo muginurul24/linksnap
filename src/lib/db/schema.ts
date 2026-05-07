@@ -22,7 +22,6 @@ export const paymentStatusEnum = pgEnum("payment_status", [
   "DENY",
   "EXPIRE",
 ]);
-export const paymentGatewayEnum = pgEnum("payment_gateway", ["midtrans"]);
 export const ruleTypeEnum = pgEnum("rule_type", [
   "GEO",
   "DEVICE",
@@ -278,7 +277,6 @@ export const transactions = pgTable("transactions", {
     .references(() => users.id, { onDelete: "cascade" })
     .notNull(),
   orderId: varchar("order_id", { length: 100 }).notNull().unique(),
-  gateway: paymentGatewayEnum("gateway").default("midtrans").notNull(),
   plan: planEnum("plan").notNull(),
   duration: varchar("duration", { length: 10 }).notNull(),
   grossAmountUsd: real("gross_amount_usd").notNull(),

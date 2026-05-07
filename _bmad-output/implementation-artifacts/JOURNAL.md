@@ -4379,6 +4379,45 @@ Removed the remaining gateway selector UI from billing plan cards and reverted p
 
 **Next Task:** 14.3 — Cleanup Transaction & DB References
 
+### 14.3 — Cleanup Transaction & DB References
+- **Date:** 2026-05-07 20:25 GMT+7
+- **Duration:** 0 hours 20 minutes
+- **Status:** ✅ Complete
+
+**What I Did:**
+Removed the `gateway` column from the Drizzle `transactions` schema, payment query types, inserts, returns, and billing history UI. Applied the schema change to the database with `rtk bun run db:push`, confirming Drizzle's data-loss prompt for the single dropped column.
+
+**Files Changed:**
+- `src/lib/db/schema.ts` — Removed payment gateway enum and `transactions.gateway`.
+- `src/lib/db/queries/payments.ts` — Removed gateway fields from transaction inputs, output types, selects, inserts, and returns.
+- `src/app/(dashboard)/settings/billing/page.tsx` — Removed billing history gateway column and badge display.
+- `tests/integration/billing-page-gateway-detection.test.tsx` — Updated history coverage to assert no gateway column.
+- `tests/unit/checkout-pages.test.tsx` — Removed gateway from checkout transaction fixtures.
+- `tests/unit/subscription.test.ts` — Removed gateway from payment transaction fixtures.
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Checked off Task 14.3.
+- `_bmad-output/implementation-artifacts/JOURNAL.md` — Recorded this completion entry.
+
+**Decisions Made:**
+- Removed the now-single-value `payment_gateway` enum from application schema definitions because it no longer has product meaning.
+- Kept `paymentMethod` in transaction history because Midtrans still provides bank/e-wallet method details independently of gateway.
+
+**Tests:**
+- ✅ Database: `rtk bun run db:push` — Applied, dropping `transactions.gateway`.
+- ✅ Gateway reference check: no `transactions.gateway` or payment gateway enum references remain in `src/`.
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Unit/Integration: `rtk bun run test` — 95 files passed, 438 tests passed.
+
+**Issues Encountered:**
+- Drizzle prompted for data loss because one existing row had a `gateway` value → Confirmed the removal as required by Task 14.3.
+
+**Security Checks:**
+- ✅ No raw SQL was added; schema change was applied through Drizzle tooling.
+- ✅ Payment webhook/order queries still look up transactions by order ID and user ownership checks remain unchanged.
+- ✅ No secrets or sensitive payment data were logged.
+
+**Next Task:** 14.4 — Remove Stripe Tests
+
 ### 13.4 — Smart Rules API Update
 - **Date:** 2026-05-07 18:47 GMT+7
 - **Duration:** 0h 30m

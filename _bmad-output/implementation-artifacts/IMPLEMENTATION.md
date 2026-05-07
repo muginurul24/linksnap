@@ -1033,11 +1033,11 @@ rtk bun run db:studio    # Open Drizzle Studio (in another terminal)
 - [x] Tests: unit (billing page renders single gateway)
 
 ### TASK 14.3 — Cleanup Transaction & DB References
-- [ ] Remove `gateway` column from `transactions` table schema (Drizzle schema)
-- [ ] Remove gateway badge/column from billing history table
-- [ ] Drop `gateway` column from DB: `rtk bun run db:push`
-- [ ] Remove gateway-related types/interfaces
-- [ ] Tests: integration (billing history without gateway column)
+- [x] Remove `gateway` column from `transactions` table schema (Drizzle schema)
+- [x] Remove gateway badge/column from billing history table
+- [x] Drop `gateway` column from DB: `rtk bun run db:push`
+- [x] Remove gateway-related types/interfaces
+- [x] Tests: integration (billing history without gateway column)
 
 ### TASK 14.4 — Remove Stripe Tests
 - [ ] Delete Stripe test files:

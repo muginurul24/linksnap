@@ -12,7 +12,6 @@ type MockBillingUser = {
 type MockBillingTransaction = {
   createdAt: Date;
   duration: string;
-  gateway: "midtrans";
   grossAmountIdr: number;
   grossAmountUsd: number;
   id: string;
@@ -72,7 +71,7 @@ describe("billing page Midtrans checkout", () => {
     mockState.subscription = null;
   });
 
-  it("should render a single gateway-free upgrade control", async () => {
+  it("should render a single upgrade control", async () => {
     const element = await BillingPage({
       searchParams: Promise.resolve({}),
     });
@@ -85,13 +84,12 @@ describe("billing page Midtrans checkout", () => {
     expect(markup).not.toContain("data-client-country");
   });
 
-  it("should render transaction history for Midtrans payments", async () => {
+  it("should render transaction history without a gateway column", async () => {
     mockState.history = {
       items: [
         {
           createdAt: new Date("2026-05-07T07:00:00.000Z"),
           duration: "MONTHLY",
-          gateway: "midtrans",
           grossAmountIdr: 128000,
           grossAmountUsd: 8,
           id: "transaction-midtrans",
@@ -103,7 +101,7 @@ describe("billing page Midtrans checkout", () => {
           updatedAt: new Date("2026-05-07T07:05:00.000Z"),
         },
       ],
-      total: 2,
+      total: 1,
     };
 
     const element = await BillingPage({
@@ -111,8 +109,7 @@ describe("billing page Midtrans checkout", () => {
     });
     const markup = renderToStaticMarkup(element);
 
-    expect(markup).toContain("Gateway");
-    expect(markup).toContain("Midtrans");
+    expect(markup).not.toContain("Gateway");
     expect(markup).toContain("Bank Transfer");
   });
 });

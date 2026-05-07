@@ -17,7 +17,6 @@ type MockSubscription = {
 
 type MockPaymentTransaction = {
   duration: string;
-  gateway: "midtrans";
   grossAmountIdr: number;
   grossAmountUsd: number;
   orderId: string;
@@ -125,7 +124,6 @@ function createTransaction(
 ): MockPaymentTransaction {
   return {
     duration: "MONTHLY",
-    gateway: "midtrans",
     grossAmountIdr: 128000,
     grossAmountUsd: 8,
     orderId: "LS-123",
