@@ -1361,4 +1361,141 @@ rtk bun run db:studio    # Open Drizzle Studio (in another terminal)
 **Estimated total:** 99 + 12 = 111 tasks
 **Estimated timeline:** 12 weeks (3 months) for 1 full-time developer
 
+---
+
+## 🔴 Phase 17: Pre-Launch Security & Resilience Hardening
+
+> **Source:** Claw Kun comprehensive audit — 2026-05-08. Close the 3 HIGH and remaining MEDIUM gaps before go-live. Defense-in-depth hardening for the most critical paths.
+
+### 🔴 HIGH — Must Fix Before Go-Live
+
+### TASK 17.1 — Rate Limit the Public Redirect Handler
+- [ ] File: `src/app/[slug]/page.tsx` (and `src/app/[slug]/go/route.ts`)
+- [ ] Add Redis sliding window rate limit on the redirect path — most critical surface for a URL shortener
+- [ ] Rate limit: 100 requests per 60 seconds per IP for `/[slug]`
+- [ ] Rate limit: 30 requests per 60 seconds per IP for `/[slug]/go` (CTA clicks)
+- [ ] Use existing `slidingWindowRateLimit()` from `src/lib/redis/rate-limit.ts`
+- [ ] Key format: `redirect:slug:{ip}` and `redirect:cta:{ip}`
+- [ ] When rate-limited: return 429 with `Retry-After` header instead of redirect
+- [ ] Skip rate limit for known bot UAs (Googlebot, etc.) to avoid SEO impact
+- [ ] Tests: unit (rate limit triggers at threshold), integration (rate-limited request gets 429)
+
+### TASK 17.2 — Replace CSP `unsafe-inline` with Nonce-Based Policy
+- [ ] File: `src/lib/security/headers.ts`
+- [ ] Remove `'unsafe-inline'` from both `script-src` and `style-src`
+- [ ] Generate per-request nonce via `crypto.randomUUID()`
+- [ ] Inject nonce via `next.config.ts` headers function using `request`-scoped nonce
+- [ ] For scripts: migrate any inline `<script>` tags to external files or `next/script` with nonce
+- [ ] For styles: use CSS modules or styled-jsx instead of inline styles
+- [ ] Verify CSP doesn't break production — run full smoke test suite
+- [ ] Reference: [Next.js CSP docs](https://nextjs.org/docs/app/building-your-application/configuring/content-security-policy)
+- [ ] Tests: unit (CSP header contains nonce, no unsafe-inline)
+
+### TASK 17.3 — Mitigate `after()` Experimental API Risk for Click Logging
+- [ ] Files: `src/app/[slug]/page.tsx` and `src/app/[slug]/go/route.ts`
+- [ ] Current: click logging uses `after(() => { void logRedirectClick(input) })` — experimental Next.js 16 API
+- [ ] Risk: if `after()` silently fails, ALL click events are lost
+- [ ] Option A (preferred): Replace with Upstash Redis queue — push click event to Redis list, process via cron/worker
+- [ ] Option B: Add try/catch inside `after()` + structured error telemetry to detect failures
+- [ ] Option C: Use `waitUntil()` from Vercel Edge if deployed there
+- [ ] Add Sentry/OpenTelemetry alert when click logging fails > 5% of requests
+- [ ] Tests: unit (click event enqueued to Redis), integration (event persistence verified)
+
+### 🟡 MEDIUM — Should Fix Within Week 1
+
+### TASK 17.4 — Standardize Error Logging (console.error → logger)
+- [ ] Scan all `src/app/api/v1/**/*.ts` route handlers
+- [ ] Replace bare `console.error("[ROUTE] message", error)` with `logger.error("api_error_response", { requestId, code, error })`
+- [ ] 50+ route handlers affected — bulk search & replace
+- [ ] Also audit `src/components/` and `src/lib/` for bare console logging
+- [ ] Verify JSON-structured logs appear correctly in production (Vercel Logs / Datadog / Grafana)
+- [ ] Tests: unit (logger output format)
+
+### TASK 17.5 — Extract Duplicated `getRedirectLink()` and `getBaseUrl()`
+- [ ] Create `src/lib/links/redirect-cache.ts` — extract shared `getRedirectLink()` with cache logic
+- [ ] Refactor `src/app/[slug]/page.tsx` to import from shared module
+- [ ] Refactor `src/app/[slug]/go/route.ts` to import from shared module
+- [ ] Create `src/lib/api/base-url.ts` — extract `getBaseUrl()` used in 4+ route files
+- [ ] Refactor all route handlers to use shared `getBaseUrl()`
+- [ ] Verify zero behavioral changes — all existing tests must pass
+- [ ] Tests: update imports, run full suite
+
+### TASK 17.6 — Decouple Click Count from Redirect Cache
+- [ ] Current: `redirect:${slug}` cache includes `clickCount` — stale for up to 300s
+- [ ] File: `src/lib/links/redirect.ts` — remove `clickCount` from `RedirectLink` cache entry
+- [ ] Store `clickCount` separately — either Redis atomic `INCR` or periodic DB flush
+- [ ] Dashboard queries pull real-time-ish click count (Redis first, DB fallback)
+- [ ] Cache TTL for redirect metadata stays 300s; click count refreshes every 60s
+- [ ] Tests: unit (separate cache keys), integration (click count freshness)
+
+### TASK 17.7 — Add Cursor-Based Pagination for List Endpoints
+- [ ] Files: `GET /api/v1/links`, `GET /api/v1/campaigns`, `GET /api/v1/pages`
+- [ ] Add optional `cursor` param (uses `createdAt` + `id` as cursor)
+- [ ] Add `maxPageLimit` (e.g., 100 items max per request)
+- [ ] Keep backward compatibility with `page` + `limit` params
+- [ ] Return `nextCursor` in response for cursor-based navigation
+- [ ] Tests: integration (cursor pagination returns correct next page)
+
+### TASK 17.8 — Add `global-error.tsx` Root Error Boundary
+- [x] ✅ Already created by Claw Kun (see `src/app/global-error.tsx`)
+
+### 🟢 LOW — Polish Items
+
+### TASK 17.9 — Add DB Proxy Symbol Trap Handlers
+- [ ] File: `src/lib/db/index.ts`
+- [ ] Add `Symbol.toPrimitive` and `Symbol.iterator` handlers to the Proxy
+- [ ] Prevents runtime errors if any tool/library tries to iterate or coerce `db`
+- [ ] Tests: unit (proxy symbol behavior)
+
+### TASK 17.10 — Validate Destination URL Protocols
+- [ ] File: `src/lib/validations/link.ts` — `createLinkSchema`
+- [ ] Add URL protocol validation: reject `javascript:`, `data:`, `file:`, `vbscript:`
+- [ ] Only allow `http:` and `https:` protocols
+- [ ] Return clear error: "URL must start with http:// or https://"
+- [ ] Tests: unit (reject dangerous protocols)
+
+### TASK 17.11 — Cache Subscription Status in Dashboard Layout
+- [ ] File: `src/app/(dashboard)/layout.tsx`
+- [ ] `syncSubscriptionStatusForUser()` runs on every dashboard page navigation — adds DB load
+- [ ] Cache subscription snapshot in Redis with 60s TTL
+- [ ] Only query DB on cache miss
+- [ ] Tests: unit (cache hit returns correct plan)
+
+### TASK 17.12 — Add Settings Loading Skeleton
+- [x] ✅ Already created by Claw Kun (see `src/app/(dashboard)/settings/loading.tsx`)
+
+### TASK 17.13 — Add Settings Error Boundary
+- [x] ✅ Already created by Claw Kun (see `src/app/(dashboard)/settings/error.tsx`)
+
+### TASK 17.14 — Add Dashboard Layout Error Recovery
+- [x] ✅ Already fixed by Claw Kun — try/catch around `syncSubscriptionStatusForUser` and `findBillingUserById`
+
+### TASK 17.15 — Add Playwright E2E Tests for Critical Flows
+- [ ] File: `e2e/auth.spec.ts` — register → verify → login → dashboard → logout
+- [ ] File: `e2e/link.spec.ts` — create link → visit short URL → verify analytics
+- [ ] File: `e2e/payment.spec.ts` — visit billing → click upgrade → verify Midtrans redirect
+- [ ] File: `e2e/settings.spec.ts` — change profile → change password → verify persistence
+- [ ] Run: `rtk bun run test:e2e` — all 4 specs must pass
+- [ ] Add to CI pipeline (after build step, optional for PR)
+
+---
+
+## 🚀 Ready to Start?
+
+```bash
+cd ~/projects/linksnap
+rtk bun run dev          # Start development
+rtk bun run db:studio    # Open Drizzle Studio (in another terminal)
+```
+
+**Priority order (GO-LIVE BLOCKERS first):**
+17.1 → 17.2 → 17.3 → 17.4 → 17.5 → 17.6 → 17.7 → 17.9 → 17.10 → 17.11 → 17.15
+
+(17.8, 17.12, 17.13, 17.14 already completed by Claw Kun)
+
+**Estimated total:** 111 + 15 = 126 tasks
+**Estimated timeline:** 1 week for go-live blockers (17.1–17.3), 1 week for MEDIUM items (17.4–17.8), 1 week for polish (17.9–17.15)
+
+**🔴 BLOCKERS for go-live:** 17.1, 17.2, 17.3 — must be done before production launch.
+
 Good luck. Ship it. 🚀

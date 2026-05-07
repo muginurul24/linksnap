@@ -5647,3 +5647,41 @@ Audited all unchecked checklist markers in `_bmad-output`. Reconciled completed 
 - ✅ Remaining security gaps are documented instead of being falsely marked complete.
 
 **Next Task:** Dedicated security hardening and external launch-readiness evidence collection.
+
+### 17.A — Claw Kun Audit + Phase 17 Creation
+- **Date:** 2026-05-08 04:52 GMT+7
+- **Duration:** 1h 0m
+- **Status:** ✅ Complete
+
+**What I Did:**
+Conducted comprehensive audit of entire LinkSnap codebase (255 source files, 116 test files, 513 tests). Created Phase 17 with 15 tasks covering pre-launch security hardening. Applied immediate resilience fixes to the dashboard layout and settings page.
+
+**Files Changed:**
+- `src/app/(dashboard)/layout.tsx` — Added try/catch around `syncSubscriptionStatusForUser()` and `findBillingUserById()` to prevent dashboard-wide crashes from DB cold starts or timeouts.
+- `src/app/(dashboard)/settings/loading.tsx` — Created skeleton loading state for settings page.
+- `src/app/(dashboard)/settings/error.tsx` — Created settings-specific error boundary with recovery UI.
+- `src/app/global-error.tsx` — Created root error boundary for layout-level crashes.
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Added Phase 17 (15 tasks).
+- `_bmad-output/implementation-artifacts/JOURNAL.md` — This entry.
+
+**Audit Findings Summary:**
+- 3 HIGH: Missing rate limit on redirect handler, CSP unsafe-inline, after() experimental API for click logging
+- 5 MEDIUM: Inconsistent logging, duplicated code, stale click count in cache, no pagination limit, no nonce CSP
+- 7 LOW: DB proxy traps, URL protocol validation, subscription cache, missing E2E tests, etc.
+- Overall score: 9/10 — production-grade with minor pre-launch gaps.
+
+**Tests:**
+- ✅ Typecheck: `rtk bun run typecheck` — Passed
+- ✅ Unit/Integration: `rtk bun run test` — 116 files passed, 513 tests passed
+- ✅ Build: `rtk bun run build` — Passed
+
+**Decisions Made:**
+- Settings crash root cause: dashboard layout called DB queries without try/catch, causing error boundary trigger when DB was unreachable
+- Phase 17 blockers (17.1, 17.2, 17.3) are defense-in-depth items — app works without them but they're critical for production security
+- `after()` is an acceptable risk for week 1, but should be replaced with Redis queue before heavy traffic
+
+**Security Checks:**
+- ✅ Added error boundaries don't expose sensitive data (show only error.digest)
+- ✅ No new secrets, raw SQL, or dangerous patterns introduced
+
+**Next Task:** 17.1 — Rate Limit the Public Redirect Handler

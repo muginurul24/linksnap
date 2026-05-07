@@ -48,14 +48,23 @@ export default async function DashboardLayout({
   };
 
   if (userId) {
-    await syncSubscriptionStatusForUser(userId);
-    const billingUser = await findBillingUserById(userId);
-    sidebarUser = {
-      email: billingUser?.email ?? sidebarUser.email,
-      image: sidebarUser.image,
-      name: billingUser?.name ?? sidebarUser.name,
-    };
-    userPlan = billingUser?.plan ?? "FREE";
+    try {
+      await syncSubscriptionStatusForUser(userId);
+    } catch (error) {
+      console.error("[DashboardLayout] Failed to sync subscription status", error);
+    }
+
+    try {
+      const billingUser = await findBillingUserById(userId);
+      sidebarUser = {
+        email: billingUser?.email ?? sidebarUser.email,
+        image: sidebarUser.image,
+        name: billingUser?.name ?? sidebarUser.name,
+      };
+      userPlan = billingUser?.plan ?? "FREE";
+    } catch (error) {
+      console.error("[DashboardLayout] Failed to load billing user", error);
+    }
   }
 
   return (
