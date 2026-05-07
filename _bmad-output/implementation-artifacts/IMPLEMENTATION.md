@@ -1307,10 +1307,10 @@ rtk bun run db:studio    # Open Drizzle Studio (in another terminal)
 - [x] Tests: integration (save → reload → preferences intact)
 
 ### TASK 16.6 — Change Email Flow
-- [ ] Create `src/app/api/v1/auth/change-email/route.ts` — POST: require password, send OTP to new email
-- [ ] Create `src/app/api/v1/auth/verify-new-email/route.ts` — POST: verify OTP, update email
-- [ ] Settings Profile tab: "Change Email" expandable section → password + new email + OTP
-- [ ] Tests: integration (change email full flow)
+- [x] Create `src/app/api/v1/auth/change-email/route.ts` — POST: require password, send OTP to new email
+- [x] Create `src/app/api/v1/auth/verify-new-email/route.ts` — POST: verify OTP, update email
+- [x] Settings Profile tab: "Change Email" expandable section → password + new email + OTP
+- [x] Tests: integration (change email full flow)
 
 ### TASK 16.7 — Delete Account
 - [ ] Create `src/app/api/v1/auth/delete-account/route.ts` — POST: require password, soft-delete user + cascade

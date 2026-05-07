@@ -5367,3 +5367,43 @@ Verified that notification preferences already save through the settings API, up
 - ✅ The test keeps ownership scoped to the authenticated user fixture.
 
 **Next Task:** 16.6 — Change Email Flow
+
+### 16.6 — Change Email Flow
+- **Date:** 2026-05-07 23:22 GMT+7
+- **Duration:** 0h 45m
+- **Status:** ✅ Complete
+
+**What I Did:**
+Added a password-confirmed email change flow that sends an OTP to the requested new email, stores the pending change temporarily, and updates the account email after OTP verification. Added an expandable Change Email section in the Profile tab and refreshes settings after verification.
+
+**Files Changed:**
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Checked off Task 16.6.
+- `src/app/api/v1/auth/change-email/route.ts` — Added password-confirmed OTP request endpoint.
+- `src/app/api/v1/auth/verify-new-email/route.ts` — Added pending email OTP verification and email update endpoint.
+- `src/lib/auth/email-change.ts` — Added Redis-backed pending email change helpers.
+- `src/lib/db/queries/email-change.ts` — Added email-change user lookup, uniqueness, and update queries.
+- `src/lib/validations/auth.ts` — Added change email and verify new email schemas.
+- `src/app/(dashboard)/settings/page.tsx` — Added the Change Email form to the Profile tab.
+- `src/app/(dashboard)/settings/settings-forms.tsx` — Added expandable Change Email UI and API wiring.
+- `tests/integration/change-email-flow.test.ts` — Added full change email request/verify coverage and duplicate email rejection.
+
+**Decisions Made:**
+- Stored pending email changes in Redis with a short TTL instead of adding another database column for temporary OTP state.
+- Reused the existing verification email delivery path so file-based E2E delivery and Resend production delivery stay consistent.
+
+**Tests:**
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Targeted Integration: `rtk bun run test -- tests/integration/change-email-flow.test.ts tests/integration/settings-api.test.ts tests/unit/form-success-feedback.test.ts` — 3 files passed, 13 tests passed.
+- ✅ Unit/Integration: `rtk bun run test` — 112 files passed, 502 tests passed.
+
+**Issues Encountered:**
+- None.
+
+**Security Checks:**
+- ✅ Email change requires an authenticated session and current password verification.
+- ✅ Duplicate email addresses are rejected before OTP delivery and before final update.
+- ✅ OTP verification is rate-limited and pending changes expire through Redis TTL.
+- ✅ No secrets, raw SQL, or `dangerouslySetInnerHTML` introduced.
+
+**Next Task:** 16.7 — Delete Account

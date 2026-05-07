@@ -12,7 +12,9 @@ import { Switch } from "@/components/ui/switch";
 import type { UserNotificationPreferences } from "@/lib/db/schema";
 import {
   changePasswordSchema,
+  changeEmailSchema,
   type ChangePasswordInput,
+  verifyNewEmailSchema,
 } from "@/lib/validations/auth";
 import {
   clearFieldError,
@@ -37,6 +39,10 @@ type ApiEnvelope<T> =
 type ProfileSettingsFormProps = {
   email: string;
   initialName: string;
+};
+
+type ChangeEmailFormProps = {
+  currentEmail: string;
 };
 
 type NotificationsSettingsFormProps = {
@@ -174,6 +180,195 @@ export function ProfileSettingsForm({
         Save Changes
       </Button>
     </form>
+  );
+}
+
+export function ChangeEmailForm({ currentEmail }: ChangeEmailFormProps) {
+  const router = useRouter();
+  const [newEmail, setNewEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [otp, setOtp] = useState("");
+  const [pendingEmail, setPendingEmail] = useState<string | null>(null);
+  const [formError, setFormError] = useState<string | null>(null);
+  const [isRequestingOtp, setIsRequestingOtp] = useState(false);
+  const [isVerifyingOtp, setIsVerifyingOtp] = useState(false);
+
+  async function requestEmailChange(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const parsed = changeEmailSchema.safeParse({ email: newEmail, password });
+    if (!parsed.success) {
+      setFormError(parsed.error.issues[0]?.message ?? "Invalid email change input.");
+      return;
+    }
+
+    setFormError(null);
+    setIsRequestingOtp(true);
+
+    try {
+      const response = await fetch("/api/v1/auth/change-email", {
+        body: JSON.stringify(parsed.data),
+        headers: {
+          "content-type": "application/json",
+          "X-Requested-With": "XMLHttpRequest",
+        },
+        method: "POST",
+      });
+      const body = await readResponse<{ email: string }>(response);
+
+      if (!body.success) {
+        setFormError(body.error.message);
+        return;
+      }
+
+      setPendingEmail(body.data.email);
+      setOtp("");
+      toast.success("Verification code sent");
+    } catch {
+      setFormError("Unable to send verification code.");
+    } finally {
+      setIsRequestingOtp(false);
+    }
+  }
+
+  async function verifyEmailChange(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const parsed = verifyNewEmailSchema.safeParse({
+      email: pendingEmail ?? newEmail,
+      otp,
+    });
+    if (!parsed.success) {
+      setFormError(parsed.error.issues[0]?.message ?? "Invalid verification code.");
+      return;
+    }
+
+    setFormError(null);
+    setIsVerifyingOtp(true);
+
+    try {
+      const response = await fetch("/api/v1/auth/verify-new-email", {
+        body: JSON.stringify(parsed.data),
+        headers: {
+          "content-type": "application/json",
+          "X-Requested-With": "XMLHttpRequest",
+        },
+        method: "POST",
+      });
+      const body = await readResponse<{ email: string }>(response);
+
+      if (!body.success) {
+        setFormError(body.error.message);
+        return;
+      }
+
+      setNewEmail("");
+      setPassword("");
+      setOtp("");
+      setPendingEmail(null);
+      toast.success("Email updated");
+      router.refresh();
+    } catch {
+      setFormError("Unable to verify new email.");
+    } finally {
+      setIsVerifyingOtp(false);
+    }
+  }
+
+  return (
+    <details className="rounded-lg border bg-muted/30 p-3">
+      <summary className="cursor-pointer text-sm font-medium">Change Email</summary>
+      <div className="mt-4 space-y-4">
+        <p className="text-xs text-muted-foreground">
+          Current email: <span className="font-medium">{currentEmail}</span>
+        </p>
+        <form
+          className="grid gap-3 sm:grid-cols-[1fr_1fr_auto]"
+          noValidate
+          onSubmit={(event) => void requestEmailChange(event)}
+        >
+          <div className="space-y-1.5">
+            <Label htmlFor="new-email">New email</Label>
+            <Input
+              autoComplete="email"
+              disabled={isRequestingOtp || isVerifyingOtp}
+              id="new-email"
+              onChange={(event) => {
+                setNewEmail(event.target.value);
+                setFormError(null);
+              }}
+              type="email"
+              value={newEmail}
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="change-email-password">Password</Label>
+            <Input
+              autoComplete="current-password"
+              disabled={isRequestingOtp || isVerifyingOtp}
+              id="change-email-password"
+              onChange={(event) => {
+                setPassword(event.target.value);
+                setFormError(null);
+              }}
+              type="password"
+              value={password}
+            />
+          </div>
+          <Button
+            aria-busy={isRequestingOtp}
+            className="self-end"
+            disabled={isRequestingOtp || isVerifyingOtp}
+            size="sm"
+            type="submit"
+          >
+            {isRequestingOtp ? <Loader2 className="size-4 animate-spin" /> : null}
+            Send Code
+          </Button>
+        </form>
+
+        {pendingEmail ? (
+          <form
+            className="grid gap-3 sm:grid-cols-[1fr_auto]"
+            noValidate
+            onSubmit={(event) => void verifyEmailChange(event)}
+          >
+            <div className="space-y-1.5">
+              <Label htmlFor="new-email-otp">Verification code</Label>
+              <Input
+                autoComplete="one-time-code"
+                disabled={isVerifyingOtp}
+                id="new-email-otp"
+                inputMode="numeric"
+                maxLength={6}
+                onChange={(event) => {
+                  setOtp(event.target.value.replace(/\D/g, "").slice(0, 6));
+                  setFormError(null);
+                }}
+                value={otp}
+              />
+              <p className="text-xs text-muted-foreground">
+                Sent to {pendingEmail}.
+              </p>
+            </div>
+            <Button
+              aria-busy={isVerifyingOtp}
+              className="self-end"
+              disabled={isVerifyingOtp || otp.length !== 6}
+              size="sm"
+              type="submit"
+            >
+              {isVerifyingOtp ? <Loader2 className="size-4 animate-spin" /> : null}
+              Verify Email
+            </Button>
+          </form>
+        ) : null}
+
+        {formError ? (
+          <div className="rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+            {formError}
+          </div>
+        ) : null}
+      </div>
+    </details>
   );
 }
 

@@ -15,6 +15,7 @@ import {
   type ApiKeyPanelItem,
 } from "@/app/(dashboard)/settings/api-keys-panel";
 import {
+  ChangeEmailForm,
   NotificationsSettingsForm,
   ProfileSettingsForm,
   SecuritySettingsForm,
@@ -107,10 +108,13 @@ export default async function SettingsPage({ searchParams }: SettingsPageProps) 
                 <CardDescription>Update your name and email address.</CardDescription>
               </CardHeader>
               <CardContent>
-                <ProfileSettingsForm
-                  email={settingsData.settingsUser.email}
-                  initialName={settingsData.settingsUser.name ?? ""}
-                />
+                <div className="space-y-4">
+                  <ProfileSettingsForm
+                    email={settingsData.settingsUser.email}
+                    initialName={settingsData.settingsUser.name ?? ""}
+                  />
+                  <ChangeEmailForm currentEmail={settingsData.settingsUser.email} />
+                </div>
               </CardContent>
             </Card>
           </TabsContent>

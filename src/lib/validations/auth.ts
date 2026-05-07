@@ -111,6 +111,24 @@ export const twoFactorPasswordSchema = z
 
 export type TwoFactorPasswordInput = z.infer<typeof twoFactorPasswordSchema>;
 
+export const changeEmailSchema = z
+  .object({
+    email: emailSchema,
+    password: z.string().min(1, "Password is required"),
+  })
+  .strict();
+
+export type ChangeEmailInput = z.infer<typeof changeEmailSchema>;
+
+export const verifyNewEmailSchema = z
+  .object({
+    email: emailSchema,
+    otp: z.string().regex(/^\d{6}$/, "Enter the 6-digit code"),
+  })
+  .strict();
+
+export type VerifyNewEmailInput = z.infer<typeof verifyNewEmailSchema>;
+
 export const forgotPasswordSchema = z
   .object({
     email: emailSchema,
