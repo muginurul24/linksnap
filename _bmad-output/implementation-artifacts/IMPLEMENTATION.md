@@ -857,11 +857,11 @@ rtk bun run db:studio    # Open Drizzle Studio (in another terminal)
 - [x] Tests: verify Snap payload includes correct callback URLs
 
 ### TASK 12.22 — Search Implementation
-- [ ] File: `src/components/dashboard/app-header.tsx`
-- [ ] Wire search input to actually filter links by slug or destination
-- [ ] Debounce input (300ms), redirect to `/links?search=query`
-- [ ] Or: if keeping it simple, use GET param on links page directly
-- [ ] Tests: unit (search query building)
+- [x] File: `src/components/dashboard/app-header.tsx`
+- [x] Wire search input to actually filter links by slug or destination
+- [x] Debounce input (300ms), redirect to `/links?search=query`
+- [x] Or: if keeping it simple, use GET param on links page directly
+- [x] Tests: unit (search query building)
 
 ---
 

@@ -1,4 +1,5 @@
 export const LINKS_SEARCH_MAX_LENGTH = 100;
+export const LINKS_SEARCH_DEBOUNCE_MS = 300;
 
 export function getLinksSearchQuery(value: unknown): string | undefined {
   const raw = Array.isArray(value) ? value[0] : value;
@@ -15,4 +16,11 @@ export function buildLinksSearchHref(value: unknown): string {
   if (!search) return "/links";
 
   return `/links?${new URLSearchParams({ search }).toString()}`;
+}
+
+export function shouldNavigateLinksSearch(
+  currentHref: string,
+  value: unknown,
+): boolean {
+  return buildLinksSearchHref(value) !== currentHref;
 }

@@ -3767,3 +3767,45 @@ finish, error, and unfinish URLs and passes them into the Midtrans Snap client.
 - ✅ No secrets introduced.
 
 **Next Task:** 12.22 — Search Implementation
+
+### 12.22 — Search Implementation
+- **Date:** 2026-05-07 17:24 GMT+7
+- **Duration:** 0h 15m
+- **Status:** ✅ Complete
+
+**What I Did:**
+Wired the dashboard header search input to the existing `/links?search=` server
+filter. The header now debounces typed search terms for 300ms and navigates to
+the links page with a sanitized internal search URL.
+
+**Files Changed:**
+- `_bmad-output/planning-artifacts/spec-dashboard-search-implementation.md` — Added task spec, acceptance criteria, and risks.
+- `src/components/dashboard/app-header.tsx` — Added controlled search input, debounce behavior, and internal links navigation.
+- `src/lib/links/search.ts` — Added debounce constant and navigation comparison helper.
+- `tests/unit/dashboard-app-header.test.ts` — Added search debounce and navigation helper coverage.
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Checked off Task 12.22.
+- `_bmad-output/implementation-artifacts/JOURNAL.md` — Recorded this completion entry.
+
+**Decisions Made:**
+- Debounced updates use `router.replace` to avoid noisy history entries while typing.
+- Manual form submit still uses `router.push` as the explicit navigation action.
+- The header avoids `useSearchParams`; current query state is read on the client from `window.location.search` to avoid Suspense/static rendering side effects in a shared header.
+
+**Tests:**
+- ✅ Targeted: `rtk bun run test -- tests/unit/dashboard-app-header.test.ts tests/integration/list-links-api.test.ts` — 2 files passed, 15 tests passed.
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Unit/Integration: `rtk bun run test` — 89 files passed, 399 tests passed.
+- ✅ Build: `rtk bun run build` — Passed and generated 52 static pages.
+
+**Issues Encountered:**
+- None.
+
+**Security Checks:**
+- ✅ Search navigation uses the internal `buildLinksSearchHref` helper before calling `router.push` or `router.replace`.
+- ✅ Search input is trimmed and capped at 100 characters.
+- ✅ Existing link filtering remains owner-scoped through authenticated `/links` data loading.
+- ✅ Raw SQL and `dangerouslySetInnerHTML` scan returned no matches.
+- ✅ No secrets introduced.
+
+**Next Task:** Phase 12 complete — await next phase.

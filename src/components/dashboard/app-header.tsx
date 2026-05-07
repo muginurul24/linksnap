@@ -15,15 +15,33 @@ import { Search, Sun, Moon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useTheme } from "next-themes";
-import { type FormEvent, Fragment, useSyncExternalStore } from "react";
+import {
+  type ChangeEvent,
+  type FormEvent,
+  Fragment,
+  useEffect,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from "react";
 import {
   buildLinksSearchHref,
+  getLinksSearchQuery,
+  LINKS_SEARCH_DEBOUNCE_MS,
   LINKS_SEARCH_MAX_LENGTH,
+  shouldNavigateLinksSearch,
 } from "@/lib/links/search";
 
 const subscribeToClientMount = () => () => {};
 const getClientMountSnapshot = () => true;
 const getServerMountSnapshot = () => false;
+
+function getCurrentLinksSearchHref(pathname: string): string {
+  if (pathname !== "/links" || typeof window === "undefined") return pathname;
+
+  const params = new URLSearchParams(window.location.search);
+  return buildLinksSearchHref(params.get("search"));
+}
 
 export type DashboardBreadcrumb = {
   href?: string;
@@ -66,6 +84,8 @@ export function AppHeader() {
   const pathname = usePathname();
   const router = useRouter();
   const { theme, setTheme } = useTheme();
+  const [searchValue, setSearchValue] = useState("");
+  const hasEditedSearch = useRef(false);
   const mounted = useSyncExternalStore(
     subscribeToClientMount,
     getClientMountSnapshot,
@@ -74,11 +94,41 @@ export function AppHeader() {
 
   const crumbs = getDashboardBreadcrumbs(pathname);
 
+  useEffect(() => {
+    if (pathname !== "/links" || typeof window === "undefined") return;
+    if (hasEditedSearch.current) return;
+
+    const params = new URLSearchParams(window.location.search);
+    setSearchValue(getLinksSearchQuery(params.get("search")) ?? "");
+  }, [pathname]);
+
+  useEffect(() => {
+    if (!hasEditedSearch.current) return;
+    if (pathname !== "/links" && !getLinksSearchQuery(searchValue)) return;
+
+    const timeoutId = window.setTimeout(() => {
+      const href = buildLinksSearchHref(searchValue);
+      const currentHref = getCurrentLinksSearchHref(pathname);
+
+      if (shouldNavigateLinksSearch(currentHref, searchValue)) {
+        router.replace(href, { scroll: false });
+      }
+    }, LINKS_SEARCH_DEBOUNCE_MS);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [pathname, router, searchValue]);
+
+  function handleSearchChange(event: ChangeEvent<HTMLInputElement>) {
+    hasEditedSearch.current = true;
+    setSearchValue(event.target.value);
+  }
+
   function handleSearchSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
     const formData = new FormData(event.currentTarget);
     const search = formData.get("search");
+    hasEditedSearch.current = true;
     router.push(buildLinksSearchHref(search));
   }
 
@@ -112,8 +162,10 @@ export function AppHeader() {
             className="w-64 pl-8"
             maxLength={LINKS_SEARCH_MAX_LENGTH}
             name="search"
+            onChange={handleSearchChange}
             placeholder="Search links..."
             type="search"
+            value={searchValue}
           />
         </form>
         {mounted && (
