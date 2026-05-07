@@ -26,6 +26,12 @@ import {
 } from "@/lib/db/queries/payments";
 import { syncSubscriptionStatusForUser } from "@/lib/payments/subscription";
 import type { UserPlan } from "@/lib/links/limits";
+import {
+  PLANS,
+  formatUsdPrice,
+  getPlanDefinition,
+  type PlanDefinition,
+} from "@/lib/plans/definitions";
 import type { PaidPlan } from "@/lib/validations/payment";
 import { UpgradeButton } from "./upgrade-button";
 
@@ -35,57 +41,30 @@ type SessionWithUserId = {
   } | null;
 } | null;
 
-type PlanCard = {
-  description: string;
-  features: string[];
+type PlanCard = PlanDefinition & {
   icon: typeof Zap;
-  name: string;
   period: string;
   plan: UserPlan;
   price: string;
 };
 
-const plans: PlanCard[] = [
-  {
-    description: "For personal use and early experiments.",
-    features: ["25 short links", "3 Link Pages", "2 Smart Rules per link"],
-    icon: Zap,
-    name: "Free",
-    period: "forever",
-    plan: "FREE",
-    price: "$0",
-  },
-  {
-    description: "For power marketers and growing teams.",
-    features: [
-      "500 short links",
-      "50 Link Pages",
-      "10 campaigns",
-      "A/B split testing",
-      "Priority support",
-    ],
-    icon: Sparkles,
-    name: "Pro",
-    period: "per month",
-    plan: "PRO",
-    price: "$8",
-  },
-  {
-    description: "For agencies and teams operating at scale.",
-    features: [
-      "Unlimited links",
-      "Unlimited campaigns",
-      "Unlimited A/B variants",
-      "Webhook callbacks",
-      "PDF and API exports",
-    ],
-    icon: Building,
-    name: "Business",
-    period: "per month",
-    plan: "BUSINESS",
-    price: "$19",
-  },
-];
+const planIcons: Record<UserPlan, typeof Zap> = {
+  FREE: Zap,
+  PRO: Sparkles,
+  BUSINESS: Building,
+};
+
+function toPlanCard(plan: PlanDefinition): PlanCard {
+  return {
+    ...plan,
+    icon: planIcons[plan.id],
+    period: plan.monthlyUsd === 0 ? "forever" : "per month",
+    plan: plan.id,
+    price: formatUsdPrice(plan.monthlyUsd),
+  };
+}
+
+const plans: PlanCard[] = PLANS.map(toPlanCard);
 
 function getSessionUserId(session: SessionWithUserId): string | null {
   return typeof session?.user?.id === "string" ? session.user.id : null;
@@ -130,7 +109,7 @@ function getStatusVariant(
 }
 
 function getCurrentPlanConfig(plan: UserPlan): PlanCard {
-  return plans.find((item) => item.plan === plan) ?? plans[0];
+  return toPlanCard(getPlanDefinition(plan));
 }
 
 export default async function BillingPage() {

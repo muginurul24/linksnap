@@ -13,140 +13,21 @@ import {
   Zap,
   type LucideIcon,
 } from "lucide-react";
+import {
+  PLAN_COMPARISON_ROWS,
+  PLANS,
+  formatUsdPrice,
+  getYearlySavings,
+  type PlanDefinition,
+} from "@/lib/plans/definitions";
 import { cn } from "@/lib/utils";
 
 type BillingCycle = "monthly" | "yearly";
-
-type Plan = {
-  name: "Free" | "Pro" | "Business";
-  description: string;
-  monthly: number;
-  yearly: number;
-  yearlyLabel?: string;
-  cta: string;
-  highlighted?: boolean;
-  features: string[];
-};
-
-type ComparisonRow = {
-  feature: string;
-  free: string;
-  pro: string;
-  business: string;
-};
 
 type Faq = {
   question: string;
   answer: string;
 };
-
-const plans: Plan[] = [
-  {
-    name: "Free",
-    description: "For validating your first smart links.",
-    monthly: 0,
-    yearly: 0,
-    cta: "Get Started Free",
-    features: [
-      "25 short links",
-      "3 Link Pages",
-      "2 Smart Rules per link",
-      "10 QR codes",
-      "30-day analytics retention",
-    ],
-  },
-  {
-    name: "Pro",
-    description: "For active marketers and growing stores.",
-    monthly: 8,
-    yearly: 75,
-    yearlyLabel: "Save $21",
-    cta: "Start Pro",
-    highlighted: true,
-    features: [
-      "500 short links",
-      "50 Link Pages",
-      "10 campaign groups",
-      "UTM auto-builder",
-      "A/B split testing",
-      "API access at 500 req/hr",
-    ],
-  },
-  {
-    name: "Business",
-    description: "For high-volume campaigns and teams.",
-    monthly: 19,
-    yearly: 180,
-    yearlyLabel: "Save $48",
-    cta: "Start Business",
-    features: [
-      "Unlimited short links",
-      "Unlimited Link Pages",
-      "Unlimited campaigns",
-      "500 QR codes",
-      "Webhook callbacks",
-      "API access at 5000 req/hr",
-      "Priority support",
-    ],
-  },
-];
-
-const comparisonRows: ComparisonRow[] = [
-  {
-    feature: "Short links",
-    free: "25",
-    pro: "500",
-    business: "Unlimited",
-  },
-  {
-    feature: "Link Pages",
-    free: "3",
-    pro: "50",
-    business: "Unlimited",
-  },
-  {
-    feature: "Smart Rules per link",
-    free: "2",
-    pro: "5",
-    business: "Unlimited",
-  },
-  {
-    feature: "QR codes",
-    free: "10",
-    pro: "100",
-    business: "500",
-  },
-  {
-    feature: "Campaign groups",
-    free: "1",
-    pro: "10",
-    business: "Unlimited",
-  },
-  {
-    feature: "Analytics retention",
-    free: "30 days",
-    pro: "180 days",
-    business: "365 days",
-  },
-  {
-    feature: "A/B split testing",
-    free: "Not included",
-    pro: "3 variants",
-    business: "Unlimited",
-  },
-  {
-    feature: "API rate limit",
-    free: "Not included",
-    pro: "500 req/hr",
-    business: "5000 req/hr",
-  },
-  {
-    feature: "Webhook callbacks",
-    free: "Not included",
-    pro: "Not included",
-    business: "Included",
-  },
-];
 
 const faqs: Faq[] = [
   {
@@ -186,9 +67,9 @@ const trustItems: Array<{ icon: LucideIcon; text: string }> = [
   },
 ];
 
-function formatPrice(plan: Plan, cycle: BillingCycle): string {
-  const amount = cycle === "monthly" ? plan.monthly : plan.yearly;
-  return amount === 0 ? "$0" : `$${amount}`;
+function formatPrice(plan: PlanDefinition, cycle: BillingCycle): string {
+  const amount = cycle === "monthly" ? plan.monthlyUsd : plan.yearlyUsd;
+  return formatUsdPrice(amount);
 }
 
 function Container({
@@ -267,7 +148,7 @@ function BillingToggle({
   );
 }
 
-function PlanCard({ plan, cycle }: { plan: Plan; cycle: BillingCycle }) {
+function PlanCard({ plan, cycle }: { plan: PlanDefinition; cycle: BillingCycle }) {
   const price = formatPrice(plan, cycle);
   const period = cycle === "monthly" ? "month" : "year";
 
@@ -297,9 +178,9 @@ function PlanCard({ plan, cycle }: { plan: Plan; cycle: BillingCycle }) {
             <span className="text-4xl font-semibold">{price}</span>
             <span className="text-sm text-muted-foreground">/{period}</span>
           </div>
-          {cycle === "yearly" && plan.yearlyLabel ? (
+          {cycle === "yearly" && getYearlySavings(plan) > 0 ? (
             <p className="mt-2 text-sm font-medium text-emerald-400">
-              {plan.yearlyLabel} compared with monthly
+              Save ${getYearlySavings(plan)} compared with monthly
             </p>
           ) : null}
         </div>
@@ -355,7 +236,7 @@ function ComparisonTable() {
               </tr>
             </thead>
             <tbody>
-              {comparisonRows.map((row) => (
+              {PLAN_COMPARISON_ROWS.map((row) => (
                 <tr key={row.feature} className="border-t">
                   <th className="px-4 py-3 font-medium">{row.feature}</th>
                   <td className="px-4 py-3 text-muted-foreground">{row.free}</td>
@@ -407,7 +288,7 @@ function Hero({
   onCycleChange: (cycle: BillingCycle) => void;
 }) {
   const maxYearlySavings = useMemo(
-    () => Math.max(...plans.map((plan) => plan.monthly * 12 - plan.yearly)),
+    () => Math.max(...PLANS.map((plan) => getYearlySavings(plan))),
     [],
   );
 
@@ -461,7 +342,7 @@ export default function PricingPage() {
       <Header />
       <Hero cycle={cycle} onCycleChange={setCycle} />
       <Container className="grid gap-4 pb-16 lg:grid-cols-3">
-        {plans.map((plan) => (
+        {PLANS.map((plan) => (
           <PlanCard key={plan.name} plan={plan} cycle={cycle} />
         ))}
       </Container>
