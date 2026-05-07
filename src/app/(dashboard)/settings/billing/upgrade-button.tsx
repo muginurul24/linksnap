@@ -62,6 +62,7 @@ export function UpgradeButton({
 
   return (
     <Button
+      aria-busy={isLoading}
       className="w-full"
       disabled={current || isLoading}
       onClick={createPayment}

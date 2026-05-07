@@ -503,11 +503,11 @@ src/
 - [x] Structured logging with requestId
 
 ### TASK 10.2 — Loading States
-- Dashboard skeleton (matching layout grid)
-- Table skeleton (rows × columns)
-- Chart skeleton (placeholder area chart)
-- Button loading spinners
-- Suspense boundaries on all async pages
+- [x] Dashboard skeleton (matching layout grid)
+- [x] Table skeleton (rows × columns)
+- [x] Chart skeleton (placeholder area chart)
+- [x] Button loading spinners
+- [x] Suspense boundaries on all async pages
 
 ### TASK 10.3 — SEO & Metadata
 - `generateMetadata()` on all public pages

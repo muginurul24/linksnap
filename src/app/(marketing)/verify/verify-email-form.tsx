@@ -213,7 +213,12 @@ export function VerifyEmailForm() {
               </div>
             )}
 
-            <Button className="w-full" type="submit" disabled={isVerifying}>
+            <Button
+              aria-busy={isVerifying}
+              className="w-full"
+              type="submit"
+              disabled={isVerifying}
+            >
               {isVerifying && <Loader2 className="size-4 animate-spin" />}
               Verify email
             </Button>
@@ -227,6 +232,7 @@ export function VerifyEmailForm() {
               type="button"
               variant="ghost"
               size="sm"
+              aria-busy={isResending}
               onClick={() => void resendOtp()}
               disabled={isResending || resendCooldown > 0}
             >

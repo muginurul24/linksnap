@@ -173,7 +173,12 @@ export default function RegisterPage() {
               </div>
             )}
 
-            <Button className="w-full" type="submit" disabled={isSubmitting}>
+            <Button
+              aria-busy={isSubmitting}
+              className="w-full"
+              type="submit"
+              disabled={isSubmitting}
+            >
               {isSubmitting && <Loader2 className="size-4 animate-spin" />}
               Create account
             </Button>

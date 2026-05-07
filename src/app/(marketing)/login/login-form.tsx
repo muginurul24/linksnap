@@ -164,7 +164,12 @@ export function LoginForm() {
               </div>
             )}
 
-            <Button className="w-full" type="submit" disabled={isSubmitting}>
+            <Button
+              aria-busy={isSubmitting}
+              className="w-full"
+              type="submit"
+              disabled={isSubmitting}
+            >
               {isSubmitting && <Loader2 className="size-4 animate-spin" />}
               Sign in
             </Button>
@@ -180,6 +185,7 @@ export function LoginForm() {
             className="w-full"
             type="button"
             variant="outline"
+            aria-busy={isGoogleLoading}
             onClick={() => void handleGoogleSignIn()}
             disabled={isSubmitting || isGoogleLoading}
           >

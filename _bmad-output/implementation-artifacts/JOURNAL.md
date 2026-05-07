@@ -2461,3 +2461,52 @@ Added branded root error and not-found pages, introduced a structured logger, st
 - ✅ Structured 5xx logs include request ID, code, status, and safe response copy only.
 
 **Next Task:** 10.2 — Loading States
+
+### 10.2 — Loading States
+- **Date:** 2026-05-07 10:03 GMT+7
+- **Duration:** 0h 30m
+- **Status:** ✅ Complete
+
+**What I Did:**
+Added reusable dashboard loading skeletons, route-level `loading.tsx` fallbacks for async pages, and accessibility state on buttons that already show loading spinners.
+
+**Files Changed:**
+- `src/components/dashboard/loading-states.tsx` — Added reusable dashboard, table, chart, QR grid, billing, analytics, and form skeletons.
+- `src/app/(dashboard)/dashboard/loading.tsx` — Added dashboard overview loading UI.
+- `src/app/(dashboard)/links/loading.tsx` — Added links table loading UI.
+- `src/app/(dashboard)/links/[slug]/edit/loading.tsx` — Added edit form loading UI.
+- `src/app/(dashboard)/qr/loading.tsx` — Added QR grid loading UI.
+- `src/app/(dashboard)/analytics/loading.tsx` — Added analytics chart loading UI.
+- `src/app/(dashboard)/settings/billing/loading.tsx` — Added billing loading UI.
+- `src/app/(marketing)/blog/loading.tsx` — Added public blog loading UI.
+- `src/app/[slug]/loading.tsx` — Added redirect loading UI.
+- `src/app/(dashboard)/settings/billing/upgrade-button.tsx` — Added `aria-busy` to the upgrade loading button.
+- `src/app/(marketing)/login/login-form.tsx` — Added `aria-busy` to sign-in loading buttons.
+- `src/app/(marketing)/register/page.tsx` — Added `aria-busy` to the register loading button.
+- `src/app/(marketing)/verify/verify-email-form.tsx` — Added `aria-busy` to verification and resend loading buttons.
+- `tests/unit/loading-states.test.tsx` — Added skeleton rendering coverage.
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Checked off Task 10.2.
+- `_bmad-output/implementation-artifacts/JOURNAL.md` — Recorded this completion entry.
+
+**Decisions Made:**
+- Used route-level `loading.tsx` because Next.js automatically wraps matching page segments in Suspense and keeps shared layouts interactive.
+- Kept skeletons in a dashboard shared component so table and chart placeholders stay consistent across routes.
+- Added `aria-busy` rather than changing button APIs, keeping the existing shadcn/base-ui button surface stable.
+
+**Tests:**
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Unit/Integration: `rtk bun run test` — 63 files passed, 282 tests passed.
+- ✅ Build: `rtk bun run build` — Passed.
+- ✅ Browser: Playwright loaded `/blog` and `/login` with zero console errors.
+
+**Issues Encountered:**
+- None.
+
+**Security Checks:**
+- ✅ Loading UI does not expose user data while protected routes resolve auth.
+- ✅ Redirect loading UI does not reveal destination metadata before routing completes.
+- ✅ Button loading states remain disabled during in-flight operations.
+- ✅ No new API surface, raw SQL, secrets, or logging of sensitive data added.
+
+**Next Task:** 10.3 — SEO & Metadata
