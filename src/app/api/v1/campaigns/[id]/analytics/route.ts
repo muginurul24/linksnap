@@ -4,13 +4,12 @@ import { createRequestId, errorResponse, successResponse } from "@/lib/api/respo
 import {
   AnalyticsDateRangeError,
   normalizeAnalyticsDateRange,
-  summarizeClickEvents,
   type LinkAnalyticsSummary,
 } from "@/lib/analytics/summary";
+import { summarizeCampaignClickEvents } from "@/lib/campaigns/analytics";
 import {
   listClickEventsForCampaigns,
   listTopLinksForCampaign,
-  type CampaignClickEventForAnalytics,
   type TopCampaignLink,
 } from "@/lib/db/queries/click-events";
 import {
@@ -196,20 +195,6 @@ async function getComparisonCampaigns(
   });
 }
 
-function groupEventsByCampaign(
-  events: CampaignClickEventForAnalytics[],
-): Map<string, CampaignClickEventForAnalytics[]> {
-  const groups = new Map<string, CampaignClickEventForAnalytics[]>();
-
-  for (const event of events) {
-    const campaignEvents = groups.get(event.campaignId) ?? [];
-    campaignEvents.push(event);
-    groups.set(event.campaignId, campaignEvents);
-  }
-
-  return groups;
-}
-
 function buildComparison(
   campaign: CampaignWithLinkCount,
   summary: LinkAnalyticsSummary,
@@ -302,14 +287,21 @@ export async function GET(
         to: range.to,
       }),
     ]);
-    const eventsByCampaign = groupEventsByCampaign(events);
-    const summary = summarizeClickEvents(eventsByCampaign.get(campaign.id) ?? [], range);
-    const comparisons = compareCampaigns.map((item) =>
-      buildComparison(
-        item,
-        summarizeClickEvents(eventsByCampaign.get(item.id) ?? [], range),
-      ),
-    );
+    const summariesByCampaign = summarizeCampaignClickEvents({
+      campaignIds,
+      events,
+      range,
+    });
+    const summary = summariesByCampaign.get(campaign.id);
+    if (!summary) throw new Error("Campaign analytics summary was not generated.");
+    const comparisons = compareCampaigns.map((item) => {
+      const comparisonSummary = summariesByCampaign.get(item.id);
+      if (!comparisonSummary) {
+        throw new Error("Campaign comparison summary was not generated.");
+      }
+
+      return buildComparison(item, comparisonSummary);
+    });
 
     return successResponse({
       ...summary,

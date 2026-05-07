@@ -392,9 +392,9 @@ src/
 - [x] Show preview before saving
 
 ### TASK 6.5 — Campaign Tests
-- Unit: UTM builder, campaign analytics aggregation
-- Integration: create campaign → add links → verify UTM params → check analytics
-- E2E: full campaign workflow from dashboard
+- [x] Unit: UTM builder, campaign analytics aggregation
+- [x] Integration: create campaign → add links → verify UTM params → check analytics
+- [x] E2E: full campaign workflow from dashboard
 
 ---
 

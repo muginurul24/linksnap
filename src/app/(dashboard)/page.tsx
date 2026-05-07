@@ -126,7 +126,9 @@ export default function DashboardOverview() {
                   <TableCell className="hidden lg:table-cell text-sm text-muted-foreground">{link.created}</TableCell>
                   <TableCell>
                     <DropdownMenu>
-                      <DropdownMenuTrigger><Button variant="ghost" size="icon" className="size-8"><MoreHorizontal className="size-4" /></Button></DropdownMenuTrigger>
+                      <DropdownMenuTrigger render={<Button variant="ghost" size="icon" className="size-8" />}>
+                        <MoreHorizontal className="size-4" />
+                      </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
                         <DropdownMenuItem><ExternalLink className="mr-2 size-4" /> Open</DropdownMenuItem>
                         <DropdownMenuItem><Copy className="mr-2 size-4" /> Copy URL</DropdownMenuItem>

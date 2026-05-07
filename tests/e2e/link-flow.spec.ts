@@ -3,7 +3,13 @@ import { loadEnvConfig } from "@next/env";
 import { readFile } from "node:fs/promises";
 import { count, eq } from "drizzle-orm";
 import { db } from "../../src/lib/db";
-import { clickEvents, linkPages, links, users } from "../../src/lib/db/schema";
+import {
+  campaigns,
+  clickEvents,
+  linkPages,
+  links,
+  users,
+} from "../../src/lib/db/schema";
 import { hashPassword } from "../../src/lib/auth/password";
 import { redis } from "../../src/lib/redis";
 
@@ -51,6 +57,9 @@ async function cleanupLinkFlowState(
           `rate-limit:api:links:page:post:${userId}`,
           `rate-limit:api:links:rules:post:${userId}`,
           `rate-limit:api:links:slug:get:${userId}`,
+          `rate-limit:api:campaigns:analytics:get:${userId}`,
+          `rate-limit:api:campaigns:links:post:${userId}`,
+          `rate-limit:api:campaigns:post:${userId}`,
           `rate-limit:links:create:${userId}`,
         ]
       : []),
@@ -73,6 +82,18 @@ async function getLinkIdBySlug(slug: string): Promise<string> {
   if (!link) throw new Error("Created link was not found.");
 
   return link.id;
+}
+
+async function getLinkDestinationUrlBySlug(slug: string): Promise<string> {
+  const [link] = await db
+    .select({ destinationUrl: links.destinationUrl })
+    .from(links)
+    .where(eq(links.slug, slug))
+    .limit(1);
+
+  if (!link) throw new Error("Created link was not found.");
+
+  return link.destinationUrl;
 }
 
 async function countClicksForLink(linkId: string): Promise<number> {
@@ -379,6 +400,97 @@ test("should configure Smart Rules then redirect by browser user agent", async (
       })
       .toBeGreaterThanOrEqual(2);
   } finally {
+    await cleanupLinkFlowState(email, userId, [slug]);
+  }
+});
+
+test("should run campaign workflow from an authenticated dashboard session", async ({
+  page,
+}) => {
+  const email = `e2e-campaign-${Date.now()}@example.com`;
+  const password = "Password1";
+  const slug = `campaign-${Date.now()}`;
+  const campaignSlug = `campaign-flow-${Date.now()}`;
+  const taggedUrl =
+    "https://example.com/campaign-offer?utm_source=instagram&utm_medium=social&utm_campaign=ramadhan-2026";
+  let userId: string | undefined;
+
+  try {
+    userId = await createVerifiedUser(email, password);
+
+    await db.insert(links).values({
+      destinationUrl: "https://example.com/campaign-offer",
+      slug,
+      title: "Campaign E2E",
+      userId,
+    });
+
+    await signIn(page, { email, password });
+    await expect(page).toHaveURL(/\/links$/, { timeout: 15_000 });
+    await page.goto("/campaigns");
+    await expect(page.getByRole("heading", { name: "Campaigns" })).toBeVisible();
+
+    const campaignResponse = await page.request.post("/api/v1/campaigns", {
+      data: {
+        name: "Ramadhan E2E",
+        slug: campaignSlug,
+        utmCampaign: "ramadhan-2026",
+        utmMedium: "social",
+        utmSource: "instagram",
+      },
+    });
+    expect(campaignResponse.ok()).toBe(true);
+    const campaignBody = (await campaignResponse.json()) as {
+      data: { id: string };
+      success: true;
+    };
+
+    const linkId = await getLinkIdBySlug(slug);
+    const addLinksResponse = await page.request.post(
+      `/api/v1/campaigns/${campaignBody.data.id}/links`,
+      {
+        data: { linkIds: [linkId] },
+      },
+    );
+    expect(addLinksResponse.ok()).toBe(true);
+    await expect
+      .poll(() => getLinkDestinationUrlBySlug(slug), {
+        message: "campaign UTM params should be saved to the link",
+        timeout: 10_000,
+      })
+      .toBe(taggedUrl);
+
+    await page.goto(`/${slug}`);
+    await page.waitForURL(taggedUrl, { timeout: 15_000 });
+
+    await expect
+      .poll(() => countClicksForLink(linkId), {
+        message: "campaign redirect click should be logged",
+        timeout: 10_000,
+      })
+      .toBeGreaterThan(0);
+
+    const from = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+    const to = new Date(Date.now() + 60 * 60 * 1000).toISOString();
+    const analyticsResponse = await page.request.get(
+      `/api/v1/campaigns/${campaignBody.data.id}/analytics?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`,
+    );
+    expect(analyticsResponse.ok()).toBe(true);
+    const analyticsBody = (await analyticsResponse.json()) as {
+      data: {
+        topLinks: Array<{ id: string; slug: string }>;
+        totalClicks: number;
+      };
+      success: true;
+    };
+
+    expect(analyticsBody.success).toBe(true);
+    expect(analyticsBody.data.totalClicks).toBeGreaterThan(0);
+    expect(analyticsBody.data.topLinks[0]).toMatchObject({ id: linkId, slug });
+  } finally {
+    if (userId) {
+      await db.delete(campaigns).where(eq(campaigns.userId, userId));
+    }
     await cleanupLinkFlowState(email, userId, [slug]);
   }
 });

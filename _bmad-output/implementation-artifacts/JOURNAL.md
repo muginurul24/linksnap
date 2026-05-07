@@ -1867,3 +1867,46 @@ Added campaign UTM URL building and wired it into campaign link assignment. Addi
 - ✅ No raw SQL, secrets, plaintext IP storage, or sensitive logging added.
 
 **Next Task:** 6.5 — Campaign Tests
+
+### 6.5 — Campaign Tests
+- **Date:** 2026-05-07 07:34 GMT+7
+- **Duration:** 0h 40m
+- **Status:** ✅ Complete
+
+**What I Did:**
+Completed campaign test coverage across unit, integration, and E2E layers. The new coverage verifies campaign analytics aggregation, the create-campaign → add-link → UTM → analytics workflow, and an authenticated dashboard-session campaign flow through Playwright.
+
+**Files Changed:**
+- `src/lib/campaigns/analytics.ts` — Added campaign event grouping and summary helper for unit-level coverage.
+- `src/app/api/v1/campaigns/[id]/analytics/route.ts` — Reused the campaign analytics helper in the API route.
+- `tests/unit/campaign-analytics.test.ts` — Added campaign aggregation unit coverage.
+- `tests/integration/campaign-workflow.test.ts` — Added create campaign → add link → UTM params → analytics integration flow.
+- `tests/e2e/link-flow.spec.ts` — Added authenticated dashboard-session campaign workflow E2E coverage.
+- `src/app/(dashboard)/campaigns/page.tsx` — Fixed dropdown trigger button nesting found by the campaign E2E run.
+- `src/app/(dashboard)/page.tsx` — Fixed the same dropdown trigger nesting pattern.
+- `src/app/(dashboard)/pages/page.tsx` — Fixed the same dropdown trigger nesting pattern.
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Checked off Task 6.5.
+- `_bmad-output/implementation-artifacts/JOURNAL.md` — Recorded this completion entry.
+
+**Decisions Made:**
+- Kept campaign analytics grouping in a small library helper so both API and tests share the same aggregation behavior.
+- Used an authenticated dashboard Playwright session for the E2E campaign flow and exercised the campaign APIs from that session because the campaign dashboard UI is still mostly static.
+- Fixed invalid nested dropdown buttons immediately because the first E2E run exposed a real hydration warning on the campaign page.
+
+**Tests:**
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Unit/Integration: `rtk bun run test` — 47 files passed, 223 tests passed.
+- ✅ Build: `rtk bun run build` — Passed.
+- ✅ E2E: `rtk bun run test:e2e` — 7 specs passed.
+
+**Issues Encountered:**
+- Initial E2E run passed but surfaced nested `<button>` hydration warnings in dashboard dropdown triggers → Updated the affected triggers to use the component `render` prop and reran E2E cleanly.
+
+**Security Checks:**
+- ✅ Campaign workflow tests use authenticated users and user-owned records.
+- ✅ Campaign APIs continue to validate ownership before link assignment or analytics reads.
+- ✅ E2E cleanup removes test users and campaign/link data.
+- ✅ No secrets, plaintext IP storage, raw SQL, or sensitive logging added.
+
+**Next Task:** 7.1 — Split Test API
