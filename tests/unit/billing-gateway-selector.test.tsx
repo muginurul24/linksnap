@@ -7,39 +7,26 @@ import {
 } from "../../src/app/(dashboard)/settings/billing/upgrade-button";
 
 describe("billing gateway selector", () => {
-  it("should render Midtrans as the only payment option", () => {
+  it("should render a single upgrade button without gateway radio controls", () => {
     const markup = renderToStaticMarkup(
-      <UpgradeButton
-        availableGateways={["midtrans"]}
-        current={false}
-        gateway="midtrans"
-        plan="PRO"
-      />,
+      <UpgradeButton current={false} plan="PRO" />,
     );
 
-    expect(markup).toContain("Midtrans");
-    expect(markup).toContain("Bank Lokal");
-    expect(markup).toContain('type="radio"');
+    expect(markup).toContain("Upgrade to Pro");
+    expect(markup).not.toContain('type="radio"');
   });
 
-  it("should disable the single payment option", () => {
-    const markup = renderToStaticMarkup(
-      <UpgradeButton
-        availableGateways={["midtrans"]}
-        current={false}
-        gateway="midtrans"
-        plan="BUSINESS"
-      />,
-    );
+  it("should render current plan state", () => {
+    const markup = renderToStaticMarkup(<UpgradeButton current plan="BUSINESS" />);
 
-    expect(markup).toContain("Midtrans");
+    expect(markup).toContain("Current Plan");
     expect(markup).toContain("disabled");
   });
 
   it("should choose the Midtrans create endpoint and redirect URL", () => {
-    expect(getPaymentCreateEndpoint("midtrans")).toBe("/api/v1/payments/create");
+    expect(getPaymentCreateEndpoint()).toBe("/api/v1/payments/create");
     expect(
-      getPaymentRedirectUrl("midtrans", {
+      getPaymentRedirectUrl({
         orderId: "LS-123",
         redirectUrl: "https://app.sandbox.midtrans.com/snap/v2/vtweb/token-1",
         snapToken: "token-1",

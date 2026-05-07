@@ -4342,6 +4342,43 @@ Removed the Stripe package, deleted Stripe payment modules and API routes, and r
 
 **Next Task:** 14.2 — Revert Gateway Selector to Midtrans-Only
 
+### 14.2 — Revert Gateway Selector to Midtrans-Only
+- **Date:** 2026-05-07 20:20 GMT+7
+- **Duration:** 0 hours 12 minutes
+- **Status:** ✅ Complete
+
+**What I Did:**
+Removed the remaining gateway selector UI from billing plan cards and reverted paid plans to a single Midtrans checkout button. The billing page no longer detects client country for gateway selection, and the upgrade button always posts to the existing Midtrans payment endpoint.
+
+**Files Changed:**
+- `src/app/(dashboard)/settings/billing/page.tsx` — Removed country detection, payment-gateway data attributes, and gateway props passed to `UpgradeButton`.
+- `src/app/(dashboard)/settings/billing/upgrade-button.tsx` — Removed gateway props, radio controls, and generic gateway helpers.
+- `src/lib/payments/gateway-selection.ts` — Deleted obsolete gateway-selection helper.
+- `tests/unit/billing-gateway-selector.test.tsx` — Updated unit coverage for the single-button Midtrans flow.
+- `tests/integration/billing-page-gateway-detection.test.tsx` — Updated billing page coverage to assert no gateway selector/country metadata remains.
+- `tests/unit/payment-gateway-selection.test.ts` — Deleted obsolete country-selection tests.
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Checked off Task 14.2.
+- `_bmad-output/implementation-artifacts/JOURNAL.md` — Recorded this completion entry.
+
+**Decisions Made:**
+- Deleted the gateway-selection helper rather than keeping a Midtrans-only wrapper because billing no longer needs country-aware gateway logic.
+- Kept transaction-history gateway display for Task 14.3 so the UI rollback and DB cleanup stay reviewable as separate commits.
+
+**Tests:**
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Unit/Integration: `rtk bun run test` — 95 files passed, 438 tests passed.
+
+**Issues Encountered:**
+- None.
+
+**Security Checks:**
+- ✅ Payment creation still uses the existing authenticated, rate-limited Midtrans endpoint.
+- ✅ No new input surfaces or user-controlled URLs were introduced.
+- ✅ No secrets, raw SQL, or `dangerouslySetInnerHTML` introduced.
+
+**Next Task:** 14.3 — Cleanup Transaction & DB References
+
 ### 13.4 — Smart Rules API Update
 - **Date:** 2026-05-07 18:47 GMT+7
 - **Duration:** 0h 30m

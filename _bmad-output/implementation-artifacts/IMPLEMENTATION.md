@@ -1024,13 +1024,13 @@ rtk bun run db:studio    # Open Drizzle Studio (in another terminal)
 - [x] Tests: verify zero Stripe references in `src/`
 
 ### TASK 14.2 — Revert Gateway Selector to Midtrans-Only
-- [ ] File: `src/app/(dashboard)/settings/billing/page.tsx`
-- [ ] Remove dual gateway selector UI (radio buttons)
-- [ ] Revert to single "Upgrade" button per plan — one gateway only
-- [ ] File: `src/app/(dashboard)/settings/billing/upgrade-button.tsx`
-- [ ] Remove `gateway` prop — always use Midtrans endpoint
-- [ ] Clean up country detection logic added for gateway selection
-- [ ] Tests: unit (billing page renders single gateway)
+- [x] File: `src/app/(dashboard)/settings/billing/page.tsx`
+- [x] Remove dual gateway selector UI (radio buttons)
+- [x] Revert to single "Upgrade" button per plan — one gateway only
+- [x] File: `src/app/(dashboard)/settings/billing/upgrade-button.tsx`
+- [x] Remove `gateway` prop — always use Midtrans endpoint
+- [x] Clean up country detection logic added for gateway selection
+- [x] Tests: unit (billing page renders single gateway)
 
 ### TASK 14.3 — Cleanup Transaction & DB References
 - [ ] Remove `gateway` column from `transactions` table schema (Drizzle schema)
