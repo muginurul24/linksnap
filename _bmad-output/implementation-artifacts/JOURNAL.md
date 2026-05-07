@@ -3809,3 +3809,49 @@ the links page with a sanitized internal search URL.
 - ✅ No secrets introduced.
 
 **Next Task:** Phase 12 complete — await next phase.
+
+### 10.5 — Redis Cache Warming
+- **Date:** 2026-05-07 17:35 GMT+7
+- **Duration:** 0h 20m
+- **Status:** ✅ Complete
+
+**What I Did:**
+Added a repeatable Redis cache warmup command for launch operations. The command
+loads active redirect links from the database and writes the same redirect cache
+payload used by the public short-link redirect handler.
+
+**Files Changed:**
+- `_bmad-output/planning-artifacts/spec-redis-cache-warming.md` — Added task spec, acceptance criteria, and risks.
+- `scripts/warm-redis-cache.ts` — Added Bun warmup script with bounded `--limit=` / `REDIS_WARMUP_LIMIT` support.
+- `src/lib/links/cache-warming.ts` — Added warmup helper, limit parser, and result accounting.
+- `src/lib/db/queries/links.ts` — Added active redirect-link query ordered by click volume and recency.
+- `tests/unit/redirect-cache-warming.test.ts` — Added unit coverage for limit parsing, cache payload writes, skips, and write errors.
+- `package.json` — Added `cache:warm` script.
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Checked off Redis cache warming.
+- `_bmad-output/implementation-artifacts/JOURNAL.md` — Recorded this completion entry.
+
+**Decisions Made:**
+- Warmup writes Redis directly instead of issuing HTTP requests, so it avoids logging artificial click events.
+- Only active, already-scheduled, non-expired links are selected for warmup.
+- The default warmup limit is 500 links and the hard cap is 5000 links to keep database and Redis load bounded.
+
+**Tests:**
+- ✅ Targeted: `rtk bun run test -- tests/unit/redirect-cache-warming.test.ts tests/unit/redirect.test.ts` — 2 files passed, 11 tests passed.
+- ✅ Warmup command: `rtk bun run cache:warm -- --limit=25` — Completed with `total=0 cached=0 skipped=0 errors=0` because the connected DB had no active redirect links.
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Unit/Integration: `rtk bun run test` — 90 files passed, 403 tests passed.
+- ✅ Build: `rtk bun run build` — Passed and generated 52 static pages.
+
+**Issues Encountered:**
+- Production Vercel environment variables still cannot be verified from this workspace because Vercel CLI and Vercel API token/project environment variables are unavailable.
+- Google OAuth E2E remains an interactive provider-flow task; local env values are present, but consent/login cannot be completed automatically here.
+
+**Security Checks:**
+- ✅ Warmup output prints counts only, not destination URLs or secrets.
+- ✅ Cache payload uses the existing redirect cache serializer.
+- ✅ Query uses Drizzle predicates; no raw SQL introduced.
+- ✅ Security scan found no runtime `dangerouslySetInnerHTML`, raw SQL execution, or `db.execute`.
+- ✅ No secrets introduced.
+
+**Next Task:** 10.5 — Backup strategy / load test / penetration test, or 1.5 — Google OAuth E2E if interactive provider access is available.
