@@ -101,7 +101,7 @@ function LinkRows({ links }: { links: ListedLink[] }) {
               <span className="text-xs text-muted-foreground">None</span>
             )}
           </TableCell>
-          <TableCell className="text-right font-mono font-medium tabular-nums">
+          <TableCell className="hidden text-right font-mono font-medium tabular-nums sm:table-cell">
             {link.clickCount.toLocaleString()}
           </TableCell>
           <TableCell className="hidden lg:table-cell">
@@ -191,7 +191,7 @@ export default async function LinksPage({ searchParams }: LinksPageProps) {
                   <TableHead>Link</TableHead>
                   <TableHead className="hidden md:table-cell">Destination</TableHead>
                   <TableHead className="hidden sm:table-cell">Features</TableHead>
-                  <TableHead className="text-right">Clicks</TableHead>
+                  <TableHead className="hidden text-right sm:table-cell">Clicks</TableHead>
                   <TableHead className="hidden lg:table-cell">Status</TableHead>
                   <TableHead className="w-10">
                     <span className="sr-only">Preview</span>

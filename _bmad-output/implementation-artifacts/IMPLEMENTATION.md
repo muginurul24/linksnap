@@ -1182,15 +1182,15 @@ rtk bun run db:studio    # Open Drizzle Studio (in another terminal)
 - [x] Tests: unit (button disabled state during submit)
 
 ### TASK 15.10 — Mobile Navigation Polish
-- [ ] File: `src/components/dashboard/app-header.tsx`
+- [x] File: `src/components/dashboard/app-header.tsx`
   - Breadcrumbs on mobile: truncate to current page only (hide parent breadcrumbs)
-- [ ] File: `src/components/dashboard/app-sidebar.tsx`
+- [x] File: `src/components/dashboard/app-sidebar.tsx`
   - Sidebar collapsed by default on mobile (`defaultOpen={false}` for mobile via media query or responsive prop)
-- [ ] File: `src/app/(dashboard)/links/page.tsx`
+- [x] File: `src/app/(dashboard)/links/page.tsx`
   - Links table: on mobile, hide some columns, show essential info only
-- [ ] File: `src/app/(dashboard)/settings/billing/page.tsx`
+- [x] File: `src/app/(dashboard)/settings/billing/page.tsx`
   - Billing plan cards: stack vertically on mobile
-- [ ] Tests: unit (responsive behavior verification where testable)
+- [x] Tests: unit (responsive behavior verification where testable)
 
 ### TASK 15.11 — Form Validation UX Improvements
 - [ ] All forms: show inline field errors immediately on blur (not just on submit)

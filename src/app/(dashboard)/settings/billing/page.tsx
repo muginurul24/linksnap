@@ -239,7 +239,7 @@ export default async function BillingPage({ searchParams }: BillingPageProps) {
         </CardContent>
       </Card>
 
-      <div className="grid gap-4 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
         {plans.map((plan) => {
           const isCurrent = plan.plan === billingUser.plan;
 

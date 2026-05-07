@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { getDashboardBreadcrumbs } from "../../src/components/dashboard/app-header";
+import {
+  getBreadcrumbItemVisibilityClass,
+  getDashboardBreadcrumbs,
+} from "../../src/components/dashboard/app-header";
 import {
   buildLinksSearchHref,
   getLinksSearchQuery,
@@ -26,6 +29,12 @@ describe("dashboard app header", () => {
       { href: "/dashboard", label: "Dashboard" },
       { label: "API Docs" },
     ]);
+  });
+
+  it("should hide parent breadcrumbs on mobile", () => {
+    expect(getBreadcrumbItemVisibilityClass(0, 3)).toBe("hidden md:inline-flex");
+    expect(getBreadcrumbItemVisibilityClass(1, 3)).toBe("hidden md:inline-flex");
+    expect(getBreadcrumbItemVisibilityClass(2, 3)).toBeUndefined();
   });
 
   it("should build a filtered links search href when query is provided", () => {

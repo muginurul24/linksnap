@@ -57,7 +57,7 @@ export default async function DashboardLayout({
   return (
     <ThemeProvider attribute="class" defaultTheme="dark" enableSystem disableTransitionOnChange>
       <TooltipProvider>
-        <SidebarProvider defaultOpen>
+        <SidebarProvider defaultOpen defaultOpenMobile={false}>
           <AppSidebar user={sidebarUser} />
           <main className="flex min-h-screen w-full flex-col">
             <AppHeader />

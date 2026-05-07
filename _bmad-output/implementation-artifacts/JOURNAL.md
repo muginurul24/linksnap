@@ -4950,3 +4950,43 @@ Updated the Smart Rules engine to evaluate rules in saved display order and adde
 - ✅ Fallback behavior does not bypass existing redirect availability checks in the route handlers.
 
 **Next Task:** 13.4 — Smart Rules API Update
+
+### 15.10 — Mobile Navigation Polish
+- **Date:** 2026-05-07 21:14 GMT+7
+- **Duration:** 0h 25m
+- **Status:** ✅ Complete
+
+**What I Did:**
+Polished the dashboard mobile navigation by showing only the current breadcrumb on small screens and ensuring the mobile sidebar starts closed. Tightened the links table and billing plan layout so mobile users see essential information without horizontal crowding.
+
+**Files Changed:**
+- `_bmad-output/planning-artifacts/spec-phase-15-mobile-navigation.md` — Added quick-dev spec for the responsive navigation task.
+- `src/components/dashboard/app-header.tsx` — Added breadcrumb visibility helper and hid parent breadcrumb items on mobile.
+- `src/components/ui/sidebar.tsx` — Added an explicit mobile default-open option.
+- `src/app/(dashboard)/layout.tsx` — Configured the dashboard sidebar to start closed on mobile.
+- `src/app/(dashboard)/links/page.tsx` — Hid the clicks column on mobile table layouts.
+- `src/app/(dashboard)/settings/billing/page.tsx` — Made plan cards stack on mobile and expand to columns on medium screens.
+- `tests/unit/dashboard-app-header.test.ts` — Added breadcrumb mobile visibility coverage.
+- `tests/unit/mobile-navigation-polish.test.ts` — Added focused responsive behavior tests.
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Checked off Task 15.10.
+
+**Decisions Made:**
+- Kept parent breadcrumbs in the DOM but hidden on mobile to preserve desktop navigation and avoid rebuilding breadcrumb data.
+- Added a mobile-specific sidebar default instead of changing the desktop `defaultOpen` behavior.
+- Hid only the clicks column on mobile because link title, destination, status, and actions are the minimum usable set for scanning.
+
+**Tests:**
+- ✅ Targeted: `rtk bun run test -- tests/unit/dashboard-app-header.test.ts tests/unit/mobile-navigation-polish.test.ts` — 2 files passed, 13 tests passed.
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Unit/Integration: `rtk bun run test` — 104 files passed, 471 tests passed.
+
+**Issues Encountered:**
+- No blocking issues encountered.
+
+**Security Checks:**
+- ✅ No user input, API routes, or persistence logic changed.
+- ✅ No secrets, raw SQL, or `dangerouslySetInnerHTML` introduced.
+- ✅ Ownership and rate-limited paths are unaffected by these UI-only changes.
+
+**Next Task:** 15.11 — Form Validation UX Improvements

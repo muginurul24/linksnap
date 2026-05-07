@@ -80,6 +80,13 @@ export function getDashboardBreadcrumbs(pathname: string): DashboardBreadcrumb[]
   return breadcrumbMap[pathname] ?? [{ label: "Dashboard" }];
 }
 
+export function getBreadcrumbItemVisibilityClass(
+  index: number,
+  total: number,
+): string | undefined {
+  return index < total - 1 ? "hidden md:inline-flex" : undefined;
+}
+
 export function AppHeader() {
   const pathname = usePathname();
   const router = useRouter();
@@ -140,7 +147,9 @@ export function AppHeader() {
         <BreadcrumbList>
           {crumbs.map((crumb, i) => (
             <Fragment key={crumb.label}>
-              <BreadcrumbItem>
+              <BreadcrumbItem
+                className={getBreadcrumbItemVisibilityClass(i, crumbs.length)}
+              >
                 {i === crumbs.length - 1 ? (
                   <BreadcrumbPage>{crumb.label}</BreadcrumbPage>
                 ) : (
@@ -148,7 +157,7 @@ export function AppHeader() {
                 )}
               </BreadcrumbItem>
               {i < crumbs.length - 1 && (
-                <BreadcrumbSeparator />
+                <BreadcrumbSeparator className="hidden md:inline-flex" />
               )}
             </Fragment>
           ))}
