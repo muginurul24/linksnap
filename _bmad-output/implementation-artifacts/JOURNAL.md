@@ -3855,3 +3855,40 @@ payload used by the public short-link redirect handler.
 - ✅ No secrets introduced.
 
 **Next Task:** 10.5 — Backup strategy / load test / penetration test, or 1.5 — Google OAuth E2E if interactive provider access is available.
+
+### 10.5 — Basic Penetration Smoke
+- **Date:** 2026-05-07 17:44 GMT+7
+- **Duration:** 0h 20m
+- **Status:** ✅ Complete
+
+**What I Did:**
+Added a repeatable basic penetration smoke script for launch checks. The script
+exercises safe hostile-input cases against production without creating records
+or touching real payment state.
+
+**Files Changed:**
+- `_bmad-output/planning-artifacts/spec-basic-penetration-smoke.md` — Added task spec, acceptance criteria, and risks.
+- `scripts/basic-penetration-smoke.sh` — Added production-safe hostile-input smoke checks.
+- `package.json` — Added `security:smoke` script.
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Checked off basic penetration test.
+- `_bmad-output/implementation-artifacts/JOURNAL.md` — Recorded this completion entry.
+
+**Decisions Made:**
+- Slug attack checks assert the not-found UI and lack of reflected payload rather than requiring HTTP 404, because the deployed App Router streamed not-found response currently returns HTTP 200.
+- The script checks invalid webhook signatures with a syntactically valid Midtrans payload so signature verification is exercised.
+- The script avoids valid slugs and valid auth payloads to prevent artificial click logs or account writes.
+
+**Tests:**
+- ✅ Basic penetration smoke: `rtk bun run security:smoke` — Passed against `https://www.justqiu.cloud`.
+
+**Issues Encountered:**
+- XSS-like and overlong slug requests returned HTTP 200 with a streamed not-found UI. The body did not reflect executable script payloads and did not expose internal errors, so the smoke check was adjusted to verify the security outcome directly.
+
+**Security Checks:**
+- ✅ XSS-like slug rendered not-found state without reflected executable payload.
+- ✅ Overlong slug rendered not-found state without internal error.
+- ✅ `/.env` did not expose `DATABASE_URL` or `AUTH_SECRET`.
+- ✅ Malformed JSON returned `VALIDATION_ERROR` without parser stack details.
+- ✅ Midtrans webhook rejected an invalid signature with `INVALID_SIGNATURE`.
+
+**Next Task:** 10.5 — Backup strategy / load test, or 1.5 — Google OAuth E2E if interactive provider access is available.
