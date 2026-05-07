@@ -321,6 +321,14 @@ export const API_DOC_SECTIONS: ApiDocSection[] = [
     description: "Read link, campaign, and dashboard analytics.",
     endpoints: [
       {
+        auth: "Session",
+        method: "GET",
+        path: "/api/v1/analytics",
+        rateLimit: PLAN_RATE_LIMIT,
+        responseExample: { data: { summary: { totalClicks: 120 } }, success: true },
+        summary: "Read dashboard-wide analytics for the authenticated user.",
+      },
+      {
         auth: "API key",
         method: "GET",
         path: "/api/v1/dashboard/overview",

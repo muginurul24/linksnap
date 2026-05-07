@@ -3530,3 +3530,53 @@ favor of schema-backed fields.
 - ✅ No secrets or raw SQL introduced.
 
 **Next Task:** 12.17 — Connect Analytics Dashboard to Real Data
+
+### 12.17 — Connect Analytics Dashboard to Real Data
+- **Date:** 2026-05-07 16:27 GMT+7
+- **Duration:** 0h 30m
+- **Status:** ✅ Complete
+
+**What I Did:**
+Connected the Analytics dashboard to owner-scoped click event data. The page now
+supports 7/30/90 day and custom ranges, renders real daily clicks, device,
+referrer, and country charts, and exports the same summary as CSV.
+
+**Files Changed:**
+- `_bmad-output/planning-artifacts/spec-analytics-dashboard-real-data.md` — Added task spec and range/export decisions.
+- `src/lib/validations/analytics.ts` — Added dashboard analytics query validation.
+- `src/lib/analytics/dashboard.ts` — Added dashboard range normalization, summary builder, and CSV export helper.
+- `src/lib/db/queries/click-events.ts` — Added owner-scoped click event listing.
+- `src/app/api/v1/analytics/route.ts` — Added authenticated dashboard analytics API.
+- `src/app/(dashboard)/analytics/page.tsx` — Converted dashboard page to an async server component with real data and controls.
+- `src/app/(dashboard)/analytics/analytics-dashboard-client.tsx` — Added client chart renderer for Recharts tabs.
+- `src/lib/api-docs/spec.ts` — Documented the dashboard analytics endpoint.
+- `tests/unit/dashboard-analytics.test.ts` — Added range, aggregation, and CSV coverage.
+- `tests/integration/dashboard-analytics-api.test.ts` — Added dashboard analytics API coverage.
+- `tests/integration/api-docs-route.test.ts` — Verified the new analytics endpoint appears in OpenAPI output.
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Checked off Task 12.17.
+- `_bmad-output/implementation-artifacts/JOURNAL.md` — Recorded this completion entry.
+
+**Decisions Made:**
+- Dashboard analytics allows up to 90 days; existing per-link analytics remains capped at 30 days.
+- Range state is stored in query params so dashboard views are shareable and server-rendered.
+- CSV export is generated as a data URL from the server summary to avoid adding stateful export storage.
+- CTA click events remain excluded from total clicks and trend charts, matching the existing analytics summary semantics.
+
+**Tests:**
+- ✅ Targeted: `rtk bun run test -- tests/unit/dashboard-analytics.test.ts tests/unit/analytics-summary.test.ts tests/integration/dashboard-analytics-api.test.ts tests/integration/api-docs-route.test.ts` — 4 files passed, 17 tests passed.
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Unit/Integration: `rtk bun run test` — 85 files passed, 381 tests passed.
+- ✅ Build: `rtk bun run build` — Passed.
+
+**Issues Encountered:**
+- None.
+
+**Security Checks:**
+- ✅ Analytics dashboard and API require authenticated sessions.
+- ✅ Click event reads are owner-scoped through `links.userId`.
+- ✅ Analytics API query params are validated with Zod.
+- ✅ Analytics API route is rate limited.
+- ✅ No secrets or raw SQL introduced.
+
+**Next Task:** 12.18 — Post-Payment Checkout Pages

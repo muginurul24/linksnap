@@ -40,6 +40,12 @@ type ListClickEventsForCampaignsInput = {
   to: Date;
 };
 
+type ListClickEventsForUserInput = {
+  from: Date;
+  to: Date;
+  userId: string;
+};
+
 type ListTopLinksForCampaignInput = {
   campaignId: string;
   from: Date;
@@ -113,6 +119,33 @@ export async function listClickEventsForCampaigns({
 
     return [{ ...row, campaignId: row.campaignId }];
   });
+}
+
+export async function listClickEventsForUser({
+  from,
+  to,
+  userId,
+}: ListClickEventsForUserInput): Promise<ClickEventForAnalytics[]> {
+  return db
+    .select({
+      browser: clickEvents.browser,
+      city: clickEvents.city,
+      country: clickEvents.country,
+      device: clickEvents.device,
+      eventType: clickEvents.eventType,
+      ipHash: clickEvents.ipHash,
+      linkPageHasCountdown: clickEvents.linkPageHasCountdown,
+      referrer: clickEvents.referrer,
+      timestamp: clickEvents.timestamp,
+    })
+    .from(clickEvents)
+    .innerJoin(links, eq(clickEvents.linkId, links.id))
+    .where(and(
+      eq(links.userId, userId),
+      gte(clickEvents.timestamp, from),
+      lte(clickEvents.timestamp, to),
+    ))
+    .orderBy(desc(clickEvents.timestamp));
 }
 
 export async function listTopLinksForCampaign({

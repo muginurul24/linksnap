@@ -1,35 +1,164 @@
-"use client";
-
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { redirect } from "next/navigation";
+import { Calendar, Download, MousePointerClick } from "lucide-react";
 import { EmptyState } from "@/components/dashboard/empty-state";
-import { Area, AreaChart, Bar, BarChart, CartesianGrid, XAxis, YAxis, ResponsiveContainer, PieChart, Pie, Cell, Legend } from "recharts";
-import { Download, Calendar, MousePointerClick } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { ButtonLink } from "@/components/ui/button-link";
+import { Input } from "@/components/ui/input";
+import {
+  buildDashboardAnalyticsData,
+  normalizeDashboardAnalyticsRange,
+  type DashboardAnalyticsRange,
+  type DashboardAnalyticsRangeKey,
+} from "@/lib/analytics/dashboard";
+import { auth } from "@/lib/auth";
+import { listClickEventsForUser } from "@/lib/db/queries/click-events";
+import { dashboardAnalyticsQuerySchema } from "@/lib/validations/analytics";
+import { AnalyticsDashboardClient } from "./analytics-dashboard-client";
 
-const dailyClicks: { date: string; clicks: number }[] = [];
+type AnalyticsPageProps = {
+  searchParams: Promise<{
+    from?: string | string[];
+    range?: string | string[];
+    to?: string | string[];
+  }>;
+};
 
-const deviceData: { name: string; value: number; color: string }[] = [];
+type SessionWithUserId = {
+  user?: {
+    id?: unknown;
+  } | null;
+} | null;
 
-const referrerData: { source: string; clicks: number }[] = [];
+const RANGE_OPTIONS: Array<{
+  href: string;
+  key: Exclude<DashboardAnalyticsRangeKey, "custom">;
+  label: string;
+}> = [
+  { href: "/analytics?range=7", key: "7", label: "Last 7 Days" },
+  { href: "/analytics?range=30", key: "30", label: "Last 30 Days" },
+  { href: "/analytics?range=90", key: "90", label: "Last 90 Days" },
+];
 
-export default function AnalyticsPage() {
-  const hasClicks = dailyClicks.some((item) => item.clicks > 0);
+function getSessionUserId(session: SessionWithUserId): string | null {
+  return typeof session?.user?.id === "string" ? session.user.id : null;
+}
+
+function firstParam(value: string | string[] | undefined): string | undefined {
+  return Array.isArray(value) ? value[0] : value;
+}
+
+function getAnalyticsRange(
+  params: Awaited<AnalyticsPageProps["searchParams"]>,
+): DashboardAnalyticsRange {
+  const parsed = dashboardAnalyticsQuerySchema.safeParse({
+    from: firstParam(params.from),
+    range: firstParam(params.range),
+    to: firstParam(params.to),
+  });
+
+  if (!parsed.success) {
+    return normalizeDashboardAnalyticsRange({ range: "30" });
+  }
+
+  try {
+    return normalizeDashboardAnalyticsRange(parsed.data);
+  } catch {
+    return normalizeDashboardAnalyticsRange({ range: "30" });
+  }
+}
+
+function toDateInputValue(date: Date): string {
+  return date.toISOString().slice(0, 10);
+}
+
+function toCsvDataUri(csv: string): string {
+  return `data:text/csv;charset=utf-8,${encodeURIComponent(csv)}`;
+}
+
+function getCsvFilename(range: DashboardAnalyticsRange): string {
+  return `linksnap-analytics-${toDateInputValue(range.from)}-${toDateInputValue(
+    range.to,
+  )}.csv`;
+}
+
+function AnalyticsRangeControls({ range }: { range: DashboardAnalyticsRange }) {
+  return (
+    <div className="flex flex-col gap-2 sm:items-end">
+      <div className="flex flex-wrap gap-2">
+        {RANGE_OPTIONS.map((option) => (
+          <ButtonLink
+            href={option.href}
+            key={option.key}
+            size="sm"
+            variant={range.key === option.key ? "default" : "outline"}
+          >
+            <Calendar className="size-4" />
+            {option.label}
+          </ButtonLink>
+        ))}
+      </div>
+      <form action="/analytics" className="flex flex-wrap items-center gap-2">
+        <input name="range" type="hidden" value="custom" />
+        <Input
+          aria-label="Analytics from date"
+          className="w-36"
+          defaultValue={toDateInputValue(range.from)}
+          name="from"
+          type="date"
+        />
+        <Input
+          aria-label="Analytics to date"
+          className="w-36"
+          defaultValue={toDateInputValue(range.to)}
+          name="to"
+          type="date"
+        />
+        <Button size="sm" type="submit" variant="outline">
+          Apply
+        </Button>
+      </form>
+    </div>
+  );
+}
+
+export default async function AnalyticsPage({ searchParams }: AnalyticsPageProps) {
+  const session = await auth();
+  const userId = getSessionUserId(session);
+  if (!userId) redirect("/login?callbackUrl=/analytics");
+
+  const params = await searchParams;
+  const range = getAnalyticsRange(params);
+  const events = await listClickEventsForUser({
+    from: range.from,
+    to: range.to,
+    userId,
+  });
+  const analytics = buildDashboardAnalyticsData({ events, range });
+  const hasClicks = analytics.summary.totalClicks > 0;
 
   return (
     <>
-      <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Analytics</h1>
-          <p className="text-sm text-muted-foreground">Deep dive into your link performance data.</p>
+          <p className="text-sm text-muted-foreground">
+            Deep dive into your link performance data.
+          </p>
         </div>
-        <div className="flex gap-2 mt-2 sm:mt-0">
-          <Button variant="outline" size="sm">
-            <Calendar className="mr-2 size-4" /> Last 7 Days
-          </Button>
-          <Button variant="outline" size="sm">
-            <Download className="mr-2 size-4" /> Export
+        <div className="flex flex-col gap-2 lg:items-end">
+          <AnalyticsRangeControls range={range} />
+          <Button
+            render={
+              <a
+                download={getCsvFilename(range)}
+                href={toCsvDataUri(analytics.csv)}
+              />
+            }
+            size="sm"
+            variant="outline"
+          >
+            <Download className="size-4" />
+            Export CSV
           </Button>
         </div>
       </div>
@@ -38,86 +167,13 @@ export default function AnalyticsPage() {
         <EmptyState
           actionHref="/links"
           actionLabel="Share link"
+          description="Analytics will appear after someone opens one of your short links."
           icon={<MousePointerClick className="size-5" />}
           title="Waiting for clicks..."
-          description="Analytics will appear after someone opens one of your short links."
         />
-      ) : null}
-
-      {hasClicks ? (
-      <Tabs defaultValue="overview" className="w-full">
-        <TabsList>
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="devices">Devices</TabsTrigger>
-          <TabsTrigger value="referrers">Referrers</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="overview" className="mt-4">
-          <Card>
-            <CardHeader><CardTitle className="text-base">Click Trend</CardTitle></CardHeader>
-            <CardContent>
-              <ChartContainer config={{ clicks: { label: "Clicks", color: "hsl(var(--primary))" } }} className="h-[350px] w-full">
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={dailyClicks}>
-                    <defs>
-                      <linearGradient id="analyticsGradient" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3} />
-                        <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0} />
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                    <XAxis dataKey="date" className="text-xs" />
-                    <YAxis className="text-xs" />
-                    <ChartTooltip content={<ChartTooltipContent />} />
-                    <Area type="monotone" dataKey="clicks" stroke="hsl(var(--primary))" fill="url(#analyticsGradient)" strokeWidth={2} />
-                  </AreaChart>
-                </ResponsiveContainer>
-              </ChartContainer>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="devices" className="mt-4">
-          <Card>
-            <CardHeader><CardTitle className="text-base">Device Distribution</CardTitle></CardHeader>
-            <CardContent>
-              <ChartContainer config={{ value: { label: "Share" } }} className="h-[350px] w-full">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie data={deviceData} cx="50%" cy="50%" innerRadius={80} outerRadius={140} paddingAngle={5} dataKey="value">
-                      {deviceData.map((entry, i) => (
-                        <Cell key={i} fill={entry.color} />
-                      ))}
-                    </Pie>
-                    <Legend />
-                    <ChartTooltip content={<ChartTooltipContent />} />
-                  </PieChart>
-                </ResponsiveContainer>
-              </ChartContainer>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="referrers" className="mt-4">
-          <Card>
-            <CardHeader><CardTitle className="text-base">Top Referrers</CardTitle></CardHeader>
-            <CardContent>
-              <ChartContainer config={{ clicks: { label: "Clicks", color: "hsl(var(--chart-1))" } }} className="h-[350px] w-full">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={referrerData} layout="vertical" margin={{ left: 20 }}>
-                    <CartesianGrid strokeDasharray="3 3" className="stroke-muted" horizontal={false} />
-                    <XAxis type="number" className="text-xs" />
-                    <YAxis type="category" dataKey="source" className="text-xs" width={80} />
-                    <ChartTooltip content={<ChartTooltipContent />} />
-                    <Bar dataKey="clicks" fill="hsl(var(--chart-1))" radius={[0, 4, 4, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
-              </ChartContainer>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
-      ) : null}
+      ) : (
+        <AnalyticsDashboardClient summary={analytics.summary} />
+      )}
     </>
   );
 }
