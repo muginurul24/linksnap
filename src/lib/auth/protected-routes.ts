@@ -5,6 +5,7 @@ const PROTECTED_PREFIXES = [
   "/qr",
   "/campaigns",
   "/analytics",
+  "/docs",
   "/settings",
 ] as const;
 

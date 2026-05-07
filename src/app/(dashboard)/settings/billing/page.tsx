@@ -41,6 +41,12 @@ type SessionWithUserId = {
   } | null;
 } | null;
 
+type BillingPageProps = {
+  searchParams: Promise<{
+    upgrade?: string | string[];
+  }>;
+};
+
 type PlanCard = PlanDefinition & {
   icon: typeof Zap;
   period: string;
@@ -68,6 +74,11 @@ const plans: PlanCard[] = PLANS.map(toPlanCard);
 
 function getSessionUserId(session: SessionWithUserId): string | null {
   return typeof session?.user?.id === "string" ? session.user.id : null;
+}
+
+function getUpgradeReason(value: string | string[] | undefined): string | null {
+  const raw = Array.isArray(value) ? value[0] : value;
+  return raw?.trim() || null;
 }
 
 function formatDate(date: Date | null): string {
@@ -112,12 +123,14 @@ function getCurrentPlanConfig(plan: UserPlan): PlanCard {
   return toPlanCard(getPlanDefinition(plan));
 }
 
-export default async function BillingPage() {
+export default async function BillingPage({ searchParams }: BillingPageProps) {
   const session = await auth();
   const userId = getSessionUserId(session);
 
   if (!userId) redirect("/login");
 
+  const params = await searchParams;
+  const upgradeReason = getUpgradeReason(params.upgrade);
   await syncSubscriptionStatusForUser(userId);
 
   const [billingUser, subscription, history] = await Promise.all([
@@ -140,6 +153,23 @@ export default async function BillingPage() {
           Manage your subscription and billing details.
         </p>
       </div>
+
+      {upgradeReason === "api-docs" ? (
+        <div className="rounded-lg border border-primary/30 bg-primary/5 p-4">
+          <div className="flex items-start gap-3">
+            <Sparkles className="mt-0.5 size-4 text-primary" />
+            <div>
+              <p className="text-sm font-medium">
+                API documentation requires Pro or Business.
+              </p>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Upgrade to unlock API docs, API key access, and advanced
+                automation workflows.
+              </p>
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       <Card>
         <CardHeader>

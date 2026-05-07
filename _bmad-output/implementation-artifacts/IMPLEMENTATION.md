@@ -755,14 +755,14 @@ rtk bun run db:studio    # Open Drizzle Studio (in another terminal)
 - [x] Tests: unit (sidebar active state for `/settings` vs `/settings/billing`)
 
 ### TASK 12.12 — API Documentation Page (Paid Users)
-- [ ] Create `src/app/(dashboard)/docs/page.tsx` — API reference page
-- [ ] Gate access: redirect FREE users to `/settings/billing` with upgrade prompt
-- [ ] Content: list all `/api/v1/*` endpoints with method, path, auth required, rate limit, request/response examples
-- [ ] Sections: Authentication (API keys), Links API, Link Pages API, Campaigns API, QR API, Analytics API, Smart Rules API, Payments API
-- [ ] Show user's API key(s) with copy button (reuse from settings API keys tab)
-- [ ] Add sidebar nav item: "API Docs" with `BookOpen` icon, shown only for PRO/BUSINESS
-- [ ] Create `src/app/api/v1/docs/route.ts` — GET: return OpenAPI JSON spec
-- [ ] Tests: unit (docs page gating), integration (OpenAPI spec validity)
+- [x] Create `src/app/(dashboard)/docs/page.tsx` — API reference page
+- [x] Gate access: redirect FREE users to `/settings/billing` with upgrade prompt
+- [x] Content: list all `/api/v1/*` endpoints with method, path, auth required, rate limit, request/response examples
+- [x] Sections: Authentication (API keys), Links API, Link Pages API, Campaigns API, QR API, Analytics API, Smart Rules API, Payments API
+- [x] Show user's API key(s) with copy button (header format shown; real key CRUD remains Task 12.13)
+- [x] Add sidebar nav item: "API Docs" with `BookOpen` icon, shown only for PRO/BUSINESS
+- [x] Create `src/app/api/v1/docs/route.ts` — GET: return OpenAPI JSON spec
+- [x] Tests: unit (docs page gating), integration (OpenAPI spec validity)
 
 ### TASK 12.13 — API Keys Management (Settings Tab)
 - [ ] File: `src/app/(dashboard)/settings/page.tsx` — "API Keys" tab

@@ -7,6 +7,7 @@ describe("protected route matching", () => {
     expect(isProtectedPath("/dashboard/links")).toBe(true);
     expect(isProtectedPath("/links")).toBe(true);
     expect(isProtectedPath("/links/new")).toBe(true);
+    expect(isProtectedPath("/docs")).toBe(true);
     expect(isProtectedPath("/settings/billing")).toBe(true);
   });
 
