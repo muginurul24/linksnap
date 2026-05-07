@@ -82,36 +82,66 @@ function ChartContainer({
 }
 
 const ChartStyle = ({ id, config }: { id: string; config: ChartConfig }) => {
+  const css = buildChartStyleCss(id, config)
+
+  if (!css) {
+    return null
+  }
+
+  return <style>{css}</style>
+}
+
+export function buildChartStyleCss(id: string, config: ChartConfig): string {
+  const safeId = getSafeChartCssIdentifier(id)
+  if (!safeId) return ""
+
   const colorConfig = Object.entries(config).filter(
     ([, config]) => config.theme ?? config.color
   )
 
   if (!colorConfig.length) {
-    return null
+    return ""
   }
 
-  return (
-    <style
-      dangerouslySetInnerHTML={{
-        __html: Object.entries(THEMES)
-          .map(
-            ([theme, prefix]) => `
-${prefix} [data-chart=${id}] {
-${colorConfig
-  .map(([key, itemConfig]) => {
-    const color =
-      itemConfig.theme?.[theme as keyof typeof itemConfig.theme] ??
-      itemConfig.color
-    return color ? `  --color-${key}: ${color};` : null
-  })
-  .join("\n")}
+  return Object.entries(THEMES)
+    .map(([theme, prefix]) => {
+      const rules = colorConfig
+        .map(([key, itemConfig]) => {
+          const safeKey = getSafeChartCssIdentifier(key)
+          const color = getSafeChartColorValue(
+            itemConfig.theme?.[theme as keyof typeof itemConfig.theme] ??
+              itemConfig.color
+          )
+
+          return safeKey && color ? `  --color-${safeKey}: ${color};` : null
+        })
+        .filter((rule): rule is string => Boolean(rule))
+        .join("\n")
+
+      if (!rules) return ""
+
+      return `
+${prefix} [data-chart=${safeId}] {
+${rules}
 }
 `
-          )
-          .join("\n"),
-      }}
-    />
-  )
+    })
+    .filter(Boolean)
+    .join("\n")
+}
+
+export function getSafeChartCssIdentifier(value: string): string | null {
+  return /^[a-zA-Z0-9_-]+$/.test(value) ? value : null
+}
+
+export function getSafeChartColorValue(value: string | undefined): string | null {
+  if (!value) return null
+
+  const trimmed = value.trim()
+  const safeColorPattern =
+    /^(#[0-9a-fA-F]{3,8}|(?:hsl|rgb|oklch)\((?:var\(--[a-zA-Z0-9-]+\)|[-0-9.% /,a-zA-Z]+)\)|var\(--[a-zA-Z0-9-]+\))$/
+
+  return safeColorPattern.test(trimmed) ? trimmed : null
 }
 
 const ChartTooltip = RechartsPrimitive.Tooltip

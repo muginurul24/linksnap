@@ -2562,3 +2562,55 @@ Centralized public SEO metadata, added sitemap and robots metadata routes, compl
 - ✅ No new API surface, raw SQL, secrets, or sensitive logging added.
 
 **Next Task:** 10.4 — Security Audit
+
+### 10.4 — Security Audit
+- **Date:** 2026-05-07 10:20 GMT+7
+- **Duration:** 0h 45m
+- **Status:** ✅ Complete
+
+**What I Did:**
+Ran the launch security audit, patched app-level gaps, added global security headers/CSP, enforced Origin and custom-header checks for mutating `/api/v1/*` requests, removed chart `dangerouslySetInnerHTML`, added OTP verification rate limiting, and documented residual production security work.
+
+**Files Changed:**
+- `_bmad-output/planning-artifacts/spec-security-audit.md` — Added the BMad quick-dev mini-spec and acceptance criteria.
+- `_bmad-output/planning-artifacts/security-audit-2026-05-07.md` — Added security audit evidence, findings, fixes, and residual launch checks.
+- `_bmad-output/planning-artifacts/SECURITY.md` — Updated completed checklist items for injection, XSS, CSRF controls, headers, verify rate limiting, and webhook signature validation.
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Checked off Task 10.4 items.
+- `next.config.ts` — Added global security headers through Next.js `headers()`.
+- `src/lib/security/headers.ts` — Added CSP, HSTS, nosniff, frame, referrer, and permissions policy definitions.
+- `src/lib/security/api-request.ts` — Added API mutation Origin/custom-header validation helpers.
+- `src/proxy.ts` — Applied centralized API mutation guard before route handlers.
+- `src/components/ui/chart.tsx` — Replaced dangerous style injection with sanitized style text generation.
+- `src/app/api/v1/auth/verify/route.ts` — Added verification attempt rate limiting.
+- `tests/unit/api-security.test.ts` — Added API mutation guard coverage.
+- `tests/unit/security-headers.test.ts` — Added security header/CSP coverage.
+- `tests/unit/link-page-renderer.test.tsx` — Added chart style sanitization coverage.
+- `_bmad-output/implementation-artifacts/JOURNAL.md` — Recorded this completion entry.
+
+**Decisions Made:**
+- Used `next.config.ts` headers instead of nonce-based CSP so public pages remain statically optimized; the CSP still blocks framing, object embeds, and untrusted origins.
+- Exempted Midtrans webhook from the custom browser header because it is server-to-server and already verifies the Midtrans SHA512 signature.
+- Kept redirect rate limiting as a documented WAF/Cloudflare control to preserve the hot redirect path latency target.
+
+**Tests:**
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Targeted Unit: `rtk bun run test -- tests/unit/api-security.test.ts tests/unit/security-headers.test.ts tests/unit/link-page-renderer.test.tsx` — 13 tests passed.
+- ✅ Unit/Integration: `rtk bun run test` — 66 files passed, 296 tests passed.
+- ✅ Build: `rtk bun run build` — Passed.
+- ✅ Runtime Headers: `rtk curl -sI http://localhost:3000/` confirmed CSP, HSTS, nosniff, X-Frame-Options, Referrer-Policy, and Permissions-Policy.
+- ✅ Runtime API Guard: Missing `X-Requested-With` returned 403 `CSRF_HEADER_REQUIRED`; untrusted `Origin` returned 403 `FORBIDDEN_ORIGIN`; Midtrans webhook without custom header reached validation and returned 400, not proxy-blocked.
+
+**Issues Encountered:**
+- Initial proxy wiring invoked NextAuth for public/API requests and emitted localhost `UntrustedHost` logs → resolved by short-circuiting `/api/v1/*` and public non-protected paths before the auth proxy.
+- Redirect endpoint rate limiting remains an infrastructure/WAF requirement because app-level Redis checks would add latency to every redirect.
+
+**Security Checks:**
+- ✅ No raw SQL, `db.execute`, `.execute(`, or `raw(` matches in `src`.
+- ✅ No `dangerouslySetInnerHTML` matches in `src`.
+- ✅ No user-controlled fetch URL matches found by the audit pattern.
+- ✅ No command execution APIs with user input; only safe `RegExp.exec` false positive found.
+- ✅ API body parsing paths continue to use Zod `safeParse`.
+- ✅ Security headers are emitted by the production server.
+
+**Next Task:** 10.5 — Launch Checklist

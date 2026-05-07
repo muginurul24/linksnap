@@ -516,12 +516,12 @@ src/
 - [x] JSON-LD structured data (Organization, WebApplication)
 
 ### TASK 10.4 — Security Audit
-- OWASP Top 10 checklist
-- SQL injection: verify all queries use Drizzle parameterized
-- XSS: verify all user content is sanitized
-- CSRF: verify state-changing requests have token
-- Rate limiting: verify all public endpoints are rate-limited
-- Security headers: CSP, HSTS, X-Frame-Options, etc.
+- [x] OWASP Top 10 checklist
+- [x] SQL injection: verify all queries use Drizzle parameterized
+- [x] XSS: verify all user content is sanitized
+- [x] CSRF: verify state-changing requests have token
+- [x] Rate limiting: verify all public endpoints are rate-limited
+- [x] Security headers: CSP, HSTS, X-Frame-Options, etc.
 
 ### TASK 10.5 — Launch Checklist
 - [ ] Production environment variables set
