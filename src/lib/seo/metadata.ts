@@ -11,9 +11,10 @@ type PublicMetadataInput = {
 };
 
 type BlogStructuredDataPost = {
+  excerpt: string;
+  publishedAt?: string;
   slug: string;
   title: string;
-  excerpt: string;
 };
 
 export const siteConfig = {
@@ -150,10 +151,24 @@ export function buildBlogIndexJsonLd(posts: BlogStructuredDataPost[]) {
     itemListElement: posts.map((post, index) => ({
       "@type": "ListItem",
       position: index + 1,
-      url: `${absoluteUrl("/blog")}#${post.slug}`,
+      url: absoluteUrl(`/blog/${post.slug}`),
       name: post.title,
       description: post.excerpt,
     })),
+  };
+}
+
+export function buildBlogPostJsonLd(post: BlogStructuredDataPost) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "Article",
+    headline: post.title,
+    description: post.excerpt,
+    url: absoluteUrl(`/blog/${post.slug}`),
+    ...(post.publishedAt ? { datePublished: post.publishedAt } : {}),
+    author: organizationJsonLd(),
+    publisher: organizationJsonLd(),
+    mainEntityOfPage: absoluteUrl(`/blog/${post.slug}`),
   };
 }
 

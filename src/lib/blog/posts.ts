@@ -3,6 +3,7 @@ import path from "node:path";
 
 const BLOG_CONTENT_DIR = path.join(process.cwd(), "src/content/blog");
 const FRONTMATTER_PATTERN = /^---\n([\s\S]*?)\n---\n?/;
+const BLOG_SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
 export type BlogPostSummary = {
   slug: string;
@@ -11,6 +12,30 @@ export type BlogPostSummary = {
   category: string;
   publishedAt: string;
   readingTime: string;
+};
+
+export type BlogContentBlock =
+  | {
+      depth: 1 | 2 | 3;
+      text: string;
+      type: "heading";
+    }
+  | {
+      items: string[];
+      type: "list";
+    }
+  | {
+      text: string;
+      type: "paragraph";
+    }
+  | {
+      code: string;
+      language: string | null;
+      type: "code";
+    };
+
+export type BlogPost = BlogPostSummary & {
+  blocks: BlogContentBlock[];
 };
 
 type BlogFrontmatter = Omit<BlogPostSummary, "slug">;
@@ -35,10 +60,46 @@ export async function getBlogPosts(): Promise<BlogPostSummary[]> {
   );
 }
 
+export async function getBlogPostSlugs(): Promise<string[]> {
+  const posts = await getBlogPosts();
+
+  return posts.map((post) => post.slug);
+}
+
+export async function getBlogPostBySlug(slug: string): Promise<BlogPost | null> {
+  if (!isBlogSlug(slug)) return null;
+
+  try {
+    const rawContent = await readFile(
+      path.join(BLOG_CONTENT_DIR, `${slug}.mdx`),
+      "utf8",
+    );
+
+    return parseBlogPostDocument(rawContent, slug);
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === "ENOENT") return null;
+
+    throw error;
+  }
+}
+
 export function parseBlogPost(
   rawContent: string,
   slug: string,
 ): BlogPostSummary {
+  const post = parseBlogPostDocument(rawContent, slug);
+
+  return {
+    category: post.category,
+    excerpt: post.excerpt,
+    publishedAt: post.publishedAt,
+    readingTime: post.readingTime,
+    slug: post.slug,
+    title: post.title,
+  };
+}
+
+export function parseBlogPostDocument(rawContent: string, slug: string): BlogPost {
   const match = rawContent.match(FRONTMATTER_PATTERN);
 
   const frontmatter = match?.[1];
@@ -47,10 +108,111 @@ export function parseBlogPost(
     throw new Error(`Blog post "${slug}" is missing frontmatter.`);
   }
 
+  const body = rawContent.slice(match[0].length);
+
   return {
+    blocks: parseMdxBlocks(body),
     slug,
     ...parseFrontmatter(frontmatter, slug),
   };
+}
+
+export function parseMdxBlocks(rawBody: string): BlogContentBlock[] {
+  const blocks: BlogContentBlock[] = [];
+  const lines = rawBody.replace(/\r\n/g, "\n").split("\n");
+  let codeLines: string[] | null = null;
+  let codeLanguage: string | null = null;
+  let listItems: string[] = [];
+  let paragraphLines: string[] = [];
+
+  function flushCode(): void {
+    if (!codeLines) return;
+
+    blocks.push({
+      code: codeLines.join("\n"),
+      language: codeLanguage,
+      type: "code",
+    });
+    codeLines = null;
+    codeLanguage = null;
+  }
+
+  function flushList(): void {
+    if (listItems.length === 0) return;
+
+    blocks.push({ items: listItems, type: "list" });
+    listItems = [];
+  }
+
+  function flushParagraph(): void {
+    if (paragraphLines.length === 0) return;
+
+    blocks.push({
+      text: paragraphLines.join(" "),
+      type: "paragraph",
+    });
+    paragraphLines = [];
+  }
+
+  for (const line of lines) {
+    const trimmed = line.trim();
+
+    if (codeLines) {
+      if (trimmed.startsWith("```")) {
+        flushCode();
+        continue;
+      }
+
+      codeLines.push(line);
+      continue;
+    }
+
+    if (!trimmed) {
+      flushParagraph();
+      flushList();
+      continue;
+    }
+
+    if (trimmed.startsWith("```")) {
+      flushParagraph();
+      flushList();
+      codeLines = [];
+      codeLanguage = trimmed.slice(3).trim() || null;
+      continue;
+    }
+
+    const heading = trimmed.match(/^(#{1,3})\s+(.+)$/);
+    if (heading) {
+      flushParagraph();
+      flushList();
+      blocks.push({
+        depth: heading[1].length as 1 | 2 | 3,
+        text: heading[2],
+        type: "heading",
+      });
+      continue;
+    }
+
+    const listItem = trimmed.match(/^-\s+(.+)$/);
+    if (listItem) {
+      flushParagraph();
+      listItems.push(listItem[1]);
+      continue;
+    }
+
+    flushList();
+    paragraphLines.push(trimmed);
+  }
+
+  flushCode();
+  flushParagraph();
+  flushList();
+
+  return blocks;
+}
+
+export function isBlogSlug(value: string): boolean {
+  return BLOG_SLUG_PATTERN.test(value);
 }
 
 function parseFrontmatter(frontmatter: string, slug: string): BlogFrontmatter {

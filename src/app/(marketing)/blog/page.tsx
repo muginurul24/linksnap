@@ -95,15 +95,20 @@ function BlogCard({ post, featured }: { post: BlogPostSummary; featured?: boolea
         </span>
       </div>
       <h2 className={`${featured ? "text-3xl" : "text-2xl"} mt-5 font-semibold`}>
-        {post.title}
+        <Link href={`/blog/${post.slug}`} className="hover:text-emerald-400">
+          {post.title}
+        </Link>
       </h2>
       <p className="mt-4 max-w-2xl text-sm leading-6 text-muted-foreground sm:text-base">
         {post.excerpt}
       </p>
-      <div className="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-emerald-400">
+      <Link
+        href={`/blog/${post.slug}`}
+        className="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-emerald-400"
+      >
         <BookOpen className="size-4" />
         Launch article
-      </div>
+      </Link>
     </article>
   );
 }
