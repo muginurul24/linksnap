@@ -1325,9 +1325,9 @@ rtk bun run db:studio    # Open Drizzle Studio (in another terminal)
 - [x] Tests: unit (loading state during sign out)
 
 ### TASK 16.9 — Fix Upgrade Card Copy
-- [ ] Current: "Unlock Link Pages, Smart Rules, and unlimited links" — inaccurate (FREE has these already)
-- [ ] Update: "Unlock 500 links, 50 Link Pages, 10 campaigns, A/B testing, and API access"
-- [ ] Tests: unit (card copy)
+- [x] Current: "Unlock Link Pages, Smart Rules, and unlimited links" — inaccurate (FREE has these already)
+- [x] Update: "Unlock 500 links, 50 Link Pages, 10 campaigns, A/B testing, and API access"
+- [x] Tests: unit (card copy)
 
 ### TASK 16.10 — Help / Support Page
 - [ ] Create `src/app/(dashboard)/help/page.tsx` — FAQ + contact

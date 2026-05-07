@@ -5479,3 +5479,34 @@ Added a loading state to the sidebar sign-out menu item. The menu item now disab
 - ✅ No secrets, raw SQL, or `dangerouslySetInnerHTML` introduced.
 
 **Next Task:** 16.9 — Fix Upgrade Card Copy
+
+### 16.9 — Fix Upgrade Card Copy
+- **Date:** 2026-05-07 23:30 GMT+7
+- **Duration:** 0h 10m
+- **Status:** ✅ Complete
+
+**What I Did:**
+Updated the sidebar upgrade card copy to match actual product limits and remove the inaccurate unlimited-links claim. Added unit coverage for the copy.
+
+**Files Changed:**
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Checked off Task 16.9.
+- `src/components/dashboard/app-sidebar.tsx` — Replaced the upgrade card copy with the audited text.
+- `tests/unit/app-sidebar.test.ts` — Added upgrade copy coverage.
+
+**Decisions Made:**
+- Exported the copy as a constant so the exact promise is easy to test and keep aligned.
+
+**Tests:**
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Targeted Unit: `rtk bun run test -- tests/unit/app-sidebar.test.ts` — 1 file passed, 9 tests passed.
+- ✅ Unit/Integration: `rtk bun run test` — 113 files passed, 506 tests passed.
+
+**Issues Encountered:**
+- None.
+
+**Security Checks:**
+- ✅ Copy-only change; no auth, data, or payment logic changed.
+- ✅ No secrets, raw SQL, or `dangerouslySetInnerHTML` introduced.
+
+**Next Task:** 16.10 — Help / Support Page

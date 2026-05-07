@@ -4,6 +4,7 @@ import {
   getSidebarDisplayUser,
   getSignOutMenuLabel,
   isSidebarItemActive,
+  SIDEBAR_UPGRADE_CARD_COPY,
   shouldShowSidebarUpgradeCard,
 } from "../../src/components/dashboard/app-sidebar";
 
@@ -69,6 +70,13 @@ describe("app sidebar user display", () => {
     expect(shouldShowSidebarUpgradeCard("FREE")).toBe(true);
     expect(shouldShowSidebarUpgradeCard("PRO")).toBe(false);
     expect(shouldShowSidebarUpgradeCard("BUSINESS")).toBe(false);
+  });
+
+  it("should use accurate upgrade card copy", () => {
+    expect(SIDEBAR_UPGRADE_CARD_COPY).toBe(
+      "Unlock 500 links, 50 Link Pages, 10 campaigns, A/B testing, and API access",
+    );
+    expect(SIDEBAR_UPGRADE_CARD_COPY).not.toContain("unlimited links");
   });
 
   it("should label sign out loading state", () => {

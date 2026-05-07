@@ -99,6 +99,9 @@ export function shouldShowSidebarUpgradeCard(plan: UserPlan): boolean {
   return plan === "FREE";
 }
 
+export const SIDEBAR_UPGRADE_CARD_COPY =
+  "Unlock 500 links, 50 Link Pages, 10 campaigns, A/B testing, and API access";
+
 export function getSignOutMenuLabel(isSigningOut: boolean): string {
   return isSigningOut ? "Signing out..." : "Sign Out";
 }
@@ -186,7 +189,7 @@ export function AppSidebar({ user }: { user: AppSidebarUser }) {
                   <span className="text-sm font-medium">Upgrade to Pro</span>
                 </div>
                 <p className="mb-3 text-xs text-muted-foreground">
-                  Unlock Link Pages, Smart Rules, and unlimited links.
+                  {SIDEBAR_UPGRADE_CARD_COPY}
                 </p>
                 <Link
                   href="/settings/billing"
