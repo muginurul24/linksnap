@@ -13,6 +13,11 @@ type MockCampaign = {
   id: string;
   linkCount: number;
   userId: string;
+  utmCampaign: string | null;
+  utmContent: string | null;
+  utmMedium: string | null;
+  utmSource: string | null;
+  utmTerm: string | null;
 };
 
 type MockListedLink = {
@@ -100,7 +105,7 @@ vi.mock("@/lib/db/queries/links", () => ({
       total: mockState.total,
     };
   },
-  listOwnedLinkIdsByIds: async ({
+  listOwnedLinksByIds: async ({
     linkIds,
     userId,
   }: {
@@ -109,7 +114,10 @@ vi.mock("@/lib/db/queries/links", () => ({
   }) =>
     mockState.links
       .filter((link) => link.userId === userId && linkIds.includes(link.id))
-      .map((link) => link.id),
+      .map((link) => ({
+        destinationUrl: link.destinationUrl,
+        id: link.id,
+      })),
   removeLinkFromCampaignForUser: async ({
     campaignId,
     linkId,
@@ -130,10 +138,12 @@ vi.mock("@/lib/db/queries/links", () => ({
   },
   setLinksCampaignForUser: async ({
     campaignId,
+    destinationUrlsById,
     linkIds,
     userId,
   }: {
     campaignId: string;
+    destinationUrlsById?: ReadonlyMap<string, string>;
     linkIds: string[];
     userId: string;
   }) => {
@@ -141,6 +151,7 @@ vi.mock("@/lib/db/queries/links", () => ({
     for (const link of mockState.links) {
       if (link.userId === userId && linkIds.includes(link.id)) {
         link.campaignId = campaignId;
+        link.destinationUrl = destinationUrlsById?.get(link.id) ?? link.destinationUrl;
         updatedIds.push(link.id);
       }
     }
@@ -172,6 +183,11 @@ function createCampaign(overrides: Partial<MockCampaign> = {}): MockCampaign {
     id: campaignId,
     linkCount: 1,
     userId: "user-1",
+    utmCampaign: "ramadhan-2026",
+    utmContent: null,
+    utmMedium: "social",
+    utmSource: "instagram",
+    utmTerm: null,
     ...overrides,
   };
 }
@@ -233,7 +249,7 @@ describe("campaign links API", () => {
     });
   });
 
-  it("should add owned links to a campaign", async () => {
+  it("should add owned links to a campaign with UTM params", async () => {
     mockState.links = [
       createLink({ campaignId: null }),
       createLink({ campaignId: null, id: secondLinkId, slug: "two" }),
@@ -245,19 +261,86 @@ describe("campaign links API", () => {
       }),
       createContext(),
     );
-    const body = await readJson<{ campaignId: string; linkIds: string[] }>(response);
+    const body = await readJson<{
+      campaignId: string;
+      linkIds: string[];
+      links: Array<{
+        id: string;
+        previewUrl: string;
+        utmApplied: boolean;
+      }>;
+    }>(response);
 
     expect(response.status).toBe(200);
     expect(body.success).toBe(true);
     if (!body.success) return;
-    expect(body.data).toEqual({ campaignId, linkIds: [linkId, secondLinkId] });
+    expect(body.data).toMatchObject({
+      campaignId,
+      linkIds: [linkId, secondLinkId],
+      links: [
+        {
+          id: linkId,
+          previewUrl:
+            "https://example.com/promo?utm_source=instagram&utm_medium=social&utm_campaign=ramadhan-2026",
+          utmApplied: true,
+        },
+        {
+          id: secondLinkId,
+          previewUrl:
+            "https://example.com/promo?utm_source=instagram&utm_medium=social&utm_campaign=ramadhan-2026",
+          utmApplied: true,
+        },
+      ],
+    });
     expect(mockState.links.map((link) => link.campaignId)).toEqual([
       campaignId,
       campaignId,
     ]);
+    expect(mockState.links.map((link) => link.destinationUrl)).toEqual([
+      "https://example.com/promo?utm_source=instagram&utm_medium=social&utm_campaign=ramadhan-2026",
+      "https://example.com/promo?utm_source=instagram&utm_medium=social&utm_campaign=ramadhan-2026",
+    ]);
     expect(mockState.rateLimitOptions).toEqual([
       { key: "api:campaigns:links:post:user-1", limit: 60, windowSeconds: 60 },
     ]);
+  });
+
+  it("should preview campaign UTM params before saving links", async () => {
+    mockState.links = [createLink({ campaignId: null })];
+
+    const response = await POST(
+      createRequest(`/api/v1/campaigns/${campaignId}/links`, "POST", {
+        linkIds: [linkId],
+        preview: true,
+      }),
+      createContext(),
+    );
+    const body = await readJson<{
+      campaignId: string;
+      links: Array<{ id: string; previewUrl: string; utmApplied: boolean }>;
+      preview: boolean;
+    }>(response);
+
+    expect(response.status).toBe(200);
+    expect(body.success).toBe(true);
+    if (!body.success) return;
+    expect(body.data).toEqual({
+      campaignId,
+      links: [
+        {
+          destinationUrl: "https://example.com/promo",
+          id: linkId,
+          previewUrl:
+            "https://example.com/promo?utm_source=instagram&utm_medium=social&utm_campaign=ramadhan-2026",
+          utmApplied: true,
+        },
+      ],
+      preview: true,
+    });
+    expect(mockState.links[0]).toMatchObject({
+      campaignId: null,
+      destinationUrl: "https://example.com/promo",
+    });
   });
 
   it("should remove a link from a campaign", async () => {

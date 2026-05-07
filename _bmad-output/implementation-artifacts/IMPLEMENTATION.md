@@ -385,11 +385,11 @@ src/
 - [x] Compare campaigns: `?compare=ramadhan-2026,launch-q2-2026`
 
 ### TASK 6.4 — UTM Auto-Builder
-- File: `src/lib/campaigns/utm-builder.ts`
-- When adding link to campaign, auto-append UTM params to destination URL
-- Format: `?utm_source=X&utm_medium=Y&utm_campaign=Z&utm_term=W&utm_content=V`
-- Skip if destination URL already has UTM params
-- Show preview before saving
+- [x] File: `src/lib/campaigns/utm-builder.ts`
+- [x] When adding link to campaign, auto-append UTM params to destination URL
+- [x] Format: `?utm_source=X&utm_medium=Y&utm_campaign=Z&utm_term=W&utm_content=V`
+- [x] Skip if destination URL already has UTM params
+- [x] Show preview before saving
 
 ### TASK 6.5 — Campaign Tests
 - Unit: UTM builder, campaign analytics aggregation

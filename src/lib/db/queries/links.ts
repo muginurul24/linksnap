@@ -10,6 +10,11 @@ export type CreatedLink = {
   slug: string;
 };
 
+export type OwnedLinkForCampaignAssignment = {
+  destinationUrl: string;
+  id: string;
+};
+
 type CreateLinkRecordInput = {
   destinationUrl: string;
   slug: string;
@@ -107,6 +112,7 @@ type UpdateLinkRecordInput = {
 
 type SetLinksCampaignInput = {
   campaignId: string;
+  destinationUrlsById?: ReadonlyMap<string, string>;
   linkIds: string[];
   userId: string;
 };
@@ -403,12 +409,65 @@ export async function listOwnedLinkIdsByIds({
   return rows.map((row) => row.id);
 }
 
+export async function listOwnedLinksByIds({
+  linkIds,
+  userId,
+}: {
+  linkIds: string[];
+  userId: string;
+}): Promise<OwnedLinkForCampaignAssignment[]> {
+  if (linkIds.length === 0) return [];
+
+  return db
+    .select({
+      destinationUrl: links.destinationUrl,
+      id: links.id,
+    })
+    .from(links)
+    .where(and(eq(links.userId, userId), inArray(links.id, linkIds)));
+}
+
 export async function setLinksCampaignForUser({
   campaignId,
+  destinationUrlsById,
   linkIds,
   userId,
 }: SetLinksCampaignInput): Promise<string[]> {
   if (linkIds.length === 0) return [];
+
+  if (destinationUrlsById?.size) {
+    const updatedIds = new Set<string>();
+    const idsWithoutDestinationUpdate = linkIds.filter(
+      (id) => !destinationUrlsById.has(id),
+    );
+
+    if (idsWithoutDestinationUpdate.length > 0) {
+      const updated = await db
+        .update(links)
+        .set({ campaignId, updatedAt: new Date() })
+        .where(
+          and(
+            eq(links.userId, userId),
+            inArray(links.id, idsWithoutDestinationUpdate),
+          ),
+        )
+        .returning({ id: links.id });
+
+      for (const link of updated) updatedIds.add(link.id);
+    }
+
+    for (const [id, destinationUrl] of destinationUrlsById) {
+      const [link] = await db
+        .update(links)
+        .set({ campaignId, destinationUrl, updatedAt: new Date() })
+        .where(and(eq(links.id, id), eq(links.userId, userId)))
+        .returning({ id: links.id });
+
+      if (link) updatedIds.add(link.id);
+    }
+
+    return linkIds.filter((id) => updatedIds.has(id));
+  }
 
   const updated = await db
     .update(links)

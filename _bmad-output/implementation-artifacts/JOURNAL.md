@@ -1827,3 +1827,43 @@ Implemented authenticated campaign analytics. The endpoint aggregates click anal
 - ✅ No raw SQL, secrets, plaintext IP storage, or sensitive logging added.
 
 **Next Task:** 6.4 — UTM Auto-Builder
+
+### 6.4 — UTM Auto-Builder
+- **Date:** 2026-05-07 07:25 GMT+7
+- **Duration:** 0h 30m
+- **Status:** ✅ Complete
+
+**What I Did:**
+Added campaign UTM URL building and wired it into campaign link assignment. Adding links to a campaign now applies campaign UTM parameters to destination URLs when safe, skips URLs that already contain UTM params, and supports `preview: true` to show the resulting URLs without saving.
+
+**Files Changed:**
+- `src/lib/campaigns/utm-builder.ts` — Added UTM param builder, existing-UTM detection, URL append logic, and preview generation.
+- `src/app/api/v1/campaigns/[id]/links/route.ts` — Applied UTM previews during campaign link assignment and added preview-only response support.
+- `src/lib/db/queries/links.ts` — Added owned link lookup with destination URLs and campaign assignment with optional destination URL updates.
+- `src/lib/validations/campaign.ts` — Added optional `preview` flag to campaign link assignment input.
+- `tests/unit/utm-builder.test.ts` — Added UTM builder coverage.
+- `tests/integration/campaign-links-api.test.ts` — Added UTM application and preview coverage for campaign link assignment.
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Checked off Task 6.4.
+- `_bmad-output/implementation-artifacts/JOURNAL.md` — Recorded this completion entry.
+
+**Decisions Made:**
+- Any existing `utm_*` query parameter causes the builder to skip appending campaign UTMs, preserving manually tagged URLs.
+- UTM preview is exposed through the existing campaign links POST endpoint with `preview: true`, avoiding a separate endpoint for the same authorization path.
+- Campaign assignment validates ownership and prepares UTM previews before mutating links, so invalid link IDs do not partially update data.
+
+**Tests:**
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Unit/Integration: `rtk bun run test` — 45 files passed, 221 tests passed.
+- ✅ Build: `rtk bun run build` — Passed.
+
+**Issues Encountered:**
+- None.
+
+**Security Checks:**
+- ✅ Campaign link assignment input is validated with Zod, including the preview flag.
+- ✅ Campaign ownership and link ownership checks run before preview or save.
+- ✅ Existing destination URL validation still happens at link creation/update boundaries.
+- ✅ No raw SQL, secrets, plaintext IP storage, or sensitive logging added.
+
+**Next Task:** 6.5 — Campaign Tests

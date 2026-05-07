@@ -140,6 +140,7 @@ export const addCampaignLinksSchema = z
       .min(1, "At least one link is required")
       .max(100, "Too many links in one request")
       .transform((value) => [...new Set(value)]),
+    preview: z.boolean().default(false),
   })
   .strict();
 

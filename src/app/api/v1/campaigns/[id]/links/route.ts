@@ -1,11 +1,15 @@
 import { NextRequest } from "next/server";
 import { auth } from "@/lib/auth";
 import { createRequestId, errorResponse, successResponse } from "@/lib/api/response";
+import {
+  buildCampaignUtmParams,
+  previewCampaignUtmUrls,
+} from "@/lib/campaigns/utm-builder";
 import { findCampaignById } from "@/lib/db/queries/campaigns";
 import {
   getUserPlanById,
   listLinksByUserId,
-  listOwnedLinkIdsByIds,
+  listOwnedLinksByIds,
   removeLinkFromCampaignForUser,
   setLinksCampaignForUser,
   type ListedLink,
@@ -164,11 +168,13 @@ async function getAuthenticatedUser(
   return { userId, userPlan };
 }
 
-async function getAuthorizedCampaign(id: string, userId: string): Promise<void> {
+async function getAuthorizedCampaign(id: string, userId: string) {
   const campaign = await findCampaignById(id);
 
   if (!campaign) throw new CampaignNotFoundError();
   if (campaign.userId !== userId) throw new CampaignForbiddenError();
+
+  return campaign;
 }
 
 function handleKnownError(error: unknown, requestId: string): Response | null {
@@ -299,18 +305,45 @@ export async function POST(
       );
     }
 
-    await getAuthorizedCampaign(parsedParams.params.id, authResult.userId);
+    const campaign = await getAuthorizedCampaign(
+      parsedParams.params.id,
+      authResult.userId,
+    );
 
-    const ownedLinkIds = await listOwnedLinkIdsByIds({
+    const ownedLinks = await listOwnedLinksByIds({
       linkIds: parsedBody.data.linkIds,
       userId: authResult.userId,
     });
-    if (ownedLinkIds.length !== parsedBody.data.linkIds.length) {
+    if (ownedLinks.length !== parsedBody.data.linkIds.length) {
       throw new LinkOwnershipError();
     }
 
+    const linksById = new Map(ownedLinks.map((link) => [link.id, link]));
+    const orderedLinks = parsedBody.data.linkIds.flatMap((id) => {
+      const link = linksById.get(id);
+      return link ? [link] : [];
+    });
+    const utmPreviews = previewCampaignUtmUrls({
+      links: orderedLinks,
+      params: buildCampaignUtmParams(campaign),
+    });
+
+    if (parsedBody.data.preview) {
+      return successResponse({
+        campaignId: parsedParams.params.id,
+        links: utmPreviews,
+        preview: true,
+      });
+    }
+
+    const destinationUrlsById = new Map(
+      utmPreviews
+        .filter((preview) => preview.utmApplied)
+        .map((preview) => [preview.id, preview.previewUrl]),
+    );
     const updatedLinkIds = await setLinksCampaignForUser({
       campaignId: parsedParams.params.id,
+      destinationUrlsById,
       linkIds: parsedBody.data.linkIds,
       userId: authResult.userId,
     });
@@ -318,6 +351,7 @@ export async function POST(
     return successResponse({
       campaignId: parsedParams.params.id,
       linkIds: updatedLinkIds,
+      links: utmPreviews,
     });
   } catch (error) {
     const knownError = handleKnownError(error, requestId);
