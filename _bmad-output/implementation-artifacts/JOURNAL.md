@@ -2614,3 +2614,42 @@ Ran the launch security audit, patched app-level gaps, added global security hea
 - ✅ Security headers are emitted by the production server.
 
 **Next Task:** 10.5 — Launch Checklist
+
+### 10.5 — Launch Checklist
+- **Date:** 2026-05-07 10:26 GMT+7
+- **Duration:** 0h 25m
+- **Status:** ⚠️ Partial
+
+**What I Did:**
+Verified launch prerequisites that can be checked locally, added missing Auth.js trust variables to `.env.example` and local `.env`, verified connected database indexes, confirmed GeoLite MMDB files and path, checked DNS for `linksnap.id`, and documented remaining production blockers.
+
+**Files Changed:**
+- `_bmad-output/planning-artifacts/launch-readiness-2026-05-07.md` — Added launch readiness report, verified items, blockers, and go-live requirements.
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Checked off database index verification.
+- `_bmad-output/implementation-artifacts/JOURNAL.md` — Recorded this partial launch-readiness entry.
+- `.env.example` — Added `AUTH_URL` and `AUTH_TRUST_HOST` placeholders for Auth.js host trust.
+- `.env` — Filled `AUTH_URL` and `AUTH_TRUST_HOST` locally; not tracked or committed.
+
+**Decisions Made:**
+- Left production environment variables unchecked because local `.env` presence does not prove Vercel production secrets are configured.
+- Left custom domain and SSL unchecked because both `linksnap.id` and `www.linksnap.id` failed DNS resolution from this environment.
+- Marked database indexes complete because the connected PostgreSQL database returned the expected link, click-event, campaign, and smart-rule indexes.
+
+**Tests:**
+- ✅ Env presence check: required local `.env` keys are present without printing secret values.
+- ✅ MaxMind files: ASN, city, and country `.mmdb` files exist; `MAXMIND_DB_PATH` matches the city DB path.
+- ✅ Database indexes: queried `pg_indexes` through the configured `DATABASE_URL` and verified expected index names.
+- ✅ Domain check: `rtk curl -I --max-time 10 https://linksnap.id` and `https://www.linksnap.id` both failed DNS resolution, confirming domain setup is not complete.
+- ✅ Code verification inherited from Task 10.4 after the latest runtime code changes: typecheck, lint, full tests, build, and runtime header/API guard checks passed.
+
+**Issues Encountered:**
+- Production DNS/domain is not configured yet, so SSL, external penetration testing, and load testing cannot be completed.
+- Monitoring/alerting, backup/PITR, Redis cache warming, and go-live require production platform access.
+
+**Security Checks:**
+- ✅ `.env` remains untracked.
+- ✅ No production secrets were printed or committed.
+- ✅ Auth host trust variables are documented in `.env.example` and filled locally.
+- ✅ Database index verification did not expose connection strings or credentials.
+
+**Next Task:** None — remaining launch items require production infrastructure access

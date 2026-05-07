@@ -527,7 +527,7 @@ src/
 - [ ] Production environment variables set
 - [ ] Custom domain configured (linksnap.id or similar)
 - [ ] SSL certificate active
-- [ ] Database indexes verified
+- [x] Database indexes verified
 - [ ] Redis cache warming
 - [ ] Monitoring/alerting configured
 - [ ] Backup strategy verified
