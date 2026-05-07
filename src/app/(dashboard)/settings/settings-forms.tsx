@@ -94,6 +94,7 @@ export function ProfileSettingsForm({
         <div className="space-y-2">
           <Label htmlFor="name">Full Name</Label>
           <Input
+            disabled={isSaving}
             id="name"
             maxLength={255}
             onChange={(event) => setName(event.target.value)}
@@ -102,10 +103,10 @@ export function ProfileSettingsForm({
         </div>
         <div className="space-y-2">
           <Label htmlFor="email">Email</Label>
-          <Input id="email" readOnly type="email" value={email} />
+          <Input disabled={isSaving} id="email" readOnly type="email" value={email} />
         </div>
       </div>
-      <Button disabled={isSaving} size="sm" type="submit">
+      <Button aria-busy={isSaving} disabled={isSaving} size="sm" type="submit">
         {isSaving ? (
           <Loader2 className="size-4 animate-spin" />
         ) : (
@@ -172,12 +173,14 @@ export function NotificationsSettingsForm({
           </Label>
           <Switch
             checked={preferences[item.key]}
+            disabled={isSaving}
             id={`notification-${item.key}`}
             onCheckedChange={(checked) => setPreference(item.key, checked)}
           />
         </div>
       ))}
       <Button
+        aria-busy={isSaving}
         className="mt-2"
         disabled={isSaving}
         onClick={() => void savePreferences()}
@@ -238,6 +241,7 @@ export function SecuritySettingsForm() {
         <Label htmlFor="current-password">Current Password</Label>
         <Input
           autoComplete="current-password"
+          disabled={isSaving}
           id="current-password"
           onChange={(event) => setCurrentPassword(event.target.value)}
           type="password"
@@ -248,6 +252,7 @@ export function SecuritySettingsForm() {
         <Label htmlFor="new-password">New Password</Label>
         <Input
           autoComplete="new-password"
+          disabled={isSaving}
           id="new-password"
           onChange={(event) => setPassword(event.target.value)}
           type="password"
@@ -258,13 +263,14 @@ export function SecuritySettingsForm() {
         <Label htmlFor="confirm-password">Confirm New Password</Label>
         <Input
           autoComplete="new-password"
+          disabled={isSaving}
           id="confirm-password"
           onChange={(event) => setConfirmPassword(event.target.value)}
           type="password"
           value={confirmPassword}
         />
       </div>
-      <Button disabled={isSaving} size="sm" type="submit">
+      <Button aria-busy={isSaving} disabled={isSaving} size="sm" type="submit">
         {isSaving ? <Loader2 className="size-4 animate-spin" /> : null}
         Update Password
       </Button>

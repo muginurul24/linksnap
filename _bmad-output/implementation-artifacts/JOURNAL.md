@@ -4544,6 +4544,42 @@ Added a shared delete confirmation dialog with the required destructive copy and
 
 **Next Task:** 15.9 — Loading State for All Interactive Actions
 
+### 15.9 — Loading State for All Interactive Actions
+- **Date:** 2026-05-07 21:10 GMT+7
+- **Duration:** 0 hours 15 minutes
+- **Status:** ✅ Complete
+
+**What I Did:**
+Audited the required auth, link, campaign, settings, and billing actions for loading state behavior. Added missing `aria-busy` states to dashboard submit/save buttons and disabled settings fields/switches while save requests are in flight.
+
+**Files Changed:**
+- `_bmad-output/planning-artifacts/spec-phase-15-loading-states.md` — Added the loading-state mini-spec.
+- `src/app/(dashboard)/links/link-form.tsx` — Added busy state to the link submit button.
+- `src/app/(dashboard)/campaigns/campaign-form.tsx` — Added busy state to the campaign submit button.
+- `src/app/(dashboard)/settings/settings-forms.tsx` — Added busy state and disabled controls during profile, notification, and password saves.
+- `tests/unit/form-loading-states.test.ts` — Added coverage for auth, dashboard, settings, and upgrade button loading-state snippets.
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Checked off Task 15.9.
+- `_bmad-output/implementation-artifacts/JOURNAL.md` — Recorded this completion entry.
+
+**Decisions Made:**
+- Kept existing auth and upgrade button implementations unchanged because they already had disabled states, spinners, and busy indicators.
+- Used a source-level regression test for loading-state snippets to avoid introducing a new DOM test dependency in this repo.
+
+**Tests:**
+- ✅ Unit: `rtk bun run test -- tests/unit/form-loading-states.test.ts` — 1 file passed, 4 tests passed.
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Unit/Integration: `rtk bun run test` — 103 files passed, 467 tests passed.
+
+**Issues Encountered:**
+- None.
+
+**Security Checks:**
+- ✅ UI-only state changes; API validation, auth, ownership, and rate limits remain unchanged.
+- ✅ No user input, secrets, raw SQL, or unsafe rendering introduced.
+
+**Next Task:** 15.10 — Mobile Navigation Polish
+
 ### 13.3 — Rule Engine Logic (Ordered Priority)
 - **Date:** 2026-05-07 18:41 GMT+7
 - **Duration:** 0h 30m

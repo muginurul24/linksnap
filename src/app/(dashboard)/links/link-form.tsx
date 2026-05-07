@@ -846,7 +846,7 @@ export function CreateLinkForm({ initialLink, userPlan }: LinkFormProps) {
             ) : (
               <span />
             )}
-            <Button type="submit" disabled={isSubmitting}>
+            <Button aria-busy={isSubmitting} type="submit" disabled={isSubmitting}>
               {isSubmitting ? (
                 <Loader2 className="size-4 animate-spin" />
               ) : (

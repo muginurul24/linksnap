@@ -378,7 +378,7 @@ export function CampaignForm({ initialCampaign }: CampaignFormProps) {
           ) : null}
 
           <div className="flex justify-end">
-            <Button disabled={isSubmitting} type="submit">
+            <Button aria-busy={isSubmitting} disabled={isSubmitting} type="submit">
               {isSubmitting ? (
                 <Loader2 className="size-4 animate-spin" />
               ) : (

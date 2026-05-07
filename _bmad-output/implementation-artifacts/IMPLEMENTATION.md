@@ -1174,12 +1174,12 @@ rtk bun run db:studio    # Open Drizzle Studio (in another terminal)
 - [x] Tests: unit (dialog renders, confirm/cancel callbacks)
 
 ### TASK 15.9 — Loading State for All Interactive Actions
-- [ ] Scan all forms across the app for missing loading states:
+- [x] Scan all forms across the app for missing loading states:
   - Buttons should show spinner + disable during submit
   - Use `isSubmitting` state pattern consistently
-- [ ] Check: login, register, verify, forgot-password, reset-password, create link, edit link, create campaign, edit campaign, settings save, upgrade button
-- [ ] All must have: `disabled={isSubmitting}` + `<Loader2 className="animate-spin" />` when submitting
-- [ ] Tests: unit (button disabled state during submit)
+- [x] Check: login, register, verify, forgot-password, reset-password, create link, edit link, create campaign, edit campaign, settings save, upgrade button
+- [x] All must have: `disabled={isSubmitting}` + `<Loader2 className="animate-spin" />` when submitting
+- [x] Tests: unit (button disabled state during submit)
 
 ### TASK 15.10 — Mobile Navigation Polish
 - [ ] File: `src/components/dashboard/app-header.tsx`
