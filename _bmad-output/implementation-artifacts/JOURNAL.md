@@ -2908,3 +2908,49 @@ option used by the handler.
 - ✅ No secrets were printed or committed.
 
 **Next Task:** 12.3 — Connect Dashboard Overview to Real Data
+
+### 12.3 — Connect Dashboard Overview to Real Data
+- **Date:** 2026-05-07 13:57 GMT+7
+- **Duration:** 0h 50m
+- **Status:** ✅ Complete
+
+**What I Did:**
+Replaced the Dashboard Overview mock arrays with authenticated, owner-scoped
+database data. The page is now an async server component that fetches overview
+data and passes it to a client chart/table component. Added a dashboard overview
+API response for test coverage and future client consumers.
+
+**Files Changed:**
+- `src/app/(dashboard)/dashboard/page.tsx` — Converted to async server component with auth and DB query.
+- `src/app/(dashboard)/dashboard/dashboard-overview-client.tsx` — Added client UI for charts, stats, recent links, and empty state.
+- `src/app/api/v1/dashboard/overview/route.ts` — Added authenticated overview API response.
+- `src/lib/db/queries/dashboard.ts` — Added dashboard overview aggregate queries.
+- `src/lib/dashboard/overview.ts` — Added data transformation helpers.
+- `tests/unit/dashboard-overview.test.ts` — Added transformation coverage.
+- `tests/integration/dashboard-overview-api.test.ts` — Added API response/auth/rate limit coverage.
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Checked off Task 12.3.
+- `_bmad-output/implementation-artifacts/JOURNAL.md` — Recorded this completion entry.
+
+**Decisions Made:**
+- Split the dashboard into server data fetch + client renderer because Recharts must stay in a client component.
+- Excluded `LINK_PAGE_CTA_CLICK` from click totals to match existing analytics summary semantics.
+- Counted active campaigns as campaigns with at least one active linked short link.
+- Counted QR scans via QR-attributed click referrer only; the current schema has no first-class QR scan source, so this remains zero until QR attribution is implemented.
+
+**Tests:**
+- ✅ Targeted: `rtk bun run test -- tests/unit/dashboard-overview.test.ts tests/integration/dashboard-overview-api.test.ts` — 2 files passed, 7 tests passed.
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Unit/Integration: `rtk bun run test` — 71 files passed, 310 tests passed.
+- ✅ Build: `rtk bun run build` — Passed.
+
+**Issues Encountered:**
+- QR scan attribution is not represented in the current click event model. I kept the dashboard truthful by querying only QR-attributed records instead of reusing unrelated direct-click data.
+
+**Security Checks:**
+- ✅ Dashboard data is scoped to `session.user.id`.
+- ✅ API route authenticates, verifies the user plan, rate limits by user, and uses standard response envelopes.
+- ✅ No raw user input or unsafe HTML added.
+- ✅ No secrets were printed or committed.
+
+**Next Task:** 12.4 — Unify Plan Definitions
