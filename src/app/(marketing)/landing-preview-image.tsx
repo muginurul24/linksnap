@@ -95,7 +95,7 @@ export function createLandingPreviewImage(): ImageResponse {
               padding: "16px 20px",
             }}
           >
-            linksnap.id/ramadhan-sale
+            www.justqiu.cloud/ramadhan-sale
           </div>
           <div style={{ display: "flex", gap: 18 }}>
             {[

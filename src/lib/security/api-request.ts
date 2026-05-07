@@ -21,6 +21,8 @@ type ApiSecurityInput = {
 
 export function getAllowedOrigins(): string[] {
   return uniqueOrigins([
+    "https://justqiu.cloud",
+    "https://www.justqiu.cloud",
     "https://linksnap.id",
     "https://www.linksnap.id",
     "http://localhost:3000",

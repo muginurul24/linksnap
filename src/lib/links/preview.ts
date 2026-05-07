@@ -1,4 +1,4 @@
-const DEFAULT_SHORT_URL_BASE = "https://linksnap.id";
+const DEFAULT_SHORT_URL_BASE = "https://www.justqiu.cloud";
 
 export function normalizeShortUrlBase(baseUrl?: string | null): string {
   const trimmed = baseUrl?.trim().replace(/\/+$/, "");

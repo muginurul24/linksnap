@@ -68,17 +68,17 @@ describe("SEO metadata routes", () => {
     const urls = sitemap().map((entry) => entry.url);
 
     expect(urls).toEqual([
-      "https://linksnap.id/",
-      "https://linksnap.id/pricing",
-      "https://linksnap.id/blog",
+      "https://www.justqiu.cloud/",
+      "https://www.justqiu.cloud/pricing",
+      "https://www.justqiu.cloud/blog",
     ]);
-    expect(urls).not.toContain("https://linksnap.id/login");
+    expect(urls).not.toContain("https://www.justqiu.cloud/login");
   });
 
   it("should disallow private app, API, and auth surfaces in robots", () => {
     const generatedRobots = robots();
 
-    expect(generatedRobots.sitemap).toBe("https://linksnap.id/sitemap.xml");
+    expect(generatedRobots.sitemap).toBe("https://www.justqiu.cloud/sitemap.xml");
     expect(generatedRobots.host).toBe(siteConfig.url);
     expect(generatedRobots.rules).toMatchObject({
       userAgent: "*",

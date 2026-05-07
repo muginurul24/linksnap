@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 
 export function DemoGenerator() {
   const [url, setUrl] = useState("https://myshop.id/ramadhan-sale?utm_source=instagram");
-  const [shortLink, setShortLink] = useState("https://linksnap.id/myshop-k7p3");
+  const [shortLink, setShortLink] = useState("https://www.justqiu.cloud/myshop-k7p3");
   const [error, setError] = useState<string | null>(null);
   const [isCopied, setIsCopied] = useState(false);
 
@@ -30,7 +30,7 @@ export function DemoGenerator() {
     }
 
     setError(null);
-    setShortLink(`https://linksnap.id/${generateDemoSlug(url)}`);
+    setShortLink(`https://www.justqiu.cloud/${generateDemoSlug(url)}`);
   }
 
   async function copyShortLink() {

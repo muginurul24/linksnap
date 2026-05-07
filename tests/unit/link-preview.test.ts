@@ -18,6 +18,6 @@ describe("link preview helpers", () => {
   });
 
   it("should fall back to the placeholder slug when slug is blank", () => {
-    expect(buildShortUrlPreview(null, "")).toBe("https://linksnap.id/your-slug");
+    expect(buildShortUrlPreview(null, "")).toBe("https://www.justqiu.cloud/your-slug");
   });
 });

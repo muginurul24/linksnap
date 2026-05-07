@@ -4,7 +4,7 @@ import {
   validateApiMutationRequest,
 } from "@/lib/security/api-request";
 
-const allowedOrigins = ["https://linksnap.id"];
+const allowedOrigins = ["https://www.justqiu.cloud"];
 
 describe("API mutation security", () => {
   it("should allow safe methods without CSRF headers", () => {
@@ -37,7 +37,7 @@ describe("API mutation security", () => {
     const result = validateApiMutationRequest({
       allowedOrigins,
       method: "PATCH",
-      origin: "https://linksnap.id",
+      origin: "https://www.justqiu.cloud",
       pathname: "/api/v1/links/link-id",
       requestedWith: null,
     });
@@ -51,7 +51,7 @@ describe("API mutation security", () => {
     const result = validateApiMutationRequest({
       allowedOrigins,
       method: "DELETE",
-      origin: "https://linksnap.id",
+      origin: "https://www.justqiu.cloud",
       pathname: "/api/v1/links/link-id",
       requestedWith: API_CSRF_HEADER_VALUE,
     });

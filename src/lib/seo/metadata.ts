@@ -18,7 +18,7 @@ type BlogStructuredDataPost = {
 
 export const siteConfig = {
   name: "LinkSnap",
-  url: "https://linksnap.id",
+  url: "https://www.justqiu.cloud",
   title: "LinkSnap - Smart Short Links & Micro Landing Pages",
   description:
     "Turn every short link into a branded conversion path with smart redirects, Link Pages, QR codes, campaign analytics, and Midtrans-ready billing.",
