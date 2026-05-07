@@ -33,7 +33,9 @@ export default function LinkPagesPage() {
                 <div className="flex items-center gap-1">
                   <Switch checked={page.active} />
                   <DropdownMenu>
-                    <DropdownMenuTrigger><Button variant="ghost" size="icon" className="size-8"><MoreHorizontal className="size-4" /></Button></DropdownMenuTrigger>
+                    <DropdownMenuTrigger render={<Button variant="ghost" size="icon" className="size-8" />}>
+                      <MoreHorizontal className="size-4" />
+                    </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
                       <DropdownMenuItem><Edit className="mr-2 size-4" /> Edit Page</DropdownMenuItem>
                       <DropdownMenuItem><ExternalLink className="mr-2 size-4" /> Preview</DropdownMenuItem>

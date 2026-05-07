@@ -45,24 +45,22 @@ export async function replaceSmartRulesForLink({
   linkId,
   rules,
 }: ReplaceSmartRulesInput): Promise<SmartRuleRecord[]> {
-  return db.transaction(async (tx) => {
-    await tx.delete(smartRules).where(eq(smartRules.linkId, linkId));
+  await db.delete(smartRules).where(eq(smartRules.linkId, linkId));
 
-    if (rules.length === 0) return [];
+  if (rules.length === 0) return [];
 
-    return tx
-      .insert(smartRules)
-      .values(
-        rules.map((rule) => ({
-          condition: rule.condition,
-          destinationUrl: rule.destinationUrl,
-          linkId,
-          priority: rule.priority,
-          type: rule.type,
-        })),
-      )
-      .returning(smartRuleColumns);
-  });
+  return db
+    .insert(smartRules)
+    .values(
+      rules.map((rule) => ({
+        condition: rule.condition,
+        destinationUrl: rule.destinationUrl,
+        linkId,
+        priority: rule.priority,
+        type: rule.type,
+      })),
+    )
+    .returning(smartRuleColumns);
 }
 
 export async function deleteSmartRuleForLink({

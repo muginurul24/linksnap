@@ -29,7 +29,9 @@ export default function CampaignsPage() {
                   <div><CardTitle className="text-base">{camp.name}</CardTitle><CardDescription className="text-xs">{camp.links} links</CardDescription></div>
                 </div>
                 <DropdownMenu>
-                  <DropdownMenuTrigger><Button variant="ghost" size="icon" className="size-8"><MoreHorizontal className="size-4" /></Button></DropdownMenuTrigger>
+                  <DropdownMenuTrigger render={<Button variant="ghost" size="icon" className="size-8" />}>
+                    <MoreHorizontal className="size-4" />
+                  </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
                     <DropdownMenuItem><Edit className="mr-2 size-4" /> Edit</DropdownMenuItem>
                     <DropdownMenuItem><BarChart3 className="mr-2 size-4" /> Analytics</DropdownMenuItem>

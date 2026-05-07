@@ -1,6 +1,6 @@
 import { db } from "@/lib/db";
-import { clickEvents } from "@/lib/db/schema";
-import { and, desc, eq, gte, lte } from "drizzle-orm";
+import { clickEvents, links } from "@/lib/db/schema";
+import { and, count, desc, eq, gte, inArray, lte, ne } from "drizzle-orm";
 
 export type NewClickEvent = typeof clickEvents.$inferInsert;
 
@@ -16,9 +16,34 @@ export type ClickEventForAnalytics = {
   timestamp: Date;
 };
 
+export type CampaignClickEventForAnalytics = ClickEventForAnalytics & {
+  campaignId: string;
+};
+
+export type TopCampaignLink = {
+  destinationUrl: string;
+  id: string;
+  slug: string;
+  title: string | null;
+  totalClicks: number;
+};
+
 type ListClickEventsForLinkInput = {
   from: Date;
   linkId: string;
+  to: Date;
+};
+
+type ListClickEventsForCampaignsInput = {
+  campaignIds: string[];
+  from: Date;
+  to: Date;
+};
+
+type ListTopLinksForCampaignInput = {
+  campaignId: string;
+  from: Date;
+  limit?: number;
   to: Date;
 };
 
@@ -52,4 +77,69 @@ export async function listClickEventsForLink({
       lte(clickEvents.timestamp, to),
     ))
     .orderBy(desc(clickEvents.timestamp));
+}
+
+export async function listClickEventsForCampaigns({
+  campaignIds,
+  from,
+  to,
+}: ListClickEventsForCampaignsInput): Promise<CampaignClickEventForAnalytics[]> {
+  if (campaignIds.length === 0) return [];
+
+  const rows = await db
+    .select({
+      browser: clickEvents.browser,
+      campaignId: links.campaignId,
+      city: clickEvents.city,
+      country: clickEvents.country,
+      device: clickEvents.device,
+      eventType: clickEvents.eventType,
+      ipHash: clickEvents.ipHash,
+      linkPageHasCountdown: clickEvents.linkPageHasCountdown,
+      referrer: clickEvents.referrer,
+      timestamp: clickEvents.timestamp,
+    })
+    .from(clickEvents)
+    .innerJoin(links, eq(clickEvents.linkId, links.id))
+    .where(and(
+      inArray(links.campaignId, campaignIds),
+      gte(clickEvents.timestamp, from),
+      lte(clickEvents.timestamp, to),
+    ))
+    .orderBy(desc(clickEvents.timestamp));
+
+  return rows.flatMap((row) => {
+    if (!row.campaignId) return [];
+
+    return [{ ...row, campaignId: row.campaignId }];
+  });
+}
+
+export async function listTopLinksForCampaign({
+  campaignId,
+  from,
+  limit = 5,
+  to,
+}: ListTopLinksForCampaignInput): Promise<TopCampaignLink[]> {
+  const totalClicks = count();
+
+  return db
+    .select({
+      destinationUrl: links.destinationUrl,
+      id: links.id,
+      slug: links.slug,
+      title: links.title,
+      totalClicks,
+    })
+    .from(clickEvents)
+    .innerJoin(links, eq(clickEvents.linkId, links.id))
+    .where(and(
+      eq(links.campaignId, campaignId),
+      gte(clickEvents.timestamp, from),
+      lte(clickEvents.timestamp, to),
+      ne(clickEvents.eventType, "LINK_PAGE_CTA_CLICK"),
+    ))
+    .groupBy(links.id, links.slug, links.title, links.destinationUrl)
+    .orderBy(desc(totalClicks))
+    .limit(limit);
 }

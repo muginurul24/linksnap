@@ -1478,3 +1478,475 @@ Implemented the Smart Rules evaluation engine and wired it into public redirects
 - ✅ MaxMind MMDB files and `.env` remain ignored and are not committed.
 
 **Next Task:** 4.3 — Geo IP Lookup
+
+### 4.3 — Geo IP Lookup
+- **Date:** 2026-05-07 06:36 GMT+7
+- **Duration:** 0h 35m
+- **Status:** ✅ Complete
+
+**What I Did:**
+Added a dedicated GeoIP lookup module backed by MaxMind GeoLite2 and Redis. Public IP lookups now cache `{ country, city, region }` for 24 hours, local/private IPs return `null` without cache or database reads, and the existing edge-header wrapper now prefers MaxMind data while preserving edge fallback behavior.
+
+**Files Changed:**
+- `src/lib/geo/geoip.ts` — Added MaxMind reader management, public/private IP detection, Redis cache keys, 24-hour TTL caching, and GeoIP lookup output.
+- `src/lib/geo/ip-lookup.ts` — Refactored to combine cached MaxMind results with decoded edge geo headers.
+- `tests/unit/geoip.test.ts` — Added coverage for private IP fallback, MaxMind result caching, missing DB path, and address-not-found behavior.
+- `tests/unit/geo-ip-lookup.test.ts` — Updated wrapper coverage for region headers, MaxMind preference, edge fallback, and empty results.
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Checked off Task 4.3.
+- `_bmad-output/implementation-artifacts/JOURNAL.md` — Recorded this completion entry.
+
+**Decisions Made:**
+- Kept `ip-lookup.ts` as the compatibility wrapper for existing analytics and rule-engine callers, while `geoip.ts` owns MaxMind and Redis concerns.
+- Cached only successful public-IP MaxMind lookups so private/local traffic and missing database configurations do not create noisy cache entries.
+- Used the configured `MAXMIND_DB_PATH` from `.env`; the local value points at `/home/mugiew/projects/linksnap/src/database/geolite/city.mmdb`.
+
+**Tests:**
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Unit/Integration: `rtk bun run test` — 36 files passed, 176 tests passed.
+- ✅ Build: `rtk bun run build` — Passed.
+- ✅ E2E: `rtk bun run test:e2e` — 4 specs passed after rerun.
+
+**Issues Encountered:**
+- First E2E attempt failed because a previous `next dev` process was still running for this repo → verified the process, stopped it, reran E2E successfully.
+
+**Security Checks:**
+- ✅ Private, localhost, link-local, and unique-local IPs are not sent to MaxMind or cached.
+- ✅ Geo lookup failures do not break redirects or click logging; callers continue to fall back to edge headers or empty geo data.
+- ✅ `.env` and local MMDB files remain ignored and were not committed.
+- ✅ No raw SQL, secrets, plaintext IP storage, or sensitive logging added.
+
+**Next Task:** 4.4 — Device Detection
+
+### 4.4 — Device Detection
+- **Date:** 2026-05-07 06:41 GMT+7
+- **Duration:** 0h 25m
+- **Status:** ✅ Complete
+
+**What I Did:**
+Replaced the hand-rolled user agent regex parser with a dedicated `ua-parser-js` based detector. Existing analytics and Smart Rule code keep using `parseUserAgent`, while the new detector module owns mobile/tablet/desktop/bot classification plus browser and OS normalization.
+
+**Files Changed:**
+- `package.json` — Added `ua-parser-js`.
+- `bun.lock` — Locked `ua-parser-js` and its transitive dependencies.
+- `src/lib/geo/device-detector.ts` — Added device, browser, OS, and bot detection.
+- `src/lib/analytics/user-agent.ts` — Re-exported the new detector through the existing `parseUserAgent` contract.
+- `tests/unit/device-detector.test.ts` — Added direct detector coverage for mobile, tablet, desktop, bot, and unknown user agents.
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Checked off Task 4.4.
+- `_bmad-output/implementation-artifacts/JOURNAL.md` — Recorded this completion entry.
+
+**Decisions Made:**
+- Kept the analytics-facing `parseUserAgent` API stable so click logging and rule evaluation did not need broad call-site churn.
+- Normalized `Mobile Safari` to `Safari`, `Mac OS` to `macOS`, and `Chrome WebView` to `Chrome` to preserve existing analytics labels.
+- Kept explicit bot detection before device normalization because crawlers do not reliably map to mobile/tablet/desktop device types.
+
+**Tests:**
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Unit/Integration: `rtk bun run test` — 37 files passed, 181 tests passed.
+- ✅ Build: `rtk bun run build` — Passed.
+- ✅ E2E: `rtk bun run test:e2e` — 4 specs passed.
+
+**Issues Encountered:**
+- None.
+
+**Security Checks:**
+- ✅ User agent parsing is deterministic and does not execute user-controlled input.
+- ✅ No user agent strings are logged outside existing hashed click analytics flow.
+- ✅ No raw SQL, secrets, plaintext IP storage, or sensitive logging added.
+
+**Next Task:** 4.5 — Smart Rules Tests
+
+### 4.5 — Smart Rules Tests
+- **Date:** 2026-05-07 06:48 GMT+7
+- **Duration:** 0h 45m
+- **Status:** ✅ Complete
+
+**What I Did:**
+Completed Smart Rules test coverage across unit, integration, and E2E layers. Added a mocked integration flow that creates rules through the API and verifies mobile vs desktop public redirects, plus an E2E flow that creates a link from the dashboard, saves a Smart Rule through the authenticated API, and verifies browser user-agent based redirects with Playwright context overrides.
+
+**Files Changed:**
+- `tests/integration/smart-rule-redirect-flow.test.ts` — Added create-rules-to-public-redirect integration coverage for different user agents.
+- `tests/e2e/link-flow.spec.ts` — Added Smart Rules E2E coverage using dashboard-authenticated rule creation and browser user-agent overrides.
+- `src/lib/db/queries/smart-rules.ts` — Replaced unsupported Neon HTTP transaction usage in rule replacement with driver-compatible delete/insert operations.
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Checked off Task 4.5.
+- `_bmad-output/implementation-artifacts/JOURNAL.md` — Recorded this completion entry.
+
+**Decisions Made:**
+- Kept Smart Rules E2E setup API-driven after dashboard link creation because there is not yet a dedicated dashboard Smart Rules UI.
+- Verified both matching and non-matching user agents so fallback to the default destination remains covered.
+- Removed `db.transaction()` from Smart Rule replacement because the project’s Neon HTTP driver does not support transactions in the E2E/runtime environment.
+
+**Tests:**
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Unit/Integration: `rtk bun run test` — 38 files passed, 182 tests passed.
+- ✅ Build: `rtk bun run build` — Passed.
+- ✅ E2E: `rtk bun run test:e2e` — 5 specs passed.
+
+**Issues Encountered:**
+- E2E exposed `No transactions support in neon-http driver` in `replaceSmartRulesForLink` → Updated the query helper to use Neon HTTP compatible delete/insert operations and reran all verification successfully.
+
+**Security Checks:**
+- ✅ Smart Rules E2E uses an authenticated user and owner-scoped API mutation.
+- ✅ Rule input remains validated by the production API before redirect behavior is exercised.
+- ✅ Redirect assertions cover the default destination fallback when no rule matches.
+- ✅ No raw SQL, secrets, plaintext IP storage, or sensitive logging added.
+
+**Next Task:** 5.1 — QR Generation API
+
+### 5.1 — QR Generation API
+- **Date:** 2026-05-07 06:52 GMT+7
+- **Duration:** 0h 30m
+- **Status:** ✅ Complete
+
+**What I Did:**
+Implemented the public QR generation endpoint for short links. The API validates slug and query params, verifies the link exists and is currently available before serving cached content, generates PNG or SVG QR codes for the short URL, caches base64 image output in Redis for 24 hours, and rate limits public QR generation by client IP.
+
+**Files Changed:**
+- `src/app/api/v1/qr/[slug]/route.ts` — Added public QR generation route with PNG/SVG output, size validation, Redis caching, rate limiting, and active-link checks.
+- `src/lib/validations/qr.ts` — Added QR query validation for format and size.
+- `tests/integration/qr-api.test.ts` — Added integration coverage for PNG/SVG generation, cache hits, invalid queries, unavailable links, and rate limiting.
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Checked off Task 5.1.
+- `_bmad-output/implementation-artifacts/JOURNAL.md` — Recorded this completion entry.
+
+**Decisions Made:**
+- QR codes encode the public short URL, not the destination URL, so scans continue through LinkSnap analytics and Smart Rules.
+- Cache keys include size (`qr:{slug}:{format}:{size}`) to avoid serving a cached 300px image for a later custom-size request.
+- The route checks link availability before reading QR cache so stale cached QR content cannot be served for deleted, inactive, scheduled, or expired links.
+
+**Tests:**
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Unit/Integration: `rtk bun run test` — 39 files passed, 188 tests passed.
+- ✅ Build: `rtk bun run build` — Passed; `/api/v1/qr/[slug]` is registered.
+
+**Issues Encountered:**
+- None.
+
+**Security Checks:**
+- ✅ Slug and query params validated with Zod.
+- ✅ Public endpoint checks link availability before image generation or cache serving.
+- ✅ Public QR generation is rate limited by client IP.
+- ✅ QR output encodes only the short URL; no secrets or sensitive user data are embedded.
+- ✅ No raw SQL, secrets, plaintext IP storage, or sensitive logging added.
+
+**Next Task:** 5.2 — QR Download
+
+### 5.2 — QR Download
+- **Date:** 2026-05-07 06:55 GMT+7
+- **Duration:** 0h 25m
+- **Status:** ✅ Complete
+
+**What I Did:**
+Added QR download controls for PNG and SVG formats in both the dashboard links table and the QR Codes page. The QR page now lists the authenticated user’s real links instead of static placeholder cards, and each link exposes direct download targets backed by the public QR API.
+
+**Files Changed:**
+- `src/lib/qr/downloads.ts` — Added helpers for QR download hrefs and filenames.
+- `src/app/(dashboard)/links/page.tsx` — Added PNG and SVG QR download actions to each link row dropdown.
+- `src/app/(dashboard)/qr/page.tsx` — Rebuilt the QR Codes page around the authenticated user’s links with PNG/SVG download buttons.
+- `tests/unit/qr-downloads.test.ts` — Added helper coverage for download URLs and filenames.
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Checked off Task 5.2.
+- `_bmad-output/implementation-artifacts/JOURNAL.md` — Recorded this completion entry.
+
+**Decisions Made:**
+- Centralized download URL and filename generation in `src/lib/qr/downloads.ts` so the links table, QR page, and future tests use the same contract.
+- Kept QR download links as normal anchors with `download` attributes so the browser can handle file downloads without client-side JavaScript.
+- Replaced static QR page data with real link data to make the download controls actionable.
+
+**Tests:**
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Unit/Integration: `rtk bun run test` — 40 files passed, 189 tests passed.
+- ✅ Build: `rtk bun run build` — Passed; `/qr` is dynamic and `/api/v1/qr/[slug]` remains registered.
+
+**Issues Encountered:**
+- None.
+
+**Security Checks:**
+- ✅ QR page requires authenticated dashboard access.
+- ✅ Download links use the public QR endpoint, which validates slug/query input and link availability.
+- ✅ No client-side secret handling or sensitive logging added.
+
+**Next Task:** 5.3 — QR Tests
+
+### 5.3 — QR Tests
+- **Date:** 2026-05-07 06:59 GMT+7
+- **Duration:** 0h 25m
+- **Status:** ✅ Complete
+
+**What I Did:**
+Completed QR test coverage by adding E2E download verification from the QR dashboard. The test creates a real link for an authenticated user, opens `/qr`, downloads both PNG and SVG QR files, verifies suggested filenames, and checks the downloaded file contents.
+
+**Files Changed:**
+- `tests/e2e/link-flow.spec.ts` — Added QR dashboard download E2E coverage and cleanup for QR cache/rate-limit keys.
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Checked off Task 5.3.
+- `_bmad-output/implementation-artifacts/JOURNAL.md` — Recorded this completion entry.
+
+**Decisions Made:**
+- Verified PNG content via the PNG file signature and SVG content via `<svg` markup so the E2E test validates actual generated files instead of only clicking links.
+- Reused the existing QR API integration coverage from Task 5.1 for QR generation validity, and the public redirect E2E coverage for the scan-to-short-link path.
+
+**Tests:**
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Unit/Integration: `rtk bun run test` — 40 files passed, 189 tests passed.
+- ✅ Build: `rtk bun run build` — Passed.
+- ✅ E2E: `rtk bun run test:e2e` — 6 specs passed.
+
+**Issues Encountered:**
+- None.
+
+**Security Checks:**
+- ✅ Download E2E uses an authenticated dashboard user and cleans up created data.
+- ✅ QR downloads continue to go through the validated, rate-limited public QR endpoint.
+- ✅ No secrets, plaintext IP storage, or sensitive logging added.
+
+**Next Task:** 6.1 — Campaign API
+
+### 6.1 — Campaign API
+- **Date:** 2026-05-07 07:09 GMT+7
+- **Duration:** 0h 45m
+- **Status:** ✅ Complete
+
+**What I Did:**
+Implemented authenticated Campaign CRUD APIs. Users can create campaigns, list their campaigns with link counts, fetch campaign details, update campaign metadata and UTM templates, and delete campaigns. Campaign deletes rely on the existing foreign key behavior so related links become ungrouped instead of being deleted.
+
+**Files Changed:**
+- `src/app/api/v1/campaigns/route.ts` — Added authenticated POST and GET handlers for campaign creation and listing.
+- `src/app/api/v1/campaigns/[id]/route.ts` — Added authenticated GET, PATCH, and DELETE handlers with ownership checks.
+- `src/lib/db/queries/campaigns.ts` — Added campaign create/list/detail/update/delete query helpers with link counts.
+- `src/lib/validations/campaign.ts` — Added strict Zod schemas for campaign params, create/update bodies, and list queries.
+- `tests/integration/campaigns-api.test.ts` — Added API coverage for create, list, detail, update, delete, IDOR, duplicate slug, validation, auth, and rate limits.
+- `tests/unit/campaign-validation.test.ts` — Added campaign validation coverage.
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Checked off Task 6.1.
+- `_bmad-output/implementation-artifacts/JOURNAL.md` — Recorded this completion entry.
+
+**Decisions Made:**
+- Campaign slugs are unique per user and return `CAMPAIGN_SLUG_ALREADY_EXISTS` on unique constraint conflicts.
+- List and detail responses include `linkCount` while omitting `userId` from API payloads.
+- Deleting a campaign uses the existing `ON DELETE SET NULL` relationship from `links.campaignId` to keep links intact and ungrouped.
+
+**Tests:**
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Unit/Integration: `rtk bun run test` — 42 files passed, 202 tests passed.
+- ✅ Build: `rtk bun run build` — Passed; `/api/v1/campaigns` and `/api/v1/campaigns/[id]` are registered.
+
+**Issues Encountered:**
+- ESLint flagged an unused destructured `userId` in campaign response formatting → Replaced it with explicit response mapping.
+
+**Security Checks:**
+- ✅ Campaign params, query strings, create bodies, and update bodies are validated with Zod.
+- ✅ Auth required for all campaign endpoints.
+- ✅ Campaign detail, update, and delete verify ownership before returning or mutating data.
+- ✅ API rate limiting uses the existing plan-based limits.
+- ✅ No raw SQL, secrets, plaintext IP storage, or sensitive logging added.
+
+**Next Task:** 6.2 — Campaign Links API
+
+### 6.2 — Campaign Links API
+- **Date:** 2026-05-07 07:15 GMT+7
+- **Duration:** 0h 30m
+- **Status:** ✅ Complete
+
+**What I Did:**
+Implemented authenticated campaign link membership APIs. Users can list links assigned to an owned campaign, add multiple owned links to a campaign in one request, and remove a link from a campaign without deleting the link.
+
+**Files Changed:**
+- `src/app/api/v1/campaigns/[id]/links/route.ts` — Added GET, POST, and DELETE campaign link handlers with auth, ownership checks, validation, and rate limiting.
+- `src/lib/db/queries/links.ts` — Added batch helpers for owned link lookup, campaign assignment, and campaign removal.
+- `src/lib/validations/campaign.ts` — Added strict Zod schemas for campaign link assignment and removal inputs.
+- `tests/integration/campaign-links-api.test.ts` — Added API coverage for list, add, remove, ownership failures, validation failures, and rate limits.
+- `tests/unit/campaign-validation.test.ts` — Added campaign link validation coverage.
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Checked off Task 6.2.
+- `_bmad-output/implementation-artifacts/JOURNAL.md` — Recorded this completion entry.
+
+**Decisions Made:**
+- Adding links validates all requested IDs belong to the authenticated user before updating anything.
+- Link membership uses `links.campaignId`; removing a link clears that field and keeps the link active.
+- Campaign link list reuses the existing paginated link listing helper with a campaign filter to avoid duplicate query logic.
+
+**Tests:**
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Unit/Integration: `rtk bun run test` — 43 files passed, 209 tests passed.
+- ✅ Build: `rtk bun run build` — Passed; `/api/v1/campaigns/[id]/links` is registered.
+
+**Issues Encountered:**
+- TypeScript inferred route handler responses too loosely in tests → Added explicit `Promise<Response>` return types and a typed list-query parse result.
+
+**Security Checks:**
+- ✅ Campaign ID, query string, add body, and remove body are validated with Zod.
+- ✅ Auth required for all campaign link endpoints.
+- ✅ Campaign ownership is verified before list, add, or remove operations.
+- ✅ Link ownership is verified before campaign assignment to prevent cross-user linking.
+- ✅ API rate limiting uses the existing plan-based limits.
+- ✅ No raw SQL, secrets, plaintext IP storage, or sensitive logging added.
+
+**Next Task:** 6.3 — Campaign Analytics API
+
+### 6.3 — Campaign Analytics API
+- **Date:** 2026-05-07 07:20 GMT+7
+- **Duration:** 0h 25m
+- **Status:** ✅ Complete
+
+**What I Did:**
+Implemented authenticated campaign analytics. The endpoint aggregates click analytics across all links in an owned campaign, returns top links, and supports comparison against other owned campaigns by slug.
+
+**Files Changed:**
+- `src/app/api/v1/campaigns/[id]/analytics/route.ts` — Added campaign analytics GET handler with auth, ownership checks, range validation, comparison support, and rate limiting.
+- `src/lib/db/queries/click-events.ts` — Added batch campaign click-event query and top campaign links query.
+- `src/lib/db/queries/campaigns.ts` — Added owned campaign lookup by comparison slugs.
+- `src/lib/validations/campaign.ts` — Added campaign analytics query validation for date range and compare slugs.
+- `tests/integration/campaign-analytics-api.test.ts` — Added API coverage for aggregation, comparisons, IDOR, missing comparisons, validation, auth, and rate limits.
+- `tests/unit/campaign-validation.test.ts` — Added campaign analytics query validation coverage.
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Checked off Task 6.3.
+- `_bmad-output/implementation-artifacts/JOURNAL.md` — Recorded this completion entry.
+
+**Decisions Made:**
+- Reused the existing click-event summarizer so campaign analytics stay consistent with link analytics.
+- Batched campaign click-event reads by campaign IDs for the main campaign and comparisons instead of querying one campaign at a time.
+- Comparison campaigns are resolved by slug within the authenticated user's campaign set; missing or unowned slugs return a generic not-found error.
+
+**Tests:**
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Unit/Integration: `rtk bun run test` — 44 files passed, 217 tests passed.
+- ✅ Build: `rtk bun run build` — Passed; `/api/v1/campaigns/[id]/analytics` is registered.
+
+**Issues Encountered:**
+- None.
+
+**Security Checks:**
+- ✅ Campaign ID, date range, and comparison slugs are validated with Zod.
+- ✅ Auth required for campaign analytics.
+- ✅ Campaign ownership is verified before returning analytics.
+- ✅ Comparison campaign slugs are scoped to the authenticated user.
+- ✅ API rate limiting uses the existing plan-based limits.
+- ✅ No raw SQL, secrets, plaintext IP storage, or sensitive logging added.
+
+**Next Task:** 6.4 — UTM Auto-Builder
+
+### 6.4 — UTM Auto-Builder
+- **Date:** 2026-05-07 07:25 GMT+7
+- **Duration:** 0h 30m
+- **Status:** ✅ Complete
+
+**What I Did:**
+Added campaign UTM URL building and wired it into campaign link assignment. Adding links to a campaign now applies campaign UTM parameters to destination URLs when safe, skips URLs that already contain UTM params, and supports `preview: true` to show the resulting URLs without saving.
+
+**Files Changed:**
+- `src/lib/campaigns/utm-builder.ts` — Added UTM param builder, existing-UTM detection, URL append logic, and preview generation.
+- `src/app/api/v1/campaigns/[id]/links/route.ts` — Applied UTM previews during campaign link assignment and added preview-only response support.
+- `src/lib/db/queries/links.ts` — Added owned link lookup with destination URLs and campaign assignment with optional destination URL updates.
+- `src/lib/validations/campaign.ts` — Added optional `preview` flag to campaign link assignment input.
+- `tests/unit/utm-builder.test.ts` — Added UTM builder coverage.
+- `tests/integration/campaign-links-api.test.ts` — Added UTM application and preview coverage for campaign link assignment.
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Checked off Task 6.4.
+- `_bmad-output/implementation-artifacts/JOURNAL.md` — Recorded this completion entry.
+
+**Decisions Made:**
+- Any existing `utm_*` query parameter causes the builder to skip appending campaign UTMs, preserving manually tagged URLs.
+- UTM preview is exposed through the existing campaign links POST endpoint with `preview: true`, avoiding a separate endpoint for the same authorization path.
+- Campaign assignment validates ownership and prepares UTM previews before mutating links, so invalid link IDs do not partially update data.
+
+**Tests:**
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Unit/Integration: `rtk bun run test` — 45 files passed, 221 tests passed.
+- ✅ Build: `rtk bun run build` — Passed.
+
+**Issues Encountered:**
+- None.
+
+**Security Checks:**
+- ✅ Campaign link assignment input is validated with Zod, including the preview flag.
+- ✅ Campaign ownership and link ownership checks run before preview or save.
+- ✅ Existing destination URL validation still happens at link creation/update boundaries.
+- ✅ No raw SQL, secrets, plaintext IP storage, or sensitive logging added.
+
+**Next Task:** 6.5 — Campaign Tests
+
+### 6.5 — Campaign Tests
+- **Date:** 2026-05-07 07:34 GMT+7
+- **Duration:** 0h 40m
+- **Status:** ✅ Complete
+
+**What I Did:**
+Completed campaign test coverage across unit, integration, and E2E layers. The new coverage verifies campaign analytics aggregation, the create-campaign → add-link → UTM → analytics workflow, and an authenticated dashboard-session campaign flow through Playwright.
+
+**Files Changed:**
+- `src/lib/campaigns/analytics.ts` — Added campaign event grouping and summary helper for unit-level coverage.
+- `src/app/api/v1/campaigns/[id]/analytics/route.ts` — Reused the campaign analytics helper in the API route.
+- `tests/unit/campaign-analytics.test.ts` — Added campaign aggregation unit coverage.
+- `tests/integration/campaign-workflow.test.ts` — Added create campaign → add link → UTM params → analytics integration flow.
+- `tests/e2e/link-flow.spec.ts` — Added authenticated dashboard-session campaign workflow E2E coverage.
+- `src/app/(dashboard)/campaigns/page.tsx` — Fixed dropdown trigger button nesting found by the campaign E2E run.
+- `src/app/(dashboard)/page.tsx` — Fixed the same dropdown trigger nesting pattern.
+- `src/app/(dashboard)/pages/page.tsx` — Fixed the same dropdown trigger nesting pattern.
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Checked off Task 6.5.
+- `_bmad-output/implementation-artifacts/JOURNAL.md` — Recorded this completion entry.
+
+**Decisions Made:**
+- Kept campaign analytics grouping in a small library helper so both API and tests share the same aggregation behavior.
+- Used an authenticated dashboard Playwright session for the E2E campaign flow and exercised the campaign APIs from that session because the campaign dashboard UI is still mostly static.
+- Fixed invalid nested dropdown buttons immediately because the first E2E run exposed a real hydration warning on the campaign page.
+
+**Tests:**
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Unit/Integration: `rtk bun run test` — 47 files passed, 223 tests passed.
+- ✅ Build: `rtk bun run build` — Passed.
+- ✅ E2E: `rtk bun run test:e2e` — 7 specs passed.
+
+**Issues Encountered:**
+- Initial E2E run passed but surfaced nested `<button>` hydration warnings in dashboard dropdown triggers → Updated the affected triggers to use the component `render` prop and reran E2E cleanly.
+
+**Security Checks:**
+- ✅ Campaign workflow tests use authenticated users and user-owned records.
+- ✅ Campaign APIs continue to validate ownership before link assignment or analytics reads.
+- ✅ E2E cleanup removes test users and campaign/link data.
+- ✅ No secrets, plaintext IP storage, raw SQL, or sensitive logging added.
+
+**Next Task:** 7.1 — Split Test API
+
+### 7.1 — Split Test API
+- **Date:** 2026-05-07 07:38 GMT+7
+- **Duration:** 0h 30m
+- **Status:** ✅ Complete
+
+**What I Did:**
+Implemented authenticated split test management for links. Users can create or update variants with weights, fetch split test config and performance counters, and delete a split test for an owned link.
+
+**Files Changed:**
+- `src/app/api/v1/links/[id]/split-test/route.ts` — Added GET, POST, and DELETE handlers with auth, ownership checks, validation, rate limiting, and redirect cache invalidation.
+- `src/lib/db/queries/split-tests.ts` — Added split test lookup, upsert, variant replacement, and delete query helpers.
+- `src/lib/validations/split-test.ts` — Added strict Zod validation for split test variants and safe destination URLs.
+- `tests/integration/split-test-api.test.ts` — Added API coverage for create/update, get, delete, IDOR, validation, and rate limits.
+- `tests/unit/split-test-validation.test.ts` — Added split test validation coverage.
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Checked off Task 7.1.
+- `_bmad-output/implementation-artifacts/JOURNAL.md` — Recorded this completion entry.
+
+**Decisions Made:**
+- Split test POST replaces the full variant set for a link, matching the create/update API shape and avoiding partial variant drift.
+- Split test changes invalidate the redirect cache for the link slug so the router can pick up future split-test behavior.
+- Variant destinations reuse the existing safe URL rules to block localhost/private-network targets.
+
+**Tests:**
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Unit/Integration: `rtk bun run test` — 49 files passed, 230 tests passed.
+- ✅ Build: `rtk bun run build` — Passed; `/api/v1/links/[id]/split-test` is registered.
+
+**Issues Encountered:**
+- None.
+
+**Security Checks:**
+- ✅ Link ID and split test body are validated with Zod.
+- ✅ Auth required for all split test endpoints.
+- ✅ Link ownership is verified before reading or mutating split tests.
+- ✅ API rate limiting uses the existing plan-based limits.
+- ✅ No raw SQL, secrets, plaintext IP storage, or sensitive logging added.
+
+**Next Task:** 7.2 — Split Test Router

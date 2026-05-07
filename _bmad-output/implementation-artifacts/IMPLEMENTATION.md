@@ -319,93 +319,93 @@ src/
   5. [x] If no rules match, return null → use default destination
 
 ### TASK 4.3 — Geo IP Lookup
-- File: `src/lib/geo/geoip.ts`
-- Use MaxMind GeoLite2 database (download to `data/GeoLite2-City.mmdb`)
-- Cache results in Redis: `geo:{ip}` → `{ country, city, region }`
-- TTL: 24 hours
-- Fallback: if IP is localhost/private → return null
+- [x] File: `src/lib/geo/geoip.ts`
+- [x] Use MaxMind GeoLite2 database (download to `data/GeoLite2-City.mmdb`)
+- [x] Cache results in Redis: `geo:{ip}` → `{ country, city, region }`
+- [x] TTL: 24 hours
+- [x] Fallback: if IP is localhost/private → return null
 
 ### TASK 4.4 — Device Detection
-- File: `src/lib/geo/device-detector.ts`
-- Parse user agent string
-- Detect: mobile, tablet, desktop
-- Detect: browser (Chrome, Safari, Firefox, etc.)
-- Detect: OS (Windows, macOS, iOS, Android, Linux)
-- Use `ua-parser-js` library
+- [x] File: `src/lib/geo/device-detector.ts`
+- [x] Parse user agent string
+- [x] Detect: mobile, tablet, desktop
+- [x] Detect: browser (Chrome, Safari, Firefox, etc.)
+- [x] Detect: OS (Windows, macOS, iOS, Android, Linux)
+- [x] Use `ua-parser-js` library
 
 ### TASK 4.5 — Smart Rules Tests
-- Unit: rule evaluation for each type, device parsing
-- Integration: create rules → visit with different IPs/UAs → verify correct redirect
-- E2E: configure rules from dashboard → test with browser dev tools user agent override
+- [x] Unit: rule evaluation for each type, device parsing
+- [x] Integration: create rules → visit with different IPs/UAs → verify correct redirect
+- [x] E2E: configure rules from dashboard → test with browser dev tools user agent override
 
 ---
 
 ## 🟠 Phase 5: QR Codes (3 tasks)
 
 ### TASK 5.1 — QR Generation API
-- File: `src/app/api/v1/qr/[slug]/route.ts`
-- No auth required (public endpoint)
-- Generate QR code as PNG or SVG (query param `?format=png|svg`)
-- Cache in Redis: `qr:{slug}:{format}` → base64 image
-- TTL: 24 hours (or until link updated)
-- Size: 300x300 default, configurable `?size=300`
+- [x] File: `src/app/api/v1/qr/[slug]/route.ts`
+- [x] No auth required (public endpoint)
+- [x] Generate QR code as PNG or SVG (query param `?format=png|svg`)
+- [x] Cache in Redis: `qr:{slug}:{format}` → base64 image
+- [x] TTL: 24 hours (or until link updated)
+- [x] Size: 300x300 default, configurable `?size=300`
 
 ### TASK 5.2 — QR Download
-- Add download buttons in links table and QR codes page
-- PNG download: `<a download="slug.png" href="/api/v1/qr/slug?format=png">`
-- SVG download: `<a download="slug.svg" href="/api/v1/qr/slug?format=svg">`
+- [x] Add download buttons in links table and QR codes page
+- [x] PNG download: `<a download="slug.png" href="/api/v1/qr/slug?format=png">`
+- [x] SVG download: `<a download="slug.svg" href="/api/v1/qr/slug?format=svg">`
 
 ### TASK 5.3 — QR Tests
-- Integration: generate QR → verify it's valid → scan with phone → verify redirect
-- E2E: click download button → verify file downloads
+- [x] Integration: generate QR → verify it's valid → scan with phone → verify redirect
+- [x] E2E: click download button → verify file downloads
 
 ---
 
 ## 🔴 Phase 6: Campaign Workbench (5 tasks)
 
 ### TASK 6.1 — Campaign API
-- File: `src/app/api/v1/campaigns/route.ts`
-- POST: create campaign `{ name, slug, description, utmSource, utmMedium, utmCampaign, utmTerm, utmContent }`
-- GET: list user campaigns (with link count)
-- File: `src/app/api/v1/campaigns/[id]/route.ts`
-- GET: campaign details
-- PATCH: update campaign (utm templates, name)
-- DELETE: delete campaign (links become ungrouped, not deleted)
+- [x] File: `src/app/api/v1/campaigns/route.ts`
+- [x] POST: create campaign `{ name, slug, description, utmSource, utmMedium, utmCampaign, utmTerm, utmContent }`
+- [x] GET: list user campaigns (with link count)
+- [x] File: `src/app/api/v1/campaigns/[id]/route.ts`
+- [x] GET: campaign details
+- [x] PATCH: update campaign (utm templates, name)
+- [x] DELETE: delete campaign (links become ungrouped, not deleted)
 
 ### TASK 6.2 — Campaign Links API
-- File: `src/app/api/v1/campaigns/[id]/links/route.ts`
-- POST: add links to campaign `{ linkIds: [...] }`
-- DELETE: remove link from campaign `{ linkId }`
-- GET: list links in campaign (paginated)
+- [x] File: `src/app/api/v1/campaigns/[id]/links/route.ts`
+- [x] POST: add links to campaign `{ linkIds: [...] }`
+- [x] DELETE: remove link from campaign `{ linkId }`
+- [x] GET: list links in campaign (paginated)
 
 ### TASK 6.3 — Campaign Analytics API
-- File: `src/app/api/v1/campaigns/[id]/analytics/route.ts`
-- Return: aggregated analytics across all campaign links
-- Total clicks, clicks per day, top links, top countries
-- Compare campaigns: `?compare=ramadhan-2026,launch-q2-2026`
+- [x] File: `src/app/api/v1/campaigns/[id]/analytics/route.ts`
+- [x] Return: aggregated analytics across all campaign links
+- [x] Total clicks, clicks per day, top links, top countries
+- [x] Compare campaigns: `?compare=ramadhan-2026,launch-q2-2026`
 
 ### TASK 6.4 — UTM Auto-Builder
-- File: `src/lib/campaigns/utm-builder.ts`
-- When adding link to campaign, auto-append UTM params to destination URL
-- Format: `?utm_source=X&utm_medium=Y&utm_campaign=Z&utm_term=W&utm_content=V`
-- Skip if destination URL already has UTM params
-- Show preview before saving
+- [x] File: `src/lib/campaigns/utm-builder.ts`
+- [x] When adding link to campaign, auto-append UTM params to destination URL
+- [x] Format: `?utm_source=X&utm_medium=Y&utm_campaign=Z&utm_term=W&utm_content=V`
+- [x] Skip if destination URL already has UTM params
+- [x] Show preview before saving
 
 ### TASK 6.5 — Campaign Tests
-- Unit: UTM builder, campaign analytics aggregation
-- Integration: create campaign → add links → verify UTM params → check analytics
-- E2E: full campaign workflow from dashboard
+- [x] Unit: UTM builder, campaign analytics aggregation
+- [x] Integration: create campaign → add links → verify UTM params → check analytics
+- [x] E2E: full campaign workflow from dashboard
 
 ---
 
 ## ⚫ Phase 7: Split Testing (3 tasks)
 
 ### TASK 7.1 — Split Test API
-- File: `src/app/api/v1/links/[id]/split-test/route.ts`
-- POST: create/update split test `{ variants: [{ destinationUrl, weight }] }`
-- GET: get split test config + performance data
-- DELETE: remove split test
-- Auth: required, ownership check
+- [x] File: `src/app/api/v1/links/[id]/split-test/route.ts`
+- [x] POST: create/update split test `{ variants: [{ destinationUrl, weight }] }`
+- [x] GET: get split test config + performance data
+- [x] DELETE: remove split test
+- [x] Auth: required, ownership check
 
 ### TASK 7.2 — Split Test Router
 - Integrate into redirect handler (`[slug]/page.tsx`)

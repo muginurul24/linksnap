@@ -1,4 +1,4 @@
-import { and, count, desc, eq, ilike, or, type SQL } from "drizzle-orm";
+import { and, count, desc, eq, ilike, inArray, or, type SQL } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { linkPages, links, smartRules, users } from "@/lib/db/schema";
 import type { UserPlan } from "@/lib/links/limits";
@@ -8,6 +8,11 @@ export type CreatedLink = {
   destinationUrl: string;
   id: string;
   slug: string;
+};
+
+export type OwnedLinkForCampaignAssignment = {
+  destinationUrl: string;
+  id: string;
 };
 
 type CreateLinkRecordInput = {
@@ -102,6 +107,19 @@ type UpdateLinkRecordInput = {
   id: string;
   slug?: string;
   title?: string | null;
+  userId: string;
+};
+
+type SetLinksCampaignInput = {
+  campaignId: string;
+  destinationUrlsById?: ReadonlyMap<string, string>;
+  linkIds: string[];
+  userId: string;
+};
+
+type RemoveLinkFromCampaignInput = {
+  campaignId: string;
+  linkId: string;
   userId: string;
 };
 
@@ -369,6 +387,112 @@ export async function setLinkPageEnabledForUser({
     .update(links)
     .set({ hasLinkPage: enabled, updatedAt: new Date() })
     .where(and(eq(links.id, id), eq(links.userId, userId)))
+    .returning({ id: links.id });
+
+  return link ?? null;
+}
+
+export async function listOwnedLinkIdsByIds({
+  linkIds,
+  userId,
+}: {
+  linkIds: string[];
+  userId: string;
+}): Promise<string[]> {
+  if (linkIds.length === 0) return [];
+
+  const rows = await db
+    .select({ id: links.id })
+    .from(links)
+    .where(and(eq(links.userId, userId), inArray(links.id, linkIds)));
+
+  return rows.map((row) => row.id);
+}
+
+export async function listOwnedLinksByIds({
+  linkIds,
+  userId,
+}: {
+  linkIds: string[];
+  userId: string;
+}): Promise<OwnedLinkForCampaignAssignment[]> {
+  if (linkIds.length === 0) return [];
+
+  return db
+    .select({
+      destinationUrl: links.destinationUrl,
+      id: links.id,
+    })
+    .from(links)
+    .where(and(eq(links.userId, userId), inArray(links.id, linkIds)));
+}
+
+export async function setLinksCampaignForUser({
+  campaignId,
+  destinationUrlsById,
+  linkIds,
+  userId,
+}: SetLinksCampaignInput): Promise<string[]> {
+  if (linkIds.length === 0) return [];
+
+  if (destinationUrlsById?.size) {
+    const updatedIds = new Set<string>();
+    const idsWithoutDestinationUpdate = linkIds.filter(
+      (id) => !destinationUrlsById.has(id),
+    );
+
+    if (idsWithoutDestinationUpdate.length > 0) {
+      const updated = await db
+        .update(links)
+        .set({ campaignId, updatedAt: new Date() })
+        .where(
+          and(
+            eq(links.userId, userId),
+            inArray(links.id, idsWithoutDestinationUpdate),
+          ),
+        )
+        .returning({ id: links.id });
+
+      for (const link of updated) updatedIds.add(link.id);
+    }
+
+    for (const [id, destinationUrl] of destinationUrlsById) {
+      const [link] = await db
+        .update(links)
+        .set({ campaignId, destinationUrl, updatedAt: new Date() })
+        .where(and(eq(links.id, id), eq(links.userId, userId)))
+        .returning({ id: links.id });
+
+      if (link) updatedIds.add(link.id);
+    }
+
+    return linkIds.filter((id) => updatedIds.has(id));
+  }
+
+  const updated = await db
+    .update(links)
+    .set({ campaignId, updatedAt: new Date() })
+    .where(and(eq(links.userId, userId), inArray(links.id, linkIds)))
+    .returning({ id: links.id });
+
+  return updated.map((link) => link.id);
+}
+
+export async function removeLinkFromCampaignForUser({
+  campaignId,
+  linkId,
+  userId,
+}: RemoveLinkFromCampaignInput): Promise<{ id: string } | null> {
+  const [link] = await db
+    .update(links)
+    .set({ campaignId: null, updatedAt: new Date() })
+    .where(
+      and(
+        eq(links.id, linkId),
+        eq(links.userId, userId),
+        eq(links.campaignId, campaignId),
+      ),
+    )
     .returning({ id: links.id });
 
   return link ?? null;

@@ -1,36 +1,17 @@
-import {
-  AddressNotFoundError,
-  Reader,
-  type ReaderModel,
-} from "@maxmind/geoip2-node";
+import { lookupGeoIp } from "@/lib/geo/geoip";
 
 export type EdgeGeoHeaders = {
   city: string | null;
   country: string | null;
+  region?: string | null;
 };
 
-export type GeoLookupResult = EdgeGeoHeaders & {
+export type GeoLookupResult = {
+  city: string | null;
+  country: string | null;
+  region: string | null;
   source: "edge" | "maxmind" | "none";
 };
-
-let readerPromise: Promise<ReaderModel | null> | null = null;
-
-function getMaxMindDbPath(): string | null {
-  return process.env.MAXMIND_DB_PATH?.trim() || null;
-}
-
-async function getMaxMindReader(): Promise<ReaderModel | null> {
-  const dbPath = getMaxMindDbPath();
-  if (!dbPath) return null;
-
-  readerPromise ??= Reader.open(dbPath).catch((error: unknown) => {
-    readerPromise = null;
-    console.error("[geo] unable to open MaxMind database", error);
-    return null;
-  });
-
-  return readerPromise;
-}
 
 function normalizeHeaderValue(value: string | null): string | null {
   const trimmed = value?.trim();
@@ -51,6 +32,11 @@ export function readEdgeGeoHeaders(headers: Headers): EdgeGeoHeaders {
     country: normalizeHeaderValue(
       headers.get("x-vercel-ip-country") ?? headers.get("cf-ipcountry"),
     ),
+    region: normalizeHeaderValue(
+      headers.get("x-vercel-ip-country-region") ??
+        headers.get("x-vercel-ip-region") ??
+        headers.get("cf-region"),
+    ),
   };
 }
 
@@ -61,29 +47,25 @@ export async function lookupGeoLocation({
   edgeGeo: EdgeGeoHeaders;
   ipAddress: string | null;
 }): Promise<GeoLookupResult> {
-  const reader = await getMaxMindReader();
+  const geoIp = await lookupGeoIp(ipAddress);
 
-  if (reader && ipAddress) {
-    try {
-      const response = reader.city(ipAddress);
-      return {
-        city: response.city?.names.en ?? edgeGeo.city,
-        country:
-          response.country?.isoCode ??
-          response.registeredCountry?.isoCode ??
-          edgeGeo.country,
-        source: "maxmind",
-      };
-    } catch (error) {
-      if (!(error instanceof AddressNotFoundError)) {
-        console.error("[geo] MaxMind lookup failed", error);
-      }
-    }
+  if (geoIp) {
+    return {
+      city: geoIp.city ?? edgeGeo.city,
+      country: geoIp.country ?? edgeGeo.country,
+      region: geoIp.region ?? edgeGeo.region ?? null,
+      source: "maxmind",
+    };
   }
 
-  if (edgeGeo.city || edgeGeo.country) {
-    return { ...edgeGeo, source: "edge" };
+  if (edgeGeo.city || edgeGeo.country || edgeGeo.region) {
+    return {
+      city: edgeGeo.city,
+      country: edgeGeo.country,
+      region: edgeGeo.region ?? null,
+      source: "edge",
+    };
   }
 
-  return { city: null, country: null, source: "none" };
+  return { city: null, country: null, region: null, source: "none" };
 }
