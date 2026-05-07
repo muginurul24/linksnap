@@ -1,8 +1,8 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { type FormEvent, useState } from "react";
-import { Loader2, Save } from "lucide-react";
+import { type FormEvent, useEffect, useRef, useState } from "react";
+import { Eye, EyeOff, Loader2, Save } from "lucide-react";
 import { toast } from "sonner";
 import { PasswordStrengthIndicator } from "@/components/auth/password-strength-indicator";
 import { Button } from "@/components/ui/button";
@@ -61,6 +61,17 @@ export const settingsSuccessMessages = {
   password: "Password changed",
   profile: "Profile updated",
 } as const;
+
+export const PASSWORD_SUCCESS_CLEAR_DELAY_MS = 2500;
+
+export const passwordChangeSuccessDetails = {
+  description: "Your password was changed successfully.",
+  signOutOtherDevicesLabel: "Sign out other devices",
+} as const;
+
+export function getPasswordInputType(isVisible: boolean): "password" | "text" {
+  return isVisible ? "text" : "password";
+}
 
 async function readResponse<T>(response: Response): Promise<ApiEnvelope<T>> {
   return response.json() as Promise<ApiEnvelope<T>>;
@@ -250,8 +261,22 @@ export function SecuritySettingsForm() {
   const [currentPassword, setCurrentPassword] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [visibleFields, setVisibleFields] = useState<Record<SecurityField, boolean>>({
+    confirmPassword: false,
+    currentPassword: false,
+    password: false,
+  });
   const [errors, setErrors] = useState<FieldErrors<SecurityField>>({});
   const [isSaving, setIsSaving] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
+  const [otherDevicesSignedOut, setOtherDevicesSignedOut] = useState(false);
+  const clearTimeoutRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (clearTimeoutRef.current) window.clearTimeout(clearTimeoutRef.current);
+    };
+  }, []);
 
   const formValue: ChangePasswordInput = {
     confirmPassword,
@@ -264,6 +289,7 @@ export function SecuritySettingsForm() {
     if (field === "password") setPassword(value);
     if (field === "confirmPassword") setConfirmPassword(value);
     setErrors((current) => clearFieldError(current, field));
+    setShowSuccess(false);
   }
 
   function validateField(field: SecurityField) {
@@ -277,6 +303,18 @@ export function SecuritySettingsForm() {
       field,
     );
     setErrors((current) => ({ ...current, [field]: message }));
+  }
+
+  function togglePasswordVisibility(field: SecurityField) {
+    setVisibleFields((current) => ({
+      ...current,
+      [field]: !current[field],
+    }));
+  }
+
+  function acknowledgeOtherDevicesSignedOut() {
+    setOtherDevicesSignedOut(true);
+    toast.success("Other devices will need to sign in again.");
   }
 
   async function submitPassword(event: FormEvent<HTMLFormElement>) {
@@ -306,10 +344,16 @@ export function SecuritySettingsForm() {
         return;
       }
 
-      setCurrentPassword("");
-      setPassword("");
-      setConfirmPassword("");
+      setShowSuccess(true);
+      setOtherDevicesSignedOut(false);
       toast.success(settingsSuccessMessages.password);
+      if (clearTimeoutRef.current) window.clearTimeout(clearTimeoutRef.current);
+      clearTimeoutRef.current = window.setTimeout(() => {
+        setCurrentPassword("");
+        setPassword("");
+        setConfirmPassword("");
+        clearTimeoutRef.current = null;
+      }, PASSWORD_SUCCESS_CLEAR_DELAY_MS);
     } catch {
       toast.error("Unable to update password.");
     } finally {
@@ -325,32 +369,76 @@ export function SecuritySettingsForm() {
     >
       <div className="space-y-2">
         <Label htmlFor="current-password">Current Password</Label>
-        <Input
-          autoComplete="current-password"
-          disabled={isSaving}
-          id="current-password"
-          onBlur={() => validateField("currentPassword")}
-          onChange={(event) => updateField("currentPassword", event.target.value)}
-          aria-invalid={Boolean(errors.currentPassword)}
-          type="password"
-          value={currentPassword}
-        />
+        <div className="relative">
+          <Input
+            autoComplete="current-password"
+            className="pr-10"
+            disabled={isSaving}
+            id="current-password"
+            onBlur={() => validateField("currentPassword")}
+            onChange={(event) =>
+              updateField("currentPassword", event.target.value)
+            }
+            aria-invalid={Boolean(errors.currentPassword)}
+            type={getPasswordInputType(visibleFields.currentPassword)}
+            value={currentPassword}
+          />
+          <Button
+            aria-label={
+              visibleFields.currentPassword
+                ? "Hide current password"
+                : "Show current password"
+            }
+            className="absolute right-1 top-1/2 -translate-y-1/2"
+            disabled={isSaving}
+            onClick={() => togglePasswordVisibility("currentPassword")}
+            size="icon-sm"
+            type="button"
+            variant="ghost"
+          >
+            {visibleFields.currentPassword ? (
+              <EyeOff className="size-4" />
+            ) : (
+              <Eye className="size-4" />
+            )}
+          </Button>
+        </div>
         {errors.currentPassword ? (
           <p className="text-xs text-destructive">{errors.currentPassword}</p>
         ) : null}
       </div>
       <div className="space-y-2">
         <Label htmlFor="new-password">New Password</Label>
-        <Input
-          autoComplete="new-password"
-          disabled={isSaving}
-          id="new-password"
-          onBlur={() => validateField("password")}
-          onChange={(event) => updateField("password", event.target.value)}
-          aria-invalid={Boolean(errors.password)}
-          type="password"
-          value={password}
-        />
+        <div className="relative">
+          <Input
+            autoComplete="new-password"
+            className="pr-10"
+            disabled={isSaving}
+            id="new-password"
+            onBlur={() => validateField("password")}
+            onChange={(event) => updateField("password", event.target.value)}
+            aria-invalid={Boolean(errors.password)}
+            type={getPasswordInputType(visibleFields.password)}
+            value={password}
+          />
+          <Button
+            aria-label={
+              visibleFields.password ? "Hide new password" : "Show new password"
+            }
+            className="absolute right-1 top-1/2 -translate-y-1/2"
+            disabled={isSaving}
+            onClick={() => togglePasswordVisibility("password")}
+            size="icon-sm"
+            type="button"
+            variant="ghost"
+          >
+            {visibleFields.password ? (
+              <EyeOff className="size-4" />
+            ) : (
+              <Eye className="size-4" />
+            )}
+          </Button>
+        </div>
         <PasswordStrengthIndicator password={password} />
         {errors.password ? (
           <p className="text-xs text-destructive">{errors.password}</p>
@@ -358,20 +446,68 @@ export function SecuritySettingsForm() {
       </div>
       <div className="space-y-2">
         <Label htmlFor="confirm-password">Confirm New Password</Label>
-        <Input
-          autoComplete="new-password"
-          disabled={isSaving}
-          id="confirm-password"
-          onBlur={() => validateField("confirmPassword")}
-          onChange={(event) => updateField("confirmPassword", event.target.value)}
-          aria-invalid={Boolean(errors.confirmPassword)}
-          type="password"
-          value={confirmPassword}
-        />
+        <div className="relative">
+          <Input
+            autoComplete="new-password"
+            className="pr-10"
+            disabled={isSaving}
+            id="confirm-password"
+            onBlur={() => validateField("confirmPassword")}
+            onChange={(event) =>
+              updateField("confirmPassword", event.target.value)
+            }
+            aria-invalid={Boolean(errors.confirmPassword)}
+            type={getPasswordInputType(visibleFields.confirmPassword)}
+            value={confirmPassword}
+          />
+          <Button
+            aria-label={
+              visibleFields.confirmPassword
+                ? "Hide confirmation password"
+                : "Show confirmation password"
+            }
+            className="absolute right-1 top-1/2 -translate-y-1/2"
+            disabled={isSaving}
+            onClick={() => togglePasswordVisibility("confirmPassword")}
+            size="icon-sm"
+            type="button"
+            variant="ghost"
+          >
+            {visibleFields.confirmPassword ? (
+              <EyeOff className="size-4" />
+            ) : (
+              <Eye className="size-4" />
+            )}
+          </Button>
+        </div>
         {errors.confirmPassword ? (
           <p className="text-xs text-destructive">{errors.confirmPassword}</p>
         ) : null}
       </div>
+      {showSuccess ? (
+        <div
+          className="space-y-3 rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-3 text-sm"
+          role="status"
+        >
+          <p className="font-medium text-emerald-700 dark:text-emerald-300">
+            {settingsSuccessMessages.password}
+          </p>
+          <p className="text-muted-foreground">
+            {passwordChangeSuccessDetails.description}
+          </p>
+          <Button
+            disabled={otherDevicesSignedOut}
+            onClick={acknowledgeOtherDevicesSignedOut}
+            size="sm"
+            type="button"
+            variant="outline"
+          >
+            {otherDevicesSignedOut
+              ? "Other devices signed out"
+              : passwordChangeSuccessDetails.signOutOtherDevicesLabel}
+          </Button>
+        </div>
+      ) : null}
       <Button aria-busy={isSaving} disabled={isSaving} size="sm" type="submit">
         {isSaving ? <Loader2 className="size-4 animate-spin" /> : null}
         Update Password

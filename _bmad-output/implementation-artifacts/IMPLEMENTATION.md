@@ -1295,11 +1295,11 @@ rtk bun run db:studio    # Open Drizzle Studio (in another terminal)
 - [x] Tests: integration (profile save → sidebar updates)
 
 ### TASK 16.4 — Password Change UX
-- [ ] File: `src/app/(dashboard)/settings/settings-forms.tsx`
-- [ ] Add show/hide toggle on password fields (eye icon)
-- [ ] After success: show confirmation + "Sign out other devices" option
-- [ ] Delay form clear so user can read success message
-- [ ] Tests: unit (password toggle, success UX)
+- [x] File: `src/app/(dashboard)/settings/settings-forms.tsx`
+- [x] Add show/hide toggle on password fields (eye icon)
+- [x] After success: show confirmation + "Sign out other devices" option
+- [x] Delay form clear so user can read success message
+- [x] Tests: unit (password toggle, success UX)
 
 ### TASK 16.5 — Notification Persistence
 - [ ] Verify `notifications` JSON column loads correctly from DB

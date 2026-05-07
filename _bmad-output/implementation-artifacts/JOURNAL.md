@@ -5302,3 +5302,36 @@ Refreshed the dashboard server component tree after profile saves so the sidebar
 - ✅ Existing CSRF header behavior remains unchanged.
 
 **Next Task:** 16.4 — Password Change UX
+
+### 16.4 — Password Change UX
+- **Date:** 2026-05-07 23:15 GMT+7
+- **Duration:** 0h 25m
+- **Status:** ✅ Complete
+
+**What I Did:**
+Improved password-change UX with per-field show/hide toggles, a visible success confirmation, and a delayed form clear so users can read the result. Added a post-success "Sign out other devices" option that reflects the existing password-change session invalidation behavior.
+
+**Files Changed:**
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Checked off Task 16.4.
+- `src/app/(dashboard)/settings/settings-forms.tsx` — Added password visibility toggles, delayed field clearing, and success action UI.
+- `tests/unit/form-success-feedback.test.ts` — Added password input type and success UX helper coverage.
+
+**Decisions Made:**
+- Kept the delayed clear client-side with a short timeout so the success state remains visible without changing API semantics.
+- Reused the existing password update path, which already clears the stored refresh token hash, for the "other devices" UX.
+
+**Tests:**
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Targeted Unit/Integration: `rtk bun run test -- tests/unit/form-success-feedback.test.ts tests/integration/change-password-api.test.ts` — 2 files passed, 10 tests passed.
+- ✅ Unit/Integration: `rtk bun run test` — 111 files passed, 499 tests passed.
+
+**Issues Encountered:**
+- None.
+
+**Security Checks:**
+- ✅ Password fields remain masked by default and visibility toggles are explicit user actions.
+- ✅ Existing password validation and current-password verification remain unchanged.
+- ✅ No secrets, raw SQL, or `dangerouslySetInnerHTML` introduced.
+
+**Next Task:** 16.5 — Notification Persistence

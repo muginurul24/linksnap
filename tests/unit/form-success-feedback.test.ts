@@ -9,7 +9,12 @@ vi.mock("next/navigation", () => ({
 
 import { getCampaignSubmitSuccessFeedback } from "../../src/app/(dashboard)/campaigns/campaign-form";
 import { getLinkSubmitSuccessFeedback } from "../../src/app/(dashboard)/links/link-form";
-import { settingsSuccessMessages } from "../../src/app/(dashboard)/settings/settings-forms";
+import {
+  PASSWORD_SUCCESS_CLEAR_DELAY_MS,
+  getPasswordInputType,
+  passwordChangeSuccessDetails,
+  settingsSuccessMessages,
+} from "../../src/app/(dashboard)/settings/settings-forms";
 
 describe("form success feedback", () => {
   it("should redirect to links after creating a link", () => {
@@ -66,6 +71,16 @@ describe("form success feedback", () => {
       notifications: "Preferences saved",
       password: "Password changed",
       profile: "Profile updated",
+    });
+  });
+
+  it("should expose password change UX helpers", () => {
+    expect(getPasswordInputType(false)).toBe("password");
+    expect(getPasswordInputType(true)).toBe("text");
+    expect(PASSWORD_SUCCESS_CLEAR_DELAY_MS).toBeGreaterThanOrEqual(2000);
+    expect(passwordChangeSuccessDetails).toEqual({
+      description: "Your password was changed successfully.",
+      signOutOtherDevicesLabel: "Sign out other devices",
     });
   });
 });
