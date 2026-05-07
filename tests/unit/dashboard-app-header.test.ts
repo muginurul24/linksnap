@@ -3,7 +3,9 @@ import { getDashboardBreadcrumbs } from "../../src/components/dashboard/app-head
 import {
   buildLinksSearchHref,
   getLinksSearchQuery,
+  LINKS_SEARCH_DEBOUNCE_MS,
   LINKS_SEARCH_MAX_LENGTH,
+  shouldNavigateLinksSearch,
 } from "../../src/lib/links/search";
 
 describe("dashboard app header", () => {
@@ -32,6 +34,10 @@ describe("dashboard app header", () => {
     );
   });
 
+  it("should use a 300ms debounce for dashboard search input", () => {
+    expect(LINKS_SEARCH_DEBOUNCE_MS).toBe(300);
+  });
+
   it("should build an unfiltered links href when query is empty", () => {
     expect(buildLinksSearchHref("   ")).toBe("/links");
   });
@@ -41,5 +47,15 @@ describe("dashboard app header", () => {
 
     expect(getLinksSearchQuery(tooLong)).toBeUndefined();
     expect(buildLinksSearchHref(tooLong)).toBe("/links");
+  });
+
+  it("should skip search navigation when the normalized href is unchanged", () => {
+    expect(shouldNavigateLinksSearch("/links?search=promo+code", " promo code ")).toBe(
+      false,
+    );
+  });
+
+  it("should request search navigation when the normalized href changes", () => {
+    expect(shouldNavigateLinksSearch("/links?search=old", "new")).toBe(true);
   });
 });
