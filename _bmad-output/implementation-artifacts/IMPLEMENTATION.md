@@ -401,11 +401,11 @@ src/
 ## ⚫ Phase 7: Split Testing (3 tasks)
 
 ### TASK 7.1 — Split Test API
-- File: `src/app/api/v1/links/[id]/split-test/route.ts`
-- POST: create/update split test `{ variants: [{ destinationUrl, weight }] }`
-- GET: get split test config + performance data
-- DELETE: remove split test
-- Auth: required, ownership check
+- [x] File: `src/app/api/v1/links/[id]/split-test/route.ts`
+- [x] POST: create/update split test `{ variants: [{ destinationUrl, weight }] }`
+- [x] GET: get split test config + performance data
+- [x] DELETE: remove split test
+- [x] Auth: required, ownership check
 
 ### TASK 7.2 — Split Test Router
 - Integrate into redirect handler (`[slug]/page.tsx`)

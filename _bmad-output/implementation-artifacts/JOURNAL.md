@@ -1910,3 +1910,43 @@ Completed campaign test coverage across unit, integration, and E2E layers. The n
 - ✅ No secrets, plaintext IP storage, raw SQL, or sensitive logging added.
 
 **Next Task:** 7.1 — Split Test API
+
+### 7.1 — Split Test API
+- **Date:** 2026-05-07 07:38 GMT+7
+- **Duration:** 0h 30m
+- **Status:** ✅ Complete
+
+**What I Did:**
+Implemented authenticated split test management for links. Users can create or update variants with weights, fetch split test config and performance counters, and delete a split test for an owned link.
+
+**Files Changed:**
+- `src/app/api/v1/links/[id]/split-test/route.ts` — Added GET, POST, and DELETE handlers with auth, ownership checks, validation, rate limiting, and redirect cache invalidation.
+- `src/lib/db/queries/split-tests.ts` — Added split test lookup, upsert, variant replacement, and delete query helpers.
+- `src/lib/validations/split-test.ts` — Added strict Zod validation for split test variants and safe destination URLs.
+- `tests/integration/split-test-api.test.ts` — Added API coverage for create/update, get, delete, IDOR, validation, and rate limits.
+- `tests/unit/split-test-validation.test.ts` — Added split test validation coverage.
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Checked off Task 7.1.
+- `_bmad-output/implementation-artifacts/JOURNAL.md` — Recorded this completion entry.
+
+**Decisions Made:**
+- Split test POST replaces the full variant set for a link, matching the create/update API shape and avoiding partial variant drift.
+- Split test changes invalidate the redirect cache for the link slug so the router can pick up future split-test behavior.
+- Variant destinations reuse the existing safe URL rules to block localhost/private-network targets.
+
+**Tests:**
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Unit/Integration: `rtk bun run test` — 49 files passed, 230 tests passed.
+- ✅ Build: `rtk bun run build` — Passed; `/api/v1/links/[id]/split-test` is registered.
+
+**Issues Encountered:**
+- None.
+
+**Security Checks:**
+- ✅ Link ID and split test body are validated with Zod.
+- ✅ Auth required for all split test endpoints.
+- ✅ Link ownership is verified before reading or mutating split tests.
+- ✅ API rate limiting uses the existing plan-based limits.
+- ✅ No raw SQL, secrets, plaintext IP storage, or sensitive logging added.
+
+**Next Task:** 7.2 — Split Test Router
