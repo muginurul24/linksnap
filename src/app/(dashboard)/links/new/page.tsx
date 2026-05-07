@@ -2,7 +2,6 @@ import { redirect } from "next/navigation";
 import { BackNavigationLink } from "@/components/dashboard/back-navigation-link";
 import { auth } from "@/lib/auth";
 import { countLinkPagesByUserId } from "@/lib/db/queries/links";
-import { findBillingUserById } from "@/lib/db/queries/payments";
 import { CreateLinkForm } from "../link-form";
 
 type SessionWithUserId = {
@@ -20,11 +19,7 @@ export default async function NewLinkPage() {
   const userId = getSessionUserId(session);
   if (!userId) redirect("/login?callbackUrl=/links/new");
 
-  const [billingUser, linkPageCount] = await Promise.all([
-    findBillingUserById(userId),
-    countLinkPagesByUserId(userId),
-  ]);
-  const userPlan = billingUser?.plan ?? "FREE";
+  const linkPageCount = await countLinkPagesByUserId(userId);
 
   return (
     <>
@@ -38,7 +33,7 @@ export default async function NewLinkPage() {
         </div>
       </div>
 
-      <CreateLinkForm linkPageCount={linkPageCount} userPlan={userPlan} />
+      <CreateLinkForm linkPageCount={linkPageCount} />
     </>
   );
 }

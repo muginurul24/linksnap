@@ -8,9 +8,9 @@ import {
 
 describe("app sidebar user display", () => {
   it("should render the matching plan label for each user plan", () => {
-    expect(getSidebarDisplayUser({ plan: "FREE" }).planLabel).toBe("Free Plan");
-    expect(getSidebarDisplayUser({ plan: "PRO" }).planLabel).toBe("Pro Plan");
-    expect(getSidebarDisplayUser({ plan: "BUSINESS" }).planLabel).toBe(
+    expect(getSidebarDisplayUser({}, "FREE").planLabel).toBe("Free Plan");
+    expect(getSidebarDisplayUser({}, "PRO").planLabel).toBe("Pro Plan");
+    expect(getSidebarDisplayUser({}, "BUSINESS").planLabel).toBe(
       "Business Plan",
     );
   });
@@ -20,8 +20,7 @@ describe("app sidebar user display", () => {
       email: "rafi@example.com",
       image: "https://example.com/avatar.png",
       name: "Rafi Firmansyah",
-      plan: "PRO",
-    })).toEqual({
+    }, "PRO")).toEqual({
       avatarFallback: "RF",
       avatarUrl: "https://example.com/avatar.png",
       email: "rafi@example.com",
@@ -31,7 +30,7 @@ describe("app sidebar user display", () => {
   });
 
   it("should fall back when account identity is missing", () => {
-    expect(getSidebarDisplayUser({ plan: "FREE" })).toEqual({
+    expect(getSidebarDisplayUser({}, "FREE")).toEqual({
       avatarFallback: "U",
       avatarUrl: undefined,
       email: "user@email.com",

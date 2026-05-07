@@ -27,6 +27,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { buildShortUrlPreview } from "@/lib/links/preview";
+import { usePlan } from "@/lib/auth/plan-context";
 import {
   clearFieldError as clearFieldErrorValue,
   fieldErrorFromParseResult,
@@ -136,7 +137,6 @@ export type EditableLinkInitialData = {
 type LinkFormProps = {
   initialLink?: EditableLinkInitialData;
   linkPageCount?: number;
-  userPlan: UserPlan;
 };
 
 const CUSTOM_SLUG_UPGRADE_MESSAGE =
@@ -278,9 +278,9 @@ export function getLinkSubmitSuccessFeedback({
 export function CreateLinkForm({
   initialLink,
   linkPageCount = 0,
-  userPlan,
 }: LinkFormProps) {
   const router = useRouter();
+  const userPlan = usePlan();
   const isEditMode = initialLink !== undefined;
   const initialLinkPage = initialLink?.linkPage;
   const initialSmartRules = initialLink?.smartRules ?? [];

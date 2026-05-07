@@ -5,6 +5,7 @@ import { getCampaignCreateQuotaState } from "../../src/app/(dashboard)/campaigns
 import { getLinkCreateQuotaState } from "../../src/app/(dashboard)/links/link-plan-gates";
 import { getQrDownloadQuotaState } from "../../src/app/(dashboard)/qr/qr-plan-gates";
 import { RuleBuilder } from "../../src/components/smart-rules/rule-builder";
+import { PlanProvider } from "../../src/lib/auth/plan-context";
 import type { RuleBuilderValue } from "../../src/lib/rules/rule-builder";
 
 function ruleBuilderValue(ruleCount: number): RuleBuilderValue {
@@ -29,7 +30,9 @@ function ruleBuilderValue(ruleCount: number): RuleBuilderValue {
 describe("dashboard plan gates", () => {
   it("should lock API key creation for free users with PlanGate", () => {
     const markup = renderToStaticMarkup(
-      <ApiKeysPanel initialApiKeys={[]} plan="FREE" />,
+      <PlanProvider userPlan="FREE">
+        <ApiKeysPanel initialApiKeys={[]} />
+      </PlanProvider>,
     );
 
     expect(markup).toContain("API key access requires Pro or Business plan.");
@@ -40,7 +43,9 @@ describe("dashboard plan gates", () => {
 
   it("should render API key creation normally for paid users", () => {
     const markup = renderToStaticMarkup(
-      <ApiKeysPanel initialApiKeys={[]} plan="PRO" />,
+      <PlanProvider userPlan="PRO">
+        <ApiKeysPanel initialApiKeys={[]} />
+      </PlanProvider>,
     );
 
     expect(markup).toContain("Create Key");

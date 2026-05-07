@@ -17,6 +17,7 @@ import {
   LayoutDashboard, Link2, Globe, Megaphone, BarChart3, Settings, QrCode, Zap,
   LogOut, User, CreditCard, Sparkles, BookOpen,
 } from "lucide-react";
+import { usePlan } from "@/lib/auth/plan-context";
 import type { UserPlan } from "@/lib/links/limits";
 import { getPlanDefinition } from "@/lib/plans/definitions";
 
@@ -24,7 +25,6 @@ export type AppSidebarUser = {
   email?: string | null;
   image?: string | null;
   name?: string | null;
-  plan: UserPlan;
 };
 
 export type SidebarDisplayUser = {
@@ -67,7 +67,10 @@ function getAvatarFallback(name: string, email: string): string {
   return initials || "U";
 }
 
-export function getSidebarDisplayUser(user: AppSidebarUser): SidebarDisplayUser {
+export function getSidebarDisplayUser(
+  user: AppSidebarUser,
+  plan: UserPlan,
+): SidebarDisplayUser {
   const email = normalizeText(user.email) ?? "user@email.com";
   const name = normalizeText(user.name) ?? "User";
 
@@ -76,7 +79,7 @@ export function getSidebarDisplayUser(user: AppSidebarUser): SidebarDisplayUser 
     avatarUrl: normalizeText(user.image) ?? undefined,
     email,
     name,
-    planLabel: `${getPlanDefinition(user.plan).name} Plan`,
+    planLabel: `${getPlanDefinition(plan).name} Plan`,
   };
 }
 
@@ -97,8 +100,9 @@ export function shouldShowSidebarUpgradeCard(plan: UserPlan): boolean {
 
 export function AppSidebar({ user }: { user: AppSidebarUser }) {
   const pathname = usePathname();
-  const displayUser = getSidebarDisplayUser(user);
-  const mainNavItems = getSidebarMainNavItems(user.plan);
+  const userPlan = usePlan();
+  const displayUser = getSidebarDisplayUser(user, userPlan);
+  const mainNavItems = getSidebarMainNavItems(userPlan);
 
   return (
     <Sidebar collapsible="icon" variant="sidebar">
@@ -161,7 +165,7 @@ export function AppSidebar({ user }: { user: AppSidebarUser }) {
           </SidebarGroupContent>
         </SidebarGroup>
 
-        {shouldShowSidebarUpgradeCard(user.plan) && (
+        {shouldShowSidebarUpgradeCard(userPlan) && (
           <SidebarGroup>
             <SidebarGroupContent>
               <div className="rounded-lg border bg-card p-3 text-card-foreground shadow-sm group-data-[collapsible=icon]:hidden">

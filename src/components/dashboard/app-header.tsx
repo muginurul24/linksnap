@@ -15,6 +15,8 @@ import { Search, Sun, Moon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useTheme } from "next-themes";
+import { usePlan } from "@/lib/auth/plan-context";
+import { getPlanDefinition } from "@/lib/plans/definitions";
 import {
   type ChangeEvent,
   type FormEvent,
@@ -91,6 +93,8 @@ export function AppHeader() {
   const pathname = usePathname();
   const router = useRouter();
   const { theme, setTheme } = useTheme();
+  const userPlan = usePlan();
+  const planLabel = getPlanDefinition(userPlan).name;
   const [searchValue, setSearchValue] = useState("");
   const hasEditedSearch = useRef(false);
   const mounted = useSyncExternalStore(
@@ -164,6 +168,9 @@ export function AppHeader() {
         </BreadcrumbList>
       </Breadcrumb>
       <div className="ml-auto flex items-center gap-2">
+        <span className="hidden rounded-md border px-2 py-1 text-xs font-medium text-muted-foreground sm:inline-flex">
+          {planLabel}
+        </span>
         <form className="relative hidden md:block" onSubmit={handleSearchSubmit}>
           <Search className="absolute left-2.5 top-2.5 size-4 text-muted-foreground" />
           <Input

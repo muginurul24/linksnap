@@ -5129,3 +5129,49 @@ Applied upfront PlanGate and quota gates across paid/gated dashboard features. C
 - ✅ Existing CSRF headers and authenticated dashboard flows remain unchanged.
 
 **Next Task:** 15.14 — Pass userPlan Through Dashboard Hierarchy
+
+### 15.14 — Pass userPlan Through Dashboard Hierarchy
+- **Date:** 2026-05-07 22:19 GMT+7
+- **Duration:** 0h 35m
+- **Status:** ✅ Complete
+
+**What I Did:**
+Added a dashboard plan context and wired it through `DashboardLayout` so client dashboard components consume the current plan from one provider instead of receiving repeated plan props. Refactored the sidebar, header, link form, and API keys panel to read from the context.
+
+**Files Changed:**
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Checked off Task 15.14.
+- `src/lib/auth/plan-context.ts` — Added `PlanProvider` and `usePlan`.
+- `src/app/(dashboard)/layout.tsx` — Wrapped the dashboard shell in `PlanProvider`.
+- `src/components/dashboard/app-sidebar.tsx` — Read plan from context and removed plan from `AppSidebarUser`.
+- `src/components/dashboard/app-header.tsx` — Read plan from context and surfaced the current plan label.
+- `src/app/(dashboard)/links/link-form.tsx` — Read plan from context instead of a `userPlan` prop.
+- `src/app/(dashboard)/links/new/page.tsx` — Removed duplicate billing lookup and stopped passing `userPlan`.
+- `src/app/(dashboard)/links/[slug]/edit/page.tsx` — Removed duplicate billing lookup and stopped passing `userPlan`.
+- `src/app/(dashboard)/settings/api-keys-panel.tsx` — Read plan from context instead of a `plan` prop.
+- `src/app/(dashboard)/settings/page.tsx` — Stopped passing plan into `ApiKeysPanel`.
+- `tests/unit/plan-context.test.tsx` — Added provider/hook coverage.
+- `tests/unit/app-sidebar.test.ts` — Updated sidebar display helper tests for context-driven plan input.
+- `tests/unit/link-form-plan-gates.test.tsx` — Wrapped link form tests in `PlanProvider`.
+- `tests/unit/dashboard-plan-gates.test.tsx` — Wrapped API key panel tests in `PlanProvider`.
+
+**Decisions Made:**
+- Kept server-side quota pages computing `userPlan` directly because client context cannot be consumed in server components.
+- Removed duplicate billing lookups from link create/edit pages because the client form can now read the layout-provided plan.
+- Added a compact plan badge in the header so `AppHeader` consumes the same hierarchy value and users can see their current tier.
+
+**Tests:**
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Targeted Unit: `rtk bun run test -- tests/unit/plan-context.test.tsx tests/unit/app-sidebar.test.ts tests/unit/dashboard-app-header.test.ts tests/unit/link-form-plan-gates.test.tsx tests/unit/dashboard-plan-gates.test.tsx` — 5 files passed, 31 tests passed.
+- ✅ Unit/Integration: `rtk bun run test` — 107 files passed, 487 tests passed.
+- ✅ Full E2E: `rtk bun run test:e2e` — 16 tests passed.
+
+**Issues Encountered:**
+- Server components still need explicit plan queries for quota rendering → Kept those server-side and limited context refactor to client dashboard components.
+
+**Security Checks:**
+- ✅ Plan context only carries the existing plan enum and does not expose secrets.
+- ✅ API-side plan, quota, ownership, and rate-limit enforcement remains unchanged.
+- ✅ No raw SQL or `dangerouslySetInnerHTML` introduced.
+
+**Next Task:** No remaining Phase 15 tasks.

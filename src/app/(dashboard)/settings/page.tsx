@@ -164,7 +164,6 @@ export default async function SettingsPage({ searchParams }: SettingsPageProps) 
             <CardContent>
               <ApiKeysPanel
                 initialApiKeys={apiKeys.map((apiKey) => toApiKeyPanelItem(apiKey))}
-                plan={plan}
               />
             </CardContent>
           </Card>

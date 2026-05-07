@@ -5,7 +5,6 @@ import {
   countLinkPagesByUserId,
   findEditableLinkBySlugForUser,
 } from "@/lib/db/queries/links";
-import { findBillingUserById } from "@/lib/db/queries/payments";
 import { linkSlugParamsSchema } from "@/lib/validations/link";
 import {
   CreateLinkForm,
@@ -50,13 +49,11 @@ export default async function EditLinkPage({ params }: EditLinkPageProps) {
     redirect(`/login?callbackUrl=/links/${parsedParams.data.slug}/edit`);
   }
 
-  const [link, billingUser, linkPageCount] = await Promise.all([
+  const [link, linkPageCount] = await Promise.all([
     findEditableLinkBySlugForUser(parsedParams.data.slug, userId),
-    findBillingUserById(userId),
     countLinkPagesByUserId(userId),
   ]);
   const initialLink = toInitialLink(link);
-  const userPlan = billingUser?.plan ?? "FREE";
 
   return (
     <>
@@ -73,7 +70,6 @@ export default async function EditLinkPage({ params }: EditLinkPageProps) {
       <CreateLinkForm
         initialLink={initialLink}
         linkPageCount={linkPageCount}
-        userPlan={userPlan}
       />
     </>
   );

@@ -16,6 +16,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { usePlan } from "@/lib/auth/plan-context";
 import type { UserPlan } from "@/lib/links/limits";
 
 export type ApiKeyPanelItem = {
@@ -28,7 +29,6 @@ export type ApiKeyPanelItem = {
 
 type ApiKeysPanelProps = {
   initialApiKeys: ApiKeyPanelItem[];
-  plan: UserPlan;
 };
 
 type ApiKeyCreateResponse =
@@ -80,7 +80,8 @@ async function copyToClipboard(value: string): Promise<void> {
   toast.success("Copied.");
 }
 
-export function ApiKeysPanel({ initialApiKeys, plan }: ApiKeysPanelProps) {
+export function ApiKeysPanel({ initialApiKeys }: ApiKeysPanelProps) {
+  const plan = usePlan();
   const [apiKeys, setApiKeys] = useState(initialApiKeys);
   const [createdKey, setCreatedKey] = useState<{
     key: string;

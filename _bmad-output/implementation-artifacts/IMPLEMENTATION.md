@@ -1227,12 +1227,12 @@ rtk bun run db:studio    # Open Drizzle Studio (in another terminal)
 - [x] Tests: unit (each gated control renders correctly per plan), integration (full flow with FREE user hitting gates)
 
 ### TASK 15.14 — Pass userPlan Through Dashboard Hierarchy
-- [ ] `DashboardLayout` already has `billingUser.plan` — pass to `AppSidebar` (✅ done) and `AppHeader`
-- [ ] Create `src/lib/auth/plan-context.ts` — React Context for `UserPlan` (avoids prop drilling)
-- [ ] Wrap dashboard children in `PlanProvider` with `userPlan` value
-- [ ] All dashboard components read plan from context instead of props
-- [ ] Refactor existing components that take `plan` prop to use context
-- [ ] Tests: unit (context provides correct plan value)
+- [x] `DashboardLayout` already has `billingUser.plan` — pass to `AppSidebar` (✅ done) and `AppHeader`
+- [x] Create `src/lib/auth/plan-context.ts` — React Context for `UserPlan` (avoids prop drilling)
+- [x] Wrap dashboard children in `PlanProvider` with `userPlan` value
+- [x] All dashboard components read plan from context instead of props
+- [x] Refactor existing components that take `plan` prop to use context
+- [x] Tests: unit (context provides correct plan value)
 
 ---
 
