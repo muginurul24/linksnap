@@ -1,0 +1,19 @@
+import type { Metadata } from "next";
+import { createPublicMetadata } from "@/lib/seo/metadata";
+import { ForgotPasswordForm } from "./forgot-password-form";
+
+const description =
+  "Request a secure LinkSnap password reset link by email.";
+
+export const metadata: Metadata = {
+  ...createPublicMetadata({
+    title: "Reset password",
+    description,
+    path: "/forgot-password",
+    noIndex: true,
+  }),
+};
+
+export default function ForgotPasswordPage() {
+  return <ForgotPasswordForm />;
+}

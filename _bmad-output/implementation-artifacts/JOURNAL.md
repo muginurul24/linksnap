@@ -2760,3 +2760,113 @@ behavior.
 - ✅ `.env` remains untracked and unchanged.
 
 **Next Task:** Backup strategy verification or Redis cache warming, depending on production platform access
+
+---
+
+### 12.0 — Claw Kun Product Audit
+- **Date:** 2026-05-07 13:00 GMT+7
+- **Duration:** Audit session
+- **Status:** ⚠️ 10 issues found, 10 tasks created
+
+**What I Did:**
+Claw Kun conducted a full product audit across all pages, auth flows, pricing, dashboard, and plan enforcement. 10 findings documented as Phase 12 tasks in IMPLEMENTATION.md.
+
+**Critical Issues Found:**
+- 🔴 Forgot password link is dead (`/forgot-password` route does not exist)
+- 🔴 Sign Out button in sidebar has no handler — users cannot log out
+- 🔴 Dashboard Overview uses 100% hardcoded mock data, no real DB queries
+
+**UX Issues Found:**
+- 🟡 Plan features inconsistent across 3 pages (landing, pricing, billing)
+- 🟡 Sidebar shows hardcoded "Free Plan" and "Rafi / rafi@email.com"
+- 🟡 Breadcrumb "Dashboard" links to `/` instead of `/dashboard`
+- 🟡 Search bar and bell icon are decorative (no handlers)
+- 🟡 Campaign and QR quotas not enforced in `limits.ts`
+- 🟡 API rate limits in marketing don't match actual `limits.ts` values
+- 🟡 Landing page hero stats are hardcoded ("308 redirects")
+
+**Tasks Created:**
+Phase 12 in IMPLEMENTATION.md — 10 tasks covering all findings. Priority order: 12.1 (forgot password) → 12.2 (sign out) → 12.3 (dashboard data) → 12.4 (unify plans) → 12.5 (sidebar) → 12.6 (app bar) → 12.7 (quotas) → 12.8 (hero stats) → 12.9 (rate limits) → 12.10 (dead link guard)
+
+**Decisions Made:**
+- Created shared `src/lib/plans/definitions.ts` as single source of truth for plan data (Task 12.4)
+- Forgot password gets full implementation, not just link removal (Task 12.1)
+- Dashboard must connect to real data — mock data is not acceptable for production (Task 12.3)
+
+**Decisions Made:**
+- Created shared `src/lib/plans/definitions.ts` as single source of truth for plan data (Task 12.4)
+- Forgot password gets full implementation, not just link removal (Task 12.1)
+- Dashboard must connect to real data — mock data is not acceptable for production (Task 12.3)
+
+**Second Pass Findings (12.11–12.22):**
+- 🔴 Settings active route bug: `/settings/billing` incorrectly highlights "Settings" nav item
+- 🔴 No `/campaigns/new` route — linked from campaigns page, returns 404
+- 🔴 No API docs page for paid users — empty `/docs/api` missing
+- 🔴 No API key management — Settings tab is a gate, not functional
+- 🟡 Settings tabs all mock: profile save, change password, 2FA, API keys — all non-functional shells
+- 🟡 Link Pages dashboard all mock data
+- 🟡 Campaigns dashboard all mock data, plus dead link to `/campaigns/new`
+- 🟡 Analytics dashboard all empty mock data
+- 🟡 No post-payment checkout pages — `/checkout/success` and `/checkout/cancel` missing
+- 🟡 No individual blog post pages — `/blog/[slug]` route missing
+- 🟡 No Terms of Service or Privacy Policy pages
+- 🟡 Midtrans redirect URLs not configured in Snap transaction payload
+- 🟡 Search input in app header is decorative (no handler)
+
+**Next Task:** 12.1 — Forgot Password Flow
+
+### 12.1 — Forgot Password Flow
+- **Date:** 2026-05-07 13:16 GMT+7
+- **Duration:** 0h 55m
+- **Status:** ✅ Complete
+
+**What I Did:**
+Implemented the full forgot/reset password flow, including reset-token storage,
+email delivery, client forms, API routes, validation, rate limiting, and tests.
+Also fixed the reported "Upgrade to Pro" checkout failure by adding the required
+`X-Requested-With` header to the payment creation request.
+
+**Files Changed:**
+- `src/lib/db/schema.ts` — Added `reset_tokens` table with hashed token storage.
+- `src/lib/auth/reset-token.ts` — Added reset token generation, hashing, expiry helpers.
+- `src/lib/email/auth-emails.ts` — Added password reset email delivery and file-delivery support.
+- `src/lib/validations/auth.ts` — Added forgot/reset password validation schemas.
+- `src/app/api/v1/auth/forgot-password/route.ts` — Added forgot password API route.
+- `src/app/api/v1/auth/reset-password/route.ts` — Added reset password API route.
+- `src/app/(marketing)/forgot-password/*` — Added forgot password page and form.
+- `src/app/(marketing)/reset-password/*` — Added reset password page and form.
+- `src/app/(dashboard)/settings/billing/upgrade-button.tsx` — Added API guard header for checkout.
+- `tests/unit/reset-token.test.ts` — Added reset token helper tests.
+- `tests/integration/forgot-reset-password-flow.test.ts` — Added forgot → reset → login flow tests.
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Checked off Task 12.1 and skipped 12.10 quick fix because the full flow is complete.
+- `_bmad-output/implementation-artifacts/JOURNAL.md` — Recorded this completion entry.
+
+**Decisions Made:**
+- Stored only SHA-256 reset token hashes in the database, not raw reset tokens.
+- Returned a generic success response for unknown forgot-password emails to avoid account enumeration.
+- Invalidated prior unused reset tokens for a user before issuing a new reset link.
+- Kept the checkout header fix in this task because it unblocks the reported production payment UX bug and aligns with the API mutation guard.
+
+**Tests:**
+- ✅ Targeted: `rtk bun run test -- tests/unit/reset-token.test.ts tests/unit/register-validation.test.ts tests/unit/login-validation.test.ts tests/integration/forgot-reset-password-flow.test.ts tests/integration/create-payment-api.test.ts` — 5 files passed, 19 tests passed.
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Unit/Integration: `rtk bun run test` — 68 files passed, 302 tests passed.
+- ✅ Build: `rtk bun run build` — Passed.
+- ✅ Database: `rtk bun run db:push` — Applied schema changes.
+- ✅ Browser smoke: `/forgot-password` and `/reset-password?token=...` rendered locally with no browser errors or warnings.
+
+**Issues Encountered:**
+- Pull with rebase was blocked by uncommitted Phase 12 audit docs, so I preserved those local Claw Kun changes and continued from them.
+- The local `Button` component does not support `asChild`, so the reset success CTA uses `buttonVariants()` on a `Link`.
+- Browser smoke surfaced a password-manager accessibility warning, resolved by adding a hidden `username` autocomplete field to the reset form.
+
+**Security Checks:**
+- ✅ Reset tokens are generated with cryptographic randomness and stored hashed.
+- ✅ Forgot password response does not reveal whether an account exists.
+- ✅ Forgot password is rate limited at 3 requests/email/hour.
+- ✅ Reset password invalidates the consumed token and clears `refreshTokenHash`.
+- ✅ Mutating forgot/reset/checkout fetches include `X-Requested-With`.
+- ✅ No secrets were printed or committed.
+
+**Next Task:** 12.2 — Fix Sign Out

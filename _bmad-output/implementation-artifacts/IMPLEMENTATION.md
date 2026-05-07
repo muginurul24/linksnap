@@ -649,6 +649,95 @@ For EVERY interactive component, implement these states:
 
 ---
 
+---
+
+## 🔴 Phase 12: Post-Audit Fixes (Claw Kun Audit — 2026-05-07)
+
+> **Source:** Claw Kun product audit. Fix critical UX bugs, unify pricing, connect dashboard to real data, and add missing enforcement.
+
+### TASK 12.1 — Forgot Password Flow
+- [x] Create `src/app/(marketing)/forgot-password/page.tsx` — email input form
+- [x] Create `src/app/api/v1/auth/forgot-password/route.ts` — POST: accept email, generate reset token (1-hour expiry), send email via Resend
+- [x] Create `src/app/(marketing)/reset-password/page.tsx` — accept `?token=` query param, new password + confirm password form
+- [x] Create `src/app/api/v1/auth/reset-password/route.ts` — POST: validate token, update password hash, invalidate token
+- [x] Add `resetTokens` table to `src/lib/db/schema.ts` (id, userId, token, expiresAt, usedAt)
+- [x] Run `rtk bun run db:push`
+- [x] Rate limit: 3 requests/email/hour
+- [x] Tests: unit (token generation/expiry), integration (forgot → reset → login)
+
+### TASK 12.2 — Fix Sign Out
+- [ ] File: `src/components/dashboard/app-sidebar.tsx`
+- [ ] Import `signOut` from `@/lib/auth`
+- [ ] Add `onClick={() => signOut({ callbackUrl: "/" })}` to the "Sign Out" `DropdownMenuItem`
+- [ ] Verify: clicking Sign Out redirects to landing page, session cleared
+
+### TASK 12.3 — Connect Dashboard Overview to Real Data
+- [ ] File: `src/app/(dashboard)/dashboard/page.tsx`
+- [ ] Replace ALL hardcoded mock data with real DB queries:
+  - Stats cards: query total links count, today's clicks (from `clickEvents`), active campaigns count, QR scans
+  - Click trend chart: query daily click counts for last 7 days from `clickEvents`
+  - Top countries chart: query top 5 countries by click count from `clickEvents`
+  - Recent links table: query latest 5 links with click counts from `links` + `clickEvents`
+- [ ] Make page `async` server component
+- [ ] Add empty state when user has 0 links (show "Create your first link" CTA)
+- [ ] Add loading state via `loading.tsx` (already exists)
+- [ ] Tests: unit (data transformation), integration (dashboard API response)
+
+### TASK 12.4 — Unify Plan Definitions (Single Source of Truth)
+- [ ] Create `src/lib/plans/definitions.ts` — export a single `PLANS` constant array with all plan metadata (name, price, period, description, features[], limits, highlighted, cta)
+- [ ] `features` must be an exhaustive list of ALL features per plan, matching actual `limits.ts` values
+- [ ] Refactor `src/components/landing/landing-page.tsx` — use `PLANS` instead of inline definition
+- [ ] Refactor `src/components/landing/pricing-page.tsx` — use `PLANS` instead of inline definition
+- [ ] Refactor `src/app/(dashboard)/settings/billing/page.tsx` — use `PLANS` instead of inline definition
+- [ ] Verify: all 3 pages show identical features, prices, and limits
+- [ ] Tests: unit (plan data integrity — no missing fields, prices match limits)
+
+### TASK 12.5 — Fix Sidebar Dynamic Data
+- [ ] File: `src/components/dashboard/app-sidebar.tsx`
+- [ ] Make sidebar a server component (or accept session as prop)
+- [ ] Replace hardcoded "Free Plan" with actual plan name from user session
+- [ ] Replace hardcoded "Rafi" + "rafi@email.com" with `session.user.name` + `session.user.email`
+- [ ] Fallback: show "User" and "user@email.com" as avatar fallback if no name
+- [ ] Tests: unit (sidebar renders correct plan label per plan type)
+
+### TASK 12.6 — Fix Dashboard App Bar Issues
+- [ ] File: `src/components/dashboard/app-header.tsx`
+- [ ] Fix breadcrumb "Dashboard" link: change `href: "/"` → `href: "/dashboard"`
+- [ ] Either implement search functionality (filter links by slug/destination) or remove the search input
+- [ ] Either wire bell icon to a notifications dropdown or remove it
+- [ ] Tests: update breadcrumb test expectations
+
+### TASK 12.7 — Add Missing Quota Enforcement
+- [ ] File: `src/lib/links/limits.ts`
+- [ ] Add `CAMPAIGN_QUOTAS` — FREE: 1, PRO: 10, BUSINESS: Infinity
+- [ ] Add `QR_QUOTAS` — FREE: 10, PRO: 100, BUSINESS: 500
+- [ ] Add `getCampaignQuota(plan)` and `getQrQuota(plan)` functions
+- [ ] Add `hasReachedCampaignQuota(plan, count)` and `hasReachedQrQuota(plan, count)`
+- [ ] Enforce campaign quota in `POST /api/v1/campaigns`
+- [ ] Enforce QR quota in `POST /api/v1/qr/[slug]` (or relevant create endpoint)
+- [ ] Tests: unit (quota boundary checks), integration (quota enforcement in API)
+
+### TASK 12.8 — Landing Page Hero Stats
+- [ ] File: `src/components/landing/landing-page.tsx`
+- [ ] Either make the hero component `async` and query real aggregate stats from DB
+- [ ] Or keep as static but update to realistic numbers (avoid pre-launch inflation like "1M+ redirects")
+- [ ] Replace "308" redirect count with a meaningful feature-based stat
+- [ ] Tests: if dynamic, integration test the stats query
+
+### TASK 12.9 — API Rate Limit Documentation Fix
+- [ ] File: `src/lib/plans/definitions.ts` (created in 12.4)
+- [ ] Document actual API rate limits: FREE: 30/min, PRO: 60/min, BUSINESS: 120/min
+- [ ] Update all plan feature lists to show correct rate limit numbers
+- [ ] Or adjust `limits.ts` to match marketed numbers — pick one direction and be consistent
+- [ ] Tests: unit (plan definitions match limits.ts values)
+
+### TASK 12.10 — Fix Forgot Password Dead Link (Quick Fix)
+- [ ] If 12.1 is deferred: temporarily remove the "Forgot password?" link from `login-form.tsx`
+- [ ] Add a comment: `{/* TODO: Implement forgot password flow — see Task 12.1 */}`
+- [x] If 12.1 is done first: skip this task
+
+---
+
 ## 🚀 Ready to Start?
 
 ```bash
@@ -657,9 +746,136 @@ rtk bun run dev          # Start development
 rtk bun run db:studio    # Open Drizzle Studio (in another terminal)
 ```
 
-**Priority order:** Phase 0 → Phase 1 → Phase 2 → Phase 3 → Phase 5 → Phase 8 → Phase 4 → Phase 6 → Phase 7 → Phase 9 → Phase 10
+### TASK 12.11 — Fix Sidebar Active Route for Settings
+- [ ] File: `src/components/dashboard/app-sidebar.tsx`
+- [ ] The `isActive` function uses `pathname.startsWith(url)` for all routes
+- [ ] Bug: when on `/settings/billing`, both "Settings" AND "Billing" highlight because `/settings/billing` starts with `/settings`
+- [ ] Fix: add special case like dashboard: `if (url === "/settings") return pathname === "/settings"`
+- [ ] This ensures `/settings/billing` only highlights "Billing", not "Settings"
+- [ ] Tests: unit (sidebar active state for `/settings` vs `/settings/billing`)
 
-**Estimated total:** 54 tasks across 10 phases
+### TASK 12.12 — API Documentation Page (Paid Users)
+- [ ] Create `src/app/(dashboard)/docs/page.tsx` — API reference page
+- [ ] Gate access: redirect FREE users to `/settings/billing` with upgrade prompt
+- [ ] Content: list all `/api/v1/*` endpoints with method, path, auth required, rate limit, request/response examples
+- [ ] Sections: Authentication (API keys), Links API, Link Pages API, Campaigns API, QR API, Analytics API, Smart Rules API, Payments API
+- [ ] Show user's API key(s) with copy button (reuse from settings API keys tab)
+- [ ] Add sidebar nav item: "API Docs" with `BookOpen` icon, shown only for PRO/BUSINESS
+- [ ] Create `src/app/api/v1/docs/route.ts` — GET: return OpenAPI JSON spec
+- [ ] Tests: unit (docs page gating), integration (OpenAPI spec validity)
+
+### TASK 12.13 — API Keys Management (Settings Tab)
+- [ ] File: `src/app/(dashboard)/settings/page.tsx` — "API Keys" tab
+- [ ] Replace mock "Upgrade to Pro" gate with real API key management for PRO/BUSINESS
+- [ ] Add `apiKeys` table to `src/lib/db/schema.ts` (id, userId, name, keyHash, keyPrefix, lastUsedAt, createdAt)
+- [ ] Create `src/app/api/v1/settings/api-keys/route.ts` — GET (list keys), POST (create key)
+- [ ] Create `src/app/api/v1/settings/api-keys/[id]/route.ts` — DELETE (revoke key)
+- [ ] Show masked key on creation only (e.g. `lsnap_sk_xxxx...xxxx`), hash stored in DB
+- [ ] Auth: API key passed as `Authorization: Bearer lsnap_sk_xxx` header
+- [ ] Add API key auth to `src/lib/auth/api-key.ts` — validate key, attach user to request
+- [ ] Integrate API key auth into proxy guard (allow API key OR session cookie)
+- [ ] Tests: unit (key hashing, prefix validation), integration (CRUD + auth with key)
+
+### TASK 12.14 — Connect Settings Tabs to Real APIs
+- [ ] File: `src/app/(dashboard)/settings/page.tsx`
+- [ ] "Profile" tab: load user name/email from session, save via `PATCH /api/v1/settings/profile`
+- [ ] Create `src/app/api/v1/settings/profile/route.ts` — PATCH: update name
+- [ ] "Security" tab: connect "Change Password" to `POST /api/v1/auth/change-password`
+- [ ] Create `src/app/api/v1/auth/change-password/route.ts` — POST: verify current password, update hash
+- [ ] "Notifications" tab: save preferences to user record (add `notifications` JSON column)
+- [ ] Remove all hardcoded values ("Rafi", "rafi@email.com")
+- [ ] Tests: unit (form validation), integration (profile update, password change flow)
+
+### TASK 12.15 — Connect Link Pages Dashboard to Real Data
+- [ ] File: `src/app/(dashboard)/pages/page.tsx`
+- [ ] Make page `async` server component
+- [ ] Query real link pages from DB via `listLinkPagesByUserId` query
+- [ ] Replace ALL hardcoded mock data array
+- [ ] Add empty state when user has 0 link pages
+- [ ] Add loading state (already has loading.tsx skeleton)
+- [ ] Add create/edit links to actual link page form
+- [ ] Tests: integration (link pages list API response)
+
+### TASK 12.16 — Connect Campaigns Dashboard to Real Data
+- [ ] File: `src/app/(dashboard)/campaigns/page.tsx`
+- [ ] Make page `async` server component
+- [ ] Query real campaigns from DB via `listCampaignsByUserId` query (already exists)
+- [ ] Replace ALL hardcoded mock data array
+- [ ] Create `src/app/(dashboard)/campaigns/new/page.tsx` — campaign creation form (the route is currently a 404!)
+- [ ] Add empty state when user has 0 campaigns
+- [ ] Add loading state (create `loading.tsx`)
+- [ ] Wire "Edit" and "Delete" dropdown actions
+- [ ] Tests: integration (campaigns list API, create campaign flow)
+
+### TASK 12.17 — Connect Analytics Dashboard to Real Data
+- [ ] File: `src/app/(dashboard)/analytics/page.tsx`
+- [ ] Make page `async` server component
+- [ ] Query real analytics from DB:
+  - Daily click counts for last 7/30 days from `clickEvents`
+  - Device breakdown (mobile/desktop/tablet) from `clickEvents.userAgent`
+  - Top referrers from `clickEvents.referrer`
+  - Top countries from `clickEvents.country`
+- [ ] Add date range picker (last 7 days, 30 days, 90 days, custom)
+- [ ] Add "Export CSV" button
+- [ ] Replace ALL empty mock arrays with real data
+- [ ] Add loading state (already has loading.tsx)
+- [ ] Tests: unit (data aggregation), integration (analytics API queries)
+
+### TASK 12.18 — Post-Payment Checkout Pages
+- [ ] Create `src/app/(marketing)/checkout/success/page.tsx`
+  - Accept `?order_id=` query param
+  - Show success message with plan name, next billing date
+  - "Go to Dashboard" CTA button
+- [ ] Create `src/app/(marketing)/checkout/cancel/page.tsx`
+  - Show "Payment was cancelled" message
+  - "Try Again" link back to `/settings/billing`
+- [ ] Update Midtrans Snap payload to include `redirect_url` finish/error/unfinish callbacks
+- [ ] Tests: unit (checkout page renders), integration (payment flow end-to-end)
+
+### TASK 12.19 — Individual Blog Post Pages
+- [ ] Create `src/app/(marketing)/blog/[slug]/page.tsx`
+- [ ] Read MDX file from `src/content/blog/[slug].mdx`
+- [ ] Render MDX content with basic styling (headings, paragraphs, lists, code blocks)
+- [ ] Add metadata: title, description, OpenGraph from frontmatter
+- [ ] Add "Back to Blog" link at top
+- [ ] Add loading state
+- [ ] Wire up blog card links from `/blog` page (currently cards have no links)
+- [ ] Tests: unit (MDX rendering), integration (blog post page)
+
+### TASK 12.20 — Legal Pages
+- [ ] Create `src/app/(marketing)/terms/page.tsx` — Terms of Service
+- [ ] Create `src/app/(marketing)/privacy/page.tsx` — Privacy Policy
+- [ ] Add footer links to Terms and Privacy on landing page and blog
+- [ ] Add to sitemap
+- [ ] Tests: unit (pages render correctly)
+
+### TASK 12.21 — Midtrans Redirect URL Configuration
+- [ ] File: `src/app/api/v1/payments/create/route.ts`
+- [ ] Update `createMidtransSnapTransaction` payload to include `callbacks.finish` → `{APP_URL}/checkout/success?order_id={order_id}`
+- [ ] Add `callbacks.error` and `callbacks.unfinish` URLs
+- [ ] Ensure redirect URLs work with production domain
+- [ ] Tests: verify Snap payload includes correct callback URLs
+
+### TASK 12.22 — Search Implementation
+- [ ] File: `src/components/dashboard/app-header.tsx`
+- [ ] Wire search input to actually filter links by slug or destination
+- [ ] Debounce input (300ms), redirect to `/links?search=query`
+- [ ] Or: if keeping it simple, use GET param on links page directly
+- [ ] Tests: unit (search query building)
+
+---
+
+## 🚀 Ready to Start?
+
+```bash
+cd ~/projects/linksnap
+rtk bun run dev          # Start development
+rtk bun run db:studio    # Open Drizzle Studio (in another terminal)
+```
+
+**Priority order:** 12.1 → 12.2 → 12.3 → 12.4 → 12.5 → 12.6 → 12.7 → 12.8 → 12.9 → 12.10 → 12.11 → 12.12 → 12.13 → 12.14 → 12.15 → 12.16 → 12.17 → 12.18 → 12.19 → 12.20 → 12.21 → 12.22
+
+**Estimated total:** 54 tasks across 10 phases + 22 post-audit fixes
 **Estimated timeline:** 12 weeks (3 months) for 1 full-time developer
 
 Good luck. Ship it. 🚀
