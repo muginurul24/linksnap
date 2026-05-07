@@ -10,7 +10,13 @@ import {
   type SQL,
 } from "drizzle-orm";
 import { db } from "@/lib/db";
-import { linkPages, links, smartRules, users } from "@/lib/db/schema";
+import {
+  clickEvents,
+  linkPages,
+  links,
+  smartRules,
+  users,
+} from "@/lib/db/schema";
 import type { UserPlan } from "@/lib/links/limits";
 import type { RedirectLink } from "@/lib/links/redirect";
 
@@ -42,6 +48,21 @@ export type ListedLink = {
   isActive: boolean;
   slug: string;
   title: string | null;
+  updatedAt: Date;
+};
+
+export type ListedLinkPage = {
+  brandName: string;
+  ctaClicks: number;
+  ctaText: string;
+  hasCountdown: boolean;
+  id: string;
+  isActive: boolean;
+  linkId: string;
+  pageViews: number;
+  showQrCode: boolean;
+  slug: string;
+  title: string;
   updatedAt: Date;
 };
 
@@ -212,6 +233,97 @@ export async function countLinkPagesByUserId(userId: string): Promise<number> {
     .where(eq(links.userId, userId));
 
   return row?.value ?? 0;
+}
+
+export async function listLinkPagesByUserId(
+  userId: string,
+): Promise<ListedLinkPage[]> {
+  const pages = await db
+    .select({
+      brandName: linkPages.brandName,
+      countdownTarget: linkPages.countdownTarget,
+      ctaText: linkPages.ctaText,
+      hasLinkPage: links.hasLinkPage,
+      id: linkPages.id,
+      isLinkActive: links.isActive,
+      linkId: linkPages.linkId,
+      showCountdown: linkPages.showCountdown,
+      showQrCode: linkPages.showQrCode,
+      slug: links.slug,
+      title: linkPages.title,
+      updatedAt: linkPages.updatedAt,
+    })
+    .from(linkPages)
+    .innerJoin(links, eq(linkPages.linkId, links.id))
+    .where(eq(links.userId, userId))
+    .orderBy(desc(linkPages.updatedAt));
+
+  if (pages.length === 0) return [];
+
+  const eventCounts = await db
+    .select({
+      eventType: clickEvents.eventType,
+      linkId: clickEvents.linkId,
+      value: count(),
+    })
+    .from(clickEvents)
+    .where(
+      and(
+        inArray(
+          clickEvents.eventType,
+          ["LINK_PAGE_VIEW", "LINK_PAGE_CTA_CLICK"],
+        ),
+        inArray(
+          clickEvents.linkId,
+          pages.map((page) => page.linkId),
+        ),
+      ),
+    )
+    .groupBy(clickEvents.linkId, clickEvents.eventType);
+
+  const countsByLinkId = new Map<
+    string,
+    { ctaClicks: number; pageViews: number }
+  >();
+
+  for (const eventCount of eventCounts) {
+    const counts = countsByLinkId.get(eventCount.linkId) ?? {
+      ctaClicks: 0,
+      pageViews: 0,
+    };
+
+    if (eventCount.eventType === "LINK_PAGE_CTA_CLICK") {
+      counts.ctaClicks = Number(eventCount.value);
+    }
+
+    if (eventCount.eventType === "LINK_PAGE_VIEW") {
+      counts.pageViews = Number(eventCount.value);
+    }
+
+    countsByLinkId.set(eventCount.linkId, counts);
+  }
+
+  return pages.map((page) => {
+    const counts = countsByLinkId.get(page.linkId) ?? {
+      ctaClicks: 0,
+      pageViews: 0,
+    };
+
+    return {
+      brandName: page.brandName,
+      ctaClicks: counts.ctaClicks,
+      ctaText: page.ctaText,
+      hasCountdown: page.showCountdown === true && page.countdownTarget !== null,
+      id: page.id,
+      isActive: page.hasLinkPage && page.isLinkActive,
+      linkId: page.linkId,
+      pageViews: counts.pageViews,
+      showQrCode: page.showQrCode ?? true,
+      slug: page.slug,
+      title: page.title,
+      updatedAt: page.updatedAt,
+    };
+  });
 }
 
 export async function findLinkBySlug(slug: string): Promise<{ id: string } | null> {

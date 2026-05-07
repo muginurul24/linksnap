@@ -3434,3 +3434,51 @@ current password before storing a new hash.
 - ✅ Hardcoded settings values (`Rafi`, `rafi@email.com`) were removed from the Settings page/forms.
 
 **Next Task:** 12.15 — Connect Link Pages Dashboard to Real Data
+
+### 12.15 — Connect Link Pages Dashboard to Real Data
+- **Date:** 2026-05-07 16:06 GMT+7
+- **Duration:** 0h 25m
+- **Status:** ✅ Complete
+
+**What I Did:**
+Connected the Link Pages dashboard to authenticated, owner-scoped database data.
+The page now renders real Link Page cards, view/click totals, empty state, and
+loading skeletons. I also added a list API endpoint for Link Pages so the data
+contract is covered by integration tests.
+
+**Files Changed:**
+- `_bmad-output/planning-artifacts/spec-link-pages-dashboard-real-data.md` — Added task spec and security decisions.
+- `src/lib/db/queries/links.ts` — Added `listLinkPagesByUserId` with batched click-event aggregation.
+- `src/app/(dashboard)/pages/page.tsx` — Replaced mocks with an async authenticated server component and real action links.
+- `src/app/(dashboard)/pages/loading.tsx` — Added Link Pages skeleton loading state.
+- `src/app/api/v1/pages/route.ts` — Added authenticated Link Pages list API.
+- `src/lib/api-docs/spec.ts` — Documented the Link Pages list endpoint.
+- `tests/integration/list-link-pages-api.test.ts` — Added list API coverage for session, API key, auth failure, and rate limit cases.
+- `tests/integration/api-docs-route.test.ts` — Verified the new endpoint appears in OpenAPI output.
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Checked off Task 12.15.
+- `_bmad-output/implementation-artifacts/JOURNAL.md` — Recorded this completion entry.
+
+**Decisions Made:**
+- Public Link Page status is derived from `links.hasLinkPage && links.isActive`.
+- Existing Link Page records remain listed when paused so users can edit them from the dashboard.
+- Create and edit actions route to the existing link form because that is where Link Page controls already live.
+- The list API accepts session or API key auth to match the paid API surface.
+
+**Tests:**
+- ✅ Targeted: `rtk bun run test -- tests/integration/list-link-pages-api.test.ts` — 1 file passed, 4 tests passed.
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Unit/Integration: `rtk bun run test` — 83 files passed, 373 tests passed.
+- ✅ Build: `rtk bun run build` — Passed.
+
+**Issues Encountered:**
+- The task referenced an existing `/pages/loading.tsx`, but no file was present; I added the skeleton route file.
+
+**Security Checks:**
+- ✅ Dashboard and API route require authentication.
+- ✅ Link Page listing is owner-scoped through the owned `links.userId` join.
+- ✅ List API is rate limited by user plan.
+- ✅ API responses use the standard `{ success, data/error }` envelope.
+- ✅ No secrets or raw SQL introduced.
+
+**Next Task:** 12.16 — Connect Campaigns Dashboard to Real Data

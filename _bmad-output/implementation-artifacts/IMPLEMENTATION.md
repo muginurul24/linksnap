@@ -787,14 +787,14 @@ rtk bun run db:studio    # Open Drizzle Studio (in another terminal)
 - [x] Tests: unit (form validation), integration (profile update, password change flow)
 
 ### TASK 12.15 — Connect Link Pages Dashboard to Real Data
-- [ ] File: `src/app/(dashboard)/pages/page.tsx`
-- [ ] Make page `async` server component
-- [ ] Query real link pages from DB via `listLinkPagesByUserId` query
-- [ ] Replace ALL hardcoded mock data array
-- [ ] Add empty state when user has 0 link pages
-- [ ] Add loading state (already has loading.tsx skeleton)
-- [ ] Add create/edit links to actual link page form
-- [ ] Tests: integration (link pages list API response)
+- [x] File: `src/app/(dashboard)/pages/page.tsx`
+- [x] Make page `async` server component
+- [x] Query real link pages from DB via `listLinkPagesByUserId` query
+- [x] Replace ALL hardcoded mock data array
+- [x] Add empty state when user has 0 link pages
+- [x] Add loading state (already has loading.tsx skeleton)
+- [x] Add create/edit links to actual link page form
+- [x] Tests: integration (link pages list API response)
 
 ### TASK 12.16 — Connect Campaigns Dashboard to Real Data
 - [ ] File: `src/app/(dashboard)/campaigns/page.tsx`

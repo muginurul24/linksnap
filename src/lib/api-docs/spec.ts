@@ -201,6 +201,17 @@ export const API_DOC_SECTIONS: ApiDocSection[] = [
       {
         auth: "API key",
         method: "GET",
+        path: "/api/v1/pages",
+        rateLimit: PLAN_RATE_LIMIT,
+        responseExample: {
+          data: [{ ctaClicks: 10, id: "page-id", pageViews: 120, slug: "promo" }],
+          success: true,
+        },
+        summary: "List owned Link Pages with view and CTA click totals.",
+      },
+      {
+        auth: "API key",
+        method: "GET",
         path: "/api/v1/links/{id}/page",
         rateLimit: PLAN_RATE_LIMIT,
         responseExample: { data: { brandName: "LinkSnap", title: "Promo" }, success: true },

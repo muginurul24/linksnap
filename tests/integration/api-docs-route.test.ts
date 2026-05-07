@@ -82,6 +82,7 @@ describe("API docs route", () => {
     expect(body.data.openapi).toBe("3.1.0");
     expect(body.data.info.title).toBe("LinkSnap API");
     expect(body.data.paths["/api/v1/links"]).toHaveProperty("get");
+    expect(body.data.paths["/api/v1/pages"]).toHaveProperty("get");
     expect(body.data.paths["/api/v1/docs"]).toHaveProperty("get");
   });
 
