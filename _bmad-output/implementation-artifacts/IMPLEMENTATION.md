@@ -732,8 +732,8 @@ For EVERY interactive component, implement these states:
 - [x] Tests: unit (plan definitions match limits.ts values)
 
 ### TASK 12.10 — Fix Forgot Password Dead Link (Quick Fix)
-- [ ] If 12.1 is deferred: temporarily remove the "Forgot password?" link from `login-form.tsx`
-- [ ] Add a comment: `{/* TODO: Implement forgot password flow — see Task 12.1 */}`
+- [x] If 12.1 is deferred: temporarily remove the "Forgot password?" link from `login-form.tsx` (skipped; 12.1 is complete)
+- [x] Add a comment: `{/* TODO: Implement forgot password flow — see Task 12.1 */}` (skipped; 12.1 is complete)
 - [x] If 12.1 is done first: skip this task
 
 ---
