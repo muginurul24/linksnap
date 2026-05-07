@@ -2,12 +2,40 @@ import type { NextFetchEvent, NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { isProtectedPath } from "@/lib/auth/protected-routes";
+import { isPublicSlug } from "@/lib/links/redirect";
 import {
   API_CSRF_HEADER,
   validateApiMutationRequest,
 } from "@/lib/security/api-request";
+import {
+  checkRedirectRateLimit,
+  createRedirectRateLimitResponse,
+} from "@/lib/security/redirect-rate-limit";
 
 const LOGIN_PATH = "/login";
+const RESERVED_PUBLIC_REDIRECT_SEGMENTS = new Set([
+  "2fa",
+  "analytics",
+  "api",
+  "blog",
+  "campaigns",
+  "checkout",
+  "dashboard",
+  "docs",
+  "forgot-password",
+  "help",
+  "links",
+  "login",
+  "pages",
+  "pricing",
+  "privacy",
+  "qr",
+  "register",
+  "reset-password",
+  "settings",
+  "terms",
+  "verify",
+]);
 
 const dashboardAuthProxy = auth((request) => {
   const { pathname, search } = request.nextUrl;
@@ -29,7 +57,20 @@ type MiddlewareHandler = (
 
 const runDashboardAuthProxy = dashboardAuthProxy as unknown as MiddlewareHandler;
 
-export default function proxy(request: NextRequest, event: NextFetchEvent) {
+function getPublicRedirectSlug(pathname: string): string | null {
+  const segments = pathname.split("/").filter(Boolean);
+  if (segments.length !== 1) return null;
+
+  const [slug] = segments;
+  if (!slug || RESERVED_PUBLIC_REDIRECT_SEGMENTS.has(slug)) return null;
+
+  return isPublicSlug(slug) ? slug : null;
+}
+
+export default async function proxy(
+  request: NextRequest,
+  event: NextFetchEvent,
+) {
   const { pathname } = request.nextUrl;
   const apiSecurityError = validateApiMutationRequest({
     authorization: request.headers.get("authorization"),
@@ -58,6 +99,14 @@ export default function proxy(request: NextRequest, event: NextFetchEvent) {
         status: 403,
       },
     );
+  }
+
+  if (request.method === "GET" && getPublicRedirectSlug(pathname)) {
+    const rateLimit = await checkRedirectRateLimit({
+      headers: request.headers,
+      kind: "slug",
+    });
+    if (rateLimit.limited) return createRedirectRateLimitResponse(rateLimit);
   }
 
   if (pathname.startsWith("/api/v1/")) {

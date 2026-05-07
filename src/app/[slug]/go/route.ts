@@ -24,6 +24,10 @@ import {
   buildRuleEvaluationContext,
   evaluateSmartRulesForLink,
 } from "@/lib/rules/rule-engine";
+import {
+  checkRedirectRateLimit,
+  createRedirectRateLimitResponse,
+} from "@/lib/security/redirect-rate-limit";
 import { resolveSplitTestRedirect } from "@/lib/split-tests/router";
 
 type LinkPageCtaRouteContext = {
@@ -58,9 +62,15 @@ function notFoundResponse(): Response {
   return new Response("Not found", { status: 404 });
 }
 
-export async function GET(_request: Request, context: LinkPageCtaRouteContext) {
+export async function GET(request: Request, context: LinkPageCtaRouteContext) {
   const { slug } = await context.params;
   if (!isPublicSlug(slug)) return notFoundResponse();
+
+  const rateLimit = await checkRedirectRateLimit({
+    headers: request.headers,
+    kind: "cta",
+  });
+  if (rateLimit.limited) return createRedirectRateLimitResponse(rateLimit);
 
   const link = await getRedirectLink(slug);
   if (!link || !isRedirectLinkAvailable(link) || !link.hasLinkPage) {

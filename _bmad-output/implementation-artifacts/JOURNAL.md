@@ -5685,3 +5685,42 @@ Conducted comprehensive audit of entire LinkSnap codebase (255 source files, 116
 - ✅ No new secrets, raw SQL, or dangerous patterns introduced
 
 **Next Task:** 17.1 — Rate Limit the Public Redirect Handler
+
+### 17.1 — Rate Limit the Public Redirect Handler
+- **Date:** 2026-05-08 05:10 GMT+7
+- **Duration:** 0h 50m
+- **Status:** ✅ Complete
+
+**What I Did:**
+Added Redis-backed sliding-window rate limiting for public short-link redirects and Link Page CTA redirects. Direct `/:slug` requests are guarded in `proxy.ts` so rate-limited requests can return a real 429 response before the App Router page renders. CTA `/[slug]/go` requests are guarded inside the route handler.
+
+**Files Changed:**
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Checked off Task 17.1.
+- `src/lib/security/redirect-rate-limit.ts` — Added redirect rate-limit helper, bot bypass, client key extraction, and 429 response builder.
+- `src/proxy.ts` — Added `/:slug` redirect rate limiting with reserved route exclusions.
+- `src/app/[slug]/go/route.ts` — Added CTA redirect rate limiting before link lookup and redirect.
+- `tests/unit/redirect-rate-limit.test.ts` — Covered key generation, thresholds, bot bypass, and 429 response output.
+- `tests/unit/proxy-redirect-rate-limit.test.ts` — Covered proxy 429 behavior, reserved routes, and bot bypass.
+- `tests/integration/create-redirect-click-flow.test.ts` — Added rate-limited CTA integration coverage.
+
+**Decisions Made:**
+- Used `proxy.ts` for the `/:slug` guard because a Next.js `page.tsx` returns UI, while the requirement needs an actual HTTP 429 response with `Retry-After`.
+- Kept known bot requests out of redirect rate limiting to avoid harming crawler/SEO behavior.
+- Excluded known first-level app routes such as `/login`, `/register`, `/settings`, and `/dashboard` from slug rate limiting.
+
+**Tests:**
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Targeted Unit/Integration: `rtk bun run test -- tests/unit/redirect-rate-limit.test.ts tests/unit/proxy-redirect-rate-limit.test.ts tests/integration/create-redirect-click-flow.test.ts` — 3 files passed, 13 tests passed.
+- ✅ Unit/Integration: `rtk bun run test` — 118 files passed, 522 tests passed.
+- ✅ Build: `rtk bun run build` — Passed.
+
+**Issues Encountered:**
+- App Router pages cannot directly return a custom 429 `Response`; the direct slug guard was moved to proxy to preserve the required HTTP semantics.
+
+**Security Checks:**
+- ✅ Rate limits apply before database lookup on CTA redirects and before page render on direct redirects.
+- ✅ 429 responses include `Retry-After`.
+- ✅ No secrets, raw SQL, or `dangerouslySetInnerHTML` introduced.
+
+**Next Task:** 17.2 — Replace CSP `unsafe-inline` with Nonce-Based Policy

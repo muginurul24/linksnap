@@ -1370,15 +1370,15 @@ rtk bun run db:studio    # Open Drizzle Studio (in another terminal)
 ### 🔴 HIGH — Must Fix Before Go-Live
 
 ### TASK 17.1 — Rate Limit the Public Redirect Handler
-- [ ] File: `src/app/[slug]/page.tsx` (and `src/app/[slug]/go/route.ts`)
-- [ ] Add Redis sliding window rate limit on the redirect path — most critical surface for a URL shortener
-- [ ] Rate limit: 100 requests per 60 seconds per IP for `/[slug]`
-- [ ] Rate limit: 30 requests per 60 seconds per IP for `/[slug]/go` (CTA clicks)
-- [ ] Use existing `slidingWindowRateLimit()` from `src/lib/redis/rate-limit.ts`
-- [ ] Key format: `redirect:slug:{ip}` and `redirect:cta:{ip}`
-- [ ] When rate-limited: return 429 with `Retry-After` header instead of redirect
-- [ ] Skip rate limit for known bot UAs (Googlebot, etc.) to avoid SEO impact
-- [ ] Tests: unit (rate limit triggers at threshold), integration (rate-limited request gets 429)
+- [x] File: `src/app/[slug]/page.tsx` (and `src/app/[slug]/go/route.ts`)
+- [x] Add Redis sliding window rate limit on the redirect path — most critical surface for a URL shortener
+- [x] Rate limit: 100 requests per 60 seconds per IP for `/[slug]`
+- [x] Rate limit: 30 requests per 60 seconds per IP for `/[slug]/go` (CTA clicks)
+- [x] Use existing `slidingWindowRateLimit()` from `src/lib/redis/rate-limit.ts`
+- [x] Key format: `redirect:slug:{ip}` and `redirect:cta:{ip}`
+- [x] When rate-limited: return 429 with `Retry-After` header instead of redirect
+- [x] Skip rate limit for known bot UAs (Googlebot, etc.) to avoid SEO impact
+- [x] Tests: unit (rate limit triggers at threshold), integration (rate-limited request gets 429)
 
 ### TASK 17.2 — Replace CSP `unsafe-inline` with Nonce-Based Policy
 - [ ] File: `src/lib/security/headers.ts`

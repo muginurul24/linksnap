@@ -73,6 +73,10 @@ type ApiEnvelope<T> =
       success: false;
     };
 
+type MockRateLimitResult =
+  | { limited: false; remaining: number }
+  | { limited: true; retryAfter: number };
+
 type CreateLinkResponse = {
   destinationUrl: string;
   id: string;
@@ -85,6 +89,7 @@ const mockState = vi.hoisted(() => ({
   linkPages: new Map<string, MockLinkPage>(),
   links: [] as MockLink[],
   loggedClicks: [] as RedirectClickInput[],
+  rateLimitResult: { limited: false, remaining: 99 } as MockRateLimitResult,
   ruleResult: null as { destinationUrl: string; ruleId: string } | null,
   session: { user: { id: "user-1" } } as MockSession,
   splitTest: null as MockSplitTest | null,
@@ -96,7 +101,7 @@ vi.mock("@/lib/auth", () => ({
 }));
 
 vi.mock("@/lib/redis/rate-limit", () => ({
-  slidingWindowRateLimit: async () => ({ limited: false as const, remaining: 99 }),
+  slidingWindowRateLimit: async () => mockState.rateLimitResult,
 }));
 
 vi.mock("@/lib/redis", () => ({
@@ -232,6 +237,7 @@ describe("create redirect click flow", () => {
     mockState.linkPages = new Map();
     mockState.links = [];
     mockState.loggedClicks = [];
+    mockState.rateLimitResult = { limited: false, remaining: 99 };
     mockState.ruleResult = null;
     mockState.session = { user: { id: "user-1" } };
     mockState.splitTest = null;
@@ -437,5 +443,28 @@ describe("create redirect click flow", () => {
         userAgent: "Vitest",
       },
     ]);
+  });
+
+  it("should return 429 for rate-limited Link Page CTA requests", async () => {
+    mockState.rateLimitResult = { limited: true, retryAfter: 60 };
+
+    const ctaResponse = await GETLinkPageCta(
+      new Request("http://localhost:3000/page-flow/go", {
+        headers: {
+          "x-forwarded-for": "203.0.113.20",
+          "user-agent": "Vitest",
+        },
+      }),
+      { params: Promise.resolve({ slug: "page-flow" }) },
+    );
+    const body = await readJson<never>(ctaResponse);
+
+    expect(ctaResponse.status).toBe(429);
+    expect(ctaResponse.headers.get("Retry-After")).toBe("60");
+    expect(body).toMatchObject({
+      error: { code: "RATE_LIMITED" },
+      success: false,
+    });
+    expect(mockState.loggedClicks).toEqual([]);
   });
 });
