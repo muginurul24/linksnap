@@ -672,16 +672,16 @@ For EVERY interactive component, implement these states:
 - [x] Verify: sign-out handler redirects to landing page and is covered by unit test; NextAuth client clears the session
 
 ### TASK 12.3 — Connect Dashboard Overview to Real Data
-- [ ] File: `src/app/(dashboard)/dashboard/page.tsx`
-- [ ] Replace ALL hardcoded mock data with real DB queries:
+- [x] File: `src/app/(dashboard)/dashboard/page.tsx`
+- [x] Replace ALL hardcoded mock data with real DB queries:
   - Stats cards: query total links count, today's clicks (from `clickEvents`), active campaigns count, QR scans
   - Click trend chart: query daily click counts for last 7 days from `clickEvents`
   - Top countries chart: query top 5 countries by click count from `clickEvents`
   - Recent links table: query latest 5 links with click counts from `links` + `clickEvents`
-- [ ] Make page `async` server component
-- [ ] Add empty state when user has 0 links (show "Create your first link" CTA)
-- [ ] Add loading state via `loading.tsx` (already exists)
-- [ ] Tests: unit (data transformation), integration (dashboard API response)
+- [x] Make page `async` server component
+- [x] Add empty state when user has 0 links (show "Create your first link" CTA)
+- [x] Add loading state via `loading.tsx` (already exists)
+- [x] Tests: unit (data transformation), integration (dashboard API response)
 
 ### TASK 12.4 — Unify Plan Definitions (Single Source of Truth)
 - [ ] Create `src/lib/plans/definitions.ts` — export a single `PLANS` constant array with all plan metadata (name, price, period, description, features[], limits, highlighted, cta)
