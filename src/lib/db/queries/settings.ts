@@ -17,7 +17,7 @@ export type PasswordUser = {
   passwordHash: string | null;
 };
 
-function normalizeNotificationPreferences(
+export function normalizeNotificationPreferences(
   value: UserNotificationPreferences | null,
 ): UserNotificationPreferences {
   return value ?? DEFAULT_NOTIFICATION_PREFERENCES;
@@ -83,7 +83,7 @@ export async function updateSettingsUserNotifications({
     .where(eq(users.id, userId))
     .returning({ notifications: users.notifications });
 
-  return user?.notifications ?? null;
+  return user ? normalizeNotificationPreferences(user.notifications) : null;
 }
 
 export async function findPasswordUserById(

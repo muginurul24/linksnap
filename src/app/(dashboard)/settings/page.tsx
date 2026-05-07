@@ -1,16 +1,16 @@
 import { redirect } from "next/navigation";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { User, Bell, Shield, Key } from "lucide-react";
 import { auth } from "@/lib/auth";
-import {
-  listApiKeysByUserId,
-  type ApiKeyListItem,
-} from "@/lib/db/queries/api-keys";
-import { findBillingUserById } from "@/lib/db/queries/payments";
-import { findSettingsUserById } from "@/lib/db/queries/settings";
-import type { UserPlan } from "@/lib/links/limits";
+import { type ApiKeyListItem } from "@/lib/db/queries/api-keys";
 import {
   ApiKeysPanel,
   type ApiKeyPanelItem,
@@ -20,6 +20,7 @@ import {
   ProfileSettingsForm,
   SecuritySettingsForm,
 } from "@/app/(dashboard)/settings/settings-forms";
+import { loadSettingsPageData } from "./settings-page-data";
 
 type SessionWithUserId = {
   user?: {
@@ -56,10 +57,6 @@ function toApiKeyPanelItem(apiKey: ApiKeyListItem): ApiKeyPanelItem {
   };
 }
 
-function canManageApiKeys(plan: UserPlan): boolean {
-  return plan === "PRO" || plan === "BUSINESS";
-}
-
 export default async function SettingsPage({ searchParams }: SettingsPageProps) {
   const session = await auth();
   const userId = getSessionUserId(session);
@@ -70,19 +67,7 @@ export default async function SettingsPage({ searchParams }: SettingsPageProps) 
 
   const params = await searchParams;
   const defaultTab = getDefaultSettingsTab(params.tab);
-  const [billingUser, settingsUser] = await Promise.all([
-    findBillingUserById(userId),
-    findSettingsUserById(userId),
-  ]);
-
-  if (!settingsUser) {
-    redirect("/login?callbackUrl=/settings");
-  }
-
-  const plan = billingUser?.plan ?? "FREE";
-  const apiKeys = canManageApiKeys(plan)
-    ? await listApiKeysByUserId(userId)
-    : [];
+  const settingsData = await loadSettingsPageData(userId);
 
   return (
     <>
@@ -91,84 +76,113 @@ export default async function SettingsPage({ searchParams }: SettingsPageProps) 
         <p className="text-sm text-muted-foreground">Manage your account and preferences.</p>
       </div>
 
-      <Tabs defaultValue={defaultTab} className="w-full">
-        <TabsList>
-          <TabsTrigger value="profile"><User className="mr-2 size-4" /> Profile</TabsTrigger>
-          <TabsTrigger value="notifications"><Bell className="mr-2 size-4" /> Notifications</TabsTrigger>
-          <TabsTrigger value="security"><Shield className="mr-2 size-4" /> Security</TabsTrigger>
-          <TabsTrigger value="api"><Key className="mr-2 size-4" /> API Keys</TabsTrigger>
-        </TabsList>
+      {settingsData.status === "error" ? (
+        <Card className="border-destructive/40 bg-destructive/5">
+          <CardHeader>
+            <CardTitle className="text-base">Settings unavailable</CardTitle>
+            <CardDescription>{settingsData.message}</CardDescription>
+          </CardHeader>
+        </Card>
+      ) : (
+        <Tabs defaultValue={defaultTab} className="w-full">
+          <TabsList>
+            <TabsTrigger value="profile">
+              <User className="mr-2 size-4" /> Profile
+            </TabsTrigger>
+            <TabsTrigger value="notifications">
+              <Bell className="mr-2 size-4" /> Notifications
+            </TabsTrigger>
+            <TabsTrigger value="security">
+              <Shield className="mr-2 size-4" /> Security
+            </TabsTrigger>
+            <TabsTrigger value="api">
+              <Key className="mr-2 size-4" /> API Keys
+            </TabsTrigger>
+          </TabsList>
 
-        <TabsContent value="profile" className="mt-4 space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Profile Information</CardTitle>
-              <CardDescription>Update your name and email address.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <ProfileSettingsForm
-                email={settingsUser.email}
-                initialName={settingsUser.name ?? ""}
-              />
-            </CardContent>
-          </Card>
-        </TabsContent>
+          <TabsContent value="profile" className="mt-4 space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Profile Information</CardTitle>
+                <CardDescription>Update your name and email address.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ProfileSettingsForm
+                  email={settingsData.settingsUser.email}
+                  initialName={settingsData.settingsUser.name ?? ""}
+                />
+              </CardContent>
+            </Card>
+          </TabsContent>
 
-        <TabsContent value="notifications" className="mt-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Notification Preferences</CardTitle>
-              <CardDescription>Choose what notifications you want to receive.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <NotificationsSettingsForm
-                initialPreferences={settingsUser.notifications}
-              />
-            </CardContent>
-          </Card>
-        </TabsContent>
+          <TabsContent value="notifications" className="mt-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Notification Preferences</CardTitle>
+                <CardDescription>
+                  Choose what notifications you want to receive.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <NotificationsSettingsForm
+                  initialPreferences={settingsData.settingsUser.notifications}
+                />
+              </CardContent>
+            </Card>
+          </TabsContent>
 
-        <TabsContent value="security" className="mt-4 space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Change Password</CardTitle>
-              <CardDescription>Use a strong password with at least 8 characters.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <SecuritySettingsForm />
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Two-Factor Authentication</CardTitle>
-              <CardDescription>Add an extra layer of security to your account.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium">Authenticator App</p>
-                  <p className="text-xs text-muted-foreground">Use Google Authenticator or similar.</p>
+          <TabsContent value="security" className="mt-4 space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Change Password</CardTitle>
+                <CardDescription>
+                  Use a strong password with at least 8 characters.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <SecuritySettingsForm />
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Two-Factor Authentication</CardTitle>
+                <CardDescription>
+                  Add an extra layer of security to your account.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium">Authenticator App</p>
+                    <p className="text-xs text-muted-foreground">
+                      Use Google Authenticator or similar.
+                    </p>
+                  </div>
+                  <Button variant="outline" size="sm">Enable 2FA</Button>
                 </div>
-                <Button variant="outline" size="sm">Enable 2FA</Button>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
+              </CardContent>
+            </Card>
+          </TabsContent>
 
-        <TabsContent value="api" className="mt-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">API Keys</CardTitle>
-              <CardDescription>Manage your API keys for programmatic access.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <ApiKeysPanel
-                initialApiKeys={apiKeys.map((apiKey) => toApiKeyPanelItem(apiKey))}
-              />
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+          <TabsContent value="api" className="mt-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">API Keys</CardTitle>
+                <CardDescription>
+                  Manage your API keys for programmatic access.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ApiKeysPanel
+                  initialApiKeys={settingsData.apiKeys.map((apiKey) =>
+                    toApiKeyPanelItem(apiKey),
+                  )}
+                />
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
+      )}
     </>
   );
 }

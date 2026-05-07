@@ -5175,3 +5175,42 @@ Added a dashboard plan context and wired it through `DashboardLayout` so client 
 - ✅ No raw SQL or `dangerouslySetInnerHTML` introduced.
 
 **Next Task:** No remaining Phase 15 tasks.
+
+### 16.1 — Fix Settings Page Crash (Something Went Wrong)
+- **Date:** 2026-05-07 22:55 GMT+7
+- **Duration:** 0h 35m
+- **Status:** ✅ Complete
+
+**What I Did:**
+Moved settings page data loading behind a guarded helper so database failures render an inline settings error instead of crashing the route. Normalized notification preferences when the JSON column is null and covered the fallback paths with unit and integration tests.
+
+**Files Changed:**
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Added Phase 16 from the audit plan and checked off Task 16.1.
+- `src/app/(dashboard)/settings/page.tsx` — Uses guarded settings data loading and renders an inline unavailable state on query failure.
+- `src/app/(dashboard)/settings/settings-page-data.ts` — Added reusable page data loader with API key plan gating and error fallback.
+- `src/lib/db/queries/settings.ts` — Exported notification preference normalization and applied it to notification updates.
+- `tests/unit/settings-queries.test.ts` — Added null notification fallback coverage.
+- `tests/integration/settings-page-data.test.ts` — Added settings page data success, API key gating, and error recovery coverage.
+
+**Decisions Made:**
+- Returned an inline error card instead of redirecting when the authenticated user exists but settings data cannot be read, because this preserves the dashboard shell and makes the production failure recoverable.
+- Kept API key loading out of the page component so paid-plan gating and query failures are testable without rendering the full server component.
+
+**Tests:**
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Database: `rtk bun run db:push` — Changes applied.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Targeted Unit/Integration: `rtk bun run test -- tests/unit/settings-queries.test.ts tests/integration/settings-page-data.test.ts tests/integration/settings-api.test.ts` — 3 files passed, 11 tests passed.
+- ✅ Unit/Integration: `rtk bun run test` — 109 files passed, 493 tests passed.
+
+**Issues Encountered:**
+- `findSettingsUserById` already normalized reads, but notification updates could still return null if legacy data or schema drift was present → Reused the same normalization helper for update returns.
+- The original settings page mixed query orchestration with rendering, making failure recovery hard to test directly → Extracted a small data loader and tested it in isolation.
+
+**Security Checks:**
+- ✅ Existing authenticated settings routes still require a session.
+- ✅ Existing settings API validation, ownership-by-session, and CSRF behavior remain unchanged.
+- ✅ No secrets, raw SQL, or `dangerouslySetInnerHTML` introduced.
+- ✅ Query failures are logged without sensitive request data.
+
+**Next Task:** 16.2 — Implement 2FA (TOTP)

@@ -1247,6 +1247,118 @@ rtk bun run db:studio    # Open Drizzle Studio (in another terminal)
 **Priority order:** 15.1 → 15.2 → 15.3 → 15.4 → 15.5 → 15.6 → 15.7 → 15.8 → 15.9 → 15.10 → 15.11 → 15.12 → 15.13 → 15.14
 
 **Estimated total:** 85 + 14 = 99 tasks
+
+---
+
+## 🔴 Phase 16: Settings & Profile UX Hardening
+
+> **Source:** Rafi + Claw Kun audit — 2026-05-07. Fix settings crash, implement 2FA, refresh profile UI, and harden settings against production edge cases.
+
+### TASK 16.1 — Fix Settings Page Crash (Something Went Wrong)
+- [x] File: `src/app/(dashboard)/settings/page.tsx`
+- [x] Wrap DB queries in try/catch — if `findSettingsUserById` throws, show inline error state
+- [x] Handle null `notifications` JSON column gracefully (default to `{}`)
+- [x] File: `src/lib/db/queries/settings.ts` — return safe fallback if column is null
+- [x] Run `rtk bun run db:push` to sync schema
+- [x] Tests: unit (null handling), integration (settings renders with error recovery)
+
+### TASK 16.2 — Implement 2FA (TOTP)
+- [ ] Add `otpauth`: `rtk bun add otpauth`
+- [ ] Add DB columns: `twoFactorSecret` (text), `twoFactorEnabled` (boolean)
+- [ ] `rtk bun run db:push`
+- [ ] Create `src/lib/auth/two-factor.ts` — generate TOTP secret, verify token, generate backup codes (8 codes, SHA256 stored)
+- [ ] Create `src/app/api/v1/auth/2fa/setup/route.ts` — POST: return QR code otpauth:// URL
+- [ ] Create `src/app/api/v1/auth/2fa/verify/route.ts` — POST: verify setup token, enable 2FA, return backup codes
+- [ ] Create `src/app/api/v1/auth/2fa/disable/route.ts` — POST: require password, disable 2FA
+- [ ] Update login flow: after password valid, if `twoFactorEnabled` → show 2FA step
+- [ ] Create `src/app/(marketing)/2fa/page.tsx` — OTP input + backup code link
+- [ ] File: settings page — replace dead "Enable 2FA" button with real modal/flow:
+  ```
+  ┌───────────────────────────────────────┐
+  │ Two-Factor Authentication            │
+  │                                       │
+  │ [Disabled]:  [Enable 2FA]             │
+  │   → opens modal with QR code + verify │
+  │                                       │
+  │ [Enabled]:   🟢 2FA Active            │
+  │   [Disable 2FA]  [Regenerate codes]   │
+  └───────────────────────────────────────┘
+  ```
+- [ ] Backup codes shown once after setup; regenerate invalidates old codes
+- [ ] Tests: unit (TOTP verify, backup codes), integration (2FA setup + login)
+
+### TASK 16.3 — Refresh Profile Across Dashboard After Save
+- [ ] After saving profile name, sidebar still shows old name until page refresh
+- [ ] File: `src/app/(dashboard)/settings/settings-forms.tsx`
+- [ ] After successful profile save → call `router.refresh()` to reload server components
+- [ ] Ensure plan badge also refreshes after billing upgrade
+- [ ] Tests: integration (profile save → sidebar updates)
+
+### TASK 16.4 — Password Change UX
+- [ ] File: `src/app/(dashboard)/settings/settings-forms.tsx`
+- [ ] Add show/hide toggle on password fields (eye icon)
+- [ ] After success: show confirmation + "Sign out other devices" option
+- [ ] Delay form clear so user can read success message
+- [ ] Tests: unit (password toggle, success UX)
+
+### TASK 16.5 — Notification Persistence
+- [ ] Verify `notifications` JSON column loads correctly from DB
+- [ ] After save, update local state immediately (no page reload needed)
+- [ ] Tests: integration (save → reload → preferences intact)
+
+### TASK 16.6 — Change Email Flow
+- [ ] Create `src/app/api/v1/auth/change-email/route.ts` — POST: require password, send OTP to new email
+- [ ] Create `src/app/api/v1/auth/verify-new-email/route.ts` — POST: verify OTP, update email
+- [ ] Settings Profile tab: "Change Email" expandable section → password + new email + OTP
+- [ ] Tests: integration (change email full flow)
+
+### TASK 16.7 — Delete Account
+- [ ] Create `src/app/api/v1/auth/delete-account/route.ts` — POST: require password, soft-delete user + cascade
+- [ ] Add `deletedAt` to users table
+- [ ] Settings Security tab bottom: red warning card + "Delete My Account" → confirm dialog → password → final
+- [ ] After delete: sign out all sessions, redirect to landing
+- [ ] Tests: integration (delete account → login rejected)
+
+### TASK 16.8 — Logout Loading State
+- [ ] File: `src/components/dashboard/app-sidebar.tsx`
+- [ ] Show spinner in dropdown during sign out, disable menu
+- [ ] Tests: unit (loading state during sign out)
+
+### TASK 16.9 — Fix Upgrade Card Copy
+- [ ] Current: "Unlock Link Pages, Smart Rules, and unlimited links" — inaccurate (FREE has these already)
+- [ ] Update: "Unlock 500 links, 50 Link Pages, 10 campaigns, A/B testing, and API access"
+- [ ] Tests: unit (card copy)
+
+### TASK 16.10 — Help / Support Page
+- [ ] Create `src/app/(dashboard)/help/page.tsx` — FAQ + contact
+- [ ] Add "Help" to sidebar Account nav with `HelpCircle` icon
+- [ ] Tests: unit (page renders)
+
+### TASK 16.11 — Session Timeout Warning
+- [ ] Create `src/components/dashboard/session-timeout.tsx`
+- [ ] Monitor JWT expiry, warn at 5min remaining
+- [ ] "Extend Session" + "Sign Out" buttons
+- [ ] Include in dashboard layout
+- [ ] Tests: unit (timeout logic)
+
+### TASK 16.12 — Production DB Migration Check
+- [ ] Verify all new columns/tables pushed to production: notifications, resetTokens, apiKeys, twoFactorSecret, twoFactorEnabled, deletedAt
+- [ ] Create verification script or run `rtk bun run db:push` in production
+- [ ] Tests: integration (schema verification)
+
+---
+
+## 🚀 Ready to Start?
+
+```bash
+cd ~/projects/linksnap
+rtk bun run dev          # Start development
+rtk bun run db:studio    # Open Drizzle Studio (in another terminal)
+```
+
+**Priority order:** 16.1 → 16.2 → 16.3 → 16.4 → 16.5 → 16.6 → 16.7 → 16.8 → 16.9 → 16.10 → 16.11 → 16.12
+
+**Estimated total:** 99 + 12 = 111 tasks
 **Estimated timeline:** 12 weeks (3 months) for 1 full-time developer
 
 Good luck. Ship it. 🚀
