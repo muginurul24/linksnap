@@ -3935,3 +3935,42 @@ Added an ISO 3166-1 country data helper and a reusable `CountryCombobox` built o
 - ✅ Input filtering is local UI state only and does not call user-controlled fetch URLs.
 
 **Next Task:** 13.2 — Smart Rule Builder Form (Visual)
+
+### 13.2 — Smart Rule Builder Form (Visual)
+- **Date:** 2026-05-07 18:36 GMT+7
+- **Duration:** 0h 25m
+- **Status:** ✅ Complete
+
+**What I Did:**
+Added a reusable visual Smart Rule builder with active toggles, per-rule destination URLs, multiple conditions, country/device/bot/time controls, up/down reordering, delete actions, add actions, fallback destination input, and readable summaries. Added a pure helper layer for builder state operations and validation so the UI can be integrated into the link form in Task 13.5.
+
+**Files Changed:**
+- `_bmad-output/planning-artifacts/spec-smart-rule-builder-form.md` — Added task spec and risks.
+- `src/lib/rules/rule-builder.ts` — Added builder types, default state factories, control-kind mapping, add/remove/reorder helpers, bot/time helpers, summaries, and validation.
+- `src/components/smart-rules/rule-builder.tsx` — Added visual Rule Builder component.
+- `tests/unit/rule-builder.test.ts` — Added validation, add/remove/reorder, condition rendering, bot, time, and summary coverage.
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Checked off Task 13.2.
+- `_bmad-output/implementation-artifacts/JOURNAL.md` — Recorded this completion entry.
+
+**Decisions Made:**
+- Used up/down arrow controls for reordering to keep keyboard and screen-reader behavior predictable without adding a drag-and-drop dependency.
+- Modeled time conditions as a two-item value array (`start`, `end`) so it stays compatible with the planned V2 API value shape.
+- Kept the builder standalone for this task; the existing link form integration is intentionally deferred to Task 13.5.
+
+**Tests:**
+- ✅ Targeted: `rtk bun run test -- tests/unit/rule-builder.test.ts` — 1 file passed, 8 tests passed.
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Unit/Integration: `rtk bun run test` — 92 files passed, 417 tests passed.
+
+**Issues Encountered:**
+- TypeScript flagged the initial `crypto.randomUUID` guard as redundant → Reworked it to call `globalThis.crypto.randomUUID()` directly when available.
+- ESLint warned about an unused helper import in the test → Extended the add/remove coverage to exercise that helper.
+
+**Security Checks:**
+- ✅ Destination and fallback URLs are validated with the existing safe URL helper.
+- ✅ No API route or database ownership surface changed in this task.
+- ✅ No raw SQL, secrets, or `dangerouslySetInnerHTML` introduced.
+- ✅ Bot custom patterns remain local form strings and are not executed as regex.
+
+**Next Task:** 13.3 — Rule Engine Logic (Ordered Priority)

@@ -904,8 +904,8 @@ rtk bun run db:studio    # Open Drizzle Studio (in another terminal)
 - [x] Tests: unit (search filter, selection, keyboard nav)
 
 ### TASK 13.2 — Smart Rule Builder Form (Visual)
-- [ ] Create `src/components/smart-rules/rule-builder.tsx`
-- [ ] Replace current manual JSON/text input with visual form:
+- [x] Create `src/components/smart-rules/rule-builder.tsx`
+- [x] Replace current manual JSON/text input with visual form:
   ```
   ┌─────────────────────────────────────────┐
   │ Rule #1                          [Active ◆] │
@@ -923,19 +923,19 @@ rtk bun run db:studio    # Open Drizzle Studio (in another terminal)
   │ [+ Add Condition]  [🗑 Delete Rule]        │
   └─────────────────────────────────────────┘
   ```
-- [ ] Condition types: country, device, bot, time (date range)
-- [ ] Operator per condition: `is`, `is not`
-- [ ] Value selector changes based on type:
+- [x] Condition types: country, device, bot, time (date range)
+- [x] Operator per condition: `is`, `is not`
+- [x] Value selector changes based on type:
   - country → `CountryCombobox` (searchable)
   - device → dropdown: Mobile, Desktop, Tablet
   - bot → predefined checkboxes (Googlebot, Bingbot, Facebook, Twitter, etc.) + custom input
   - time → date range picker (start/end)
-- [ ] Each rule has: toggle (active/inactive), destination URL input
-- [ ] "+ Add Rule" button appends new rule at bottom
-- [ ] Rules are reorderable (drag handle or up/down arrows)
-- [ ] Fallback: "Default destination" field at the bottom (used when no rules match)
-- [ ] Readable summary below each rule: "IF country is Indonesia → moneysite.com"
-- [ ] Tests: unit (form validation, add/remove/reorder rules, condition rendering)
+- [x] Each rule has: toggle (active/inactive), destination URL input
+- [x] "+ Add Rule" button appends new rule at bottom
+- [x] Rules are reorderable (drag handle or up/down arrows)
+- [x] Fallback: "Default destination" field at the bottom (used when no rules match)
+- [x] Readable summary below each rule: "IF country is Indonesia → moneysite.com"
+- [x] Tests: unit (form validation, add/remove/reorder rules, condition rendering)
 
 ### TASK 13.3 — Rule Engine Logic (Ordered Priority)
 - [ ] File: `src/lib/rules/rule-engine.ts`
