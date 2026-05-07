@@ -2870,3 +2870,41 @@ Also fixed the reported "Upgrade to Pro" checkout failure by adding the required
 - ✅ No secrets were printed or committed.
 
 **Next Task:** 12.2 — Fix Sign Out
+
+### 12.2 — Fix Sign Out
+- **Date:** 2026-05-07 13:40 GMT+7
+- **Duration:** 0h 25m
+- **Status:** ✅ Complete
+
+**What I Did:**
+Connected the dashboard sidebar Sign Out menu item to the NextAuth client
+sign-out flow and added focused unit coverage for the landing-page redirect
+option used by the handler.
+
+**Files Changed:**
+- `src/components/dashboard/app-sidebar.tsx` — Added the Sign Out click handler.
+- `src/components/dashboard/sign-out.ts` — Added the shared sign-out callback helper.
+- `tests/unit/dashboard-sign-out.test.ts` — Added coverage for the sign-out callback URL.
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Checked off Task 12.2.
+- `_bmad-output/implementation-artifacts/JOURNAL.md` — Recorded this completion entry.
+
+**Decisions Made:**
+- Used `signOut` from `next-auth/react` because `AppSidebar` is a client component; importing from `@/lib/auth` would pull server auth configuration into the client boundary.
+- Kept the redirect target as `/` so sign out returns users to the landing page.
+
+**Tests:**
+- ✅ Targeted: `rtk bun run test -- tests/unit/dashboard-sign-out.test.ts` — 1 file passed, 1 test passed.
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Unit/Integration: `rtk bun run test` — 69 files passed, 303 tests passed.
+- ✅ Build: `rtk bun run build` — Passed.
+
+**Issues Encountered:**
+- Browser E2E verification was attempted, but dashboard rendering hit intermittent Neon fetch failures unrelated to the sidebar change. I kept stable coverage at the unit/build level instead of committing a flaky browser assertion.
+
+**Security Checks:**
+- ✅ No user input added.
+- ✅ Session invalidation is delegated to NextAuth client sign-out.
+- ✅ No secrets were printed or committed.
+
+**Next Task:** 12.3 — Connect Dashboard Overview to Real Data
