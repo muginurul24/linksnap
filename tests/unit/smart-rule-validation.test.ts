@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
   deleteSmartRuleQuerySchema,
+  toPersistedSmartRulesV2,
   upsertSmartRulesSchema,
+  upsertSmartRulesV2Schema,
 } from "../../src/lib/validations/smart-rule";
 
 describe("Smart Rule validation", () => {
@@ -76,5 +78,93 @@ describe("Smart Rule validation", () => {
     expect(deleteSmartRuleQuerySchema.safeParse({ ruleId: "bad" }).success).toBe(
       false,
     );
+  });
+
+  it("should accept V2 ordered rules with fallback destination", () => {
+    const parsed = upsertSmartRulesV2Schema.safeParse({
+      fallbackDestinationUrl: "https://example.com/default",
+      rules: [
+        {
+          conditions: [
+            { operator: "is", type: "country", value: "ID" },
+            { operator: "is_not", type: "device", value: "desktop" },
+          ],
+          destinationUrl: "https://example.com/id",
+          isActive: true,
+        },
+      ],
+    });
+
+    expect(parsed.success).toBe(true);
+    if (!parsed.success) return;
+
+    expect(toPersistedSmartRulesV2(parsed.data)).toMatchObject([
+      {
+        condition: {
+          fallbackDestinationUrl: "https://example.com/default",
+          isActive: true,
+          version: 2,
+        },
+        destinationUrl: "https://example.com/id",
+        priority: 0,
+        type: "GEO",
+      },
+    ]);
+  });
+
+  it("should reject invalid V2 country, device, and time values", () => {
+    expect(
+      upsertSmartRulesV2Schema.safeParse({
+        rules: [
+          {
+            conditions: [{ operator: "is", type: "country", value: "BAD" }],
+            destinationUrl: "https://example.com",
+            isActive: true,
+          },
+        ],
+      }).success,
+    ).toBe(false);
+
+    expect(
+      upsertSmartRulesV2Schema.safeParse({
+        rules: [
+          {
+            conditions: [{ operator: "is", type: "country", value: ["ID", "SG"] }],
+            destinationUrl: "https://example.com",
+            isActive: true,
+          },
+        ],
+      }).success,
+    ).toBe(false);
+
+    expect(
+      upsertSmartRulesV2Schema.safeParse({
+        rules: [
+          {
+            conditions: [{ operator: "is", type: "device", value: "watch" }],
+            destinationUrl: "https://example.com",
+            isActive: true,
+          },
+        ],
+      }).success,
+    ).toBe(false);
+
+    expect(
+      upsertSmartRulesV2Schema.safeParse({
+        rules: [
+          {
+            conditions: [
+              {
+                operator: "is",
+                type: "time",
+                value: ["2026-05-08", "2026-05-07"],
+              },
+            ],
+            destinationUrl: "https://example.com",
+            isActive: true,
+          },
+        ],
+      }).success,
+    ).toBe(false);
   });
 });

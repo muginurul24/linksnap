@@ -4017,6 +4017,47 @@ Extended the Smart Rules engine for V2 ordered rule evaluation. V2 rules now sup
 
 **Next Task:** 13.4 — Smart Rules API Update
 
+### 13.4 — Smart Rules API Update
+- **Date:** 2026-05-07 18:46 GMT+7
+- **Duration:** 0h 35m
+- **Status:** ✅ Complete
+
+**What I Did:**
+Updated Smart Rules validation and the link rules API to accept ordered V2 rules with `isActive`, typed conditions, and `fallbackDestinationUrl`. The route now supports both POST and PUT replacement, serializes V2 rules back in display order, hides the internal fallback sentinel row, and keeps legacy payloads working without migration.
+
+**Files Changed:**
+- `_bmad-output/planning-artifacts/spec-smart-rules-api-v2.md` — Added API V2 spec and fallback sentinel risk.
+- `src/lib/validations/smart-rule.ts` — Added V2 condition/rule/upsert schemas, V2 validation rules, and V2-to-persisted-row normalization.
+- `src/app/api/v1/links/[id]/rules/route.ts` — Added V2/legacy payload parsing, display-order serialization, fallback response field, PUT support, and quota counting for visible V2 rules.
+- `tests/unit/smart-rule-validation.test.ts` — Added V2 validation and persisted payload coverage.
+- `tests/integration/smart-rules-api.test.ts` — Added V2 CRUD/order/fallback tests and PUT coverage.
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Checked off Task 13.4.
+- `_bmad-output/implementation-artifacts/JOURNAL.md` — Recorded this completion entry.
+
+**Decisions Made:**
+- Stored V2 rule metadata inside the existing JSON condition field to avoid a schema migration.
+- Used an internal fallback-only sentinel row when users save a fallback with zero visible rules; GET hides that row from V2 clients.
+- Quota enforcement counts only submitted visible V2 rules, so fallback-only config does not consume a Smart Rule quota slot.
+
+**Tests:**
+- ✅ Targeted: `rtk bun run test -- tests/unit/smart-rule-validation.test.ts tests/integration/smart-rules-api.test.ts` — 2 files passed, 16 tests passed.
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Unit/Integration: `rtk bun run test` — 92 files passed, 428 tests passed.
+
+**Issues Encountered:**
+- Fallback-only sentinel rows initially serialized as legacy because their condition array is intentionally empty → Added explicit fallback-only parsing.
+- V2 destination URL normalization keeps path URLs unchanged (`/id` stays `/id`) while root URLs normalize with a trailing slash via `URL.toString()`.
+
+**Security Checks:**
+- ✅ V2 API inputs are validated with Zod.
+- ✅ API route still authenticates and verifies link ownership before reads/writes.
+- ✅ API route remains rate limited per user plan.
+- ✅ Destination and fallback URLs reuse the existing SSRF-safe URL validation.
+- ✅ No raw SQL, secrets, or `dangerouslySetInnerHTML` introduced.
+
+**Next Task:** 13.5 — Integrate into Link Form & Redirect Handler
+
 ### 13.3 — Rule Engine Logic (Ordered Priority)
 - **Date:** 2026-05-07 18:40 GMT+7
 - **Duration:** 0h 25m

@@ -957,9 +957,9 @@ rtk bun run db:studio    # Open Drizzle Studio (in another terminal)
 - [x] Tests: unit (rule matching, priority order, bot detection, inactive rules, no-match fallback)
 
 ### TASK 13.4 — Smart Rules API Update
-- [ ] File: `src/app/api/v1/links/[id]/rules/route.ts`
-- [ ] Update schema to support ordered rules array with priority
-- [ ] New rule schema `smartRuleV2Schema`:
+- [x] File: `src/app/api/v1/links/[id]/rules/route.ts`
+- [x] Update schema to support ordered rules array with priority
+- [x] New rule schema `smartRuleV2Schema`:
   ```typescript
   {
     isActive: boolean
@@ -971,11 +971,11 @@ rtk bun run db:studio    # Open Drizzle Studio (in another terminal)
     destinationUrl: string
   }
   ```
-- [ ] Add `fallbackDestinationUrl` field to link's rules config
-- [ ] GET returns rules in display order
-- [ ] POST/PUT accepts ordered rules array (order = priority)
-- [ ] Backward compatible: existing rules format still works (migration not required)
-- [ ] Tests: integration (CRUD v2 rules, ordering, validation)
+- [x] Add `fallbackDestinationUrl` field to link's rules config
+- [x] GET returns rules in display order
+- [x] POST/PUT accepts ordered rules array (order = priority)
+- [x] Backward compatible: existing rules format still works (migration not required)
+- [x] Tests: integration (CRUD v2 rules, ordering, validation)
 
 ### TASK 13.5 — Integrate into Link Form & Redirect Handler
 - [ ] File: `src/app/(dashboard)/links/link-form.tsx`

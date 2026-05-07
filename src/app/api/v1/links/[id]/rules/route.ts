@@ -19,9 +19,12 @@ import { slidingWindowRateLimit } from "@/lib/redis/rate-limit";
 import { linkIdParamsSchema, type LinkIdParams } from "@/lib/validations/link";
 import {
   deleteSmartRuleQuerySchema,
+  smartRuleV2Schema,
+  toPersistedSmartRulesV2,
   upsertSmartRulesSchema,
+  upsertSmartRulesV2Schema,
   type DeleteSmartRuleQuery,
-  type UpsertSmartRulesInput,
+  type SmartRuleV2Input,
 } from "@/lib/validations/smart-rule";
 import { getSmartRulesCacheKey } from "@/lib/rules/rule-engine";
 
@@ -46,6 +49,25 @@ class LinkForbiddenError extends Error {
     super("Link is owned by another user.");
   }
 }
+
+type ParsedSmartRulesPayload =
+  | {
+      fallbackDestinationUrl: string | null;
+      format: "v2";
+      quotaCount: number;
+      rules: Parameters<typeof replaceSmartRulesForLink>[0]["rules"];
+    }
+  | {
+      fallbackDestinationUrl: null;
+      format: "legacy";
+      quotaCount: number;
+      rules: Parameters<typeof replaceSmartRulesForLink>[0]["rules"];
+    };
+
+type SmartRuleV2Response = SmartRuleV2Input & {
+  id: string;
+  priority: number;
+};
 
 class SmartRuleQuotaExceededError extends Error {
   constructor(public readonly quota: number) {
@@ -169,13 +191,114 @@ async function getAuthorizedLink(id: string, userId: string): Promise<LinkDetail
   return link;
 }
 
-function assertSmartRuleQuota(
-  input: UpsertSmartRulesInput,
-  userPlan: UserPlan,
-): void {
-  if (!exceedsSmartRuleQuota(userPlan, input.rules.length)) return;
+function assertSmartRuleQuota(ruleCount: number, userPlan: UserPlan): void {
+  if (!exceedsSmartRuleQuota(userPlan, ruleCount)) return;
 
   throw new SmartRuleQuotaExceededError(getSmartRuleQuota(userPlan));
+}
+
+function getV2Payload(rule: { condition: unknown }) {
+  if (typeof rule.condition !== "object" || rule.condition === null) return null;
+  if (Array.isArray(rule.condition)) return null;
+
+  const condition = rule.condition as Record<string, unknown>;
+  const parsed = zodSafeV2Payload(condition);
+  return parsed;
+}
+
+function zodSafeV2Payload(condition: Record<string, unknown>) {
+  if (condition.fallbackOnly === true && Array.isArray(condition.conditions)) {
+    return {
+      conditions: [],
+      fallbackDestinationUrl:
+        typeof condition.fallbackDestinationUrl === "string"
+          ? condition.fallbackDestinationUrl
+          : null,
+      fallbackOnly: true,
+      isActive: false,
+    };
+  }
+
+  const rules = smartRuleV2Schema.shape.conditions.safeParse(condition.conditions);
+  if (!rules.success) return null;
+
+  return {
+    conditions: rules.data,
+    fallbackDestinationUrl:
+      typeof condition.fallbackDestinationUrl === "string"
+        ? condition.fallbackDestinationUrl
+        : null,
+    fallbackOnly: condition.fallbackOnly === true,
+    isActive:
+      typeof condition.isActive === "boolean" ? condition.isActive : true,
+  };
+}
+
+function serializeRulesForResponse(rules: Awaited<ReturnType<typeof listSmartRulesByLinkId>>) {
+  const v2Rules: SmartRuleV2Response[] = [];
+  let fallbackDestinationUrl: string | null = null;
+  let sawV2Rule = false;
+
+  for (const rule of rules) {
+    const payload = getV2Payload(rule);
+    if (!payload) continue;
+
+    sawV2Rule = true;
+    fallbackDestinationUrl ??= payload.fallbackDestinationUrl;
+    if (payload.fallbackOnly) continue;
+
+    v2Rules.push({
+      conditions: payload.conditions,
+      destinationUrl: rule.destinationUrl,
+      id: rule.id,
+      isActive: payload.isActive,
+      priority: rule.priority,
+    });
+  }
+
+  if (!sawV2Rule) {
+    return {
+      fallbackDestinationUrl: null,
+      format: "legacy" as const,
+      rules,
+    };
+  }
+
+  return {
+    fallbackDestinationUrl,
+    format: "v2" as const,
+    rules: v2Rules,
+  };
+}
+
+function parseSmartRulesPayload(
+  body: unknown,
+): { data: ParsedSmartRulesPayload } | { error: Record<string, unknown> } {
+  const parsedV2 = upsertSmartRulesV2Schema.safeParse(body);
+  if (parsedV2.success) {
+    return {
+      data: {
+        fallbackDestinationUrl: parsedV2.data.fallbackDestinationUrl ?? null,
+        format: "v2",
+        quotaCount: parsedV2.data.rules.length,
+        rules: toPersistedSmartRulesV2(parsedV2.data),
+      },
+    };
+  }
+
+  const parsedLegacy = upsertSmartRulesSchema.safeParse(body);
+  if (parsedLegacy.success) {
+    return {
+      data: {
+        fallbackDestinationUrl: null,
+        format: "legacy",
+        quotaCount: parsedLegacy.data.rules.length,
+        rules: parsedLegacy.data.rules,
+      },
+    };
+  }
+
+  return { error: parsedV2.error.flatten() as Record<string, unknown> };
 }
 
 function handleKnownError(error: unknown, requestId: string): Response | null {
@@ -229,7 +352,7 @@ export async function GET(_request: NextRequest, context: SmartRulesRouteContext
     const link = await getAuthorizedLink(parsedParams.params.id, authResult.userId);
     const rules = await listSmartRulesByLinkId(link.id);
 
-    return successResponse({ linkId: link.id, rules });
+    return successResponse({ linkId: link.id, ...serializeRulesForResponse(rules) });
   } catch (error) {
     const knownError = handleKnownError(error, requestId);
     if (knownError) return knownError;
@@ -239,29 +362,33 @@ export async function GET(_request: NextRequest, context: SmartRulesRouteContext
   }
 }
 
-export async function POST(request: NextRequest, context: SmartRulesRouteContext) {
+async function upsertRules(
+  request: NextRequest,
+  context: SmartRulesRouteContext,
+  method: "POST" | "PUT",
+) {
   const requestId = createRequestId();
 
   try {
-    const authResult = await getAuthenticatedUser("POST", requestId);
+    const authResult = await getAuthenticatedUser(method, requestId);
     if ("response" in authResult) return authResult.response;
 
     const parsedParams = await parseParams(context, requestId);
     if ("response" in parsedParams) return parsedParams.response;
 
     const body = await request.json().catch(() => null);
-    const parsedBody = upsertSmartRulesSchema.safeParse(body);
-    if (!parsedBody.success) {
+    const parsedBody = parseSmartRulesPayload(body);
+    if ("error" in parsedBody) {
       return errorResponse(
         "VALIDATION_ERROR",
         "Invalid Smart Rules input.",
         400,
         requestId,
-        parsedBody.error.flatten(),
+        parsedBody.error,
       );
     }
 
-    assertSmartRuleQuota(parsedBody.data, authResult.userPlan);
+    assertSmartRuleQuota(parsedBody.data.quotaCount, authResult.userPlan);
 
     const link = await getAuthorizedLink(parsedParams.params.id, authResult.userId);
     const rules = await replaceSmartRulesForLink({
@@ -270,14 +397,22 @@ export async function POST(request: NextRequest, context: SmartRulesRouteContext
     });
     await invalidateSmartRuleCaches(link.slug);
 
-    return successResponse({ linkId: link.id, rules });
+    return successResponse({ linkId: link.id, ...serializeRulesForResponse(rules) });
   } catch (error) {
     const knownError = handleKnownError(error, requestId);
     if (knownError) return knownError;
 
-    console.error("[POST /api/v1/links/[id]/rules]", error);
+    console.error(`[${method} /api/v1/links/[id]/rules]`, error);
     return errorResponse("INTERNAL_ERROR", "Unable to save Smart Rules.", 500, requestId);
   }
+}
+
+export async function POST(request: NextRequest, context: SmartRulesRouteContext) {
+  return upsertRules(request, context, "POST");
+}
+
+export async function PUT(request: NextRequest, context: SmartRulesRouteContext) {
+  return upsertRules(request, context, "PUT");
 }
 
 export async function DELETE(request: NextRequest, context: SmartRulesRouteContext) {
