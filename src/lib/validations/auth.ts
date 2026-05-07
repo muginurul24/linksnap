@@ -66,3 +66,34 @@ export const loginSchema = z
   .strict();
 
 export type LoginInput = z.infer<typeof loginSchema>;
+
+export const forgotPasswordSchema = z
+  .object({
+    email: emailSchema,
+  })
+  .strict();
+
+export type ForgotPasswordInput = z.infer<typeof forgotPasswordSchema>;
+
+export const resetPasswordSchema = z
+  .object({
+    token: z
+      .string()
+      .trim()
+      .min(32, "Reset token is missing or invalid")
+      .max(256, "Reset token is too long"),
+    password: passwordSchema,
+    confirmPassword: z.string().min(1, "Confirm your password"),
+  })
+  .strict()
+  .superRefine((data, ctx) => {
+    if (data.password !== data.confirmPassword) {
+      ctx.addIssue({
+        code: "custom",
+        message: "Passwords do not match",
+        path: ["confirmPassword"],
+      });
+    }
+  });
+
+export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>;

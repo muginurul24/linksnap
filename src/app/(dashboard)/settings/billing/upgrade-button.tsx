@@ -42,7 +42,10 @@ export function UpgradeButton({
     try {
       const response = await fetch("/api/v1/payments/create", {
         body: JSON.stringify({ duration, plan }),
-        headers: { "content-type": "application/json" },
+        headers: {
+          "content-type": "application/json",
+          "X-Requested-With": "XMLHttpRequest",
+        },
         method: "POST",
       });
       const body = (await response.json()) as CreatePaymentResponse;

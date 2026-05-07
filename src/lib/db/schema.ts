@@ -52,6 +52,25 @@ export const users = pgTable("users", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+// ─── Password Reset Tokens ───
+export const resetTokens = pgTable(
+  "reset_tokens",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    userId: uuid("user_id")
+      .references(() => users.id, { onDelete: "cascade" })
+      .notNull(),
+    tokenHash: varchar("token_hash", { length: 64 }).notNull().unique(),
+    expiresAt: timestamp("expires_at").notNull(),
+    usedAt: timestamp("used_at"),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (table) => ({
+    tokenHashIdx: uniqueIndex("reset_tokens_token_hash_idx").on(table.tokenHash),
+    userIdIdx: index("reset_tokens_user_id_idx").on(table.userId),
+  }),
+);
+
 // ─── Links ───
 export const links = pgTable(
   "links",
