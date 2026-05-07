@@ -408,13 +408,13 @@ src/
 - [x] Auth: required, ownership check
 
 ### TASK 7.2 — Split Test Router
-- Integrate into redirect handler (`[slug]/page.tsx`)
-- If link has active split test:
+- [x] Integrate into redirect handler (`[slug]/page.tsx`)
+- [x] If link has active split test:
   1. Calculate total weight
   2. Generate random number 0-totalWeight
   3. Select variant based on weight range
   4. Log which variant was selected
-- Increment `clickCount` on variant
+- [x] Increment `clickCount` on variant
 
 ### TASK 7.3 — Split Test Tests
 - Unit: variant selection algorithm

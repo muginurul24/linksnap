@@ -35,6 +35,19 @@ type MockLinkPage = {
   title: string;
 };
 
+type MockSplitTest = {
+  createdAt: Date;
+  id: string;
+  isActive: boolean;
+  linkId: string;
+  variants: Array<{
+    clickCount: number;
+    destinationUrl: string;
+    id: string;
+    weight: number;
+  }>;
+};
+
 type CreateLinkRecordInput = {
   destinationUrl: string;
   slug: string;
@@ -74,6 +87,8 @@ const mockState = vi.hoisted(() => ({
   loggedClicks: [] as RedirectClickInput[],
   ruleResult: null as { destinationUrl: string; ruleId: string } | null,
   session: { user: { id: "user-1" } } as MockSession,
+  splitTest: null as MockSplitTest | null,
+  updatedVariantClicks: [] as Array<{ clickCount: number; id: string }>,
 }));
 
 vi.mock("@/lib/auth", () => ({
@@ -151,6 +166,20 @@ vi.mock("@/lib/rules/rule-engine", () => ({
   evaluateSmartRulesForLink: async () => mockState.ruleResult,
 }));
 
+vi.mock("@/lib/db/queries/split-tests", () => ({
+  findSplitTestByLinkId: async (linkId: string) =>
+    mockState.splitTest?.linkId === linkId ? mockState.splitTest : null,
+  updateSplitTestVariantClickCount: async ({
+    clickCount,
+    id,
+  }: {
+    clickCount: number;
+    id: string;
+  }) => {
+    mockState.updatedVariantClicks.push({ clickCount, id });
+  },
+}));
+
 vi.mock("next/headers", () => ({
   headers: async () =>
     new Headers({
@@ -205,6 +234,8 @@ describe("create redirect click flow", () => {
     mockState.loggedClicks = [];
     mockState.ruleResult = null;
     mockState.session = { user: { id: "user-1" } };
+    mockState.splitTest = null;
+    mockState.updatedVariantClicks = [];
   });
 
   afterAll(() => {
@@ -281,6 +312,67 @@ describe("create redirect click flow", () => {
         linkPageHasCountdown: false,
         referrer: "https://referrer.example",
         ruleId: "rule-mobile",
+        userAgent: "Vitest",
+      },
+    ]);
+  });
+
+  it("should select split test variant destination during direct redirect", async () => {
+    const response = await POST(
+      createJsonRequest({
+        destinationUrl: "https://example.com/default",
+        slug: "split-flow",
+      }),
+    );
+    const body = await readJson<CreateLinkResponse>(response);
+
+    expect(response.status).toBe(201);
+    expect(body.success).toBe(true);
+    if (!body.success) return;
+
+    mockState.splitTest = {
+      createdAt: new Date("2026-05-06T10:00:00.000Z"),
+      id: "split-test-1",
+      isActive: true,
+      linkId: body.data.id,
+      variants: [
+        {
+          clickCount: 0,
+          destinationUrl: "https://example.com/a",
+          id: "variant-a",
+          weight: 50,
+        },
+        {
+          clickCount: 4,
+          destinationUrl: "https://example.com/b",
+          id: "variant-b",
+          weight: 50,
+        },
+      ],
+    };
+    const randomSpy = vi.spyOn(Math, "random").mockReturnValue(0.75);
+
+    try {
+      await expect(
+        RedirectPage({ params: Promise.resolve({ slug: "split-flow" }) }),
+      ).rejects.toMatchObject({
+        message: "NEXT_REDIRECT",
+        url: "https://example.com/b",
+      });
+    } finally {
+      randomSpy.mockRestore();
+    }
+
+    expect(mockState.updatedVariantClicks).toEqual([
+      { clickCount: 5, id: "variant-b" },
+    ]);
+    expect(mockState.loggedClicks).toEqual([
+      {
+        eventType: "DIRECT_REDIRECT",
+        linkId: body.data.id,
+        linkPageHasCountdown: false,
+        referrer: "https://referrer.example",
+        ruleId: null,
         userAgent: "Vitest",
       },
     ]);

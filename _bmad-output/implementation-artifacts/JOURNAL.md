@@ -1950,3 +1950,44 @@ Implemented authenticated split test management for links. Users can create or u
 - ✅ No raw SQL, secrets, plaintext IP storage, or sensitive logging added.
 
 **Next Task:** 7.2 — Split Test Router
+
+### 7.2 — Split Test Router
+- **Date:** 2026-05-07 07:43 GMT+7
+- **Duration:** 0h 30m
+- **Status:** ✅ Complete
+
+**What I Did:**
+Integrated split-test routing into public redirects. Direct redirects and Link Page CTA redirects now select an active split-test variant when no Smart Rule destination is selected, redirect to the selected variant destination, and increment the variant click counter.
+
+**Files Changed:**
+- `src/lib/split-tests/router.ts` — Added weighted variant selection and split-test redirect resolution.
+- `src/lib/db/queries/split-tests.ts` — Added variant click-count update helper.
+- `src/app/[slug]/page.tsx` — Integrated split-test destination selection into direct redirects.
+- `src/app/[slug]/go/route.ts` — Integrated split-test destination selection into Link Page CTA redirects.
+- `tests/unit/split-test-router.test.ts` — Added deterministic weighted selection tests.
+- `tests/integration/create-redirect-click-flow.test.ts` — Added redirect flow coverage for split-test selection and variant click increment.
+- `tests/integration/smart-rule-redirect-flow.test.ts` — Added split-test query mock so Smart Rule tests remain isolated.
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Checked off Task 7.2.
+- `_bmad-output/implementation-artifacts/JOURNAL.md` — Recorded this completion entry.
+
+**Decisions Made:**
+- Smart Rules keep precedence over split tests; if a rule matches, the rule destination is used and split-test selection is skipped.
+- Variant selection is deterministic under injected random values for unit tests and uses runtime randomness in production.
+- Variant click count is the selected-variant log for the current schema; click events do not yet have a split-test variant column.
+
+**Tests:**
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Unit/Integration: `rtk bun run test` — 50 files passed, 233 tests passed.
+- ✅ Build: `rtk bun run build` — Passed.
+
+**Issues Encountered:**
+- Existing Smart Rule redirect test needed a no-op split-test query mock after the redirect handler began checking split tests.
+
+**Security Checks:**
+- ✅ Public slug validation remains in place before redirect handling.
+- ✅ Split-test destinations come from the validated management API.
+- ✅ Smart Rule precedence avoids changing existing conditional redirect behavior.
+- ✅ No secrets, plaintext IP storage, raw SQL, or sensitive logging added.
+
+**Next Task:** 7.3 — Split Test Tests
