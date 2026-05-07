@@ -5578,3 +5578,37 @@ Added a dashboard session timeout warning that appears during the final five min
 - ✅ No secrets, raw SQL, or `dangerouslySetInnerHTML` introduced.
 
 **Next Task:** 16.12 — Production DB Migration Check
+
+### 16.12 — Production DB Migration Check
+- **Date:** 2026-05-07 23:38 GMT+7
+- **Duration:** 0h 20m
+- **Status:** ✅ Complete
+
+**What I Did:**
+Verified production schema state after Phase 16 database changes and added a Drizzle-based verification script. Added schema definition coverage for the required user columns and existing reset token/API key tables.
+
+**Files Changed:**
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Checked off Task 16.12.
+- `scripts/verify-production-schema.ts` — Added production schema verification using Drizzle selects without raw SQL.
+- `tests/integration/schema-verification.test.ts` — Added schema definition checks for required columns/tables.
+
+**Decisions Made:**
+- Used Drizzle zero-row selects for runtime verification instead of raw `information_schema` SQL to stay within project DB conventions.
+
+**Tests:**
+- ✅ Database: `rtk bun run db:push` — Changes applied.
+- ✅ Script: `rtk bun run scripts/verify-production-schema.ts` — Passed.
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Targeted Integration: `rtk bun run test -- tests/integration/schema-verification.test.ts` — 1 file passed, 2 tests passed.
+- ✅ Unit/Integration: `rtk bun run test` — 116 files passed, 513 tests passed.
+- ✅ Build: `rtk bun run build` — Passed.
+
+**Issues Encountered:**
+- None.
+
+**Security Checks:**
+- ✅ Verification script performs read-only zero-row selects.
+- ✅ No secrets, raw SQL, or `dangerouslySetInnerHTML` introduced.
+
+**Next Task:** Phase 16 complete.

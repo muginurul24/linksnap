@@ -1342,9 +1342,9 @@ rtk bun run db:studio    # Open Drizzle Studio (in another terminal)
 - [x] Tests: unit (timeout logic)
 
 ### TASK 16.12 — Production DB Migration Check
-- [ ] Verify all new columns/tables pushed to production: notifications, resetTokens, apiKeys, twoFactorSecret, twoFactorEnabled, deletedAt
-- [ ] Create verification script or run `rtk bun run db:push` in production
-- [ ] Tests: integration (schema verification)
+- [x] Verify all new columns/tables pushed to production: notifications, resetTokens, apiKeys, twoFactorSecret, twoFactorEnabled, deletedAt
+- [x] Create verification script or run `rtk bun run db:push` in production
+- [x] Tests: integration (schema verification)
 
 ---
 
