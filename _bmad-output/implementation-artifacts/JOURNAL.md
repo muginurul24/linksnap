@@ -2292,3 +2292,41 @@ Built the public landing page in the marketing route group with hero, six featur
 - ✅ No secrets, raw SQL, or user-controlled fetch URLs added.
 
 **Next Task:** 9.2 — Pricing Page
+
+### 9.2 — Pricing Page
+- **Date:** 2026-05-07 09:11 GMT+7
+- **Duration:** 0h 20m
+- **Status:** ✅ Complete
+
+**What I Did:**
+Added the public pricing page with monthly/yearly billing toggle, Free/Pro/Business plan cards, full feature comparison table, FAQ section, metadata, and structured pricing data.
+
+**Files Changed:**
+- `src/app/(marketing)/pricing/page.tsx` — Added pricing route metadata and JSON-LD.
+- `src/components/landing/pricing-page.tsx` — Added pricing UI, billing toggle, comparison table, trust bar, and FAQ.
+- `src/components/landing/landing-page.tsx` — Pointed public pricing navigation to `/pricing`.
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Checked off Task 9.2.
+- `_bmad-output/implementation-artifacts/JOURNAL.md` — Recorded this completion entry.
+
+**Decisions Made:**
+- Pricing toggle is client-side only because it changes display amounts and does not require server state.
+- Yearly prices use the PRD values: Pro `$75/year`, Business `$180/year`.
+- FAQ uses native `details` elements for accessible disclosure without adding another UI dependency.
+
+**Tests:**
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Unit/Integration: `rtk bun run test` — 60 files passed, 274 tests passed.
+- ✅ Build: `rtk bun run build` — Passed; `/pricing` is registered as a static route.
+- ✅ Browser: Playwright loaded `/pricing`, verified yearly toggle values, opened FAQ content, and confirmed zero console/Next DevTools errors.
+
+**Issues Encountered:**
+- None.
+
+**Security Checks:**
+- ✅ No secrets or payment keys exposed in client code.
+- ✅ Pricing page performs no writes and creates no unauthenticated API surface.
+- ✅ JSON-LD is rendered without `dangerouslySetInnerHTML`.
+- ✅ No raw SQL, user-controlled fetch URLs, or sensitive logging added.
+
+**Next Task:** 9.3 — Blog

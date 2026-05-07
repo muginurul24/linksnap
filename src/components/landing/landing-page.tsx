@@ -579,7 +579,7 @@ function Footer() {
           <Link href="#features" className="hover:text-foreground">
             Features
           </Link>
-          <Link href="#pricing" className="hover:text-foreground">
+          <Link href="/pricing" className="hover:text-foreground">
             Pricing
           </Link>
           <Link href="#demo" className="hover:text-foreground">

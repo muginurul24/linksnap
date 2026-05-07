@@ -472,11 +472,11 @@ src/
 - [x] SEO: meta tags, OG image, structured data
 
 ### TASK 9.2 — Pricing Page
-- File: `src/app/(marketing)/pricing/page.tsx`
-- Monthly/annual toggle
-- 3 plan cards: Free, Pro, Business
-- Feature comparison table
-- FAQ section
+- [x] File: `src/app/(marketing)/pricing/page.tsx`
+- [x] Monthly/annual toggle
+- [x] 3 plan cards: Free, Pro, Business
+- [x] Feature comparison table
+- [x] FAQ section
 
 ### TASK 9.3 — Blog
 - File: `src/app/(marketing)/blog/page.tsx`
