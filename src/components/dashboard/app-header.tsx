@@ -10,30 +10,57 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
-import { usePathname } from "next/navigation";
-import { Search, Bell, Sun, Moon } from "lucide-react";
+import { usePathname, useRouter } from "next/navigation";
+import { Search, Sun, Moon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useTheme } from "next-themes";
-import { Fragment, useSyncExternalStore } from "react";
+import { type FormEvent, Fragment, useSyncExternalStore } from "react";
+import {
+  buildLinksSearchHref,
+  LINKS_SEARCH_MAX_LENGTH,
+} from "@/lib/links/search";
 
 const subscribeToClientMount = () => () => {};
 const getClientMountSnapshot = () => true;
 const getServerMountSnapshot = () => false;
 
-const breadcrumbMap: Record<string, { label: string; href?: string }[]> = {
-  "/": [{ label: "Dashboard" }],
-  "/links": [{ label: "Dashboard", href: "/" }, { label: "My Links" }],
-  "/pages": [{ label: "Dashboard", href: "/" }, { label: "Link Pages" }],
-  "/qr": [{ label: "Dashboard", href: "/" }, { label: "QR Codes" }],
-  "/campaigns": [{ label: "Dashboard", href: "/" }, { label: "Campaigns" }],
-  "/analytics": [{ label: "Dashboard", href: "/" }, { label: "Analytics" }],
-  "/settings": [{ label: "Dashboard", href: "/" }, { label: "Settings" }],
-  "/settings/billing": [{ label: "Dashboard", href: "/" }, { label: "Settings", href: "/settings" }, { label: "Billing" }],
+export type DashboardBreadcrumb = {
+  href?: string;
+  label: string;
 };
+
+const breadcrumbMap: Record<string, DashboardBreadcrumb[]> = {
+  "/dashboard": [{ label: "Dashboard" }],
+  "/links": [{ label: "Dashboard", href: "/dashboard" }, { label: "My Links" }],
+  "/pages": [{ label: "Dashboard", href: "/dashboard" }, { label: "Link Pages" }],
+  "/qr": [{ label: "Dashboard", href: "/dashboard" }, { label: "QR Codes" }],
+  "/campaigns": [
+    { label: "Dashboard", href: "/dashboard" },
+    { label: "Campaigns" },
+  ],
+  "/analytics": [
+    { label: "Dashboard", href: "/dashboard" },
+    { label: "Analytics" },
+  ],
+  "/settings": [
+    { label: "Dashboard", href: "/dashboard" },
+    { label: "Settings" },
+  ],
+  "/settings/billing": [
+    { label: "Dashboard", href: "/dashboard" },
+    { label: "Settings", href: "/settings" },
+    { label: "Billing" },
+  ],
+};
+
+export function getDashboardBreadcrumbs(pathname: string): DashboardBreadcrumb[] {
+  return breadcrumbMap[pathname] ?? [{ label: "Dashboard" }];
+}
 
 export function AppHeader() {
   const pathname = usePathname();
+  const router = useRouter();
   const { theme, setTheme } = useTheme();
   const mounted = useSyncExternalStore(
     subscribeToClientMount,
@@ -41,7 +68,15 @@ export function AppHeader() {
     getServerMountSnapshot,
   );
 
-  const crumbs = breadcrumbMap[pathname] ?? [{ label: "Dashboard" }];
+  const crumbs = getDashboardBreadcrumbs(pathname);
+
+  function handleSearchSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    const formData = new FormData(event.currentTarget);
+    const search = formData.get("search");
+    router.push(buildLinksSearchHref(search));
+  }
 
   return (
     <header className="sticky top-0 z-30 flex h-14 shrink-0 items-center gap-3 border-b bg-background px-4 md:px-6">
@@ -66,13 +101,17 @@ export function AppHeader() {
         </BreadcrumbList>
       </Breadcrumb>
       <div className="ml-auto flex items-center gap-2">
-        <div className="relative hidden md:block">
+        <form className="relative hidden md:block" onSubmit={handleSearchSubmit}>
           <Search className="absolute left-2.5 top-2.5 size-4 text-muted-foreground" />
-          <Input type="search" placeholder="Search links..." className="w-64 pl-8" />
-        </div>
-        <Button variant="ghost" size="icon" className="text-muted-foreground">
-          <Bell className="size-4" />
-        </Button>
+          <Input
+            aria-label="Search links"
+            className="w-64 pl-8"
+            maxLength={LINKS_SEARCH_MAX_LENGTH}
+            name="search"
+            placeholder="Search links..."
+            type="search"
+          />
+        </form>
         {mounted && (
           <Button variant="ghost" size="icon" onClick={() => setTheme(theme === "dark" ? "light" : "dark")}>
             {theme === "dark" ? <Sun className="size-4" /> : <Moon className="size-4" />}

@@ -3037,3 +3037,45 @@ interactive route highlighting and sign-out behavior.
 - ✅ No secrets were printed or committed.
 
 **Next Task:** 12.6 — Fix Dashboard App Bar Issues
+
+### 12.6 — Fix Dashboard App Bar Issues
+- **Date:** 2026-05-07 14:31 GMT+7
+- **Duration:** 0h 25m
+- **Status:** ✅ Complete
+
+**What I Did:**
+Fixed dashboard breadcrumbs, removed the dead notification bell, and connected
+dashboard search to real link filtering. App-header search now routes to
+`/links?search=...`, and the Links page reads that query before calling the
+owner-scoped link list query.
+
+**Files Changed:**
+- `src/components/dashboard/app-header.tsx` — Updated breadcrumb targets, added search submit behavior, and removed the notification bell button.
+- `src/app/(dashboard)/links/page.tsx` — Read `searchParams`, passed search into `listLinksByUserId`, and made the page search form submit via GET.
+- `src/lib/links/search.ts` — Added shared search normalization and href building helpers.
+- `tests/unit/dashboard-app-header.test.ts` — Added breadcrumb and search helper coverage.
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Checked off Task 12.6.
+- `_bmad-output/implementation-artifacts/JOURNAL.md` — Recorded this completion entry.
+
+**Decisions Made:**
+- Implemented search instead of removing it because the backend link query already supports slug/destination/title search.
+- Removed the bell icon rather than showing fake notification UI because there is no persisted notification model yet.
+- Limited header/page search to 100 characters to match the existing API query validation and avoid expensive unbounded search terms.
+
+**Tests:**
+- ✅ Targeted: `rtk bun run test -- tests/unit/dashboard-app-header.test.ts` — 1 file passed, 5 tests passed.
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Unit/Integration: `rtk bun run test` — 74 files passed, 322 tests passed.
+- ✅ Build: `rtk bun run build` — Passed.
+
+**Issues Encountered:**
+- Browser runtime verification was not useful without an authenticated dashboard session; stable verification came from unit coverage, typecheck, full tests, and the Next production build.
+
+**Security Checks:**
+- ✅ Search input is normalized and length-limited before building routes or DB filters.
+- ✅ Link filtering remains scoped to `session.user.id`.
+- ✅ No unsafe URLs are passed to `router.push`; only app-owned `/links` hrefs are generated.
+- ✅ No secrets were printed or committed.
+
+**Next Task:** 12.7 — Enforce Plan Limits for Campaigns/QR
