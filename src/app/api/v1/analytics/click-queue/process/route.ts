@@ -1,5 +1,10 @@
 import { NextRequest } from "next/server";
-import { createRequestId, errorResponse, successResponse } from "@/lib/api/response";
+import {
+  createRequestId,
+  errorResponse,
+  logApiErrorResponse,
+  successResponse,
+} from "@/lib/api/response";
 import {
   processRedirectClickQueue,
   REDIRECT_CLICK_QUEUE_PROCESS_LIMIT,
@@ -52,7 +57,7 @@ export async function GET(request: NextRequest) {
 
     return successResponse(result, 200);
   } catch (error) {
-    console.error("[GET /api/v1/analytics/click-queue/process]", error);
+    logApiErrorResponse({ code: "INTERNAL_ERROR", error, requestId, route: "GET /api/v1/analytics/click-queue/process" });
     return errorResponse(
       "INTERNAL_ERROR",
       "Unable to process click queue.",

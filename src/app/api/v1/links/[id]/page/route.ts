@@ -1,6 +1,11 @@
 import { NextRequest } from "next/server";
 import { auth } from "@/lib/auth";
-import { createRequestId, errorResponse, successResponse } from "@/lib/api/response";
+import {
+  createRequestId,
+  errorResponse,
+  logApiErrorResponse,
+  successResponse,
+} from "@/lib/api/response";
 import {
   countLinkPagesByUserId,
   findLinkById,
@@ -239,7 +244,7 @@ export async function GET(_request: NextRequest, context: LinkPageRouteContext) 
     const knownError = handleKnownError(error, requestId);
     if (knownError) return knownError;
 
-    console.error("[GET /api/v1/links/[id]/page]", error);
+    logApiErrorResponse({ code: "INTERNAL_ERROR", error, requestId, route: "GET /api/v1/links/[id]/page" });
     return errorResponse("INTERNAL_ERROR", "Unable to get Link Page.", 500, requestId);
   }
 }
@@ -292,7 +297,7 @@ export async function POST(request: NextRequest, context: LinkPageRouteContext) 
     const knownError = handleKnownError(error, requestId);
     if (knownError) return knownError;
 
-    console.error("[POST /api/v1/links/[id]/page]", error);
+    logApiErrorResponse({ code: "INTERNAL_ERROR", error, requestId, route: "POST /api/v1/links/[id]/page" });
     return errorResponse(
       "INTERNAL_ERROR",
       "Unable to save Link Page.",

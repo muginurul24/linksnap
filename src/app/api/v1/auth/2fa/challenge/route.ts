@@ -1,5 +1,10 @@
 import { NextRequest } from "next/server";
-import { createRequestId, errorResponse, successResponse } from "@/lib/api/response";
+import {
+  createRequestId,
+  errorResponse,
+  logApiErrorResponse,
+  successResponse,
+} from "@/lib/api/response";
 import { verifyPassword } from "@/lib/auth/password";
 import { getRequestIp } from "@/lib/auth/request-ip";
 import { createTwoFactorChallenge } from "@/lib/auth/two-factor-challenge";
@@ -84,7 +89,7 @@ export async function POST(request: NextRequest) {
       twoFactorRequired,
     });
   } catch (error) {
-    console.error("[POST /api/v1/auth/2fa/challenge]", error);
+    logApiErrorResponse({ code: "INTERNAL_ERROR", error, requestId, route: "POST /api/v1/auth/2fa/challenge" });
     return errorResponse(
       "INTERNAL_ERROR",
       "Unable to start sign-in.",

@@ -8,6 +8,7 @@ import {
   type SettingsUser,
 } from "@/lib/db/queries/settings";
 import type { UserPlan } from "@/lib/links/limits";
+import { logger } from "@/lib/observability/logger";
 
 export type SettingsPageData =
   | {
@@ -57,7 +58,7 @@ export async function loadSettingsPageData(userId: string): Promise<SettingsPage
       status: "ready",
     };
   } catch (error) {
-    console.error("[SettingsPage] Unable to load settings", error);
+    logger.error("settings_page_data_load_failed", { error, userId });
 
     return {
       apiKeys: [],

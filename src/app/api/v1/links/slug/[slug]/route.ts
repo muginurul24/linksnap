@@ -1,6 +1,11 @@
 import { NextRequest } from "next/server";
 import { auth } from "@/lib/auth";
-import { createRequestId, errorResponse, successResponse } from "@/lib/api/response";
+import {
+  createRequestId,
+  errorResponse,
+  logApiErrorResponse,
+  successResponse,
+} from "@/lib/api/response";
 import { findLinkBySlug, getUserPlanById } from "@/lib/db/queries/links";
 import {
   canUseCustomSlug,
@@ -119,7 +124,7 @@ export async function GET(
       slug: parsedParams.params.slug,
     });
   } catch (error) {
-    console.error("[GET /api/v1/links/slug/[slug]]", error);
+    logApiErrorResponse({ code: "INTERNAL_ERROR", error, requestId, route: "GET /api/v1/links/slug/[slug]" });
     return errorResponse(
       "INTERNAL_ERROR",
       "Unable to check slug availability.",

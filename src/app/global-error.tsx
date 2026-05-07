@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import Link from "next/link";
 import { AlertTriangle, Home, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { logger } from "@/lib/observability/logger";
 
 export default function GlobalError({
   error,
@@ -13,7 +14,7 @@ export default function GlobalError({
   reset: () => void;
 }) {
   useEffect(() => {
-    console.error("global_error_boundary", {
+    logger.error("global_error_boundary", {
       digest: error.digest,
       name: error.name,
       message: error.message,

@@ -14,6 +14,7 @@ import {
 } from "@/lib/db/queries/payments";
 import { sendPaymentInvoiceEmail } from "@/lib/email/payment-emails";
 import type { UserPlan } from "@/lib/links/limits";
+import { logger } from "@/lib/observability/logger";
 import {
   paidPlanSchema,
   paymentDurationSchema,
@@ -98,7 +99,7 @@ export async function createOrRenewSubscriptionForPayment(
       to: transaction.userEmail,
     });
   } catch (error) {
-    console.error("[payments:subscription] Unable to send invoice email", {
+    logger.error("payment_invoice_email_failed", {
       error,
       orderId: transaction.orderId,
     });

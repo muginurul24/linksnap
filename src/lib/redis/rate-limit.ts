@@ -1,4 +1,5 @@
 import { redis } from "@/lib/redis";
+import { logger } from "@/lib/observability/logger";
 
 type SlidingWindowOptions = {
   key: string;
@@ -37,7 +38,7 @@ export async function slidingWindowRateLimit({
 
     return { limited: false, remaining: Math.max(0, limit - count - 1) };
   } catch (error) {
-    console.error("[rate-limit]", error);
+    logger.error("rate_limit_redis_failed", { error, key });
     return { limited: false, remaining: 0 };
   }
 }

@@ -6,6 +6,7 @@ import {
 } from "@/lib/geo/ip-lookup";
 import { getClientIpFromHeaders, hashIpAddress } from "@/lib/analytics/ip";
 import { parseUserAgent } from "@/lib/analytics/user-agent";
+import { logger } from "@/lib/observability/logger";
 
 export type RedirectClickEventType =
   | "DIRECT_REDIRECT"
@@ -66,7 +67,7 @@ export async function logRedirectClick({
       userAgent,
     });
   } catch (error) {
-    console.error("[click-logger] failed to log redirect click", error);
+    logger.error("redirect_click_log_failed", { error });
   }
 }
 

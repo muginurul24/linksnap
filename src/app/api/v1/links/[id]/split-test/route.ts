@@ -1,6 +1,11 @@
 import { NextRequest } from "next/server";
 import { auth } from "@/lib/auth";
-import { createRequestId, errorResponse, successResponse } from "@/lib/api/response";
+import {
+  createRequestId,
+  errorResponse,
+  logApiErrorResponse,
+  successResponse,
+} from "@/lib/api/response";
 import { findLinkById, getUserPlanById, type LinkDetail } from "@/lib/db/queries/links";
 import {
   deleteSplitTestForLink,
@@ -186,7 +191,7 @@ export async function GET(
     const knownError = handleKnownError(error, requestId);
     if (knownError) return knownError;
 
-    console.error("[GET /api/v1/links/[id]/split-test]", error);
+    logApiErrorResponse({ code: "INTERNAL_ERROR", error, requestId, route: "GET /api/v1/links/[id]/split-test" });
     return errorResponse(
       "INTERNAL_ERROR",
       "Unable to get split test.",
@@ -234,7 +239,7 @@ export async function POST(
     const knownError = handleKnownError(error, requestId);
     if (knownError) return knownError;
 
-    console.error("[POST /api/v1/links/[id]/split-test]", error);
+    logApiErrorResponse({ code: "INTERNAL_ERROR", error, requestId, route: "POST /api/v1/links/[id]/split-test" });
     return errorResponse(
       "INTERNAL_ERROR",
       "Unable to save split test.",
@@ -271,7 +276,7 @@ export async function DELETE(
     const knownError = handleKnownError(error, requestId);
     if (knownError) return knownError;
 
-    console.error("[DELETE /api/v1/links/[id]/split-test]", error);
+    logApiErrorResponse({ code: "INTERNAL_ERROR", error, requestId, route: "DELETE /api/v1/links/[id]/split-test" });
     return errorResponse(
       "INTERNAL_ERROR",
       "Unable to delete split test.",

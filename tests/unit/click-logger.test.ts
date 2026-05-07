@@ -144,9 +144,15 @@ describe("click logger", () => {
     ).resolves.toBeUndefined();
 
     expect(mockState.insertedClicks).toEqual([]);
-    expect(errorSpy).toHaveBeenCalledWith(
-      "[click-logger] failed to log redirect click",
-      expect.any(Error),
-    );
+    expect(errorSpy).toHaveBeenCalledTimes(1);
+    const payload = JSON.parse(String(errorSpy.mock.calls[0]?.[0]));
+    expect(payload).toMatchObject({
+      level: "error",
+      message: "redirect_click_log_failed",
+      error: {
+        message: "insert failed",
+        name: "Error",
+      },
+    });
   });
 });

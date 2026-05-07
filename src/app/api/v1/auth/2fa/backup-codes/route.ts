@@ -1,6 +1,11 @@
 import { NextRequest } from "next/server";
 import { auth } from "@/lib/auth";
-import { createRequestId, errorResponse, successResponse } from "@/lib/api/response";
+import {
+  createRequestId,
+  errorResponse,
+  logApiErrorResponse,
+  successResponse,
+} from "@/lib/api/response";
 import { verifyPassword } from "@/lib/auth/password";
 import { getSessionUserId } from "@/lib/auth/session-user";
 import { generateBackupCodes } from "@/lib/auth/two-factor";
@@ -87,7 +92,7 @@ export async function POST(request: NextRequest) {
 
     return successResponse({ backupCodes: backupCodes.codes });
   } catch (error) {
-    console.error("[POST /api/v1/auth/2fa/backup-codes]", error);
+    logApiErrorResponse({ code: "INTERNAL_ERROR", error, requestId, route: "POST /api/v1/auth/2fa/backup-codes" });
     return errorResponse(
       "INTERNAL_ERROR",
       "Unable to regenerate backup codes.",

@@ -2,7 +2,12 @@ import { NextRequest } from "next/server";
 import { eq } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { users } from "@/lib/db/schema";
-import { createRequestId, errorResponse, successResponse } from "@/lib/api/response";
+import {
+  createRequestId,
+  errorResponse,
+  logApiErrorResponse,
+  successResponse,
+} from "@/lib/api/response";
 import { isOtpExpired } from "@/lib/auth/otp";
 import { slidingWindowRateLimit } from "@/lib/redis/rate-limit";
 import { verifyEmailSchema } from "@/lib/validations/auth";
@@ -71,7 +76,7 @@ export async function POST(request: NextRequest) {
 
     return successResponse();
   } catch (error) {
-    console.error("[POST /api/v1/auth/verify]", error);
+    logApiErrorResponse({ code: "INTERNAL_ERROR", error, requestId, route: "POST /api/v1/auth/verify" });
     return errorResponse(
       "INTERNAL_ERROR",
       "Unable to verify email.",

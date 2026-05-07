@@ -4,6 +4,7 @@ import {
   Reader,
   type ReaderModel,
 } from "@maxmind/geoip2-node";
+import { logger } from "@/lib/observability/logger";
 import { cacheGet, cacheSet } from "@/lib/redis";
 
 export type GeoIpLocation = {
@@ -38,7 +39,7 @@ async function getMaxMindReader(): Promise<ReaderModel | null> {
     readerPromise = Reader.open(dbPath).catch((error: unknown) => {
       readerPath = null;
       readerPromise = null;
-      console.error("[geo] unable to open MaxMind database", error);
+      logger.error("geoip_maxmind_open_failed", { error, dbPath });
       return null;
     });
   }
@@ -128,7 +129,7 @@ export async function lookupGeoIp(
     return location;
   } catch (error) {
     if (!(error instanceof AddressNotFoundError)) {
-      console.error("[geo] MaxMind lookup failed", error);
+      logger.error("geoip_maxmind_lookup_failed", { error });
     }
   }
 

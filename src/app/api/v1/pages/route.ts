@@ -4,6 +4,7 @@ import { authenticateApiKeyRequest } from "@/lib/auth/api-key";
 import {
   createRequestId,
   errorResponse,
+  logApiErrorResponse,
   successResponse,
 } from "@/lib/api/response";
 import {
@@ -126,7 +127,7 @@ export async function GET(request: NextRequest) {
 
     return successResponse(pages.map(formatLinkPage));
   } catch (error) {
-    console.error("[GET /api/v1/pages]", error);
+    logApiErrorResponse({ code: "INTERNAL_ERROR", error, requestId, route: "GET /api/v1/pages" });
     return errorResponse(
       "INTERNAL_ERROR",
       "Unable to list Link Pages.",

@@ -1,5 +1,10 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { createRequestId, errorResponse, successResponse } from "@/lib/api/response";
+import {
+  createRequestId,
+  errorResponse,
+  logApiErrorResponse,
+  successResponse,
+} from "@/lib/api/response";
 
 describe("api response helpers", () => {
   afterEach(() => {
@@ -36,17 +41,16 @@ describe("api response helpers", () => {
     expect(response.headers.get("x-request-id")).toBe("req_test_123");
   });
 
-  it("should log structured request id context when internal error response is created", () => {
+  it("should log structured request id context for API errors", () => {
     const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
 
-    const response = errorResponse(
-      "INTERNAL_ERROR",
-      "Unable to complete request.",
-      500,
-      "req_internal_123",
-    );
+    logApiErrorResponse({
+      code: "INTERNAL_ERROR",
+      error: new Error("database unavailable"),
+      requestId: "req_internal_123",
+      route: "GET /api/v1/test",
+    });
 
-    expect(response.status).toBe(500);
     expect(consoleError).toHaveBeenCalledTimes(1);
 
     const payload = JSON.parse(String(consoleError.mock.calls[0]?.[0]));
@@ -55,8 +59,12 @@ describe("api response helpers", () => {
       message: "api_error_response",
       requestId: "req_internal_123",
       code: "INTERNAL_ERROR",
-      responseMessage: "Unable to complete request.",
+      route: "GET /api/v1/test",
       status: 500,
+    });
+    expect(payload.error).toMatchObject({
+      message: "database unavailable",
+      name: "Error",
     });
     expect(typeof payload.timestamp).toBe("string");
   });

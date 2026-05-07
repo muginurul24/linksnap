@@ -1,6 +1,11 @@
 import { NextRequest } from "next/server";
 import { auth } from "@/lib/auth";
-import { createRequestId, errorResponse, successResponse } from "@/lib/api/response";
+import {
+  createRequestId,
+  errorResponse,
+  logApiErrorResponse,
+  successResponse,
+} from "@/lib/api/response";
 import {
   countCampaignsByUserId,
   createCampaignRecord,
@@ -152,7 +157,7 @@ export async function GET(request: NextRequest) {
       },
     );
   } catch (error) {
-    console.error("[GET /api/v1/campaigns]", error);
+    logApiErrorResponse({ code: "INTERNAL_ERROR", error, requestId, route: "GET /api/v1/campaigns" });
     return errorResponse(
       "INTERNAL_ERROR",
       "Unable to list campaigns.",
@@ -207,7 +212,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.error("[POST /api/v1/campaigns]", error);
+    logApiErrorResponse({ code: "INTERNAL_ERROR", error, requestId, route: "POST /api/v1/campaigns" });
     return errorResponse(
       "INTERNAL_ERROR",
       "Unable to create campaign.",

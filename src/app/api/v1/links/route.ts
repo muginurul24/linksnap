@@ -1,7 +1,12 @@
 import { NextRequest } from "next/server";
 import { auth } from "@/lib/auth";
 import { authenticateApiKeyRequest } from "@/lib/auth/api-key";
-import { createRequestId, errorResponse, successResponse } from "@/lib/api/response";
+import {
+  createRequestId,
+  errorResponse,
+  logApiErrorResponse,
+  successResponse,
+} from "@/lib/api/response";
 import {
   countLinksByUserId,
   createLinkRecord,
@@ -263,7 +268,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.error("[POST /api/v1/links]", error);
+    logApiErrorResponse({ code: "INTERNAL_ERROR", error, requestId, route: "POST /api/v1/links" });
     return errorResponse("INTERNAL_ERROR", "Unable to create link.", 500, requestId);
   }
 }
@@ -302,7 +307,7 @@ export async function GET(request: NextRequest) {
       total: result.total,
     });
   } catch (error) {
-    console.error("[GET /api/v1/links]", error);
+    logApiErrorResponse({ code: "INTERNAL_ERROR", error, requestId, route: "GET /api/v1/links" });
     return errorResponse("INTERNAL_ERROR", "Unable to list links.", 500, requestId);
   }
 }

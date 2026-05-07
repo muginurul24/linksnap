@@ -4,8 +4,13 @@ import {
   buildDashboardAnalyticsData,
   DashboardAnalyticsRangeError,
   normalizeDashboardAnalyticsRange,
-} from "@/lib/analytics/dashboard";
-import { createRequestId, errorResponse, successResponse } from "@/lib/api/response";
+  } from "@/lib/analytics/dashboard";
+import {
+  createRequestId,
+  errorResponse,
+  logApiErrorResponse,
+  successResponse,
+} from "@/lib/api/response";
 import { listClickEventsForUser } from "@/lib/db/queries/click-events";
 import { getUserPlanById } from "@/lib/db/queries/links";
 import { getApiEndpointRateLimit, type UserPlan } from "@/lib/links/limits";
@@ -118,7 +123,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    console.error("[GET /api/v1/analytics]", error);
+    logApiErrorResponse({ code: "INTERNAL_ERROR", error, requestId, route: "GET /api/v1/analytics" });
     return errorResponse(
       "INTERNAL_ERROR",
       "Unable to get analytics.",

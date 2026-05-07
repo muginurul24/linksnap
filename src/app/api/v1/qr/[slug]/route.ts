@@ -1,6 +1,10 @@
 import { NextRequest } from "next/server";
 import QRCode from "qrcode";
-import { createRequestId, errorResponse } from "@/lib/api/response";
+import {
+  createRequestId,
+  errorResponse,
+  logApiErrorResponse,
+} from "@/lib/api/response";
 import { getClientIpFromHeaders } from "@/lib/analytics/ip";
 import { findQrGenerationLinkBySlug } from "@/lib/db/queries/links";
 import { hasReachedQrQuota } from "@/lib/links/limits";
@@ -179,7 +183,7 @@ export async function GET(request: NextRequest, context: QrRouteContext) {
 
     return createQrResponse(base64, parsedQuery.query.format);
   } catch (error) {
-    console.error("[GET /api/v1/qr/[slug]]", error);
+    logApiErrorResponse({ code: "INTERNAL_ERROR", error, requestId, route: "GET /api/v1/qr/[slug]" });
     return errorResponse(
       "INTERNAL_ERROR",
       "Unable to generate QR code.",

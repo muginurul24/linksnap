@@ -1,8 +1,14 @@
 import { NextRequest } from "next/server";
 import { eq } from "drizzle-orm";
 import { db } from "@/lib/db";
-import { resetTokens, users } from "@/lib/db/schema";
-import { createRequestId, errorResponse, successResponse } from "@/lib/api/response";
+import { resetTokens,
+  users } from "@/lib/db/schema";
+import {
+  createRequestId,
+  errorResponse,
+  logApiErrorResponse,
+  successResponse,
+} from "@/lib/api/response";
 import { hashPassword } from "@/lib/auth/password";
 import {
   hashResetToken,
@@ -64,7 +70,7 @@ export async function POST(request: NextRequest) {
 
     return successResponse();
   } catch (error) {
-    console.error("[POST /api/v1/auth/reset-password]", error);
+    logApiErrorResponse({ code: "INTERNAL_ERROR", error, requestId, route: "POST /api/v1/auth/reset-password" });
     return errorResponse(
       "INTERNAL_ERROR",
       "Unable to reset password.",

@@ -5818,3 +5818,44 @@ Replaced redirect click logging's dependency on Next.js `after()` with a Redis-b
 - ✅ No secrets, raw SQL, or `dangerouslySetInnerHTML` introduced.
 
 **Next Task:** 17.4 — Standardize Error Logging
+
+### 17.4 — Standardize Error Logging
+- **Date:** 2026-05-08 05:50 GMT+7
+- **Duration:** 0h 45m
+- **Status:** ✅ Complete
+
+**What I Did:**
+Migrated API route and application error logging from bare `console.error` calls to structured JSON logger output. Added a `logApiErrorResponse()` helper for route catch blocks and migrated all `src/app/api/v1/**/*.ts` route handlers to include route, request ID, code, status, and serialized error context.
+
+**Files Changed:**
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Checked off Task 17.4.
+- `_bmad-output/implementation-artifacts/JOURNAL.md` — Logged this task.
+- `src/lib/api/response.ts` — Added `logApiErrorResponse()` and removed duplicate implicit 500 logging from `errorResponse()`.
+- `src/app/api/v1/**/*.ts` — Replaced bare route `console.error` logging with `logApiErrorResponse()`.
+- `src/app/global-error.tsx`, `src/app/(dashboard)/settings/error.tsx`, `src/app/(dashboard)/layout.tsx`, `src/app/(dashboard)/settings/settings-page-data.ts` — Migrated UI/server boundary logs to `logger.error()`.
+- `src/components/link-page/link-page-renderer.tsx` — Migrated QR generation failure logging to `logger.error()`.
+- `src/lib/analytics/*`, `src/lib/geo/geoip.ts`, `src/lib/redis/rate-limit.ts`, `src/lib/payments/subscription.ts` — Migrated operational failure logs to structured logger output.
+- `tests/unit/logger.test.ts` — Added JSON logger format coverage.
+- `tests/unit/api-response.test.ts`, `tests/unit/click-logger.test.ts` — Updated expectations for structured logger output.
+
+**Decisions Made:**
+- Centralized API catch logging in `logApiErrorResponse()` instead of duplicating logger payload construction in every route.
+- Left `console.error/warn/log` only inside `src/lib/observability/logger.ts`, since that file is the logger sink.
+- Used log-based verification locally because external Vercel/Datadog/Grafana log access is not available from this workspace.
+
+**Tests:**
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Targeted Unit/Integration: `rtk bun run test -- tests/unit/logger.test.ts tests/unit/api-response.test.ts tests/integration/click-queue-cron-api.test.ts tests/integration/create-payment-api.test.ts` — 4 files passed, 14 tests passed.
+- ✅ Unit/Integration: `rtk bun run test` — 121 files passed, 534 tests passed.
+- ✅ Build: `rtk bun run build` — Passed.
+
+**Issues Encountered:**
+- A bulk import rewrite initially made some API route imports messy; fixed with scoped formatting/repair and verified with typecheck and lint.
+
+**Security Checks:**
+- ✅ Error objects are serialized into JSON logs without changing API response bodies.
+- ✅ Request IDs remain included in API error responses and logs.
+- ✅ No secrets, raw SQL, or `dangerouslySetInnerHTML` introduced.
+
+**Next Task:** 17.5 — Extract Duplicated `getRedirectLink()` and `getBaseUrl()`

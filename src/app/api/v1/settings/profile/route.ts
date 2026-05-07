@@ -1,6 +1,11 @@
 import { NextRequest } from "next/server";
 import { auth } from "@/lib/auth";
-import { createRequestId, errorResponse, successResponse } from "@/lib/api/response";
+import {
+  createRequestId,
+  errorResponse,
+  logApiErrorResponse,
+  successResponse,
+} from "@/lib/api/response";
 import { findBillingUserById } from "@/lib/db/queries/payments";
 import { updateSettingsUserProfile } from "@/lib/db/queries/settings";
 import { getApiEndpointRateLimit, type UserPlan } from "@/lib/links/limits";
@@ -120,7 +125,7 @@ export async function PATCH(request: NextRequest) {
       name: user.name,
     });
   } catch (error) {
-    console.error("[PATCH /api/v1/settings/profile]", error);
+    logApiErrorResponse({ code: "INTERNAL_ERROR", error, requestId, route: "PATCH /api/v1/settings/profile" });
     return errorResponse(
       "INTERNAL_ERROR",
       "Unable to update profile.",

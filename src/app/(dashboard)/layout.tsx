@@ -9,6 +9,7 @@ import { auth } from "@/lib/auth";
 import { PlanProvider } from "@/lib/auth/plan-context";
 import { findBillingUserById } from "@/lib/db/queries/payments";
 import type { UserPlan } from "@/lib/links/limits";
+import { logger } from "@/lib/observability/logger";
 import { syncSubscriptionStatusForUser } from "@/lib/payments/subscription";
 
 type SessionWithUserId = {
@@ -51,7 +52,7 @@ export default async function DashboardLayout({
     try {
       await syncSubscriptionStatusForUser(userId);
     } catch (error) {
-      console.error("[DashboardLayout] Failed to sync subscription status", error);
+      logger.error("dashboard_subscription_sync_failed", { error, userId });
     }
 
     try {
@@ -63,7 +64,7 @@ export default async function DashboardLayout({
       };
       userPlan = billingUser?.plan ?? "FREE";
     } catch (error) {
-      console.error("[DashboardLayout] Failed to load billing user", error);
+      logger.error("dashboard_billing_user_load_failed", { error, userId });
     }
   }
 

@@ -1,6 +1,11 @@
 import { NextRequest } from "next/server";
 import { auth } from "@/lib/auth";
-import { createRequestId, errorResponse, successResponse } from "@/lib/api/response";
+import {
+  createRequestId,
+  errorResponse,
+  logApiErrorResponse,
+  successResponse,
+} from "@/lib/api/response";
 import {
   findLinkById,
   findLinkBySlug,
@@ -247,7 +252,7 @@ export async function GET(request: NextRequest, context: LinkRouteContext) {
     const knownError = handleKnownError(error, requestId);
     if (knownError) return knownError;
 
-    console.error("[GET /api/v1/links/[id]]", error);
+    logApiErrorResponse({ code: "INTERNAL_ERROR", error, requestId, route: "GET /api/v1/links/[id]" });
     return errorResponse("INTERNAL_ERROR", "Unable to get link.", 500, requestId);
   }
 }
@@ -301,7 +306,7 @@ export async function PATCH(request: NextRequest, context: LinkRouteContext) {
     const knownError = handleKnownError(error, requestId);
     if (knownError) return knownError;
 
-    console.error("[PATCH /api/v1/links/[id]]", error);
+    logApiErrorResponse({ code: "INTERNAL_ERROR", error, requestId, route: "PATCH /api/v1/links/[id]" });
     return errorResponse("INTERNAL_ERROR", "Unable to update link.", 500, requestId);
   }
 }
@@ -328,7 +333,7 @@ export async function DELETE(_request: NextRequest, context: LinkRouteContext) {
     const knownError = handleKnownError(error, requestId);
     if (knownError) return knownError;
 
-    console.error("[DELETE /api/v1/links/[id]]", error);
+    logApiErrorResponse({ code: "INTERNAL_ERROR", error, requestId, route: "DELETE /api/v1/links/[id]" });
     return errorResponse("INTERNAL_ERROR", "Unable to delete link.", 500, requestId);
   }
 }

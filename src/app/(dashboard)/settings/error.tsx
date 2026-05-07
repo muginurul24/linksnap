@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import Link from "next/link";
 import { AlertTriangle, ArrowLeft, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { logger } from "@/lib/observability/logger";
 
 export default function SettingsError({
   error,
@@ -13,7 +14,7 @@ export default function SettingsError({
   reset: () => void;
 }) {
   useEffect(() => {
-    console.error("settings_error_boundary", {
+    logger.error("settings_error_boundary", {
       digest: error.digest,
       name: error.name,
       message: error.message,

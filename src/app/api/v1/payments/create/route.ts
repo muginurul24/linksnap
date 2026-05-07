@@ -1,6 +1,11 @@
 import { NextRequest } from "next/server";
 import { auth } from "@/lib/auth";
-import { createRequestId, errorResponse, successResponse } from "@/lib/api/response";
+import {
+  createRequestId,
+  errorResponse,
+  logApiErrorResponse,
+  successResponse,
+} from "@/lib/api/response";
 import {
   attachTransactionSnapToken,
   createPendingTransactionRecord,
@@ -196,8 +201,11 @@ export async function POST(request: NextRequest) {
     }
 
     if (error instanceof MidtransApiError) {
-      console.error("[POST /api/v1/payments/create] Midtrans error", {
-        message: error.message,
+      logApiErrorResponse({
+        code: "PAYMENT_PROVIDER_ERROR",
+        error,
+        requestId,
+        route: "POST /api/v1/payments/create",
         status: error.status,
       });
       return errorResponse(
@@ -209,7 +217,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.error("[POST /api/v1/payments/create]", error);
+    logApiErrorResponse({ code: "INTERNAL_ERROR", error, requestId, route: "POST /api/v1/payments/create" });
     return errorResponse(
       "INTERNAL_ERROR",
       "Unable to create payment transaction.",

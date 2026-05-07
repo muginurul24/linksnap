@@ -4,6 +4,14 @@ import { logger } from "@/lib/observability/logger";
 type ErrorDetails = Record<string, unknown> | unknown[] | string | number;
 type ResponseMeta = Record<string, unknown>;
 
+type ApiErrorLogInput = {
+  code: string;
+  error: unknown;
+  requestId: string;
+  route: string;
+  status?: number;
+};
+
 export function createRequestId(): string {
   return crypto.randomUUID();
 }
@@ -28,15 +36,6 @@ export function errorResponse(
   requestId: string,
   details?: ErrorDetails,
 ): NextResponse {
-  if (status >= 500) {
-    logger.error("api_error_response", {
-      requestId,
-      code,
-      responseMessage: message,
-      status,
-    });
-  }
-
   return NextResponse.json(
     {
       success: false,
@@ -49,4 +48,20 @@ export function errorResponse(
     },
     { status, headers: { "x-request-id": requestId } },
   );
+}
+
+export function logApiErrorResponse({
+  code,
+  error,
+  requestId,
+  route,
+  status = 500,
+}: ApiErrorLogInput): void {
+  logger.error("api_error_response", {
+    code,
+    error,
+    requestId,
+    route,
+    status,
+  });
 }

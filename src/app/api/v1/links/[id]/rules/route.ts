@@ -1,6 +1,11 @@
 import { NextRequest } from "next/server";
 import { auth } from "@/lib/auth";
-import { createRequestId, errorResponse, successResponse } from "@/lib/api/response";
+import {
+  createRequestId,
+  errorResponse,
+  logApiErrorResponse,
+  successResponse,
+} from "@/lib/api/response";
 import { findLinkById, getUserPlanById, type LinkDetail } from "@/lib/db/queries/links";
 import {
   deleteSmartRuleForLink,
@@ -357,7 +362,7 @@ export async function GET(_request: NextRequest, context: SmartRulesRouteContext
     const knownError = handleKnownError(error, requestId);
     if (knownError) return knownError;
 
-    console.error("[GET /api/v1/links/[id]/rules]", error);
+    logApiErrorResponse({ code: "INTERNAL_ERROR", error, requestId, route: "GET /api/v1/links/[id]/rules" });
     return errorResponse("INTERNAL_ERROR", "Unable to get Smart Rules.", 500, requestId);
   }
 }
@@ -402,7 +407,12 @@ async function upsertRules(
     const knownError = handleKnownError(error, requestId);
     if (knownError) return knownError;
 
-    console.error(`[${method} /api/v1/links/[id]/rules]`, error);
+    logApiErrorResponse({
+      code: "INTERNAL_ERROR",
+      error,
+      requestId,
+      route: `${method} /api/v1/links/[id]/rules`,
+    });
     return errorResponse("INTERNAL_ERROR", "Unable to save Smart Rules.", 500, requestId);
   }
 }
@@ -442,7 +452,7 @@ export async function DELETE(request: NextRequest, context: SmartRulesRouteConte
     const knownError = handleKnownError(error, requestId);
     if (knownError) return knownError;
 
-    console.error("[DELETE /api/v1/links/[id]/rules]", error);
+    logApiErrorResponse({ code: "INTERNAL_ERROR", error, requestId, route: "DELETE /api/v1/links/[id]/rules" });
     return errorResponse(
       "INTERNAL_ERROR",
       "Unable to delete Smart Rule.",

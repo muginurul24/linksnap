@@ -1,6 +1,11 @@
 import { NextRequest } from "next/server";
 import { auth } from "@/lib/auth";
-import { createRequestId, errorResponse, successResponse } from "@/lib/api/response";
+import {
+  createRequestId,
+  errorResponse,
+  logApiErrorResponse,
+  successResponse,
+} from "@/lib/api/response";
 import { deleteApiKeyForUser } from "@/lib/db/queries/api-keys";
 import { findBillingUserById } from "@/lib/db/queries/payments";
 import { getApiEndpointRateLimit } from "@/lib/links/limits";
@@ -108,7 +113,7 @@ export async function DELETE(
 
     return successResponse({ deleted: true, id: parsedParams.params.id });
   } catch (error) {
-    console.error("[DELETE /api/v1/settings/api-keys/[id]]", error);
+    logApiErrorResponse({ code: "INTERNAL_ERROR", error, requestId, route: "DELETE /api/v1/settings/api-keys/[id]" });
     return errorResponse(
       "INTERNAL_ERROR",
       "Unable to revoke API key.",

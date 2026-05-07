@@ -1,6 +1,11 @@
 import { NextRequest } from "next/server";
 import { auth } from "@/lib/auth";
-import { createRequestId, errorResponse, successResponse } from "@/lib/api/response";
+import {
+  createRequestId,
+  errorResponse,
+  logApiErrorResponse,
+  successResponse,
+} from "@/lib/api/response";
 import {
   deletePendingEmailChange,
   getPendingEmailChange,
@@ -99,7 +104,7 @@ export async function POST(request: NextRequest) {
 
     return successResponse({ email: parsedBody.data.email });
   } catch (error) {
-    console.error("[POST /api/v1/auth/verify-new-email]", error);
+    logApiErrorResponse({ code: "INTERNAL_ERROR", error, requestId, route: "POST /api/v1/auth/verify-new-email" });
     return errorResponse(
       "INTERNAL_ERROR",
       "Unable to verify new email.",

@@ -1,7 +1,13 @@
 import { NextRequest } from "next/server";
 import { auth } from "@/lib/auth";
-import { hashPassword, verifyPassword } from "@/lib/auth/password";
-import { createRequestId, errorResponse, successResponse } from "@/lib/api/response";
+import { hashPassword,
+  verifyPassword } from "@/lib/auth/password";
+import {
+  createRequestId,
+  errorResponse,
+  logApiErrorResponse,
+  successResponse,
+} from "@/lib/api/response";
 import { findBillingUserById } from "@/lib/db/queries/payments";
 import {
   findPasswordUserById,
@@ -123,7 +129,7 @@ export async function POST(request: NextRequest) {
 
     return successResponse();
   } catch (error) {
-    console.error("[POST /api/v1/auth/change-password]", error);
+    logApiErrorResponse({ code: "INTERNAL_ERROR", error, requestId, route: "POST /api/v1/auth/change-password" });
     return errorResponse(
       "INTERNAL_ERROR",
       "Unable to change password.",

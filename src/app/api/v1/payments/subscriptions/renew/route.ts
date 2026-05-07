@@ -1,5 +1,10 @@
 import { NextRequest } from "next/server";
-import { createRequestId, errorResponse, successResponse } from "@/lib/api/response";
+import {
+  createRequestId,
+  errorResponse,
+  logApiErrorResponse,
+  successResponse,
+} from "@/lib/api/response";
 import { expireDueSubscriptions } from "@/lib/payments/subscription";
 
 export const runtime = "nodejs";
@@ -43,7 +48,7 @@ export async function GET(request: NextRequest) {
       200,
     );
   } catch (error) {
-    console.error("[GET /api/v1/payments/subscriptions/renew]", error);
+    logApiErrorResponse({ code: "INTERNAL_ERROR", error, requestId, route: "GET /api/v1/payments/subscriptions/renew" });
     return errorResponse(
       "INTERNAL_ERROR",
       "Unable to process subscription renewals.",

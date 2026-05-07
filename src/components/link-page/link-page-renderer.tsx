@@ -12,6 +12,7 @@ import {
   getReadableTextColor,
   getSafeHexColor,
 } from "@/components/link-page/link-page-utils";
+import { logger } from "@/lib/observability/logger";
 import { getCspNonce } from "@/lib/security/server-nonce";
 import { cn } from "@/lib/utils";
 
@@ -99,7 +100,7 @@ async function buildQrCodeDataUrl(value: string): Promise<string | null> {
       width: 176,
     });
   } catch (error) {
-    console.error("[link-page-renderer] failed to generate QR code", error);
+    logger.error("link_page_qr_generation_failed", { error });
     return null;
   }
 }

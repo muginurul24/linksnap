@@ -1,6 +1,11 @@
 import { NextRequest } from "next/server";
 import { auth } from "@/lib/auth";
-import { createRequestId, errorResponse, successResponse } from "@/lib/api/response";
+import {
+  createRequestId,
+  errorResponse,
+  logApiErrorResponse,
+  successResponse,
+} from "@/lib/api/response";
 import { createPendingEmailChange } from "@/lib/auth/email-change";
 import { generateOtp } from "@/lib/auth/otp";
 import { verifyPassword } from "@/lib/auth/password";
@@ -109,7 +114,7 @@ export async function POST(request: NextRequest) {
 
     return successResponse({ email: parsedBody.data.email });
   } catch (error) {
-    console.error("[POST /api/v1/auth/change-email]", error);
+    logApiErrorResponse({ code: "INTERNAL_ERROR", error, requestId, route: "POST /api/v1/auth/change-email" });
     return errorResponse(
       "INTERNAL_ERROR",
       "Unable to start email change.",

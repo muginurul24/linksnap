@@ -1,7 +1,12 @@
 import { NextRequest } from "next/server";
 import { auth } from "@/lib/auth";
 import { authenticateApiKeyRequest } from "@/lib/auth/api-key";
-import { createRequestId, errorResponse, successResponse } from "@/lib/api/response";
+import {
+  createRequestId,
+  errorResponse,
+  logApiErrorResponse,
+  successResponse,
+} from "@/lib/api/response";
 import { canAccessApiDocs } from "@/lib/api-docs/access";
 import { createOpenApiSpec } from "@/lib/api-docs/spec";
 import { findBillingUserById } from "@/lib/db/queries/payments";
@@ -49,7 +54,7 @@ export async function GET(request: NextRequest) {
 
     return successResponse(createOpenApiSpec());
   } catch (error) {
-    console.error("[GET /api/v1/docs]", error);
+    logApiErrorResponse({ code: "INTERNAL_ERROR", error, requestId, route: "GET /api/v1/docs" });
     return errorResponse(
       "INTERNAL_ERROR",
       "Unable to load API documentation.",

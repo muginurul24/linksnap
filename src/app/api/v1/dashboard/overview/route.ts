@@ -1,5 +1,11 @@
-import { auth } from "@/lib/auth";
-import { createRequestId, errorResponse, successResponse } from "@/lib/api/response";
+import {
+  auth } from "@/lib/auth";
+import {
+  createRequestId,
+  errorResponse,
+  logApiErrorResponse,
+  successResponse,
+} from "@/lib/api/response";
 import { getDashboardOverviewByUserId } from "@/lib/db/queries/dashboard";
 import { getUserPlanById } from "@/lib/db/queries/links";
 import { getApiEndpointRateLimit } from "@/lib/links/limits";
@@ -61,7 +67,7 @@ export async function GET() {
 
     return successResponse(overview);
   } catch (error) {
-    console.error("[GET /api/v1/dashboard/overview]", error);
+    logApiErrorResponse({ code: "INTERNAL_ERROR", error, requestId, route: "GET /api/v1/dashboard/overview" });
     return errorResponse(
       "INTERNAL_ERROR",
       "Unable to get dashboard overview.",

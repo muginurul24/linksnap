@@ -1,6 +1,11 @@
 import { NextRequest } from "next/server";
 import { auth } from "@/lib/auth";
-import { createRequestId, errorResponse, successResponse } from "@/lib/api/response";
+import {
+  createRequestId,
+  errorResponse,
+  logApiErrorResponse,
+  successResponse,
+} from "@/lib/api/response";
 import {
   deleteCampaignForUser,
   findCampaignById,
@@ -186,7 +191,7 @@ export async function GET(
     const knownError = handleKnownError(error, requestId);
     if (knownError) return knownError;
 
-    console.error("[GET /api/v1/campaigns/[id]]", error);
+    logApiErrorResponse({ code: "INTERNAL_ERROR", error, requestId, route: "GET /api/v1/campaigns/[id]" });
     return errorResponse(
       "INTERNAL_ERROR",
       "Unable to get campaign.",
@@ -244,7 +249,7 @@ export async function PATCH(
     const knownError = handleKnownError(error, requestId);
     if (knownError) return knownError;
 
-    console.error("[PATCH /api/v1/campaigns/[id]]", error);
+    logApiErrorResponse({ code: "INTERNAL_ERROR", error, requestId, route: "PATCH /api/v1/campaigns/[id]" });
     return errorResponse(
       "INTERNAL_ERROR",
       "Unable to update campaign.",
@@ -280,7 +285,7 @@ export async function DELETE(
     const knownError = handleKnownError(error, requestId);
     if (knownError) return knownError;
 
-    console.error("[DELETE /api/v1/campaigns/[id]]", error);
+    logApiErrorResponse({ code: "INTERNAL_ERROR", error, requestId, route: "DELETE /api/v1/campaigns/[id]" });
     return errorResponse(
       "INTERNAL_ERROR",
       "Unable to delete campaign.",

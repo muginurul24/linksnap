@@ -1,6 +1,11 @@
 import { NextRequest } from "next/server";
 import { auth } from "@/lib/auth";
-import { createRequestId, errorResponse, successResponse } from "@/lib/api/response";
+import {
+  createRequestId,
+  errorResponse,
+  logApiErrorResponse,
+  successResponse,
+} from "@/lib/api/response";
 import { getSessionUserId } from "@/lib/auth/session-user";
 import {
   generateBackupCodes,
@@ -80,7 +85,7 @@ export async function POST(request: NextRequest) {
 
     return successResponse({ backupCodes: backupCodes.codes });
   } catch (error) {
-    console.error("[POST /api/v1/auth/2fa/verify]", error);
+    logApiErrorResponse({ code: "INTERNAL_ERROR", error, requestId, route: "POST /api/v1/auth/2fa/verify" });
     return errorResponse(
       "INTERNAL_ERROR",
       "Unable to verify two-factor setup.",

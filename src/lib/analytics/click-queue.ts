@@ -1,4 +1,5 @@
 import { persistRedirectClick, type RedirectClickInput } from "@/lib/analytics/click-logger";
+import { logger } from "@/lib/observability/logger";
 import { redis } from "@/lib/redis";
 
 export const REDIRECT_CLICK_QUEUE_KEY = "linksnap:click-events:redirect";
@@ -59,14 +60,14 @@ export async function recordRedirectClick(
     await enqueueRedirectClick(input);
     return { status: "queued" };
   } catch (queueError) {
-    console.error("[click-queue] failed to enqueue redirect click", queueError);
+    logger.error("redirect_click_enqueue_failed", { error: queueError });
   }
 
   try {
     await persistRedirectClick(input);
     return { status: "persisted" };
   } catch (persistError) {
-    console.error("[click-queue] failed to persist redirect click", persistError);
+    logger.error("redirect_click_persist_failed", { error: persistError });
     return { status: "failed" };
   }
 }
@@ -75,7 +76,7 @@ async function moveToDeadLetter(payload: string): Promise<void> {
   try {
     await redis.rpush(REDIRECT_CLICK_DEAD_LETTER_KEY, payload);
   } catch (error) {
-    console.error("[click-queue] failed to dead-letter redirect click", error);
+    logger.error("redirect_click_dead_letter_failed", { error });
   }
 }
 
@@ -97,7 +98,7 @@ export async function processRedirectClickQueue({
       processed += 1;
     } catch (error) {
       deadLettered += 1;
-      console.error("[click-queue] failed to process redirect click", error);
+      logger.error("redirect_click_queue_process_failed", { error });
       await moveToDeadLetter(payload);
     }
   }
@@ -105,7 +106,7 @@ export async function processRedirectClickQueue({
   const attempted = deadLettered + processed;
   const failureRate = attempted === 0 ? 0 : deadLettered / attempted;
   if (failureRate > REDIRECT_CLICK_FAILURE_ALERT_THRESHOLD) {
-    console.error("[click-queue] redirect click failure rate exceeded threshold", {
+    logger.error("redirect_click_failure_rate_exceeded", {
       deadLettered,
       failureRate,
       processed,

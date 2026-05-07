@@ -1404,12 +1404,12 @@ rtk bun run db:studio    # Open Drizzle Studio (in another terminal)
 ### 🟡 MEDIUM — Should Fix Within Week 1
 
 ### TASK 17.4 — Standardize Error Logging (console.error → logger)
-- [ ] Scan all `src/app/api/v1/**/*.ts` route handlers
-- [ ] Replace bare `console.error("[ROUTE] message", error)` with `logger.error("api_error_response", { requestId, code, error })`
-- [ ] 50+ route handlers affected — bulk search & replace
-- [ ] Also audit `src/components/` and `src/lib/` for bare console logging
-- [ ] Verify JSON-structured logs appear correctly in production (Vercel Logs / Datadog / Grafana)
-- [ ] Tests: unit (logger output format)
+- [x] Scan all `src/app/api/v1/**/*.ts` route handlers
+- [x] Replace bare `console.error("[ROUTE] message", error)` with `logger.error("api_error_response", { requestId, code, error })`
+- [x] 50+ route handlers affected — bulk search & replace
+- [x] Also audit `src/components/` and `src/lib/` for bare console logging
+- [x] Verify JSON-structured logs appear correctly in production (Vercel Logs / Datadog / Grafana)
+- [x] Tests: unit (logger output format)
 
 ### TASK 17.5 — Extract Duplicated `getRedirectLink()` and `getBaseUrl()`
 - [ ] Create `src/lib/links/redirect-cache.ts` — extract shared `getRedirectLink()` with cache logic

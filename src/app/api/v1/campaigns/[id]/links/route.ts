@@ -1,6 +1,11 @@
 import { NextRequest } from "next/server";
 import { auth } from "@/lib/auth";
-import { createRequestId, errorResponse, successResponse } from "@/lib/api/response";
+import {
+  createRequestId,
+  errorResponse,
+  logApiErrorResponse,
+  successResponse,
+} from "@/lib/api/response";
 import {
   buildCampaignUtmParams,
   previewCampaignUtmUrls,
@@ -270,7 +275,7 @@ export async function GET(
     const knownError = handleKnownError(error, requestId);
     if (knownError) return knownError;
 
-    console.error("[GET /api/v1/campaigns/[id]/links]", error);
+    logApiErrorResponse({ code: "INTERNAL_ERROR", error, requestId, route: "GET /api/v1/campaigns/[id]/links" });
     return errorResponse(
       "INTERNAL_ERROR",
       "Unable to list campaign links.",
@@ -357,7 +362,7 @@ export async function POST(
     const knownError = handleKnownError(error, requestId);
     if (knownError) return knownError;
 
-    console.error("[POST /api/v1/campaigns/[id]/links]", error);
+    logApiErrorResponse({ code: "INTERNAL_ERROR", error, requestId, route: "POST /api/v1/campaigns/[id]/links" });
     return errorResponse(
       "INTERNAL_ERROR",
       "Unable to add campaign links.",
@@ -410,7 +415,7 @@ export async function DELETE(
     const knownError = handleKnownError(error, requestId);
     if (knownError) return knownError;
 
-    console.error("[DELETE /api/v1/campaigns/[id]/links]", error);
+    logApiErrorResponse({ code: "INTERNAL_ERROR", error, requestId, route: "DELETE /api/v1/campaigns/[id]/links" });
     return errorResponse(
       "INTERNAL_ERROR",
       "Unable to remove campaign link.",

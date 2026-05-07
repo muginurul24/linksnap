@@ -1,6 +1,12 @@
 import QRCode from "qrcode";
-import { auth } from "@/lib/auth";
-import { createRequestId, errorResponse, successResponse } from "@/lib/api/response";
+import {
+  auth } from "@/lib/auth";
+import {
+  createRequestId,
+  errorResponse,
+  logApiErrorResponse,
+  successResponse,
+} from "@/lib/api/response";
 import { getSessionUserId } from "@/lib/auth/session-user";
 import { createTotpSecret, createTotpUri } from "@/lib/auth/two-factor";
 import {
@@ -68,7 +74,7 @@ export async function POST() {
       secret,
     });
   } catch (error) {
-    console.error("[POST /api/v1/auth/2fa/setup]", error);
+    logApiErrorResponse({ code: "INTERNAL_ERROR", error, requestId, route: "POST /api/v1/auth/2fa/setup" });
     return errorResponse(
       "INTERNAL_ERROR",
       "Unable to start two-factor setup.",

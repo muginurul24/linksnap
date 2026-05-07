@@ -1,5 +1,10 @@
 import { NextRequest } from "next/server";
-import { createRequestId, errorResponse, successResponse } from "@/lib/api/response";
+import {
+  createRequestId,
+  errorResponse,
+  logApiErrorResponse,
+  successResponse,
+} from "@/lib/api/response";
 import {
   InvalidPaymentPlanError,
   PaymentAmountMismatchError,
@@ -90,7 +95,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.error("[POST /api/v1/payments/webhook]", error);
+    logApiErrorResponse({ code: "INTERNAL_ERROR", error, requestId, route: "POST /api/v1/payments/webhook" });
     return errorResponse(
       "INTERNAL_ERROR",
       "Unable to process payment notification.",

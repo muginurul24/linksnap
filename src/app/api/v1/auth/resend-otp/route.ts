@@ -2,7 +2,12 @@ import { NextRequest } from "next/server";
 import { eq } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { users } from "@/lib/db/schema";
-import { createRequestId, errorResponse, successResponse } from "@/lib/api/response";
+import {
+  createRequestId,
+  errorResponse,
+  logApiErrorResponse,
+  successResponse,
+} from "@/lib/api/response";
 import { generateOtp, getOtpExpiresAt } from "@/lib/auth/otp";
 import { sendVerificationEmail } from "@/lib/email/auth-emails";
 import { slidingWindowRateLimit } from "@/lib/redis/rate-limit";
@@ -63,7 +68,7 @@ export async function POST(request: NextRequest) {
 
     return successResponse();
   } catch (error) {
-    console.error("[POST /api/v1/auth/resend-otp]", error);
+    logApiErrorResponse({ code: "INTERNAL_ERROR", error, requestId, route: "POST /api/v1/auth/resend-otp" });
     return errorResponse(
       "INTERNAL_ERROR",
       "Unable to resend verification code.",

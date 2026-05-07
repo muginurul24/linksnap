@@ -1,6 +1,11 @@
 import { NextRequest } from "next/server";
 import { auth } from "@/lib/auth";
-import { createRequestId, errorResponse, successResponse } from "@/lib/api/response";
+import {
+  createRequestId,
+  errorResponse,
+  logApiErrorResponse,
+  successResponse,
+} from "@/lib/api/response";
 import {
   findBillingUserById,
   listPaymentTransactionsByUserId,
@@ -118,7 +123,7 @@ export async function GET(request: NextRequest) {
       total: result.total,
     });
   } catch (error) {
-    console.error("[GET /api/v1/payments/history]", error);
+    logApiErrorResponse({ code: "INTERNAL_ERROR", error, requestId, route: "GET /api/v1/payments/history" });
     return errorResponse(
       "INTERNAL_ERROR",
       "Unable to list payment history.",

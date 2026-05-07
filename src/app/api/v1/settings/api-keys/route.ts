@@ -6,8 +6,13 @@ import {
   getApiKeyDisplayPrefix,
   hashApiKey,
   maskApiKey,
-} from "@/lib/auth/api-key";
-import { createRequestId, errorResponse, successResponse } from "@/lib/api/response";
+  } from "@/lib/auth/api-key";
+import {
+  createRequestId,
+  errorResponse,
+  logApiErrorResponse,
+  successResponse,
+} from "@/lib/api/response";
 import {
   createApiKeyRecord,
   listApiKeysByUserId,
@@ -107,7 +112,7 @@ export async function GET() {
 
     return successResponse(keys);
   } catch (error) {
-    console.error("[GET /api/v1/settings/api-keys]", error);
+    logApiErrorResponse({ code: "INTERNAL_ERROR", error, requestId, route: "GET /api/v1/settings/api-keys" });
     return errorResponse(
       "INTERNAL_ERROR",
       "Unable to list API keys.",
@@ -153,7 +158,7 @@ export async function POST(request: NextRequest) {
       201,
     );
   } catch (error) {
-    console.error("[POST /api/v1/settings/api-keys]", error);
+    logApiErrorResponse({ code: "INTERNAL_ERROR", error, requestId, route: "POST /api/v1/settings/api-keys" });
     return errorResponse(
       "INTERNAL_ERROR",
       "Unable to create API key.",
