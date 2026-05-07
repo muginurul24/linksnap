@@ -393,6 +393,43 @@ Added server-side billing country detection using request headers, the shared cl
 
 **Next Task:** 14.5 — Dual Gateway UI in Billing Page
 
+### 14.5 — Dual Gateway UI in Billing Page
+- **Date:** 2026-05-07 19:25 GMT+7
+- **Duration:** 0 hours 14 minutes
+- **Status:** ✅ Complete
+
+**What I Did:**
+Refactored the billing plan upgrade control to render gateway radio options and route checkout creation to Stripe or Midtrans based on the selected gateway. Indonesia clients now see Midtrans and Stripe options; non-Indonesia clients see Stripe as the single selected option.
+
+**Files Changed:**
+- `src/app/(dashboard)/settings/billing/upgrade-button.tsx` — Added gateway selector UI, endpoint selection, and gateway-specific redirect handling.
+- `src/app/(dashboard)/settings/billing/page.tsx` — Passed country-derived gateway availability into paid plan upgrade controls.
+- `tests/unit/billing-gateway-selector.test.tsx` — Covered selector rendering and endpoint/redirect helper behavior.
+- `tests/integration/billing-page-gateway-detection.test.tsx` — Extended page rendering coverage for visible gateway options.
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Marked task 14.5 complete.
+- `_bmad-output/implementation-artifacts/JOURNAL.md` — Logged task completion.
+
+**Decisions Made:**
+- Used native radio inputs for predictable accessibility and form semantics without adding new UI dependencies.
+- Kept Stripe as the default single gateway when country is unknown or outside Indonesia.
+
+**Tests:**
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Unit/Integration: `rtk bun run test` — Passed, 101 files / 465 tests.
+- ✅ Targeted: `rtk bun run test tests/unit/billing-gateway-selector.test.tsx tests/integration/billing-page-gateway-detection.test.tsx` — Passed.
+
+**Issues Encountered:**
+- The client response union needed a separate `PaymentResponseData` type so Stripe and Midtrans redirect helpers remained type-safe.
+
+**Security Checks:**
+- ✅ Checkout amount and plan remain calculated server-side.
+- ✅ Client gateway choice only selects an internal API endpoint.
+- ✅ Both create endpoints remain authenticated and rate limited.
+- ✅ No payment credentials or card data are exposed to the browser.
+
+**Next Task:** 14.6 — Unify Transaction History
+
 ### 0.4 — CI/CD Pipeline
 - **Date:** 2026-05-06 20:10 GMT+7
 - **Duration:** 0 hours 35 minutes

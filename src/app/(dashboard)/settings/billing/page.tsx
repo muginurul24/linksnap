@@ -272,7 +272,12 @@ export default async function BillingPage({ searchParams }: BillingPageProps) {
                     {isCurrent ? "Current Plan" : "Included"}
                   </Button>
                 ) : (
-                  <UpgradeButton current={isCurrent} plan={plan.plan as PaidPlan} />
+                  <UpgradeButton
+                    availableGateways={availableGateways}
+                    current={isCurrent}
+                    gateway={availableGateways[0]}
+                    plan={plan.plan as PaidPlan}
+                  />
                 )}
               </CardContent>
             </Card>

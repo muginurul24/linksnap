@@ -1089,9 +1089,9 @@ Stripe handles credit card globally. Midtrans handles Indonesian local banks (BC
 - [x] Tests: unit (country detection flow), integration (billing page renders correct gateways)
 
 ### TASK 14.5 — Dual Gateway UI in Billing Page
-- [ ] File: `src/app/(dashboard)/settings/billing/page.tsx`
-- [ ] Refactor plan cards: instead of single "Upgrade" button, show gateway selector
-- [ ] UI for Indonesia clients:
+- [x] File: `src/app/(dashboard)/settings/billing/page.tsx`
+- [x] Refactor plan cards: instead of single "Upgrade" button, show gateway selector
+- [x] UI for Indonesia clients:
   ```
   Pro — $8/month
   ┌──────────────────────────┐
@@ -1101,7 +1101,7 @@ Stripe handles credit card globally. Midtrans handles Indonesian local banks (BC
   │ [  Upgrade to Pro  ]     │
   └──────────────────────────┘
   ```
-- [ ] UI for non-Indonesia clients:
+- [x] UI for non-Indonesia clients:
   ```
   Pro — $8/month
   ┌──────────────────────────┐
@@ -1110,12 +1110,12 @@ Stripe handles credit card globally. Midtrans handles Indonesian local banks (BC
   │ [  Upgrade to Pro  ]     │
   └──────────────────────────┘
   ```
-- [ ] Gateway selector: radio buttons with icon (Stripe logo, Midtrans logo)
-- [ ] Update `UpgradeButton` to accept `gateway` prop
-- [ ] On click: call appropriate endpoint
-  - `/api/v1/payments/stripe/create` → redirect to Stripe Checkout
-  - `/api/v1/payments/create` → redirect to Midtrans Snap
-- [ ] Tests: unit (gateway selector rendering), integration (billing page with country detection)
+- [x] Gateway selector: radio buttons with icon (Stripe logo, Midtrans logo)
+- [x] Update `UpgradeButton` to accept `gateway` prop
+- [x] On click: call appropriate endpoint
+  - [x] `/api/v1/payments/stripe/create` → redirect to Stripe Checkout
+  - [x] `/api/v1/payments/create` → redirect to Midtrans Snap
+- [x] Tests: unit (gateway selector rendering), integration (billing page with country detection)
 
 ### TASK 14.6 — Unify Transaction History
 - [ ] File: `src/app/(dashboard)/settings/billing/page.tsx` (billing history table)

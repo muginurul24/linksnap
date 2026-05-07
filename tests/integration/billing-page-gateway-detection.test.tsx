@@ -92,6 +92,8 @@ describe("billing page gateway country detection", () => {
 
     expect(markup).toContain('data-client-country="ID"');
     expect(markup).toContain('data-payment-gateways="midtrans,stripe"');
+    expect(markup).toContain("Midtrans");
+    expect(markup).toContain("Stripe");
   });
 
   it("should render Stripe-only gateway availability data for non-Indonesia", async () => {
@@ -106,5 +108,7 @@ describe("billing page gateway country detection", () => {
 
     expect(markup).toContain('data-client-country="US"');
     expect(markup).toContain('data-payment-gateways="stripe"');
+    expect(markup).toContain("Stripe");
+    expect(markup).not.toContain("Midtrans");
   });
 });
