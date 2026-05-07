@@ -3265,3 +3265,55 @@ settings matching and nested route behavior.
 - ✅ No secrets were printed or committed.
 
 **Next Task:** 12.12 — API Documentation Page (Paid Users)
+
+### 12.12 — API Documentation Page (Paid Users)
+- **Date:** 2026-05-07 15:17 GMT+7
+- **Duration:** 0h 50m
+- **Status:** ✅ Complete
+
+**What I Did:**
+Added a paid-user API documentation page, OpenAPI JSON route, sidebar navigation
+entry, protected `/docs` route handling, and billing upgrade prompt. The docs
+content is generated from a shared API docs source so the dashboard page and
+OpenAPI route stay aligned.
+
+**Files Changed:**
+- `src/lib/api-docs/spec.ts` — Added API docs sections, endpoint metadata, and OpenAPI spec generation.
+- `src/lib/api-docs/access.ts` — Added paid-plan access helpers and redirect targets.
+- `src/app/(dashboard)/docs/page.tsx` — Added paid-gated API docs page with endpoint request/response examples.
+- `src/app/(dashboard)/docs/copy-snippet-button.tsx` — Added clipboard button for examples and auth header snippet.
+- `src/app/api/v1/docs/route.ts` — Added paid-gated OpenAPI JSON endpoint using standard response envelope.
+- `src/components/dashboard/app-sidebar.tsx` — Added paid-only API Docs sidebar item.
+- `src/components/dashboard/app-header.tsx` — Added `/docs` breadcrumb.
+- `src/app/(dashboard)/settings/billing/page.tsx` — Added API docs upgrade prompt via `?upgrade=api-docs`.
+- `src/lib/auth/protected-routes.ts` — Added `/docs` to protected dashboard routes.
+- `tests/unit/api-docs-access.test.ts` — Added docs access/gating coverage.
+- `tests/integration/api-docs-route.test.ts` — Added OpenAPI route validity and access tests.
+- `tests/unit/app-sidebar.test.ts` — Added paid-only API Docs nav coverage.
+- `tests/unit/dashboard-app-header.test.ts` — Added API Docs breadcrumb coverage.
+- `tests/unit/protected-routes.test.ts` — Added `/docs` protected route coverage.
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Checked off Task 12.12.
+- `_bmad-output/implementation-artifacts/JOURNAL.md` — Recorded this completion entry.
+
+**Decisions Made:**
+- Kept `/api/v1/docs` behind paid-plan auth and returned the spec inside the existing `{ success, data }` API envelope to match project API conventions.
+- Showed the bearer header format with copy support instead of inventing fake user keys; persisted API key CRUD remains Task 12.13 because the `apiKeys` table does not exist yet.
+- Used `?upgrade=api-docs` on the billing page to provide a concrete upgrade prompt for FREE users redirected from `/docs`.
+
+**Tests:**
+- ✅ Targeted: `rtk bun run test -- tests/unit/api-docs-access.test.ts tests/integration/api-docs-route.test.ts tests/unit/app-sidebar.test.ts tests/unit/protected-routes.test.ts tests/unit/dashboard-app-header.test.ts` — 5 files passed, 20 tests passed.
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Unit/Integration: `rtk bun run test` — 77 files passed, 339 tests passed.
+- ✅ Build: `rtk bun run build` — Passed.
+
+**Issues Encountered:**
+- The task requested showing user API keys, but real API keys are explicitly scheduled for Task 12.13. I avoided fake secrets and documented the auth header format instead.
+
+**Security Checks:**
+- ✅ `/docs` dashboard page redirects unauthenticated users and FREE users.
+- ✅ `/api/v1/docs` authenticates and checks paid plan before returning docs.
+- ✅ No secrets or fake keys are generated or committed.
+- ✅ API responses use the standard envelope.
+
+**Next Task:** 12.13 — API Keys Management (Settings Tab)

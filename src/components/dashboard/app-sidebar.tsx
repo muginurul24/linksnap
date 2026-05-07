@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import {
   LayoutDashboard, Link2, Globe, Megaphone, BarChart3, Settings, QrCode, Zap,
-  LogOut, User, CreditCard, Sparkles,
+  LogOut, User, CreditCard, Sparkles, BookOpen,
 } from "lucide-react";
 import type { UserPlan } from "@/lib/links/limits";
 import { getPlanDefinition } from "@/lib/plans/definitions";
@@ -43,6 +43,8 @@ const mainNav = [
   { title: "Campaigns", url: "/campaigns", icon: Megaphone },
   { title: "Analytics", url: "/analytics", icon: BarChart3 },
 ];
+
+const apiDocsNavItem = { title: "API Docs", url: "/docs", icon: BookOpen };
 
 const accountNav = [
   { title: "Settings", url: "/settings", icon: Settings },
@@ -85,9 +87,14 @@ export function isSidebarItemActive(pathname: string, url: string): boolean {
   return pathname === url || pathname.startsWith(`${url}/`);
 }
 
+export function getSidebarMainNavItems(plan: UserPlan) {
+  return plan === "FREE" ? mainNav : [...mainNav, apiDocsNavItem];
+}
+
 export function AppSidebar({ user }: { user: AppSidebarUser }) {
   const pathname = usePathname();
   const displayUser = getSidebarDisplayUser(user);
+  const mainNavItems = getSidebarMainNavItems(user.plan);
 
   return (
     <Sidebar collapsible="icon" variant="sidebar">
@@ -114,7 +121,7 @@ export function AppSidebar({ user }: { user: AppSidebarUser }) {
           <SidebarGroupLabel>Main</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {mainNav.map((item) => (
+              {mainNavItems.map((item) => (
                 <SidebarMenuItem key={item.url}>
                   <SidebarMenuButton
                     isActive={isSidebarItemActive(pathname, item.url)}

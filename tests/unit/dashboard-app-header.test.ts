@@ -19,6 +19,13 @@ describe("dashboard app header", () => {
     expect(getDashboardBreadcrumbs("/unknown")).toEqual([{ label: "Dashboard" }]);
   });
 
+  it("should render API docs breadcrumbs", () => {
+    expect(getDashboardBreadcrumbs("/docs")).toEqual([
+      { href: "/dashboard", label: "Dashboard" },
+      { label: "API Docs" },
+    ]);
+  });
+
   it("should build a filtered links search href when query is provided", () => {
     expect(buildLinksSearchHref(" promo code ")).toBe(
       "/links?search=promo+code",

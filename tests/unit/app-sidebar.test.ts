@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  getSidebarMainNavItems,
   getSidebarDisplayUser,
   isSidebarItemActive,
 } from "../../src/components/dashboard/app-sidebar";
@@ -49,5 +50,17 @@ describe("app sidebar user display", () => {
   it("should keep nested non-settings routes active", () => {
     expect(isSidebarItemActive("/links/new", "/links")).toBe(true);
     expect(isSidebarItemActive("/dashboard/extra", "/dashboard")).toBe(false);
+  });
+
+  it("should show API docs navigation only for paid plans", () => {
+    expect(getSidebarMainNavItems("FREE").map((item) => item.title)).not.toContain(
+      "API Docs",
+    );
+    expect(getSidebarMainNavItems("PRO").map((item) => item.title)).toContain(
+      "API Docs",
+    );
+    expect(getSidebarMainNavItems("BUSINESS").map((item) => item.title)).toContain(
+      "API Docs",
+    );
   });
 });
