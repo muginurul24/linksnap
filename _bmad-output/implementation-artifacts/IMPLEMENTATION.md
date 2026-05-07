@@ -1125,13 +1125,13 @@ Stripe handles credit card globally. Midtrans handles Indonesian local banks (BC
 - [x] Tests: integration (transaction history shows both gateways)
 
 ### TASK 14.7 — End-to-End Payment Flow Tests
-- [ ] Update E2E tests to cover Stripe flow
-- [ ] Test: Indonesia client sees both gateways
-- [ ] Test: non-Indonesia client sees only Stripe
-- [ ] Test: Stripe checkout session creation
-- [ ] Test: Stripe webhook handling (mock signature)
-- [ ] Test: gateway badge in transaction history
-- [ ] Ensure all existing Midtrans tests still pass
+- [x] Update E2E tests to cover Stripe flow
+- [x] Test: Indonesia client sees both gateways
+- [x] Test: non-Indonesia client sees only Stripe
+- [x] Test: Stripe checkout session creation
+- [x] Test: Stripe webhook handling (mock signature)
+- [x] Test: gateway badge in transaction history
+- [x] Ensure all existing Midtrans tests still pass
 
 ---
 
@@ -1145,7 +1145,141 @@ rtk bun run db:studio    # Open Drizzle Studio (in another terminal)
 
 **Priority order:** 14.1 → 14.2 → 14.3 → 14.4 → 14.5 → 14.6 → 14.7
 
-**Estimated total:** 81 + 7 = 88 tasks
+**Estimated total:** 88 + 6 = 94 tasks
+
+---
+
+## 🟣 Phase 15: Replace Stripe with Lemon Squeezy
+
+> **Source:** Rafi product spec — 2026-05-07. Stripe not available in Indonesia. Lemon Squeezy is Merchant of Record (handles tax/VAT, chargebacks, compliance) and accepts Indonesian creators.
+
+### Why Lemon Squeezy
+- No US LLC required — Indonesian creators accepted
+- Merchant of Record — handles GST/VAT, tax invoices, chargebacks
+- Simple checkout (hosted page like Midtrans Snap)
+- Webhook system for subscription lifecycle
+- Withdraw to Wise or Indonesian bank
+
+### Key Differences from Stripe
+
+| Concept | Stripe | Lemon Squeezy |
+|---|---|---|
+| SDK | `stripe` | `@lemonsqueezy/lemonsqueezy.js` |
+| Checkout | `checkout.sessions.create` | `createCheckout` |
+| Variant ref | Dynamic price | Pre-defined variant ID in LS dashboard |
+| Webhook sig | Stripe signature | HMAC SHA256 |
+| Key setup | Secret key + webhook secret | Single API key (webhook secret = signing secret) |
+| Subscription events | `checkout.session.completed` | `order_created` |
+| Renewal event | `customer.subscription.updated` | `subscription_payment_success` |
+| Cancel event | `customer.subscription.deleted` | `subscription_cancelled` |
+
+### Pre-requisite (Manual — do in Lemon Squeezy dashboard before coding)
+- [ ] Create Lemon Squeezy account at https://app.lemonsqueezy.com
+- [ ] Create 4 product variants (one-time using the test mode):
+  - Pro Monthly ($8/mo)
+  - Pro Yearly ($75/yr)
+  - Business Monthly ($19/mo)
+  - Business Yearly ($180/yr)
+- [ ] Copy variant IDs
+- [ ] Copy API key from Settings → API
+- [ ] Copy webhook signing secret from Settings → Webhooks
+- [ ] Add to `.env`: `LEMONSQUEEZY_API_KEY`, `LEMONSQUEEZY_WEBHOOK_SECRET`, `LEMONSQUEEZY_STORE_ID`, `LEMONSQUEEZY_VARIANT_PRO_MONTHLY`, `LEMONSQUEEZY_VARIANT_PRO_YEARLY`, `LEMONSQUEEZY_VARIANT_BUSINESS_MONTHLY`, `LEMONSQUEEZY_VARIANT_BUSINESS_YEARLY`
+
+### TASK 15.1 — Lemon Squeezy SDK & Config
+- [ ] Remove Stripe: `rtk bun remove stripe`
+- [ ] Add Lemon Squeezy: `rtk bun add @lemonsqueezy/lemonsqueezy.js`
+- [ ] File: `src/lib/payments/lemonsqueezy.ts` — client singleton
+  - Configure with API key
+  - `assertLemonSqueezyConfigured()` — verify env vars
+  - `LemonSqueezyConfigurationError` class
+- [ ] File: `.env.example` — add all LS env var placeholders
+- [ ] Tests: unit (config validation)
+
+### TASK 15.2 — Lemon Squeezy Checkout Session
+- [ ] File: `src/lib/payments/lemonsqueezy-checkout.ts`
+- [ ] `createLemonSqueezyCheckout(input)`:
+  - Map plan + duration → variant ID from env vars
+  - Call `lemonsqueezy.createCheckout({ variantId, checkoutData: { custom: { userId } } })`
+  - Return `{ checkoutUrl }` — client redirects
+- [ ] Create `src/app/api/v1/payments/lemonsqueezy/create/route.ts`:
+  - Auth required, rate limited
+  - Validate plan + duration
+  - Create pending transaction record in DB (gateway: `"lemonsqueezy"`)
+  - Call `createLemonSqueezyCheckout`
+  - Return `{ checkoutUrl }`
+- [ ] Remove old Stripe route: `src/app/api/v1/payments/stripe/create/route.ts`
+- [ ] Update `upgrade-button.tsx` to use Lemon Squeezy endpoint
+- [ ] Tests: unit (variant mapping), integration (create checkout API)
+
+### TASK 15.3 — Lemon Squeezy Webhook Handler
+- [ ] Create `src/lib/payments/lemonsqueezy-webhook.ts`
+- [ ] `verifyLemonSqueezySignature(rawBody, signature)` — HMAC SHA256
+- [ ] `handleLemonSqueezyWebhook(event)`:
+  - `order_created`:
+    - Find transaction by custom data userId or order identifier
+    - Update transaction status to `SETTLEMENT`
+    - Activate subscription via existing `createOrRenewSubscriptionForPayment`
+    - Send invoice email
+  - `subscription_payment_success`:
+    - Sync subscription renewal period
+  - `subscription_cancelled`:
+    - Expire subscription, downgrade to FREE
+  - `subscription_payment_failed`:
+    - Log failure
+- [ ] Create `src/app/api/v1/payments/lemonsqueezy/webhook/route.ts`:
+  - Verify Lemon Squeezy signature
+  - Parse event
+  - Delegate to handler
+  - Return 200 quickly
+  - Exempt from CSRF guard
+- [ ] Remove old Stripe webhook route
+- [ ] Tests: unit (signature verify, event handling), integration (webhook endpoint)
+
+### TASK 15.4 — Update Gateway Selector UI
+- [ ] File: `src/app/(dashboard)/settings/billing/page.tsx`
+- [ ] Replace Stripe references with Lemon Squeezy
+- [ ] Gateway list:
+  - Indonesia: Midtrans (bank lokal) + Lemon Squeezy (credit card)
+  - Non-Indonesia: Lemon Squeezy (credit card) only
+- [ ] UI labels:
+  ```
+  ○ Lemon Squeezy (Credit/Debit Card)
+  ○ Midtrans (Indonesian Banks, GoPay)
+  ```
+- [ ] Update `UpgradeButton` gateway prop: `"midtrans" | "lemonsqueezy"`
+- [ ] Tests: unit (gateway selector rendering with new labels)
+
+### TASK 15.5 — Update Transaction Schema & History
+- [ ] Update gateway column values: `"stripe"` → `"lemonsqueezy"`
+- [ ] Update transaction history table to show "Lemon Squeezy" badge
+- [ ] Ensure existing Midtrans transactions still work
+- [ ] Test: integration (history shows both gateways correctly)
+
+### TASK 15.6 — Cleanup & End-to-End Tests
+- [ ] Remove ALL remaining Stripe code references:
+  - Delete `src/lib/payments/stripe*.ts`
+  - Delete Stripe env vars from `.env.example`
+  - Remove Stripe from CSRF exemption list in proxy
+- [ ] Update E2E tests: replace Stripe flows with Lemon Squeezy
+- [ ] Test: Indonesia client sees Midtrans + Lemon Squeezy
+- [ ] Test: non-Indonesia client sees only Lemon Squeezy
+- [ ] Test: Lemon Squeezy webhook subscription lifecycle
+- [ ] Run full test suite, typecheck, lint
+- [ ] Ensure zero Stripe references in `src/`
+
+---
+
+## 🚀 Ready to Start?
+
+```bash
+cd ~/projects/linksnap
+rtk bun run dev          # Start development
+rtk bun run db:studio    # Open Drizzle Studio (in another terminal)
+```
+
+**Priority order:** 15.1 → 15.2 → 15.3 → 15.4 → 15.5 → 15.6
+
+**Estimated total:** 88 + 6 = 94 tasks
 **Estimated timeline:** 12 weeks (3 months) for 1 full-time developer
 
 Good luck. Ship it. 🚀

@@ -465,6 +465,42 @@ Updated the billing history table to show both payment gateways in one unified t
 
 **Next Task:** 14.7 — End-to-End Payment Flow Tests
 
+### 14.7 — End-to-End Payment Flow Tests
+- **Date:** 2026-05-07 19:42 GMT+7
+- **Duration:** 0 hours 32 minutes
+- **Status:** ✅ Complete
+
+**What I Did:**
+Expanded the Playwright payment flow spec with dual-gateway billing visibility, Stripe webhook settlement, transaction-history gateway badge checks, and conditional Stripe Checkout creation coverage. Kept the existing Midtrans sandbox path covered and made the test resilient to local external-provider credential availability.
+
+**Files Changed:**
+- `tests/e2e/payment-flow.spec.ts` — Added Stripe and gateway E2E cases, signed Stripe webhook payload generation, gateway visibility assertions, and E2E stability fixes.
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Marked task 14.7 complete.
+- `_bmad-output/implementation-artifacts/JOURNAL.md` — Logged task completion.
+
+**Decisions Made:**
+- Skipped live Stripe Checkout creation unless `STRIPE_SECRET_KEY` is a non-placeholder test key, because creating Checkout sessions requires a real Stripe test account.
+- Used local IP headers in the payment E2E spec so country tests rely on explicit edge country headers instead of a local MaxMind database file.
+- Added the required browser CSRF header to E2E API create-payment requests to match production browser calls.
+
+**Tests:**
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Unit/Integration: `rtk bun run test` — Passed, 101 files / 466 tests.
+- ✅ E2E: `rtk bun run test:e2e tests/e2e/payment-flow.spec.ts` — Passed: 4 passed, 1 skipped for live Stripe Checkout due placeholder credentials.
+
+**Issues Encountered:**
+- Existing Midtrans E2E API calls were missing the required `X-Requested-With` header → Added it to match the client checkout flow.
+- Existing success-page assertions targeted heading semantics and non-exact text where the rendered shadcn components do not expose a heading role → Updated assertions to match visible output reliably.
+
+**Security Checks:**
+- ✅ Stripe webhook E2E uses a valid mock `Stripe-Signature` over the raw payload.
+- ✅ E2E create-payment API calls include the browser CSRF header.
+- ✅ External live Stripe Checkout test is guarded by real credential detection.
+- ✅ Test-created users and rate-limit keys are cleaned up.
+
+**Next Task:** Phase 14 complete
+
 ### 0.4 — CI/CD Pipeline
 - **Date:** 2026-05-06 20:10 GMT+7
 - **Duration:** 0 hours 35 minutes
