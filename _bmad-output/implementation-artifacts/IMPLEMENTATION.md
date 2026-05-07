@@ -875,7 +875,132 @@ rtk bun run db:studio    # Open Drizzle Studio (in another terminal)
 
 **Priority order:** 12.1 → 12.2 → 12.3 → 12.4 → 12.5 → 12.6 → 12.7 → 12.8 → 12.9 → 12.10 → 12.11 → 12.12 → 12.13 → 12.14 → 12.15 → 12.16 → 12.17 → 12.18 → 12.19 → 12.20 → 12.21 → 12.22
 
-**Estimated total:** 54 tasks across 10 phases + 22 post-audit fixes
+**Estimated total:** 54 + 22 + 5 = 81 tasks
+
+---
+
+## 🟣 Phase 13: Smart Rules V2 — User-Friendly UX Overhaul
+
+> **Source:** Rafi product spec — 2026-05-07. Replace cryptic manual input with intuitive visual builder. Rules engine stays the same; only the UX layer changes.
+
+### Design Decisions (Claw Kun)
+
+| Decision | Choice | Rationale |
+|---|---|---|
+| Active/Inactive toggle | **Per-rule** | User can experiment without deleting rules; individual on/off |
+| Rule priority | **Ordered, first-match-wins** | Simple and predictable — like firewall rules; no complex cascade |
+| Bot detection | **User-agent pattern matching** | Predefined bot list + custom patterns; 95% accuracy without heavy infra |
+| Country selector | **Searchable combobox** | ISO 3166-1 country list; user types to filter, no manual typing |
+| "No Redirect" | **Normal redirect to moneysite** | When smart rules disabled (inactive), ALL visitors go to moneysite — behaves like normal short link |
+
+### TASK 13.1 — Searchable Country Combobox Component
+- [x] Create `src/components/smart-rules/country-combobox.tsx`
+- [x] Use shadcn `Command` (cmdk) component for searchable dropdown
+- [x] Load ISO 3166-1 country list: name + code (e.g., "Indonesia" / "ID")
+- [x] Features: type to filter, keyboard navigation, flag emoji per country
+- [x] Export selected country code to parent form
+- [x] Placeholder: "Search country..."
+- [x] Handle edge case: no results found → show "No country found"
+- [x] Tests: unit (search filter, selection, keyboard nav)
+
+### TASK 13.2 — Smart Rule Builder Form (Visual)
+- [ ] Create `src/components/smart-rules/rule-builder.tsx`
+- [ ] Replace current manual JSON/text input with visual form:
+  ```
+  ┌─────────────────────────────────────────┐
+  │ Rule #1                          [Active ◆] │
+  │ ┌─────────────┐ ┌──────────┐ ┌──────────┐ │
+  │ │ IF ▼        │ │ country ▼│ │ = Indo… ▼│ │
+  │ │   country   │ │   is     │ │ Indonesia │ │
+  │ └─────────────┘ └──────────┘ └──────────┘ │
+  │ ┌─────────────┐ ┌──────────┐ ┌──────────┐ │
+  │ │ AND ▼       │ │ device ▼ │ │ = Mobi… ▼│ │
+  │ │   device    │ │   is     │ │ Mobile    │ │
+  │ └─────────────┘ └──────────┘ └──────────┘ │
+  │                                            │
+  │ → Redirect to: [https://tokopedia.com/...] │
+  │                                            │
+  │ [+ Add Condition]  [🗑 Delete Rule]        │
+  └─────────────────────────────────────────┘
+  ```
+- [ ] Condition types: country, device, bot, time (date range)
+- [ ] Operator per condition: `is`, `is not`
+- [ ] Value selector changes based on type:
+  - country → `CountryCombobox` (searchable)
+  - device → dropdown: Mobile, Desktop, Tablet
+  - bot → predefined checkboxes (Googlebot, Bingbot, Facebook, Twitter, etc.) + custom input
+  - time → date range picker (start/end)
+- [ ] Each rule has: toggle (active/inactive), destination URL input
+- [ ] "+ Add Rule" button appends new rule at bottom
+- [ ] Rules are reorderable (drag handle or up/down arrows)
+- [ ] Fallback: "Default destination" field at the bottom (used when no rules match)
+- [ ] Readable summary below each rule: "IF country is Indonesia → moneysite.com"
+- [ ] Tests: unit (form validation, add/remove/reorder rules, condition rendering)
+
+### TASK 13.3 — Rule Engine Logic (Ordered Priority)
+- [ ] File: `src/lib/rules/rule-engine.ts`
+- [ ] Rules are evaluated in display order (first rule = highest priority)
+- [ ] Logic per rule:
+  1. Check if `isActive === false` → skip to next rule
+  2. Check ALL conditions with AND logic (all must match)
+  3. If all conditions match → return rule's destination URL (first-match-wins)
+  4. If no conditions match → continue to next rule
+- [ ] If smart rules toggle is OFF (inactive for entire link): ALL visitors → moneysite (normal redirect, ignore rules)
+- [ ] If smart rules toggle is ON but NO rules match:
+  - If fallback/default destination URL is set → redirect there
+  - If no fallback → redirect to moneysite (default destination)
+- [ ] Bot detection: parse `user-agent` header against predefined pattern list
+  - Predefined bots: Googlebot, Bingbot, FacebookExternalHit, Twitterbot, Slurp, DuckDuckBot, Baiduspider, YandexBot, AhrefsBot, SemrushBot, GPTBot, Claude-Web, CCBot
+  - Case-insensitive substring match (simpler than regex for bot detection, handles UA variations)
+- [ ] Country detection: already handled by `src/lib/geo/geoip.ts` (MaxMind GeoLite2)
+- [ ] Device detection: already handled by `src/lib/geo/device-detector.ts`
+- [ ] Tests: unit (rule matching, priority order, bot detection, inactive rules, no-match fallback)
+
+### TASK 13.4 — Smart Rules API Update
+- [ ] File: `src/app/api/v1/links/[id]/rules/route.ts`
+- [ ] Update schema to support ordered rules array with priority
+- [ ] New rule schema `smartRuleV2Schema`:
+  ```typescript
+  {
+    isActive: boolean
+    conditions: Array<{
+      type: "country" | "device" | "bot" | "time"
+      operator: "is" | "is_not"
+      value: string | string[]  // single value or array for bot
+    }>
+    destinationUrl: string
+  }
+  ```
+- [ ] Add `fallbackDestinationUrl` field to link's rules config
+- [ ] GET returns rules in display order
+- [ ] POST/PUT accepts ordered rules array (order = priority)
+- [ ] Backward compatible: existing rules format still works (migration not required)
+- [ ] Tests: integration (CRUD v2 rules, ordering, validation)
+
+### TASK 13.5 — Integrate into Link Form & Redirect Handler
+- [ ] File: `src/app/(dashboard)/links/link-form.tsx`
+- [ ] Replace current smart rules section with `RuleBuilder` component
+- [ ] "Enable Smart Rules" toggle → expands RuleBuilder
+- [ ] Preview summary: shows readable rule list before save
+- [ ] File: `src/app/[slug]/page.tsx` (redirect handler)
+- [ ] Integrate ordered rule evaluation from rule-engine.ts
+- [ ] Fallback logic: default destination → 404
+- [ ] Keep existing click logging + analytics intact
+- [ ] Tests: integration (full flow: create rules → visit link → verify redirect)
+
+---
+
+## 🚀 Ready to Start?
+
+```bash
+cd ~/projects/linksnap
+rtk bun run dev          # Start development
+rtk bun run db:studio    # Open Drizzle Studio (in another terminal)
+```
+
+**Priority order:** 13.1 → 13.2 → 13.3 → 13.4 → 13.5
+
+**Estimated total:** 54 + 22 + 5 = 81 tasks
 **Estimated timeline:** 12 weeks (3 months) for 1 full-time developer
 
 Good luck. Ship it. 🚀

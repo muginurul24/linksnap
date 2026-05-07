@@ -3892,3 +3892,46 @@ or touching real payment state.
 - ✅ Midtrans webhook rejected an invalid signature with `INVALID_SIGNATURE`.
 
 **Next Task:** 10.5 — Backup strategy / load test, or 1.5 — Google OAuth E2E if interactive provider access is available.
+
+### 13.1 — Searchable Country Combobox Component
+- **Date:** 2026-05-07 18:32 GMT+7
+- **Duration:** 0h 20m
+- **Status:** ✅ Complete
+
+**What I Did:**
+Added an ISO 3166-1 country data helper and a reusable `CountryCombobox` built on the shadcn `Command` component. The combobox supports type-to-filter search, flag labels, empty results, hidden form value output, and parent state updates through selected country codes.
+
+**Files Changed:**
+- `_bmad-output/planning-artifacts/spec-smart-rules-country-combobox.md` — Added task spec, acceptance criteria, and risk notes.
+- `src/lib/countries.ts` — Added country code data, display-name generation, flag emoji generation, filtering, lookup, and keyboard index helpers.
+- `src/components/smart-rules/country-combobox.tsx` — Added searchable country combobox component.
+- `src/components/ui/command.tsx` — Added shadcn Command primitive.
+- `src/components/ui/input-group.tsx` — Added shadcn helper used by Command input.
+- `src/components/ui/textarea.tsx` — Added shadcn helper generated with the Command registry item.
+- `package.json` / `bun.lock` — Added `cmdk` dependency through shadcn.
+- `tests/unit/country-combobox.test.ts` — Added country filtering, selection lookup, flag, and keyboard navigation helper coverage.
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Checked off Task 13.1.
+- `_bmad-output/implementation-artifacts/JOURNAL.md` — Recorded this completion entry.
+
+**Decisions Made:**
+- Country display names are derived with `Intl.DisplayNames` from an explicit ISO alpha-2 code list to keep source data compact while still exposing name/code pairs.
+- Keyboard navigation behavior is tested through a deterministic index helper; the visible combobox delegates interactive keyboard handling to `cmdk`.
+- The component accepts an optional `countries` prop so tests and future filtered variants can use the same UI without mutating global data.
+
+**Tests:**
+- ✅ Targeted: `rtk bun run test -- tests/unit/country-combobox.test.ts` — 1 file passed, 6 tests passed.
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Unit/Integration: `rtk bun run test` — 91 files passed, 409 tests passed.
+
+**Issues Encountered:**
+- `rtk git pull --rebase` was blocked by the existing unstaged `IMPLEMENTATION.md` changes containing Phase 13 → Left the user-authored plan intact and continued from local context.
+- shadcn Command generation also added its current helper components (`input-group`, `textarea`) → Kept them because the generated Command primitive imports them directly.
+
+**Security Checks:**
+- ✅ No API route or database ownership surface changed in this task.
+- ✅ Component emits ISO country codes only; no secrets or sensitive data introduced.
+- ✅ No `dangerouslySetInnerHTML` or raw SQL introduced.
+- ✅ Input filtering is local UI state only and does not call user-controlled fetch URLs.
+
+**Next Task:** 13.2 — Smart Rule Builder Form (Visual)
