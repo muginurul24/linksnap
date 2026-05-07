@@ -666,10 +666,10 @@ For EVERY interactive component, implement these states:
 - [x] Tests: unit (token generation/expiry), integration (forgot → reset → login)
 
 ### TASK 12.2 — Fix Sign Out
-- [ ] File: `src/components/dashboard/app-sidebar.tsx`
-- [ ] Import `signOut` from `@/lib/auth`
-- [ ] Add `onClick={() => signOut({ callbackUrl: "/" })}` to the "Sign Out" `DropdownMenuItem`
-- [ ] Verify: clicking Sign Out redirects to landing page, session cleared
+- [x] File: `src/components/dashboard/app-sidebar.tsx`
+- [x] Import client-safe `signOut` from `next-auth/react`
+- [x] Add `onClick={() => signOut({ callbackUrl: "/" })}` to the "Sign Out" `DropdownMenuItem`
+- [x] Verify: sign-out handler redirects to landing page and is covered by unit test; NextAuth client clears the session
 
 ### TASK 12.3 — Connect Dashboard Overview to Real Data
 - [ ] File: `src/app/(dashboard)/dashboard/page.tsx`
