@@ -44,8 +44,27 @@ type ApiEnvelope<T> =
     };
 
 type SmartRulesApiResponse = {
+  fallbackDestinationUrl?: string | null;
+  format?: "legacy" | "v2";
   linkId: string;
   rules: MockSmartRule[];
+};
+
+type SmartRulesV2ApiResponse = {
+  fallbackDestinationUrl: string | null;
+  format: "v2";
+  linkId: string;
+  rules: Array<{
+    conditions: Array<{
+      operator: "is" | "is_not";
+      type: "bot" | "country" | "device" | "time";
+      value: string | string[];
+    }>;
+    destinationUrl: string;
+    id: string;
+    isActive: boolean;
+    priority: number;
+  }>;
 };
 
 const linkId = "f4bd85a6-2e8c-47fc-894d-3dbe3c7d86b0";
@@ -132,6 +151,7 @@ import {
   DELETE,
   GET,
   POST,
+  PUT,
 } from "../../src/app/api/v1/links/[id]/rules/route";
 
 function createRequest(method: string, body?: unknown, query = ""): NextRequest {
@@ -227,6 +247,135 @@ describe("Smart Rules API", () => {
     expect(body.data.rules).toEqual(mockState.rules);
   });
 
+  it("should list stored V2 Smart Rules without exposing fallback sentinels", async () => {
+    mockState.rules = [
+      {
+        condition: {
+          conditions: [{ operator: "is", type: "country", value: "ID" }],
+          fallbackDestinationUrl: "https://example.com/default/",
+          isActive: true,
+          version: 2,
+        },
+        destinationUrl: "https://example.com/id/",
+        id: ruleId,
+        linkId,
+        priority: 0,
+        type: "GEO",
+      },
+      {
+        condition: {
+          conditions: [],
+          fallbackDestinationUrl: "https://example.com/default/",
+          fallbackOnly: true,
+          isActive: false,
+          version: 2,
+        },
+        destinationUrl: "https://example.com/default/",
+        id: "00000000-0000-4000-8000-000000000001",
+        linkId,
+        priority: 1,
+        type: "DEVICE",
+      },
+    ];
+
+    const response = await GET(createRequest("GET"), createContext());
+    const body = await readJson<SmartRulesV2ApiResponse>(response);
+
+    expect(response.status).toBe(200);
+    expect(body.success).toBe(true);
+    if (!body.success) return;
+    expect(body.data).toEqual({
+      fallbackDestinationUrl: "https://example.com/default/",
+      format: "v2",
+      linkId,
+      rules: [
+        {
+          conditions: [{ operator: "is", type: "country", value: "ID" }],
+          destinationUrl: "https://example.com/id/",
+          id: ruleId,
+          isActive: true,
+          priority: 0,
+        },
+      ],
+    });
+  });
+
+  it("should replace V2 Smart Rules in request order with fallback", async () => {
+    const response = await PUT(
+      createRequest("PUT", {
+        fallbackDestinationUrl: "https://example.com/default",
+        rules: [
+          {
+            conditions: [
+              { operator: "is", type: "country", value: "ID" },
+              { operator: "is", type: "device", value: "mobile" },
+            ],
+            destinationUrl: "https://example.com/id",
+            isActive: true,
+          },
+          {
+            conditions: [{ operator: "is", type: "bot", value: ["GPTBot"] }],
+            destinationUrl: "https://example.com/bot",
+            isActive: false,
+          },
+        ],
+      }),
+      createContext(),
+    );
+    const body = await readJson<SmartRulesV2ApiResponse>(response);
+
+    expect(response.status).toBe(200);
+    expect(body.success).toBe(true);
+    if (!body.success) return;
+    expect(body.data.format).toBe("v2");
+    expect(body.data.fallbackDestinationUrl).toBe("https://example.com/default");
+    expect(body.data.rules.map((rule) => rule.priority)).toEqual([0, 1]);
+    expect(body.data.rules).toMatchObject([
+      {
+        conditions: [
+          { operator: "is", type: "country", value: "ID" },
+          { operator: "is", type: "device", value: "mobile" },
+        ],
+        destinationUrl: "https://example.com/id",
+        isActive: true,
+      },
+      {
+        conditions: [{ operator: "is", type: "bot", value: ["GPTBot"] }],
+        destinationUrl: "https://example.com/bot",
+        isActive: false,
+      },
+    ]);
+    expect(mockState.rules.map((rule) => rule.priority)).toEqual([0, 1]);
+    expect(mockState.rateLimitOptions).toEqual([
+      { key: "api:links:rules:put:user-1", limit: 60, windowSeconds: 60 },
+    ]);
+  });
+
+  it("should store fallback-only V2 config without returning the sentinel rule", async () => {
+    mockState.userPlan = "FREE";
+
+    const response = await POST(
+      createRequest("POST", {
+        fallbackDestinationUrl: "https://example.com/default",
+        rules: [],
+      }),
+      createContext(),
+    );
+    const body = await readJson<SmartRulesV2ApiResponse>(response);
+
+    expect(response.status).toBe(200);
+    expect(body.success).toBe(true);
+    if (!body.success) return;
+    expect(body.data.format).toBe("v2");
+    expect(body.data.fallbackDestinationUrl).toBe("https://example.com/default");
+    expect(body.data.rules).toEqual([]);
+    expect(mockState.rules).toHaveLength(1);
+    expect(mockState.rules[0].condition).toMatchObject({
+      fallbackOnly: true,
+      version: 2,
+    });
+  });
+
   it("should delete one Smart Rule for an owned link", async () => {
     mockState.rules = [
       {
@@ -298,6 +447,27 @@ describe("Smart Rules API", () => {
             condition: {},
             destinationUrl: "javascript:alert(1)",
             type: "DEVICE",
+          },
+        ],
+      }),
+      createContext(),
+    );
+    const body = await readJson<SmartRulesApiResponse>(response);
+
+    expect(response.status).toBe(400);
+    expect(body.success).toBe(false);
+    if (body.success) return;
+    expect(body.error.code).toBe("VALIDATION_ERROR");
+  });
+
+  it("should reject invalid V2 input", async () => {
+    const response = await POST(
+      createRequest("POST", {
+        rules: [
+          {
+            conditions: [{ operator: "is", type: "country", value: "BAD" }],
+            destinationUrl: "https://example.com/id",
+            isActive: true,
           },
         ],
       }),

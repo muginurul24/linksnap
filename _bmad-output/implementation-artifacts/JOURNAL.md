@@ -3892,3 +3892,293 @@ or touching real payment state.
 - ✅ Midtrans webhook rejected an invalid signature with `INVALID_SIGNATURE`.
 
 **Next Task:** 10.5 — Backup strategy / load test, or 1.5 — Google OAuth E2E if interactive provider access is available.
+
+### 13.1 — Searchable Country Combobox Component
+- **Date:** 2026-05-07 18:32 GMT+7
+- **Duration:** 0h 20m
+- **Status:** ✅ Complete
+
+**What I Did:**
+Added an ISO 3166-1 country data helper and a reusable `CountryCombobox` built on the shadcn `Command` component. The combobox supports type-to-filter search, flag labels, empty results, hidden form value output, and parent state updates through selected country codes.
+
+**Files Changed:**
+- `_bmad-output/planning-artifacts/spec-smart-rules-country-combobox.md` — Added task spec, acceptance criteria, and risk notes.
+- `src/lib/countries.ts` — Added country code data, display-name generation, flag emoji generation, filtering, lookup, and keyboard index helpers.
+- `src/components/smart-rules/country-combobox.tsx` — Added searchable country combobox component.
+- `src/components/ui/command.tsx` — Added shadcn Command primitive.
+- `src/components/ui/input-group.tsx` — Added shadcn helper used by Command input.
+- `src/components/ui/textarea.tsx` — Added shadcn helper generated with the Command registry item.
+- `package.json` / `bun.lock` — Added `cmdk` dependency through shadcn.
+- `tests/unit/country-combobox.test.ts` — Added country filtering, selection lookup, flag, and keyboard navigation helper coverage.
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Checked off Task 13.1.
+- `_bmad-output/implementation-artifacts/JOURNAL.md` — Recorded this completion entry.
+
+**Decisions Made:**
+- Country display names are derived with `Intl.DisplayNames` from an explicit ISO alpha-2 code list to keep source data compact while still exposing name/code pairs.
+- Keyboard navigation behavior is tested through a deterministic index helper; the visible combobox delegates interactive keyboard handling to `cmdk`.
+- The component accepts an optional `countries` prop so tests and future filtered variants can use the same UI without mutating global data.
+
+**Tests:**
+- ✅ Targeted: `rtk bun run test -- tests/unit/country-combobox.test.ts` — 1 file passed, 6 tests passed.
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Unit/Integration: `rtk bun run test` — 91 files passed, 409 tests passed.
+
+**Issues Encountered:**
+- `rtk git pull --rebase` was blocked by the existing unstaged `IMPLEMENTATION.md` changes containing Phase 13 → Left the user-authored plan intact and continued from local context.
+- shadcn Command generation also added its current helper components (`input-group`, `textarea`) → Kept them because the generated Command primitive imports them directly.
+
+**Security Checks:**
+- ✅ No API route or database ownership surface changed in this task.
+- ✅ Component emits ISO country codes only; no secrets or sensitive data introduced.
+- ✅ No `dangerouslySetInnerHTML` or raw SQL introduced.
+- ✅ Input filtering is local UI state only and does not call user-controlled fetch URLs.
+
+**Next Task:** 13.2 — Smart Rule Builder Form (Visual)
+
+### 13.2 — Smart Rule Builder Form (Visual)
+- **Date:** 2026-05-07 18:36 GMT+7
+- **Duration:** 0h 25m
+- **Status:** ✅ Complete
+
+**What I Did:**
+Added a reusable visual Smart Rule builder with active toggles, per-rule destination URLs, multiple conditions, country/device/bot/time controls, up/down reordering, delete actions, add actions, fallback destination input, and readable summaries. Added a pure helper layer for builder state operations and validation so the UI can be integrated into the link form in Task 13.5.
+
+**Files Changed:**
+- `_bmad-output/planning-artifacts/spec-smart-rule-builder-form.md` — Added task spec and risks.
+- `src/lib/rules/rule-builder.ts` — Added builder types, default state factories, control-kind mapping, add/remove/reorder helpers, bot/time helpers, summaries, and validation.
+- `src/components/smart-rules/rule-builder.tsx` — Added visual Rule Builder component.
+- `tests/unit/rule-builder.test.ts` — Added validation, add/remove/reorder, condition rendering, bot, time, and summary coverage.
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Checked off Task 13.2.
+- `_bmad-output/implementation-artifacts/JOURNAL.md` — Recorded this completion entry.
+
+**Decisions Made:**
+- Used up/down arrow controls for reordering to keep keyboard and screen-reader behavior predictable without adding a drag-and-drop dependency.
+- Modeled time conditions as a two-item value array (`start`, `end`) so it stays compatible with the planned V2 API value shape.
+- Kept the builder standalone for this task; the existing link form integration is intentionally deferred to Task 13.5.
+
+**Tests:**
+- ✅ Targeted: `rtk bun run test -- tests/unit/rule-builder.test.ts` — 1 file passed, 8 tests passed.
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Unit/Integration: `rtk bun run test` — 92 files passed, 417 tests passed.
+
+**Issues Encountered:**
+- TypeScript flagged the initial `crypto.randomUUID` guard as redundant → Reworked it to call `globalThis.crypto.randomUUID()` directly when available.
+- ESLint warned about an unused helper import in the test → Extended the add/remove coverage to exercise that helper.
+
+**Security Checks:**
+- ✅ Destination and fallback URLs are validated with the existing safe URL helper.
+- ✅ No API route or database ownership surface changed in this task.
+- ✅ No raw SQL, secrets, or `dangerouslySetInnerHTML` introduced.
+- ✅ Bot custom patterns remain local form strings and are not executed as regex.
+
+**Next Task:** 13.3 — Rule Engine Logic (Ordered Priority)
+
+### 13.3 — Rule Engine Logic (Ordered Priority)
+- **Date:** 2026-05-07 18:41 GMT+7
+- **Duration:** 0h 30m
+- **Status:** ✅ Complete
+
+**What I Did:**
+Extended the Smart Rules engine for V2 ordered rule evaluation. V2 rules now support active/inactive state, AND condition matching, first-match-wins display order, bot user-agent matching, fallback destinations, and default-destination behavior when Smart Rules are disabled or no rules match.
+
+**Files Changed:**
+- `_bmad-output/planning-artifacts/spec-smart-rules-ordered-engine.md` — Added task spec and risk notes.
+- `src/lib/rules/rule-engine.ts` — Added V2 rule payload detection, ordered evaluation, inactive-rule skip logic, bot/country/device/time condition matching, and fallback/default destination handling.
+- `tests/unit/rule-engine.test.ts` — Added coverage for display order, inactive rules, AND matching, bot detection, fallback/default destinations, and disabled Smart Rules.
+- `src/lib/rules/rule-builder.ts` — Aligned builder helper naming and V2 time-range values with the engine contract.
+- `src/components/smart-rules/rule-builder.tsx` — Updated builder state wiring to the aligned helper API.
+- `tests/unit/rule-builder.test.ts` — Updated builder helper coverage for the aligned V2 draft model.
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Checked off Task 13.3.
+- `_bmad-output/implementation-artifacts/JOURNAL.md` — Recorded this completion entry.
+
+**Decisions Made:**
+- V2 rules are detected by a `condition.conditions` payload, so legacy single-condition rules remain readable by the same engine.
+- Display order uses ascending priority because API task 13.4 will store the visible rule order as priority.
+- Bot matching uses case-insensitive substring checks against predefined/custom values, not regex execution.
+- Fallback handling returns `ruleId: null` so click logging can distinguish direct fallback/default redirects from rule matches.
+
+**Tests:**
+- ✅ Targeted: `rtk bun run test -- tests/unit/rule-builder.test.ts tests/unit/rule-engine.test.ts` — 2 files passed, 20 tests passed.
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Unit/Integration: `rtk bun run test` — 92 files passed, 422 tests passed.
+- ✅ Build: `rtk bun run build` — Passed.
+
+**Issues Encountered:**
+- The current branch already contained Task 13.2 work; I kept the builder changes aligned with the V2 rule engine contract instead of changing persistence or link-form integration in this task.
+
+**Security Checks:**
+- ✅ No database schema or ownership surface changed in this task.
+- ✅ No raw SQL, secrets, or `dangerouslySetInnerHTML` introduced.
+- ✅ Custom bot values are matched as plain substrings and are not executed as regex.
+- ✅ URL fallback values remain validated at the API/UI boundary; engine only evaluates already-stored rule data.
+
+**Next Task:** 13.4 — Smart Rules API Update
+
+### 13.4 — Smart Rules API Update
+- **Date:** 2026-05-07 18:47 GMT+7
+- **Duration:** 0h 30m
+- **Status:** ✅ Complete
+
+**What I Did:**
+Extended the Smart Rules API to accept V2 ordered rule payloads while preserving legacy payload support. V2 requests now include `isActive`, ordered `conditions`, `destinationUrl`, optional `fallbackDestinationUrl`, POST/PUT replacement semantics, V2 response serialization, and hidden fallback-only sentinel handling.
+
+**Files Changed:**
+- `_bmad-output/planning-artifacts/spec-smart-rules-api-v2.md` — Added API V2 task spec, acceptance criteria, and risks.
+- `src/lib/validations/smart-rule.ts` — Added V2 condition/rule/upsert schemas, country/device/time validation, optional fallback URL validation, and V2-to-current-table normalization.
+- `src/app/api/v1/links/[id]/rules/route.ts` — Added V2 parsing, PUT support, response serialization, quota counting by visible rules, fallback sentinel handling, and legacy fallback parsing.
+- `tests/unit/smart-rule-validation.test.ts` — Added V2 validation and persistence normalization coverage.
+- `tests/integration/smart-rules-api.test.ts` — Added V2 POST/PUT/GET, fallback-only, invalid V2, ordering, and backward-compatibility coverage.
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Checked off Task 13.4.
+- `_bmad-output/implementation-artifacts/JOURNAL.md` — Recorded this completion entry.
+
+**Decisions Made:**
+- Stored V2 payloads inside the existing `smart_rules.condition` JSON field to avoid a schema migration before the UI/redirect integration is complete.
+- Used an internal fallback-only sentinel row when a link has a fallback URL but no visible rules; API responses hide the sentinel.
+- Counted quota against visible V2 rules only, not fallback-only sentinel rows.
+- Kept legacy `{ type, condition, destinationUrl, priority }` payloads valid so existing clients do not need an immediate migration.
+
+**Tests:**
+- ✅ Targeted: `rtk bun run test -- tests/unit/smart-rule-validation.test.ts tests/integration/smart-rules-api.test.ts` — 2 files passed, 18 tests passed.
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Unit/Integration: `rtk bun run test` — 92 files passed, 428 tests passed.
+- ✅ Build: `rtk bun run build` — Passed.
+
+**Issues Encountered:**
+- V2 country values initially accepted arrays when the first item was valid → tightened validation so country/device/time stay single/range shaped and bot remains the multi-value condition.
+
+**Security Checks:**
+- ✅ API route still authenticates, rate limits, and verifies link ownership before reads/writes.
+- ✅ Destination and fallback URLs use the existing safe URL validator.
+- ✅ Legacy and V2 payloads are both validated by Zod before persistence.
+- ✅ No raw SQL, secrets, or `dangerouslySetInnerHTML` introduced.
+- ✅ Cache invalidation still clears redirect and Smart Rules cache after writes/deletes.
+
+**Next Task:** 13.5 — Integrate into Link Form & Redirect Handler
+
+### 13.5 — Integrate into Link Form & Redirect Handler
+- **Date:** 2026-05-07 18:54 GMT+7
+- **Duration:** 0h 35m
+- **Status:** ✅ Complete
+
+**What I Did:**
+Integrated the visual `RuleBuilder` into the link create/edit form and wired saves through the V2 Smart Rules API. Public redirect handlers now pass the link default destination into ordered rule evaluation so V2 no-match flows use fallback/default behavior while preserving split-test behavior for links without V2 rules.
+
+**Files Changed:**
+- `_bmad-output/planning-artifacts/spec-smart-rules-form-redirect-integration.md` — Added task spec, scope, acceptance criteria, and risks.
+- `src/app/(dashboard)/links/link-form.tsx` — Replaced manual Smart Rule fields with `RuleBuilder`, added V2 serialization, validation, save/clear behavior, and preview summaries.
+- `src/lib/rules/rule-builder-api.ts` — Added stored-rule-to-builder deserialization and builder-to-V2 payload serialization helpers.
+- `src/lib/rules/rule-engine.ts` — Added default-destination no-match behavior for stored V2 rules without requiring a separate link-level toggle.
+- `src/app/[slug]/page.tsx` — Passed link destination into Smart Rule evaluation.
+- `src/app/[slug]/go/route.ts` — Passed link destination into Smart Rule evaluation for Link Page CTA clicks.
+- `tests/unit/rule-builder-api.test.ts` — Added builder API mapping coverage.
+- `tests/unit/rule-engine.test.ts` — Updated V2 default-destination fallback coverage.
+- `tests/integration/smart-rule-redirect-flow.test.ts` — Added V2 full flow coverage from API rule creation to public redirect behavior.
+- `_bmad-output/implementation-artifacts/JOURNAL.md` — Recorded this completion entry.
+
+**Decisions Made:**
+- Kept Smart Rules persistence behind `/api/v1/links/{id}/rules`; the form does not write directly to the database.
+- Clearing Smart Rules on edit uses the same V2 rules endpoint with an empty rules payload.
+- Legacy stored rules are mapped into the builder as best-effort single-condition rules so editing does not start from an empty state.
+- V2 default destination fallback is triggered only when stored V2 rule payloads exist, so links without Smart Rules can still use split tests.
+
+**Tests:**
+- ✅ Targeted: `rtk bun run test -- tests/unit/rule-builder-api.test.ts tests/unit/rule-engine.test.ts tests/integration/smart-rule-redirect-flow.test.ts tests/integration/smart-rules-api.test.ts` — 4 files passed, 30 tests passed.
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Unit/Integration: `rtk bun run test` — 93 files passed, 433 tests passed.
+- ✅ Build: `rtk bun run build` — Passed.
+
+**Issues Encountered:**
+- V2 redirect test initially expected a normalized trailing slash on path URLs; `URL.toString()` preserves path URLs without adding a trailing slash, so the test expectation was corrected.
+
+**Security Checks:**
+- ✅ Form-submitted Smart Rules are validated locally and by the V2 API before persistence.
+- ✅ API calls include `X-Requested-With: XMLHttpRequest` for the CSRF proxy guard.
+- ✅ Redirect handlers preserve click logging and only log `ruleId` when a real rule matched.
+- ✅ No raw SQL, secrets, or `dangerouslySetInnerHTML` introduced.
+- ✅ User-data writes still go through authenticated, owner-checked API routes.
+
+**Next Task:** 14.1 — Stripe Configuration & Client
+
+### 13.4 — Smart Rules API Update
+- **Date:** 2026-05-07 18:46 GMT+7
+- **Duration:** 0h 35m
+- **Status:** ✅ Complete
+
+**What I Did:**
+Updated Smart Rules validation and the link rules API to accept ordered V2 rules with `isActive`, typed conditions, and `fallbackDestinationUrl`. The route now supports both POST and PUT replacement, serializes V2 rules back in display order, hides the internal fallback sentinel row, and keeps legacy payloads working without migration.
+
+**Files Changed:**
+- `_bmad-output/planning-artifacts/spec-smart-rules-api-v2.md` — Added API V2 spec and fallback sentinel risk.
+- `src/lib/validations/smart-rule.ts` — Added V2 condition/rule/upsert schemas, V2 validation rules, and V2-to-persisted-row normalization.
+- `src/app/api/v1/links/[id]/rules/route.ts` — Added V2/legacy payload parsing, display-order serialization, fallback response field, PUT support, and quota counting for visible V2 rules.
+- `tests/unit/smart-rule-validation.test.ts` — Added V2 validation and persisted payload coverage.
+- `tests/integration/smart-rules-api.test.ts` — Added V2 CRUD/order/fallback tests and PUT coverage.
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Checked off Task 13.4.
+- `_bmad-output/implementation-artifacts/JOURNAL.md` — Recorded this completion entry.
+
+**Decisions Made:**
+- Stored V2 rule metadata inside the existing JSON condition field to avoid a schema migration.
+- Used an internal fallback-only sentinel row when users save a fallback with zero visible rules; GET hides that row from V2 clients.
+- Quota enforcement counts only submitted visible V2 rules, so fallback-only config does not consume a Smart Rule quota slot.
+
+**Tests:**
+- ✅ Targeted: `rtk bun run test -- tests/unit/smart-rule-validation.test.ts tests/integration/smart-rules-api.test.ts` — 2 files passed, 16 tests passed.
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Unit/Integration: `rtk bun run test` — 92 files passed, 428 tests passed.
+
+**Issues Encountered:**
+- Fallback-only sentinel rows initially serialized as legacy because their condition array is intentionally empty → Added explicit fallback-only parsing.
+- V2 destination URL normalization keeps path URLs unchanged (`/id` stays `/id`) while root URLs normalize with a trailing slash via `URL.toString()`.
+
+**Security Checks:**
+- ✅ V2 API inputs are validated with Zod.
+- ✅ API route still authenticates and verifies link ownership before reads/writes.
+- ✅ API route remains rate limited per user plan.
+- ✅ Destination and fallback URLs reuse the existing SSRF-safe URL validation.
+- ✅ No raw SQL, secrets, or `dangerouslySetInnerHTML` introduced.
+
+**Next Task:** 13.5 — Integrate into Link Form & Redirect Handler
+
+### 13.3 — Rule Engine Logic (Ordered Priority)
+- **Date:** 2026-05-07 18:40 GMT+7
+- **Duration:** 0h 25m
+- **Status:** ✅ Complete
+
+**What I Did:**
+Updated the Smart Rules engine to evaluate rules in saved display order and added V2 multi-condition support. V2 rules now support inactive skips, AND condition logic, first-match-wins behavior, country/device/time matching, bot user-agent matching, configured fallback destinations, and default-destination behavior when Smart Rules are disabled or no V2 rule matches.
+
+**Files Changed:**
+- `_bmad-output/planning-artifacts/spec-smart-rules-ordered-engine.md` — Added engine spec and compatibility risk.
+- `src/lib/rules/rule-engine.ts` — Added V2 payload detection, ordered evaluation, inactive-rule skips, AND condition matching, bot detection, fallback/default destination handling, and nullable rule IDs for non-rule fallback redirects.
+- `tests/unit/rule-engine.test.ts` — Updated ordering expectation and added V2 active, AND, bot, fallback, and disabled-rule tests.
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Checked off Task 13.3.
+- `_bmad-output/implementation-artifacts/JOURNAL.md` — Recorded this completion entry.
+
+**Decisions Made:**
+- Kept legacy GEO/DEVICE/TIME/LANGUAGE rule matching intact while detecting V2 rules from the existing JSON `condition` payload.
+- Changed priority semantics to ascending display order to match Phase 13; the first stored rule now has highest precedence.
+- Fallback/default redirects return `ruleId: null` so analytics do not attribute non-rule fallback traffic to a Smart Rule row.
+
+**Tests:**
+- ✅ Targeted: `rtk bun run test -- tests/unit/rule-engine.test.ts` — 1 file passed, 12 tests passed.
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Unit/Integration: `rtk bun run test` — 92 files passed, 422 tests passed.
+
+**Issues Encountered:**
+- Cached rule test state caused mid-test rule mutations to reuse the previous cached rules → Reset the test cache where the test intentionally changes mocked database rules.
+- TypeScript required the optional fallback URL field to use `undefined` instead of `null` → Normalized that field in the V2 payload parser.
+
+**Security Checks:**
+- ✅ Bot patterns are case-insensitive substring checks, not executable regex supplied by users.
+- ✅ Country and device detection use existing trusted parser/lookup helpers.
+- ✅ No raw SQL, secrets, or `dangerouslySetInnerHTML` introduced.
+- ✅ Fallback behavior does not bypass existing redirect availability checks in the route handlers.
+
+**Next Task:** 13.4 — Smart Rules API Update

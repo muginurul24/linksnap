@@ -875,7 +875,277 @@ rtk bun run db:studio    # Open Drizzle Studio (in another terminal)
 
 **Priority order:** 12.1 → 12.2 → 12.3 → 12.4 → 12.5 → 12.6 → 12.7 → 12.8 → 12.9 → 12.10 → 12.11 → 12.12 → 12.13 → 12.14 → 12.15 → 12.16 → 12.17 → 12.18 → 12.19 → 12.20 → 12.21 → 12.22
 
-**Estimated total:** 54 tasks across 10 phases + 22 post-audit fixes
+**Estimated total:** 54 + 22 + 5 = 81 tasks
+
+---
+
+## 🟣 Phase 13: Smart Rules V2 — User-Friendly UX Overhaul
+
+> **Source:** Rafi product spec — 2026-05-07. Replace cryptic manual input with intuitive visual builder. Rules engine stays the same; only the UX layer changes.
+
+### Design Decisions (Claw Kun)
+
+| Decision | Choice | Rationale |
+|---|---|---|
+| Active/Inactive toggle | **Per-rule** | User can experiment without deleting rules; individual on/off |
+| Rule priority | **Ordered, first-match-wins** | Simple and predictable — like firewall rules; no complex cascade |
+| Bot detection | **User-agent pattern matching** | Predefined bot list + custom patterns; 95% accuracy without heavy infra |
+| Country selector | **Searchable combobox** | ISO 3166-1 country list; user types to filter, no manual typing |
+| "No Redirect" | **Normal redirect to moneysite** | When smart rules disabled (inactive), ALL visitors go to moneysite — behaves like normal short link |
+
+### TASK 13.1 — Searchable Country Combobox Component
+- [x] Create `src/components/smart-rules/country-combobox.tsx`
+- [x] Use shadcn `Command` (cmdk) component for searchable dropdown
+- [x] Load ISO 3166-1 country list: name + code (e.g., "Indonesia" / "ID")
+- [x] Features: type to filter, keyboard navigation, flag emoji per country
+- [x] Export selected country code to parent form
+- [x] Placeholder: "Search country..."
+- [x] Handle edge case: no results found → show "No country found"
+- [x] Tests: unit (search filter, selection, keyboard nav)
+
+### TASK 13.2 — Smart Rule Builder Form (Visual)
+- [x] Create `src/components/smart-rules/rule-builder.tsx`
+- [x] Replace current manual JSON/text input with visual form:
+  ```
+  ┌─────────────────────────────────────────┐
+  │ Rule #1                          [Active ◆] │
+  │ ┌─────────────┐ ┌──────────┐ ┌──────────┐ │
+  │ │ IF ▼        │ │ country ▼│ │ = Indo… ▼│ │
+  │ │   country   │ │   is     │ │ Indonesia │ │
+  │ └─────────────┘ └──────────┘ └──────────┘ │
+  │ ┌─────────────┐ ┌──────────┐ ┌──────────┐ │
+  │ │ AND ▼       │ │ device ▼ │ │ = Mobi… ▼│ │
+  │ │   device    │ │   is     │ │ Mobile    │ │
+  │ └─────────────┘ └──────────┘ └──────────┘ │
+  │                                            │
+  │ → Redirect to: [https://tokopedia.com/...] │
+  │                                            │
+  │ [+ Add Condition]  [🗑 Delete Rule]        │
+  └─────────────────────────────────────────┘
+  ```
+- [x] Condition types: country, device, bot, time (date range)
+- [x] Operator per condition: `is`, `is not`
+- [x] Value selector changes based on type:
+  - country → `CountryCombobox` (searchable)
+  - device → dropdown: Mobile, Desktop, Tablet
+  - bot → predefined checkboxes (Googlebot, Bingbot, Facebook, Twitter, etc.) + custom input
+  - time → date range picker (start/end)
+- [x] Each rule has: toggle (active/inactive), destination URL input
+- [x] "+ Add Rule" button appends new rule at bottom
+- [x] Rules are reorderable (drag handle or up/down arrows)
+- [x] Fallback: "Default destination" field at the bottom (used when no rules match)
+- [x] Readable summary below each rule: "IF country is Indonesia → moneysite.com"
+- [x] Tests: unit (form validation, add/remove/reorder rules, condition rendering)
+
+### TASK 13.3 — Rule Engine Logic (Ordered Priority)
+- [x] File: `src/lib/rules/rule-engine.ts`
+- [x] Rules are evaluated in display order (first rule = highest priority)
+- [x] Logic per rule:
+  1. Check if `isActive === false` → skip to next rule
+  2. Check ALL conditions with AND logic (all must match)
+  3. If all conditions match → return rule's destination URL (first-match-wins)
+  4. If no conditions match → continue to next rule
+- [x] If smart rules toggle is OFF (inactive for entire link): ALL visitors → moneysite (normal redirect, ignore rules)
+- [x] If smart rules toggle is ON but NO rules match:
+  - If fallback/default destination URL is set → redirect there
+  - If no fallback → redirect to moneysite (default destination)
+- [x] Bot detection: parse `user-agent` header against predefined pattern list
+  - Predefined bots: Googlebot, Bingbot, FacebookExternalHit, Twitterbot, Slurp, DuckDuckBot, Baiduspider, YandexBot, AhrefsBot, SemrushBot, GPTBot, Claude-Web, CCBot
+  - Case-insensitive substring match (simpler than regex for bot detection, handles UA variations)
+- [x] Country detection: already handled by `src/lib/geo/geoip.ts` (MaxMind GeoLite2)
+- [x] Device detection: already handled by `src/lib/geo/device-detector.ts`
+- [x] Tests: unit (rule matching, priority order, bot detection, inactive rules, no-match fallback)
+
+### TASK 13.4 — Smart Rules API Update
+- [x] File: `src/app/api/v1/links/[id]/rules/route.ts`
+- [x] Update schema to support ordered rules array with priority
+- [x] New rule schema `smartRuleV2Schema`:
+  ```typescript
+  {
+    isActive: boolean
+    conditions: Array<{
+      type: "country" | "device" | "bot" | "time"
+      operator: "is" | "is_not"
+      value: string | string[]  // single value or array for bot
+    }>
+    destinationUrl: string
+  }
+  ```
+- [x] Add `fallbackDestinationUrl` field to link's rules config
+- [x] GET returns rules in display order
+- [x] POST/PUT accepts ordered rules array (order = priority)
+- [x] Backward compatible: existing rules format still works (migration not required)
+- [x] Tests: integration (CRUD v2 rules, ordering, validation)
+
+### TASK 13.5 — Integrate into Link Form & Redirect Handler
+- [x] File: `src/app/(dashboard)/links/link-form.tsx`
+- [x] Replace current smart rules section with `RuleBuilder` component
+- [x] "Enable Smart Rules" toggle → expands RuleBuilder
+- [x] Preview summary: shows readable rule list before save
+- [x] File: `src/app/[slug]/page.tsx` (redirect handler)
+- [x] Integrate ordered rule evaluation from rule-engine.ts
+- [x] Fallback logic: default destination → 404
+- [x] Keep existing click logging + analytics intact
+- [x] Tests: integration (full flow: create rules → visit link → verify redirect)
+
+---
+
+## 🚀 Ready to Start?
+
+```bash
+cd ~/projects/linksnap
+rtk bun run dev          # Start development
+rtk bun run db:studio    # Open Drizzle Studio (in another terminal)
+```
+
+**Priority order:** 13.1 → 13.2 → 13.3 → 13.4 → 13.5
+
+**Estimated total:** 81 + 7 = 88 tasks
+
+---
+
+## 🟣 Phase 14: Dual Payment Gateway — Stripe + Midtrans
+
+> **Source:** Rafi product spec — 2026-05-07. Dynamic gateway selection based on client country. Indonesia → both gateways; non-Indonesia → Stripe only.
+
+### Behavior
+
+| Client Country | Available Gateways |
+|---|---|
+| Indonesia | Midtrans (bank lokal) + Stripe (credit card) |
+| Non-Indonesia | Stripe (credit card) only |
+
+Stripe handles credit card globally. Midtrans handles Indonesian local banks (BCA, Mandiri, BNI, GoPay, etc.).
+
+### TASK 14.1 — Stripe Configuration & Client
+- [ ] Add Stripe SDK: `rtk bun add stripe`
+- [ ] Add to `.env` and `.env.example`:
+  - `STRIPE_SECRET_KEY` — Stripe secret key
+  - `STRIPE_WEBHOOK_SECRET` — Stripe webhook signing secret
+  - `STRIPE_IS_TEST_MODE` — boolean (default true for sandbox)
+- [ ] Create `src/lib/payments/stripe.ts` — Stripe client singleton:
+  - Export `stripe` client instance
+  - `assertStripeConfigured()` — check env vars
+  - `StripeConfigurationError` class
+- [ ] Tests: unit (config validation, client initialization)
+
+### TASK 14.2 — Stripe Checkout Session Creation
+- [ ] Create `src/lib/payments/stripe-checkout.ts`
+- [ ] `createStripeCheckoutSession(input)`:
+  - Create Stripe Checkout Session with mode: `subscription`
+  - Line item: price from Stripe product/price IDs (not dynamic amount)
+  - Or: create dynamic price via `unit_amount` + `currency: usd`
+  - `success_url`: `{APP_URL}/checkout/success?session_id={CHECKOUT_SESSION_ID}`
+  - `cancel_url`: `{APP_URL}/checkout/cancel`
+  - `client_reference_id`: user ID
+  - `metadata`: plan + duration
+- [ ] Create `src/lib/validations/stripe.ts` — `createStripeCheckoutSchema`
+- [ ] Create `src/app/api/v1/payments/stripe/create/route.ts` — POST handler:
+  - Auth required, rate limited
+  - Validate input (plan, duration)
+  - Calculate USD price from existing pricing module
+  - Create pending transaction record in DB (reuse existing transactions table, add `gateway: "midtrans" | "stripe"`)
+  - Create Stripe Checkout Session
+  - Return `{ url: session.url }` — client redirects
+- [ ] Update `transactions` table schema: add `gateway` column (default `"midtrans"`)
+- [ ] Run `rtk bun run db:push`
+- [ ] Tests: unit (session creation params), integration (create checkout API)
+
+### TASK 14.3 — Stripe Webhook Handler
+- [ ] Create `src/lib/payments/stripe-webhook.ts`
+- [ ] `verifyStripeWebhookSignature(body, signature, secret)` — verify Stripe signature
+- [ ] `handleStripeWebhook(event)`:
+  - `checkout.session.completed`:
+    - Find transaction by `client_reference_id`
+    - Update transaction status to `SETTLEMENT`
+    - Activate subscription via existing `createOrRenewSubscriptionForPayment`
+    - Send invoice email
+  - `customer.subscription.updated`:
+    - Sync subscription status (renewal, plan change)
+  - `customer.subscription.deleted`:
+    - Expire subscription, downgrade to FREE
+  - `invoice.payment_failed`:
+    - Log failure, optionally notify user
+- [ ] Create `src/app/api/v1/payments/stripe/webhook/route.ts` — POST handler:
+  - Verify Stripe signature
+  - Parse event type
+  - Delegate to handler
+  - Return 200 quickly (Stripe expects fast response)
+  - Exempt from CSRF guard (like Midtrans webhook)
+- [ ] Update proxy CSRF exemption list to include Stripe webhook path
+- [ ] Tests: unit (signature verification, event handling), integration (webhook endpoint)
+
+### TASK 14.4 — Country Detection on Billing Page
+- [ ] File: `src/app/(dashboard)/settings/billing/page.tsx`
+- [ ] Server-side: detect client country from IP using existing MaxMind GeoLite2 (`src/lib/geo/geoip.ts`)
+- [ ] Pass `clientCountry: string | null` to billing page component
+- [ ] Logic:
+  ```typescript
+  const isIndonesia = clientCountry === "ID"
+  const gateways = isIndonesia
+    ? ["midtrans", "stripe"]
+    : ["stripe"]
+  ```
+- [ ] Tests: unit (country detection flow), integration (billing page renders correct gateways)
+
+### TASK 14.5 — Dual Gateway UI in Billing Page
+- [ ] File: `src/app/(dashboard)/settings/billing/page.tsx`
+- [ ] Refactor plan cards: instead of single "Upgrade" button, show gateway selector
+- [ ] UI for Indonesia clients:
+  ```
+  Pro — $8/month
+  ┌──────────────────────────┐
+  │ ○ Stripe (Credit Card)   │
+  │ ○ Midtrans (Bank Lokal)  │
+  │                          │
+  │ [  Upgrade to Pro  ]     │
+  └──────────────────────────┘
+  ```
+- [ ] UI for non-Indonesia clients:
+  ```
+  Pro — $8/month
+  ┌──────────────────────────┐
+  │ ● Stripe (Credit Card)   │  ← auto-selected, single option
+  │                          │
+  │ [  Upgrade to Pro  ]     │
+  └──────────────────────────┘
+  ```
+- [ ] Gateway selector: radio buttons with icon (Stripe logo, Midtrans logo)
+- [ ] Update `UpgradeButton` to accept `gateway` prop
+- [ ] On click: call appropriate endpoint
+  - `/api/v1/payments/stripe/create` → redirect to Stripe Checkout
+  - `/api/v1/payments/create` → redirect to Midtrans Snap
+- [ ] Tests: unit (gateway selector rendering), integration (billing page with country detection)
+
+### TASK 14.6 — Unify Transaction History
+- [ ] File: `src/app/(dashboard)/settings/billing/page.tsx` (billing history table)
+- [ ] Add "Gateway" column showing Stripe or Midtrans badge/icon
+- [ ] Ensure both gateways' transactions appear in unified history
+- [ ] Add payment method display (Midtrans: bank_transfer, gopay; Stripe: card brand)
+- [ ] Tests: integration (transaction history shows both gateways)
+
+### TASK 14.7 — End-to-End Payment Flow Tests
+- [ ] Update E2E tests to cover Stripe flow
+- [ ] Test: Indonesia client sees both gateways
+- [ ] Test: non-Indonesia client sees only Stripe
+- [ ] Test: Stripe checkout session creation
+- [ ] Test: Stripe webhook handling (mock signature)
+- [ ] Test: gateway badge in transaction history
+- [ ] Ensure all existing Midtrans tests still pass
+
+---
+
+## 🚀 Ready to Start?
+
+```bash
+cd ~/projects/linksnap
+rtk bun run dev          # Start development
+rtk bun run db:studio    # Open Drizzle Studio (in another terminal)
+```
+
+**Priority order:** 14.1 → 14.2 → 14.3 → 14.4 → 14.5 → 14.6 → 14.7
+
+**Estimated total:** 81 + 7 = 88 tasks
 **Estimated timeline:** 12 weeks (3 months) for 1 full-time developer
 
 Good luck. Ship it. 🚀

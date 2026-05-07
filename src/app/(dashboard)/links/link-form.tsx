@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { RuleBuilder } from "@/components/smart-rules/rule-builder";
 import {
   Card,
   CardContent,
@@ -34,6 +35,15 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { buildShortUrlPreview } from "@/lib/links/preview";
+import {
+  getReadableRuleSummary,
+  validateRuleBuilderValue,
+  type RuleBuilderValue,
+} from "@/lib/rules/rule-builder";
+import {
+  ruleBuilderValueToSmartRulesV2Input,
+  storedRulesToRuleBuilderValue,
+} from "@/lib/rules/rule-builder-api";
 import {
   createLinkSchema,
   linkSlugParamsSchema,
@@ -74,6 +84,10 @@ type LinkMutationResponse = {
 };
 
 type LinkPageMutationResponse = {
+  linkId: string;
+};
+
+type SmartRulesMutationResponse = {
   linkId: string;
 };
 
@@ -124,18 +138,6 @@ function firstFieldErrors(
   ) as FieldErrors;
 }
 
-function getRuleConditionValue(condition: unknown): string {
-  if (typeof condition !== "object" || condition === null) return "";
-
-  const candidates = ["value", "device", "country", "language", "timezone"];
-  for (const key of candidates) {
-    const value = (condition as Record<string, unknown>)[key];
-    if (typeof value === "string") return value;
-  }
-
-  return "";
-}
-
 function getClientPreviewBaseUrl(): string {
   const configured = process.env.NEXT_PUBLIC_APP_URL?.trim();
   if (configured) return configured;
@@ -169,6 +171,7 @@ function apiErrorMessage(
     PLAN_UPGRADE_REQUIRED: "Custom slugs require an upgraded plan.",
     RATE_LIMITED: "Too many requests. Try again later.",
     SLUG_ALREADY_EXISTS: "This slug is already taken.",
+    SMART_RULE_QUOTA_EXCEEDED: "Smart Rule quota exceeded.",
     VALIDATION_ERROR: "Check the form and try again.",
   };
 
@@ -215,7 +218,7 @@ export function CreateLinkForm({ initialLink }: LinkFormProps) {
   const router = useRouter();
   const isEditMode = initialLink !== undefined;
   const initialLinkPage = initialLink?.linkPage;
-  const initialSmartRule = initialLink?.smartRules[0];
+  const initialSmartRules = initialLink?.smartRules ?? [];
   const [destinationUrl, setDestinationUrl] = useState(
     initialLink?.destinationUrl ?? "",
   );
@@ -225,7 +228,7 @@ export function CreateLinkForm({ initialLink }: LinkFormProps) {
     Boolean(initialLink?.hasLinkPage || initialLinkPage),
   );
   const [enableSmartRules, setEnableSmartRules] = useState(
-    Boolean(initialSmartRule),
+    initialSmartRules.length > 0,
   );
   const [linkPageBrandName, setLinkPageBrandName] = useState(
     initialLinkPage?.brandName ?? "",
@@ -240,14 +243,8 @@ export function CreateLinkForm({ initialLink }: LinkFormProps) {
   const [linkPageCtaColor, setLinkPageCtaColor] = useState(
     initialLinkPage?.ctaColor ?? "#111827",
   );
-  const [smartRuleType, setSmartRuleType] = useState<SmartRuleType>(
-    initialSmartRule?.type ?? "DEVICE",
-  );
-  const [smartRuleValue, setSmartRuleValue] = useState(
-    getRuleConditionValue(initialSmartRule?.condition),
-  );
-  const [smartRuleDestination, setSmartRuleDestination] = useState(
-    initialSmartRule?.destinationUrl ?? "",
+  const [smartRulesValue, setSmartRulesValue] = useState<RuleBuilderValue>(() =>
+    storedRulesToRuleBuilderValue(initialSmartRules),
   );
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [formError, setFormError] = useState<string | null>(null);
@@ -417,6 +414,14 @@ export function CreateLinkForm({ initialLink }: LinkFormProps) {
       return;
     }
 
+    const parsedSmartRules = enableSmartRules
+      ? validateRuleBuilderValue(smartRulesValue)
+      : null;
+    if (parsedSmartRules && !parsedSmartRules.success) {
+      setFormError(parsedSmartRules.errors[0] ?? "Check Smart Rules and try again.");
+      return;
+    }
+
     setIsSubmitting(true);
     setFieldErrors({});
     setFormError(null);
@@ -471,6 +476,35 @@ export function CreateLinkForm({ initialLink }: LinkFormProps) {
               pageBody.error.code,
               pageBody.error.message,
               pageBody.error.details,
+            ),
+          );
+          return;
+        }
+      }
+
+      const shouldSyncSmartRules =
+        enableSmartRules || (isEditMode && initialSmartRules.length > 0);
+      if (shouldSyncSmartRules) {
+        const smartRulesPayload = enableSmartRules
+          ? ruleBuilderValueToSmartRulesV2Input(smartRulesValue)
+          : { rules: [] };
+        const rulesResponse = await fetch(`/api/v1/links/${body.data.id}/rules`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            "X-Requested-With": "XMLHttpRequest",
+          },
+          body: JSON.stringify(smartRulesPayload),
+        });
+        const rulesBody =
+          (await rulesResponse.json()) as ApiEnvelope<SmartRulesMutationResponse>;
+
+        if (!rulesBody.success) {
+          setFormError(
+            apiErrorMessage(
+              rulesBody.error.code,
+              rulesBody.error.message,
+              rulesBody.error.details,
             ),
           );
           return;
@@ -689,47 +723,16 @@ export function CreateLinkForm({ initialLink }: LinkFormProps) {
             </div>
 
             {enableSmartRules && (
-              <div className="grid gap-3 pt-1 sm:grid-cols-3">
-                <div className="space-y-1.5">
-                  <Label htmlFor="smartRuleType">Rule type</Label>
-                  <select
-                    id="smartRuleType"
-                    className="h-8 w-full rounded-lg border border-input bg-background px-2.5 text-sm outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-input/30"
-                    value={smartRuleType}
-                    onChange={(event) =>
-                      setSmartRuleType(event.target.value as SmartRuleType)
-                    }
-                    disabled={isSubmitting}
-                  >
-                    <option value="DEVICE">Device</option>
-                    <option value="GEO">Geo</option>
-                    <option value="TIME">Time</option>
-                    <option value="LANGUAGE">Language</option>
-                  </select>
-                </div>
-                <div className="space-y-1.5">
-                  <Label htmlFor="smartRuleValue">Match value</Label>
-                  <Input
-                    id="smartRuleValue"
-                    placeholder="mobile"
-                    value={smartRuleValue}
-                    onChange={(event) => setSmartRuleValue(event.target.value)}
-                    disabled={isSubmitting}
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <Label htmlFor="smartRuleDestination">Destination URL</Label>
-                  <Input
-                    id="smartRuleDestination"
-                    type="url"
-                    inputMode="url"
-                    placeholder="https://example.com/mobile"
-                    value={smartRuleDestination}
-                    onChange={(event) => setSmartRuleDestination(event.target.value)}
-                    disabled={isSubmitting}
-                  />
-                </div>
-              </div>
+              <RuleBuilder
+                className="pt-1"
+                defaultDestinationUrl={destinationUrl}
+                disabled={isSubmitting}
+                value={smartRulesValue}
+                onChange={(value) => {
+                  setSmartRulesValue(value);
+                  setFormError(null);
+                }}
+              />
             )}
           </div>
 
@@ -844,14 +847,17 @@ export function CreateLinkForm({ initialLink }: LinkFormProps) {
             <div className="space-y-2 rounded-lg border border-border p-3 text-sm">
               <div className="flex items-center gap-2 font-medium">
                 <Route className="size-4 text-muted-foreground" />
-                {smartRuleType.toLowerCase()}
+                Smart Rules
               </div>
-              <div className="text-muted-foreground">
-                {smartRuleValue || "match"} to{" "}
-                <span className="break-all">
-                  {smartRuleDestination || "destination"}
-                </span>
-              </div>
+              {smartRulesValue.rules.map((rule, index) => (
+                <p key={rule.id} className="text-muted-foreground">
+                  {index + 1}. {getReadableRuleSummary(rule)}
+                </p>
+              ))}
+              <p className="break-all text-muted-foreground">
+                Default:{" "}
+                {smartRulesValue.fallbackDestinationUrl || destinationUrl || "Not set"}
+              </p>
             </div>
           )}
         </CardContent>

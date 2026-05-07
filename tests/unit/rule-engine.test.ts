@@ -41,6 +41,7 @@ import {
   buildRuleEvaluationContext,
   evaluateSmartRulesForLink,
   getSmartRulesCacheKey,
+  isBotUserAgent,
 } from "../../src/lib/rules/rule-engine";
 
 function createRule(overrides: Partial<SmartRuleRecord>): SmartRuleRecord {
@@ -53,6 +54,29 @@ function createRule(overrides: Partial<SmartRuleRecord>): SmartRuleRecord {
     type: "DEVICE",
     ...overrides,
   };
+}
+
+function createV2Rule(
+  overrides: Partial<SmartRuleRecord> & {
+    condition?: Record<string, unknown>;
+  },
+): SmartRuleRecord {
+  return createRule({
+    type: "DEVICE",
+    ...overrides,
+    condition: {
+      conditions: [
+        {
+          operator: "is",
+          type: "device",
+          value: "mobile",
+        },
+      ],
+      isActive: true,
+      version: 2,
+      ...overrides.condition,
+    },
+  });
 }
 
 function createContext(
@@ -97,16 +121,16 @@ describe("rule engine", () => {
     });
   });
 
-  it("should return highest priority device destination when multiple rules match", async () => {
+  it("should return first matching destination in display order", async () => {
     mockState.rules = [
       createRule({
-        destinationUrl: "https://example.com/mobile-low",
-        id: "rule-low",
+        destinationUrl: "https://example.com/mobile-first",
+        id: "rule-first",
         priority: 10,
       }),
       createRule({
-        destinationUrl: "https://example.com/mobile-high",
-        id: "rule-high",
+        destinationUrl: "https://example.com/mobile-second",
+        id: "rule-second",
         priority: 50,
       }),
     ];
@@ -118,8 +142,8 @@ describe("rule engine", () => {
     });
 
     expect(result).toEqual({
-      destinationUrl: "https://example.com/mobile-high",
-      ruleId: "rule-high",
+      destinationUrl: "https://example.com/mobile-first",
+      ruleId: "rule-first",
     });
   });
 
@@ -241,5 +265,185 @@ describe("rule engine", () => {
         slug: "promo",
       }),
     ).resolves.toBeNull();
+  });
+
+  it("should skip inactive V2 rules and continue in display order", async () => {
+    mockState.rules = [
+      createV2Rule({
+        condition: { isActive: false },
+        destinationUrl: "https://example.com/inactive",
+        id: "rule-inactive",
+        priority: 0,
+      }),
+      createV2Rule({
+        destinationUrl: "https://example.com/active",
+        id: "rule-active",
+        priority: 1,
+      }),
+    ];
+
+    await expect(
+      evaluateSmartRulesForLink({
+        context: createContext(),
+        linkId: "link-1",
+        slug: "promo",
+      }),
+    ).resolves.toEqual({
+      destinationUrl: "https://example.com/active",
+      ruleId: "rule-active",
+    });
+  });
+
+  it("should require all V2 conditions to match with AND logic", async () => {
+    mockState.geo = { city: "Jakarta", country: "ID", source: "maxmind" };
+    mockState.rules = [
+      createV2Rule({
+        condition: {
+          conditions: [
+            { operator: "is", type: "country", value: "ID" },
+            { operator: "is", type: "device", value: "desktop" },
+          ],
+        },
+        destinationUrl: "https://example.com/desktop-id",
+        id: "rule-v2",
+        priority: 0,
+      }),
+    ];
+
+    await expect(
+      evaluateSmartRulesForLink({
+        context: createContext(),
+        linkId: "link-1",
+        slug: "promo",
+      }),
+    ).resolves.toBeNull();
+
+    mockState.cache = new Map();
+    mockState.rules = [
+      createV2Rule({
+        condition: {
+          conditions: [
+            { operator: "is", type: "country", value: "ID" },
+            { operator: "is", type: "device", value: "mobile" },
+          ],
+        },
+        destinationUrl: "https://example.com/mobile-id",
+        id: "rule-v2",
+        priority: 0,
+      }),
+    ];
+
+    await expect(
+      evaluateSmartRulesForLink({
+        context: createContext(),
+        linkId: "link-1",
+        slug: "promo",
+      }),
+    ).resolves.toEqual({
+      destinationUrl: "https://example.com/mobile-id",
+      ruleId: "rule-v2",
+    });
+  });
+
+  it("should detect bot user agents with case-insensitive substrings", async () => {
+    expect(isBotUserAgent("Mozilla/5.0 GPTBot/1.0")).toBe(true);
+    expect(isBotUserAgent("facebookexternalhit/1.1")).toBe(true);
+    expect(isBotUserAgent("Mozilla/5.0 Safari/605.1")).toBe(false);
+
+    mockState.rules = [
+      createV2Rule({
+        condition: {
+          conditions: [{ operator: "is", type: "bot", value: ["GPTBot"] }],
+        },
+        destinationUrl: "https://example.com/bot",
+        id: "rule-bot",
+        priority: 0,
+      }),
+    ];
+
+    await expect(
+      evaluateSmartRulesForLink({
+        context: createContext({ userAgent: "Mozilla/5.0 GPTBot/1.0" }),
+        linkId: "link-1",
+        slug: "promo",
+      }),
+    ).resolves.toEqual({
+      destinationUrl: "https://example.com/bot",
+      ruleId: "rule-bot",
+    });
+  });
+
+  it("should return fallback or default destinations for V2 no-match flows", async () => {
+    mockState.rules = [
+      createV2Rule({
+        condition: {
+          conditions: [{ operator: "is", type: "device", value: "desktop" }],
+          fallbackDestinationUrl: "https://example.com/fallback",
+        },
+        destinationUrl: "https://example.com/desktop",
+        id: "rule-desktop",
+        priority: 0,
+      }),
+    ];
+
+    await expect(
+      evaluateSmartRulesForLink({
+        context: createContext(),
+        defaultDestinationUrl: "https://example.com/default",
+        linkId: "link-1",
+        slug: "promo",
+        smartRulesEnabled: true,
+      }),
+    ).resolves.toEqual({
+      destinationUrl: "https://example.com/fallback",
+      ruleId: null,
+    });
+
+    mockState.cache = new Map();
+    mockState.rules = [
+      createV2Rule({
+        condition: {
+          conditions: [{ operator: "is", type: "device", value: "desktop" }],
+        },
+        destinationUrl: "https://example.com/desktop",
+        id: "rule-desktop",
+        priority: 0,
+      }),
+    ];
+
+    await expect(
+      evaluateSmartRulesForLink({
+        context: createContext(),
+        defaultDestinationUrl: "https://example.com/default",
+        linkId: "link-1",
+        slug: "promo",
+      }),
+    ).resolves.toEqual({
+      destinationUrl: "https://example.com/default",
+      ruleId: null,
+    });
+  });
+
+  it("should ignore rules when Smart Rules are disabled for a link", async () => {
+    mockState.rules = [
+      createV2Rule({
+        destinationUrl: "https://example.com/mobile",
+        id: "rule-mobile",
+        priority: 0,
+      }),
+    ];
+
+    await expect(
+      evaluateSmartRulesForLink({
+        context: createContext(),
+        defaultDestinationUrl: "https://example.com/default",
+        linkId: "link-1",
+        slug: "promo",
+        smartRulesEnabled: false,
+      }),
+    ).resolves.toEqual({
+      destinationUrl: "https://example.com/default",
+      ruleId: null,
+    });
   });
 });

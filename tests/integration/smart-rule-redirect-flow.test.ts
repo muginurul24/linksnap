@@ -256,4 +256,64 @@ describe("Smart Rule redirect flow", () => {
       { eventType: "DIRECT_REDIRECT", linkId, ruleId: null },
     ]);
   });
+
+  it("should create V2 ordered rules then use fallback/default redirect behavior", async () => {
+    const response = await POSTSmartRules(
+      createRulesRequest({
+        fallbackDestinationUrl: "https://example.com/fallback",
+        rules: [
+          {
+            conditions: [{ operator: "is", type: "device", value: "mobile" }],
+            destinationUrl: "https://example.com/mobile-v2",
+            isActive: true,
+          },
+          {
+            conditions: [{ operator: "is", type: "device", value: "desktop" }],
+            destinationUrl: "https://example.com/desktop-v2",
+            isActive: false,
+          },
+        ],
+      }),
+      createRulesContext(),
+    );
+    const body = await readJson<{ rules: MockSmartRule[] }>(response);
+
+    expect(response.status).toBe(200);
+    expect(body.success).toBe(true);
+
+    await expectRedirectForUserAgent(
+      mobileUserAgent,
+      "https://example.com/mobile-v2",
+    );
+    await expectRedirectForUserAgent(
+      desktopUserAgent,
+      "https://example.com/fallback",
+    );
+
+    mockState.cache = new Map();
+    const defaultOnlyResponse = await POSTSmartRules(
+      createRulesRequest({
+        rules: [
+          {
+            conditions: [{ operator: "is", type: "device", value: "tablet" }],
+            destinationUrl: "https://example.com/tablet-v2",
+            isActive: true,
+          },
+        ],
+      }),
+      createRulesContext(),
+    );
+
+    expect(defaultOnlyResponse.status).toBe(200);
+    await expectRedirectForUserAgent(
+      desktopUserAgent,
+      "https://example.com/default",
+    );
+
+    expect(mockState.loggedClicks).toEqual([
+      { eventType: "DIRECT_REDIRECT", linkId, ruleId },
+      { eventType: "DIRECT_REDIRECT", linkId, ruleId: null },
+      { eventType: "DIRECT_REDIRECT", linkId, ruleId: null },
+    ]);
+  });
 });
