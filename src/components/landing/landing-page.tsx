@@ -100,11 +100,11 @@ const testimonials: Testimonial[] = [
   },
 ];
 
-const stats = [
-  ["308", "Permanent redirects"],
-  ["<50ms", "Redirect target"],
+export const LANDING_HERO_STATS = [
+  ["4", "Smart rule types"],
+  ["120/min", "Business API limit"],
   ["365d", "Analytics retention"],
-  ["5K/hr", "Business API limit"],
+  ["500", "Business QR codes"],
 ] as const;
 
 function Container({
@@ -178,7 +178,7 @@ function Hero() {
           </div>
         </div>
         <div className="mt-14 grid max-w-3xl grid-cols-2 gap-3 sm:grid-cols-4">
-          {stats.map(([value, label]) => (
+          {LANDING_HERO_STATS.map(([value, label]) => (
             <div key={label} className="border-l border-white/15 pl-4">
               <p className="text-2xl font-semibold text-white">{value}</p>
               <p className="mt-1 text-sm text-slate-300">{label}</p>
