@@ -456,9 +456,9 @@ src/
 - [x] Show: current plan, billing history, next billing date, upgrade CTA
 
 ### TASK 8.5 — Payment Tests
-- Unit: Midtrans signature verification, amount calculation
-- Integration: create transaction → mock webhook → verify subscription created
-- E2E: full payment flow (use Midtrans sandbox)
+- [x] Unit: Midtrans signature verification, amount calculation
+- [x] Integration: create transaction → mock webhook → verify subscription created
+- [x] E2E: full payment flow (use Midtrans sandbox)
 
 ---
 

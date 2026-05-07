@@ -2205,3 +2205,45 @@ Connected billing to real payment and subscription data. Added a paginated payme
 - ✅ Upgrade CTA calls server-side payment creation; no Midtrans server key reaches the browser.
 
 **Next Task:** 8.5 — Payment Tests
+
+### 8.5 — Payment Tests
+- **Date:** 2026-05-07 08:33 GMT+7
+- **Duration:** 0h 50m
+- **Status:** ✅ Complete
+
+**What I Did:**
+Completed payment test coverage across unit, integration, and E2E. Added an integration test that creates a payment transaction, processes a signed mock Midtrans settlement webhook, and verifies subscription activation. Added a Playwright sandbox payment flow that creates a real Midtrans sandbox transaction, processes a local signed webhook, and verifies billing UI activation.
+
+**Files Changed:**
+- `tests/integration/payment-create-webhook-flow.test.ts` — Added create transaction → webhook → subscription activation coverage.
+- `tests/e2e/payment-flow.spec.ts` — Added authenticated billing payment flow using Midtrans sandbox transaction creation and local webhook processing.
+- `tests/e2e/link-flow.spec.ts` — Stabilized existing preview, redirect, and split-test E2E assertions while running the payment suite.
+- `playwright.config.ts` — Routed payment invoice email delivery to a local E2E file.
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Checked off Task 8.5.
+- `_bmad-output/implementation-artifacts/JOURNAL.md` — Recorded this completion entry.
+
+**Decisions Made:**
+- E2E uses real Midtrans sandbox transaction creation, then simulates settlement with a signed local webhook because automated payment completion through the hosted checkout UI is not deterministic.
+- Payment invoice email uses file delivery during E2E to avoid hitting Resend while still exercising the webhook path.
+- Existing Link Page and Smart Rule E2E assertions were made less order/timing-sensitive after repeated full-suite runs exposed flakes unrelated to payment logic.
+
+**Tests:**
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Unit/Integration: `rtk bun run test` — 60 files passed, 274 tests passed.
+- ✅ Build: `rtk bun run build` — Passed.
+- ✅ E2E: `rtk bun run test:e2e` — 9 specs passed.
+
+**Issues Encountered:**
+- Initial payment E2E lost the create-payment response body after browser navigation to Midtrans → switched transaction creation to authenticated `page.request`.
+- Existing split-test E2E assumed variant ordering → changed to order-insensitive assertion.
+- Existing preview and Smart Rule E2E checks were timing-sensitive → increased targeted waits and used faster redirect commit waiting.
+
+**Security Checks:**
+- ✅ Midtrans signature verification and amount calculation have unit coverage.
+- ✅ Integration verifies subscription activation only after a signed webhook.
+- ✅ E2E signs webhook payloads with the server key from environment without printing it.
+- ✅ No `.env` or payment secrets committed.
+- ✅ E2E cleans up payment test user data through cascading deletes.
+
+**Next Task:** 9.1 — Landing Page

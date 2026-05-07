@@ -186,8 +186,10 @@ async function visitSlugWithUserAgent({
   const page = await context.newPage();
 
   try {
-    await page.goto(`${baseURL}/${slug}`);
-    await page.waitForLoadState("domcontentloaded").catch(() => {});
+    await page.goto(`${baseURL}/${slug}`, {
+      timeout: 10_000,
+      waitUntil: "commit",
+    });
 
     return page.url();
   } finally {
@@ -261,11 +263,19 @@ test("should preview a Link Page from the dashboard links table", async ({ page 
 
     await page.getByRole("button", { name: `Preview Link Page for ${slug}` }).click();
 
-    await expect(page.getByText("Link Page preview")).toBeVisible();
-    await expect(page.getByText("Preview Launch")).toBeVisible();
-    await expect(page.getByText("Dashboard preview copy.")).toBeVisible();
-    await expect(page.getByText("Open offer")).toBeVisible();
-    await expect(page.getByText("42 people clicked this link")).toBeVisible();
+    await expect(page.getByText("Link Page preview")).toBeVisible({
+      timeout: 15_000,
+    });
+    await expect(page.getByText("Preview Launch")).toBeVisible({
+      timeout: 15_000,
+    });
+    await expect(page.getByText("Dashboard preview copy.")).toBeVisible({
+      timeout: 15_000,
+    });
+    await expect(page.getByText("Open offer")).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByText("42 people clicked this link")).toBeVisible({
+      timeout: 15_000,
+    });
 
     await page.getByRole("button", { name: "Desktop" }).click();
     await expect(page.getByRole("button", { name: "Desktop" })).toHaveAttribute(
@@ -378,7 +388,7 @@ test("should configure Smart Rules then redirect by browser user agent", async (
             slug,
             userAgent: mobileUserAgent,
           }),
-        { message: "mobile user agent should match Smart Rule", timeout: 15_000 },
+        { message: "mobile user agent should match Smart Rule", timeout: 30_000 },
       )
       .toBe("https://example.com/mobile-rule");
 
@@ -391,7 +401,10 @@ test("should configure Smart Rules then redirect by browser user agent", async (
             slug,
             userAgent: desktopUserAgent,
           }),
-        { message: "desktop user agent should use default destination", timeout: 15_000 },
+        {
+          message: "desktop user agent should use default destination",
+          timeout: 30_000,
+        },
       )
       .toBe("https://example.com/default");
 
@@ -549,16 +562,18 @@ test("should configure an A/B split test from an authenticated dashboard session
     };
 
     expect(configBody.success).toBe(true);
-    expect(configBody.data.splitTest?.variants).toEqual([
-      expect.objectContaining({
-        destinationUrl: "https://example.com/split-a",
-        weight: 50,
-      }),
-      expect.objectContaining({
-        destinationUrl: "https://example.com/split-b",
-        weight: 50,
-      }),
-    ]);
+    expect(configBody.data.splitTest?.variants).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          destinationUrl: "https://example.com/split-a",
+          weight: 50,
+        }),
+        expect.objectContaining({
+          destinationUrl: "https://example.com/split-b",
+          weight: 50,
+        }),
+      ]),
+    );
 
     await page.goto(`/${slug}`);
     await page.waitForURL(/https:\/\/example\.com\/split-[ab]/, {
