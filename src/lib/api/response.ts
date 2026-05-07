@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { logger } from "@/lib/observability/logger";
 
 type ErrorDetails = Record<string, unknown> | unknown[] | string | number;
 type ResponseMeta = Record<string, unknown>;
@@ -27,6 +28,15 @@ export function errorResponse(
   requestId: string,
   details?: ErrorDetails,
 ): NextResponse {
+  if (status >= 500) {
+    logger.error("api_error_response", {
+      requestId,
+      code,
+      responseMessage: message,
+      status,
+    });
+  }
+
   return NextResponse.json(
     {
       success: false,
@@ -37,6 +47,6 @@ export function errorResponse(
         ...(details === undefined ? {} : { details }),
       },
     },
-    { status },
+    { status, headers: { "x-request-id": requestId } },
   );
 }

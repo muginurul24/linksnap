@@ -5,6 +5,10 @@ import {
   type LinkPageRendererConfig,
 } from "../../src/components/link-page/link-page-renderer";
 import {
+  buildChartStyleCss,
+  getSafeChartColorValue,
+} from "../../src/components/ui/chart";
+import {
   formatClickCount,
   getReadableTextColor,
   getSafeHexColor,
@@ -73,5 +77,24 @@ describe("Link Page renderer helpers", () => {
   it("should format social proof counts", () => {
     expect(formatClickCount(1)).toBe("1 person clicked this link");
     expect(formatClickCount(2500)).toBe("2,500 people clicked this link");
+  });
+});
+
+describe("chart style sanitization", () => {
+  it("should keep safe chart colors and reject CSS injection", () => {
+    expect(getSafeChartColorValue("hsl(var(--primary))")).toBe(
+      "hsl(var(--primary))",
+    );
+    expect(getSafeChartColorValue("red;background:url(//bad.test)")).toBeNull();
+
+    const css = buildChartStyleCss("chart-1", {
+      "good-key": { color: "hsl(var(--primary))" },
+      "bad;}body{color:red": { color: "hsl(var(--chart-1))" },
+      unsafe: { color: "red;background:url(//bad.test)" },
+    });
+
+    expect(css).toContain("--color-good-key: hsl(var(--primary));");
+    expect(css).not.toContain("bad;}body");
+    expect(css).not.toContain("background:url");
   });
 });

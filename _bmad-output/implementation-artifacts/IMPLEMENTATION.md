@@ -465,69 +465,69 @@ src/
 ## 🟢 Phase 9: Public Site (4 tasks)
 
 ### TASK 9.1 — Landing Page
-- File: `src/app/(marketing)/page.tsx`
-- Sections: Hero, Features (6 cards), Pricing, Demo Generator, Testimonials
-- Demo Generator: input URL → generate short link live (no auth)
-- CTA: "Get Started Free" → `/register`, "Try Demo" → scroll to demo
-- SEO: meta tags, OG image, structured data
+- [x] File: `src/app/(marketing)/page.tsx`
+- [x] Sections: Hero, Features (6 cards), Pricing, Demo Generator, Testimonials
+- [x] Demo Generator: input URL → generate short link live (no auth)
+- [x] CTA: "Get Started Free" → `/register`, "Try Demo" → scroll to demo
+- [x] SEO: meta tags, OG image, structured data
 
 ### TASK 9.2 — Pricing Page
-- File: `src/app/(marketing)/pricing/page.tsx`
-- Monthly/annual toggle
-- 3 plan cards: Free, Pro, Business
-- Feature comparison table
-- FAQ section
+- [x] File: `src/app/(marketing)/pricing/page.tsx`
+- [x] Monthly/annual toggle
+- [x] 3 plan cards: Free, Pro, Business
+- [x] Feature comparison table
+- [x] FAQ section
 
 ### TASK 9.3 — Blog
-- File: `src/app/(marketing)/blog/page.tsx`
-- List articles from MDX content
-- Each article: `src/content/blog/{slug}.mdx`
-- Minimum 3 articles for launch:
+- [x] File: `src/app/(marketing)/blog/page.tsx`
+- [x] List articles from MDX content
+- [x] Each article: `src/content/blog/{slug}.mdx`
+- [x] Minimum 3 articles for launch:
   1. "Why Your Short Links Are Costing You Conversions"
   2. "Smart Redirect Rules: The Marketing Hack Nobody Uses"
   3. "How Link Pages 5x'd Our Click-Through Rate"
 
 ### TASK 9.4 — Public Site Tests
-- Lighthouse: target 90+ on all public pages
-- E2E: landing → pricing → demo generator → register
-- A11y: WCAG 2.1 AA audit
+- [x] Lighthouse: target 90+ on all public pages
+- [x] E2E: landing → pricing → demo generator → register
+- [x] A11y: WCAG 2.1 AA audit
 
 ---
 
 ## 🔵 Phase 10: Polish & Launch (5 tasks)
 
 ### TASK 10.1 — Error Handling & Logging
-- Global error boundary (app/error.tsx)
-- Global not-found page (app/not-found.tsx)
-- API error standardization: `{ success: false, error: { code, message, requestId } }`
-- Structured logging with requestId
+- [x] Global error boundary (app/error.tsx)
+- [x] Global not-found page (app/not-found.tsx)
+- [x] API error standardization: `{ success: false, error: { code, message, requestId } }`
+- [x] Structured logging with requestId
 
 ### TASK 10.2 — Loading States
-- Dashboard skeleton (matching layout grid)
-- Table skeleton (rows × columns)
-- Chart skeleton (placeholder area chart)
-- Button loading spinners
-- Suspense boundaries on all async pages
+- [x] Dashboard skeleton (matching layout grid)
+- [x] Table skeleton (rows × columns)
+- [x] Chart skeleton (placeholder area chart)
+- [x] Button loading spinners
+- [x] Suspense boundaries on all async pages
 
 ### TASK 10.3 — SEO & Metadata
-- `generateMetadata()` on all public pages
-- Sitemap generation (`sitemap.ts`)
-- Robots.txt (`robots.ts`)
-- JSON-LD structured data (Organization, WebApplication)
+- [x] `generateMetadata()` on all public pages
+- [x] Sitemap generation (`sitemap.ts`)
+- [x] Robots.txt (`robots.ts`)
+- [x] JSON-LD structured data (Organization, WebApplication)
 
 ### TASK 10.4 — Security Audit
-- OWASP Top 10 checklist
-- SQL injection: verify all queries use Drizzle parameterized
-- XSS: verify all user content is sanitized
-- CSRF: verify state-changing requests have token
-- Rate limiting: verify all public endpoints are rate-limited
-- Security headers: CSP, HSTS, X-Frame-Options, etc.
+- [x] OWASP Top 10 checklist
+- [x] SQL injection: verify all queries use Drizzle parameterized
+- [x] XSS: verify all user content is sanitized
+- [x] CSRF: verify state-changing requests have token
+- [x] Rate limiting: verify all public endpoints are rate-limited
+- [x] Security headers: CSP, HSTS, X-Frame-Options, etc.
 
 ### TASK 10.5 — Launch Checklist
 - [ ] Production environment variables set
 - [ ] Custom domain configured (linksnap.id or similar)
 - [ ] SSL certificate active
-- [ ] Database indexes verified
+- [x] Database indexes verified
 - [ ] Redis cache warming
 - [ ] Monitoring/alerting configured
 - [ ] Backup strategy verified

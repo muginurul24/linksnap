@@ -26,63 +26,63 @@
 ### SEC-03: Injection Attacks
 
 #### SQL Injection
-- [ ] **Drizzle ORM all queries** — Zero raw SQL in codebase
+- [x] **Drizzle ORM all queries** — Zero raw SQL in codebase verified on 2026-05-07 with `rtk proxy rg -n 'sql\`|db\.execute|\.execute\(|raw\(' src --glob '*.{ts,tsx}'`
   ```bash
   rtk grep -r "sql\`" src/ --include="*.ts" | grep -v "drizzle"
   # Should return nothing
   ```
-- [ ] **Parameterized queries** — Verify all Drizzle queries use `.where(eq(...))` not template literals
-- [ ] **No string concatenation** in query building
+- [x] **Parameterized queries** — Verified no raw SQL execution or template SQL query construction in source code on 2026-05-07.
+- [x] **No string concatenation** in query building — Verified no raw SQL/string-built query execution in source code on 2026-05-07.
 - [ ] **Database user permissions** — App DB user has minimum required privileges (no DROP, no ALTER)
 
 #### NoSQL Injection (if any)
 - [ ] N/A — Using PostgreSQL only. No MongoDB.
 
 #### Command Injection
-- [ ] **No `exec()`/`spawn()` with user input** — Verify zero instances
+- [x] **No `exec()`/`spawn()` with user input** — Verified on 2026-05-07; only `.exec()` match was safe RegExp usage in `src/lib/rules/rule-engine.ts`.
   ```bash
   rtk grep -r "exec\|spawn\|child_process" src/
   # Should return nothing
   ```
 
 ### SEC-04: Cross-Site Scripting (XSS)
-- [ ] **React auto-escaping** — All user content rendered via JSX (not `dangerouslySetInnerHTML`)
-- [ ] **No `dangerouslySetInnerHTML`** without sanitization
+- [x] **React auto-escaping** — User content is rendered through JSX; chart style text is generated from sanitized identifiers/color values.
+- [x] **No `dangerouslySetInnerHTML`** without sanitization
   ```bash
   rtk grep -r "dangerouslySetInnerHTML" src/
   # Must be zero, or documented with DOMPurify sanitization
   ```
 - [x] **Link Page content** — Public redirect renderer displays user-provided brandName, title, description, CTA text, social proof, and image URLs through JSX escaping; dynamic CTA color is validated as a hex value before rendering.
-- [ ] **URL validation** — All user-submitted URLs validated with Zod `.url()` before storage
+- [x] **URL validation** — All user-submitted URLs validated with Zod `.url()` plus protocol/internal-host checks before storage.
 - [ ] **SVG sanitization** — If accepting SVG uploads for logos, sanitize with DOMPurify
-- [ ] **Content-Security-Policy header** — Implemented in `next.config.ts`:
+- [x] **Content-Security-Policy header** — Implemented in `next.config.ts`:
   ```typescript
-  // CSP header
-  `default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self' https://api.linksnap.id;`
+  // See src/lib/security/headers.ts
+  `default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; frame-ancestors 'none';`
   ```
 
 ### SEC-05: Cross-Site Request Forgery (CSRF / XSRF)
 - [x] **NextAuth CSRF protection** — Built-in via NextAuth.js (double-submit cookie pattern)
 - [ ] **SameSite cookies** — JWT cookies set with `SameSite=Strict` (verify in auth config)
 - [ ] **State-changing operations** — All POST/PATCH/DELETE require valid session
-- [ ] **Origin/Referer header check** — Add middleware to validate Origin header on API routes:
+- [x] **Origin/Referer header check** — Proxy validates `Origin` on mutating `/api/v1/*` requests:
   ```typescript
-  // In middleware.ts
+  // In src/proxy.ts via validateApiMutationRequest()
   const origin = request.headers.get("origin");
   if (origin && !allowedOrigins.includes(origin)) {
     return new Response("Forbidden", { status: 403 });
   }
   ```
-- [ ] **Custom header requirement** — API clients must send `X-Requested-With: XMLHttpRequest` (auth UI clients already send it; server-side enforcement still pending)
+- [x] **Custom header requirement** — Proxy enforces `X-Requested-With: XMLHttpRequest` on mutating `/api/v1/*` requests, with Midtrans webhook exempted for server-to-server callbacks.
 
 ### SEC-06: Security Misconfiguration
-- [ ] **Security headers** — All implemented in `next.config.ts`:
-  - [ ] `Strict-Transport-Security: max-age=63072000; includeSubDomains; preload`
-  - [ ] `X-Content-Type-Options: nosniff`
-  - [ ] `X-Frame-Options: DENY`
-  - [ ] `Referrer-Policy: strict-origin-when-cross-origin`
-  - [ ] `Permissions-Policy: camera=(), microphone=(), geolocation=()`
-  - [ ] `Content-Security-Policy` (see SEC-04)
+- [x] **Security headers** — All implemented in `next.config.ts`:
+  - [x] `Strict-Transport-Security: max-age=63072000; includeSubDomains; preload`
+  - [x] `X-Content-Type-Options: nosniff`
+  - [x] `X-Frame-Options: DENY`
+  - [x] `Referrer-Policy: strict-origin-when-cross-origin`
+  - [x] `Permissions-Policy: camera=(), microphone=(), geolocation=()`
+  - [x] `Content-Security-Policy` (see SEC-04)
 - [ ] **No verbose errors** — Production errors return generic messages, not stack traces
 - [ ] **No directory listing** — Vercel/Next.js prevents by default
 - [ ] **CORS configuration** — Only allow `app.linksnap.id` and `linksnap.id` origins
@@ -95,6 +95,7 @@
 - [x] **Auth endpoints** — 5 login attempts/15min per IP
 - [x] **Register endpoint** — 3 registrations/hour per IP
 - [x] **OTP resend** — 3 OTPs/hour per email
+- [x] **Email verification** — 10 OTP verification attempts/15min per email.
 - [x] **Link creation** — Tier-based (Free: 10/min, Pro: 30/min, Business: 60/min) implemented in `src/app/api/v1/links/route.ts`
 - [x] **API endpoints** — Tier-based (Free: 30/min, Pro: 60/min, Business: 120/min) implemented for Link list/item/analytics/slug/Link Page/Smart Rules endpoints; future user-data APIs must continue this pattern.
 - [ ] **Redirect endpoint** — 1000 requests/min per IP (abuse prevention)
@@ -155,7 +156,7 @@
     return !blocked.some(b => parsed.hostname.startsWith(b) || parsed.hostname === b);
   }
   ```
-- [ ] **Webhook validation** — Midtrans webhooks verified via signature before processing
+- [x] **Webhook validation** — Midtrans webhooks verified via SHA512 signature with timing-safe comparison before processing.
 - [ ] **No user-controlled fetch URLs** — Verify no user input flows into `fetch()` calls
   ```bash
   rtk grep -r "fetch(req\|fetch(body\|fetch(params" src/

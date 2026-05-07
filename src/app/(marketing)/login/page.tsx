@@ -1,5 +1,19 @@
+import type { Metadata } from "next";
 import { Suspense } from "react";
+import { createPublicMetadata } from "@/lib/seo/metadata";
 import { LoginForm } from "./login-form";
+
+const description =
+  "Sign in to your LinkSnap workspace to manage short links, Link Pages, QR codes, campaigns, and analytics.";
+
+export const metadata: Metadata = {
+  ...createPublicMetadata({
+    title: "Sign in",
+    description,
+    path: "/login",
+    noIndex: true,
+  }),
+};
 
 export default function LoginPage() {
   return (

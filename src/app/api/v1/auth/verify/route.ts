@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { users } from "@/lib/db/schema";
 import { createRequestId, errorResponse, successResponse } from "@/lib/api/response";
 import { isOtpExpired } from "@/lib/auth/otp";
+import { slidingWindowRateLimit } from "@/lib/redis/rate-limit";
 import { verifyEmailSchema } from "@/lib/validations/auth";
 
 export async function POST(request: NextRequest) {
@@ -20,6 +21,22 @@ export async function POST(request: NextRequest) {
         400,
         requestId,
         parsed.error.flatten(),
+      );
+    }
+
+    const rateLimit = await slidingWindowRateLimit({
+      key: `auth:verify:${parsed.data.email}`,
+      limit: 10,
+      windowSeconds: 15 * 60,
+    });
+
+    if (rateLimit.limited) {
+      return errorResponse(
+        "RATE_LIMITED",
+        "Too many verification attempts.",
+        429,
+        requestId,
+        { retryAfter: rateLimit.retryAfter },
       );
     }
 

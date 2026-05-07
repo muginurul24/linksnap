@@ -1,5 +1,19 @@
+import type { Metadata } from "next";
 import { Suspense } from "react";
+import { createPublicMetadata } from "@/lib/seo/metadata";
 import { VerifyEmailForm } from "./verify-email-form";
+
+const description =
+  "Verify your LinkSnap account email before signing in to your workspace.";
+
+export const metadata: Metadata = {
+  ...createPublicMetadata({
+    title: "Verify email",
+    description,
+    path: "/verify",
+    noIndex: true,
+  }),
+};
 
 export default function VerifyPage() {
   return (

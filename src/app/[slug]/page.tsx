@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { after } from "next/server";
 import { headers } from "next/headers";
 import { notFound, permanentRedirect } from "next/navigation";
@@ -27,6 +28,7 @@ import {
   buildRuleEvaluationContext,
   evaluateSmartRulesForLink,
 } from "@/lib/rules/rule-engine";
+import { createPublicMetadata } from "@/lib/seo/metadata";
 import { resolveSplitTestRedirect } from "@/lib/split-tests/router";
 
 type RedirectPageProps = {
@@ -54,6 +56,19 @@ async function getRedirectLink(slug: string): Promise<RedirectLink | null> {
 function scheduleClickLog(input: RedirectClickInput): void {
   after(() => {
     void logRedirectClick(input);
+  });
+}
+
+export async function generateMetadata({
+  params,
+}: RedirectPageProps): Promise<Metadata> {
+  const { slug } = await params;
+
+  return createPublicMetadata({
+    title: "Opening Link",
+    description: "Opening a LinkSnap short link.",
+    path: isPublicSlug(slug) ? `/${slug}` : "/",
+    noIndex: true,
   });
 }
 

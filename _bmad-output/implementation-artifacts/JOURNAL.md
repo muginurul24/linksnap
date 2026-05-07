@@ -2247,3 +2247,409 @@ Completed payment test coverage across unit, integration, and E2E. Added an inte
 - ✅ E2E cleans up payment test user data through cascading deletes.
 
 **Next Task:** 9.1 — Landing Page
+
+### 9.1 — Landing Page
+- **Date:** 2026-05-07 09:05 GMT+7
+- **Duration:** 0h 45m
+- **Status:** ✅ Complete
+
+**What I Did:**
+Built the public landing page in the marketing route group with hero, six feature cards, pricing, browser-side demo generator, testimonials, SEO metadata, JSON-LD structured data, and generated PNG social/hero imagery.
+
+**Files Changed:**
+- `src/app/(marketing)/page.tsx` — Added marketing home page metadata, canonical/OG/Twitter metadata, and JSON-LD.
+- `src/app/(marketing)/landing-preview-image.tsx` — Added shared generated PNG preview image renderer.
+- `src/app/(marketing)/opengraph-image.tsx` — Added generated Open Graph image.
+- `src/app/(marketing)/landing-preview/route.tsx` — Added stable preview image route for hero visuals.
+- `src/components/landing/landing-page.tsx` — Rebuilt landing page sections and added client-side demo link generation.
+- `src/app/(dashboard)/dashboard/page.tsx` — Moved dashboard overview from `/` to `/dashboard` to avoid route group conflict.
+- `src/components/dashboard/app-sidebar.tsx` — Updated overview navigation and brand link to `/dashboard`.
+- `src/app/layout.tsx` — Added root `metadataBase` for social image URL resolution.
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Checked off Task 9.1.
+- `_bmad-output/implementation-artifacts/JOURNAL.md` — Recorded this completion entry.
+
+**Decisions Made:**
+- Demo generator is non-persistent and runs in the browser so unauthenticated visitors can try slug generation without opening a public link-creation abuse path.
+- Dashboard overview now lives at `/dashboard`; `/` is reserved for the public landing page.
+- Generated PNG imagery is shared by the hero preview and Open Graph metadata to avoid external assets.
+
+**Tests:**
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Unit/Integration: `rtk bun run test` — 60 files passed, 274 tests passed.
+- ✅ Build: `rtk bun run build` — Passed; `/`, `/dashboard`, `/landing-preview`, and generated OG image routes are registered.
+- ✅ Browser: Playwright loaded `/`, generated a demo short link, verified `/dashboard` redirects unauthenticated users to login, and confirmed zero console errors.
+
+**Issues Encountered:**
+- Moving the home route into `(marketing)` exposed a route conflict with `(dashboard)/page.tsx` resolving to `/` → moved dashboard overview to `/dashboard`.
+- The special Open Graph image route is fingerprinted by Next.js and cannot be used as a stable hero image URL → added `/landing-preview`.
+
+**Security Checks:**
+- ✅ Demo input validates URL format, protocol, and internal hostnames.
+- ✅ Demo generator does not persist data or create public redirects.
+- ✅ `/dashboard` remains protected by `src/proxy.ts`.
+- ✅ JSON-LD is rendered without `dangerouslySetInnerHTML`.
+- ✅ No secrets, raw SQL, or user-controlled fetch URLs added.
+
+**Next Task:** 9.2 — Pricing Page
+
+### 9.2 — Pricing Page
+- **Date:** 2026-05-07 09:11 GMT+7
+- **Duration:** 0h 20m
+- **Status:** ✅ Complete
+
+**What I Did:**
+Added the public pricing page with monthly/yearly billing toggle, Free/Pro/Business plan cards, full feature comparison table, FAQ section, metadata, and structured pricing data.
+
+**Files Changed:**
+- `src/app/(marketing)/pricing/page.tsx` — Added pricing route metadata and JSON-LD.
+- `src/components/landing/pricing-page.tsx` — Added pricing UI, billing toggle, comparison table, trust bar, and FAQ.
+- `src/components/landing/landing-page.tsx` — Pointed public pricing navigation to `/pricing`.
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Checked off Task 9.2.
+- `_bmad-output/implementation-artifacts/JOURNAL.md` — Recorded this completion entry.
+
+**Decisions Made:**
+- Pricing toggle is client-side only because it changes display amounts and does not require server state.
+- Yearly prices use the PRD values: Pro `$75/year`, Business `$180/year`.
+- FAQ uses native `details` elements for accessible disclosure without adding another UI dependency.
+
+**Tests:**
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Unit/Integration: `rtk bun run test` — 60 files passed, 274 tests passed.
+- ✅ Build: `rtk bun run build` — Passed; `/pricing` is registered as a static route.
+- ✅ Browser: Playwright loaded `/pricing`, verified yearly toggle values, opened FAQ content, and confirmed zero console/Next DevTools errors.
+
+**Issues Encountered:**
+- None.
+
+**Security Checks:**
+- ✅ No secrets or payment keys exposed in client code.
+- ✅ Pricing page performs no writes and creates no unauthenticated API surface.
+- ✅ JSON-LD is rendered without `dangerouslySetInnerHTML`.
+- ✅ No raw SQL, user-controlled fetch URLs, or sensitive logging added.
+
+**Next Task:** 9.3 — Blog
+
+### 9.3 — Blog
+- **Date:** 2026-05-07 09:17 GMT+7
+- **Duration:** 0h 25m
+- **Status:** ✅ Complete
+
+**What I Did:**
+Added the public blog index and three launch MDX articles. The blog page reads MDX frontmatter at build time, sorts posts by publish date, renders article summaries, and includes SEO metadata plus JSON-LD item list data.
+
+**Files Changed:**
+- `src/app/(marketing)/blog/page.tsx` — Added public blog route, metadata, JSON-LD, and article listing UI.
+- `src/lib/blog/posts.ts` — Added server-side MDX frontmatter parser and sorted post loader.
+- `src/content/blog/short-links-costing-conversions.mdx` — Added launch article 1.
+- `src/content/blog/smart-redirect-rules-marketing-hack.mdx` — Added launch article 2.
+- `src/content/blog/link-pages-click-through-rate.mdx` — Added launch article 3.
+- `tests/unit/blog-posts.test.ts` — Added parser coverage for valid and invalid frontmatter.
+- `src/components/landing/landing-page.tsx` — Added Blog navigation link.
+- `src/components/landing/pricing-page.tsx` — Added Blog navigation link.
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Checked off Task 9.3.
+- `_bmad-output/implementation-artifacts/JOURNAL.md` — Recorded this completion entry.
+
+**Decisions Made:**
+- Used server-side `fs` metadata extraction from `.mdx` files because Task 9.3 only requires a blog index, not rendered article detail pages.
+- Kept MDX compiler setup out of scope to avoid adding dependencies and changing `next.config.ts` before article detail rendering is required.
+- Frontmatter parser is strict and throws on missing required metadata so broken content fails during build/test.
+
+**Tests:**
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Unit/Integration: `rtk bun run test` — 61 files passed, 276 tests passed.
+- ✅ Build: `rtk bun run build` — Passed; `/blog` is registered as a static route.
+- ✅ Browser: Playwright loaded `/blog`, verified all three launch article titles from MDX, and confirmed zero console/Next DevTools errors.
+
+**Issues Encountered:**
+- TypeScript target rejected named capture groups in the frontmatter regex → switched to indexed capture groups.
+
+**Security Checks:**
+- ✅ Blog route performs read-only local file access at build/server time.
+- ✅ MDX content is not converted to HTML or injected with `dangerouslySetInnerHTML`.
+- ✅ JSON-LD is rendered without `dangerouslySetInnerHTML`.
+- ✅ No raw SQL, public write endpoint, secrets, or user-controlled fetch URLs added.
+
+**Next Task:** 9.4 — Public Site Tests
+
+### 9.4 — Public Site Tests
+- **Date:** 2026-05-07 09:47 GMT+7
+- **Duration:** 0h 35m
+- **Status:** ✅ Complete
+
+**What I Did:**
+Added public-site Playwright coverage for the landing/pricing/demo/register flow, added axe WCAG 2.1 AA audits for public pages, and optimized marketing routes so mobile Lighthouse stays at or above the 90 target.
+
+**Files Changed:**
+- `tests/e2e/public-site.spec.ts` — Added public navigation flow and axe accessibility checks.
+- `package.json` — Added `@axe-core/playwright` for E2E accessibility audits.
+- `bun.lock` — Locked the new E2E accessibility dependency.
+- `src/components/landing/demo-generator.tsx` — Split the interactive demo into a dedicated client component and removed global toast dependency.
+- `src/components/landing/landing-page.tsx` — Kept the landing shell server-rendered and moved preview imagery to a static public asset.
+- `public/landing-preview.png` — Added static marketing preview image for faster public-page rendering.
+- `src/app/layout.tsx` — Removed global client providers from all public routes and kept the default dark theme static.
+- `src/app/(dashboard)/layout.tsx` — Scoped theme, tooltip, and toast providers to the dashboard.
+- `src/app/(marketing)/register/page.tsx` — Added local toast rendering for registration feedback.
+- `src/app/(marketing)/verify/verify-email-form.tsx` — Added local toast rendering for verification feedback.
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Checked off Task 9.4.
+- `_bmad-output/implementation-artifacts/JOURNAL.md` — Recorded this completion entry.
+
+**Decisions Made:**
+- Used HTTP 308 copy in public marketing stats because permanent redirects are the correct production behavior for stable short links.
+- Kept Lighthouse checks against `next start` production output instead of dev mode so scores reflect optimized assets.
+- Scoped global providers out of static public pages to reduce hydration cost and keep marketing performance within target.
+
+**Tests:**
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Unit/Integration: `rtk bun run test` — 61 files passed, 276 tests passed.
+- ✅ Build: `rtk bun run build` — Passed.
+- ✅ E2E: `rtk bun run test:e2e -- tests/e2e/public-site.spec.ts` — 5 tests passed.
+- ✅ Lighthouse Mobile: `/` 90, `/pricing` 94, `/blog` 97, `/register` 96; accessibility, best-practices, and SEO all 100.
+
+**Issues Encountered:**
+- Initial mobile Lighthouse for `/` was below 90 due to unnecessary client provider and font work on public routes → split the demo client component, removed landing toast usage, stopped preloading the mono font globally, and scoped providers to dashboard/forms.
+
+**Security Checks:**
+- ✅ Public demo URL validation remains client-only and does not create persisted redirects.
+- ✅ E2E tests exercise public navigation without authenticated state.
+- ✅ Axe checks pass WCAG 2.1 AA on `/`, `/pricing`, `/blog`, and `/register`.
+- ✅ No secrets, tokens, raw SQL, or new public write endpoints added.
+
+**Next Task:** 10.1 — Error Handling & Logging
+
+### 10.1 — Error Handling & Logging
+- **Date:** 2026-05-07 09:55 GMT+7
+- **Duration:** 0h 30m
+- **Status:** ✅ Complete
+
+**What I Did:**
+Added branded root error and not-found pages, introduced a structured logger, strengthened API error responses with an `x-request-id` header, and added unit coverage for the response contract and internal-error logging.
+
+**Files Changed:**
+- `_bmad-output/planning-artifacts/spec-error-handling-logging.md` — Added the BMad quick-dev mini-spec and acceptance criteria.
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Checked off Task 10.1 items.
+- `src/app/error.tsx` — Added root error boundary UI with retry and safe home navigation.
+- `src/app/not-found.tsx` — Added root 404 UI with safe home navigation.
+- `src/lib/observability/logger.ts` — Added structured JSON logging helper.
+- `src/lib/api/response.ts` — Added request ID response headers and structured 5xx logging.
+- `tests/unit/api-response.test.ts` — Added response helper contract tests.
+- `_bmad-output/implementation-artifacts/JOURNAL.md` — Recorded this completion entry.
+
+**Decisions Made:**
+- API 4xx responses keep the request ID in the response but are not logged by default to avoid noisy logs for expected validation/auth failures.
+- API 5xx responses are logged centrally from `errorResponse()` so every internal error response has a structured `requestId` record even if the route also has local diagnostics.
+- Error boundary UI renders generic copy and only exposes the Next.js digest when available, avoiding sensitive server details in the page.
+
+**Tests:**
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Unit/Integration: `rtk bun run test` — 62 files passed, 280 tests passed.
+- ✅ Build: `rtk bun run build` — Passed.
+- ✅ Browser: Playwright loaded `/missing/path`, verified the branded 404 content and home action.
+
+**Issues Encountered:**
+- Running Vitest in parallel with `next build` caused one auth-flow timeout due resource contention → reran the full test suite separately and it passed.
+- Initial structured log context used `message` and overwrote the event name → renamed it to `responseMessage`.
+
+**Security Checks:**
+- ✅ Error UI does not render raw server exception messages.
+- ✅ API errors continue using the standard `{ success: false, error: { code, message, requestId } }` shape.
+- ✅ `x-request-id` is returned without exposing stack traces or secrets.
+- ✅ Structured 5xx logs include request ID, code, status, and safe response copy only.
+
+**Next Task:** 10.2 — Loading States
+
+### 10.2 — Loading States
+- **Date:** 2026-05-07 10:03 GMT+7
+- **Duration:** 0h 30m
+- **Status:** ✅ Complete
+
+**What I Did:**
+Added reusable dashboard loading skeletons, route-level `loading.tsx` fallbacks for async pages, and accessibility state on buttons that already show loading spinners.
+
+**Files Changed:**
+- `src/components/dashboard/loading-states.tsx` — Added reusable dashboard, table, chart, QR grid, billing, analytics, and form skeletons.
+- `src/app/(dashboard)/dashboard/loading.tsx` — Added dashboard overview loading UI.
+- `src/app/(dashboard)/links/loading.tsx` — Added links table loading UI.
+- `src/app/(dashboard)/links/[slug]/edit/loading.tsx` — Added edit form loading UI.
+- `src/app/(dashboard)/qr/loading.tsx` — Added QR grid loading UI.
+- `src/app/(dashboard)/analytics/loading.tsx` — Added analytics chart loading UI.
+- `src/app/(dashboard)/settings/billing/loading.tsx` — Added billing loading UI.
+- `src/app/(marketing)/blog/loading.tsx` — Added public blog loading UI.
+- `src/app/[slug]/loading.tsx` — Added redirect loading UI.
+- `src/app/(dashboard)/settings/billing/upgrade-button.tsx` — Added `aria-busy` to the upgrade loading button.
+- `src/app/(marketing)/login/login-form.tsx` — Added `aria-busy` to sign-in loading buttons.
+- `src/app/(marketing)/register/page.tsx` — Added `aria-busy` to the register loading button.
+- `src/app/(marketing)/verify/verify-email-form.tsx` — Added `aria-busy` to verification and resend loading buttons.
+- `tests/unit/loading-states.test.tsx` — Added skeleton rendering coverage.
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Checked off Task 10.2.
+- `_bmad-output/implementation-artifacts/JOURNAL.md` — Recorded this completion entry.
+
+**Decisions Made:**
+- Used route-level `loading.tsx` because Next.js automatically wraps matching page segments in Suspense and keeps shared layouts interactive.
+- Kept skeletons in a dashboard shared component so table and chart placeholders stay consistent across routes.
+- Added `aria-busy` rather than changing button APIs, keeping the existing shadcn/base-ui button surface stable.
+
+**Tests:**
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Unit/Integration: `rtk bun run test` — 63 files passed, 282 tests passed.
+- ✅ Build: `rtk bun run build` — Passed.
+- ✅ Browser: Playwright loaded `/blog` and `/login` with zero console errors.
+
+**Issues Encountered:**
+- None.
+
+**Security Checks:**
+- ✅ Loading UI does not expose user data while protected routes resolve auth.
+- ✅ Redirect loading UI does not reveal destination metadata before routing completes.
+- ✅ Button loading states remain disabled during in-flight operations.
+- ✅ No new API surface, raw SQL, secrets, or logging of sensitive data added.
+
+**Next Task:** 10.3 — SEO & Metadata
+
+### 10.3 — SEO & Metadata
+- **Date:** 2026-05-07 10:12 GMT+7
+- **Duration:** 0h 30m
+- **Status:** ✅ Complete
+
+**What I Did:**
+Centralized public SEO metadata, added sitemap and robots metadata routes, completed noindex metadata for auth and short-link redirect surfaces, and added safe JSON-LD structured data for LinkSnap as both an Organization and WebApplication.
+
+**Files Changed:**
+- `_bmad-output/planning-artifacts/spec-seo-metadata.md` — Added the BMad quick-dev mini-spec and acceptance criteria.
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Checked off Task 10.3 items.
+- `src/lib/seo/metadata.ts` — Added site config, metadata builder, robots policies, sitemap routes, and JSON-LD helpers.
+- `src/app/layout.tsx` — Added root metadata defaults, title template, keywords, robots, and format detection.
+- `src/app/(marketing)/page.tsx` — Switched landing metadata and Organization/WebApplication JSON-LD to shared helpers.
+- `src/app/(marketing)/pricing/page.tsx` — Switched pricing metadata and OfferCatalog JSON-LD to shared helpers.
+- `src/app/(marketing)/blog/page.tsx` — Switched blog metadata and ItemList JSON-LD to shared helpers.
+- `src/app/(marketing)/login/page.tsx` — Added noindex auth metadata.
+- `src/app/(marketing)/register/page.tsx` — Converted the route to a Server Component and added noindex auth metadata.
+- `src/app/(marketing)/register/register-form.tsx` — Moved the interactive registration form into a Client Component.
+- `src/app/(marketing)/verify/page.tsx` — Added noindex verification metadata.
+- `src/app/[slug]/page.tsx` — Added generic noindex metadata for short-link redirect surfaces without querying destination data.
+- `src/app/sitemap.ts` — Added canonical public marketing sitemap generation.
+- `src/app/robots.ts` — Added crawler rules for public, auth, API, and protected app paths.
+- `tests/unit/seo-metadata.test.ts` — Added metadata helper, sitemap, robots, and JSON-LD coverage.
+- `_bmad-output/implementation-artifacts/JOURNAL.md` — Recorded this completion entry.
+
+**Decisions Made:**
+- Used static metadata objects for static public pages because Next.js recommends `metadata` when values do not depend on route or request data.
+- Kept auth and redirect routes as `noindex,nofollow` so crawler traffic focuses on canonical marketing pages and user/private surfaces are not indexed.
+- Did not query redirect destination data from `generateMetadata()` to avoid leaking target information or adding request-time SEO latency.
+
+**Tests:**
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Unit: `rtk bun run test -- tests/unit/seo-metadata.test.ts` — 6 tests passed.
+- ✅ Unit/Integration: `rtk bun run test` — 64 files passed, 288 tests passed.
+- ✅ Build: `rtk bun run build` — Passed.
+- ✅ Runtime: `rtk curl -s http://localhost:3000/sitemap.xml` and `rtk curl -s http://localhost:3000/robots.txt` returned expected metadata routes.
+- ✅ Browser: Playwright verified `/` canonical/robots/JSON-LD and `/register` noindex metadata with no browser console errors.
+
+**Issues Encountered:**
+- Production browser verification emitted existing Auth.js `UntrustedHost` server logs for localhost session checks → route rendering and browser console remained clean; environment trust settings should be reviewed during launch/security audit.
+
+**Security Checks:**
+- ✅ JSON-LD serialization escapes raw `<` characters before rendering script content.
+- ✅ Auth pages and short-link redirect pages are noindex/nofollow.
+- ✅ Sitemap excludes auth, API, dashboard, and user short-link routes.
+- ✅ Redirect metadata stays generic and does not expose destination URLs, user data, or link-page configuration.
+- ✅ No new API surface, raw SQL, secrets, or sensitive logging added.
+
+**Next Task:** 10.4 — Security Audit
+
+### 10.4 — Security Audit
+- **Date:** 2026-05-07 10:20 GMT+7
+- **Duration:** 0h 45m
+- **Status:** ✅ Complete
+
+**What I Did:**
+Ran the launch security audit, patched app-level gaps, added global security headers/CSP, enforced Origin and custom-header checks for mutating `/api/v1/*` requests, removed chart `dangerouslySetInnerHTML`, added OTP verification rate limiting, and documented residual production security work.
+
+**Files Changed:**
+- `_bmad-output/planning-artifacts/spec-security-audit.md` — Added the BMad quick-dev mini-spec and acceptance criteria.
+- `_bmad-output/planning-artifacts/security-audit-2026-05-07.md` — Added security audit evidence, findings, fixes, and residual launch checks.
+- `_bmad-output/planning-artifacts/SECURITY.md` — Updated completed checklist items for injection, XSS, CSRF controls, headers, verify rate limiting, and webhook signature validation.
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Checked off Task 10.4 items.
+- `next.config.ts` — Added global security headers through Next.js `headers()`.
+- `src/lib/security/headers.ts` — Added CSP, HSTS, nosniff, frame, referrer, and permissions policy definitions.
+- `src/lib/security/api-request.ts` — Added API mutation Origin/custom-header validation helpers.
+- `src/proxy.ts` — Applied centralized API mutation guard before route handlers.
+- `src/components/ui/chart.tsx` — Replaced dangerous style injection with sanitized style text generation.
+- `src/app/api/v1/auth/verify/route.ts` — Added verification attempt rate limiting.
+- `tests/unit/api-security.test.ts` — Added API mutation guard coverage.
+- `tests/unit/security-headers.test.ts` — Added security header/CSP coverage.
+- `tests/unit/link-page-renderer.test.tsx` — Added chart style sanitization coverage.
+- `_bmad-output/implementation-artifacts/JOURNAL.md` — Recorded this completion entry.
+
+**Decisions Made:**
+- Used `next.config.ts` headers instead of nonce-based CSP so public pages remain statically optimized; the CSP still blocks framing, object embeds, and untrusted origins.
+- Exempted Midtrans webhook from the custom browser header because it is server-to-server and already verifies the Midtrans SHA512 signature.
+- Kept redirect rate limiting as a documented WAF/Cloudflare control to preserve the hot redirect path latency target.
+
+**Tests:**
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Targeted Unit: `rtk bun run test -- tests/unit/api-security.test.ts tests/unit/security-headers.test.ts tests/unit/link-page-renderer.test.tsx` — 13 tests passed.
+- ✅ Unit/Integration: `rtk bun run test` — 66 files passed, 296 tests passed.
+- ✅ Build: `rtk bun run build` — Passed.
+- ✅ Runtime Headers: `rtk curl -sI http://localhost:3000/` confirmed CSP, HSTS, nosniff, X-Frame-Options, Referrer-Policy, and Permissions-Policy.
+- ✅ Runtime API Guard: Missing `X-Requested-With` returned 403 `CSRF_HEADER_REQUIRED`; untrusted `Origin` returned 403 `FORBIDDEN_ORIGIN`; Midtrans webhook without custom header reached validation and returned 400, not proxy-blocked.
+
+**Issues Encountered:**
+- Initial proxy wiring invoked NextAuth for public/API requests and emitted localhost `UntrustedHost` logs → resolved by short-circuiting `/api/v1/*` and public non-protected paths before the auth proxy.
+- Redirect endpoint rate limiting remains an infrastructure/WAF requirement because app-level Redis checks would add latency to every redirect.
+
+**Security Checks:**
+- ✅ No raw SQL, `db.execute`, `.execute(`, or `raw(` matches in `src`.
+- ✅ No `dangerouslySetInnerHTML` matches in `src`.
+- ✅ No user-controlled fetch URL matches found by the audit pattern.
+- ✅ No command execution APIs with user input; only safe `RegExp.exec` false positive found.
+- ✅ API body parsing paths continue to use Zod `safeParse`.
+- ✅ Security headers are emitted by the production server.
+
+**Next Task:** 10.5 — Launch Checklist
+
+### 10.5 — Launch Checklist
+- **Date:** 2026-05-07 10:26 GMT+7
+- **Duration:** 0h 25m
+- **Status:** ⚠️ Partial
+
+**What I Did:**
+Verified launch prerequisites that can be checked locally, added missing Auth.js trust variables to `.env.example` and local `.env`, verified connected database indexes, confirmed GeoLite MMDB files and path, checked DNS for `linksnap.id`, and documented remaining production blockers.
+
+**Files Changed:**
+- `_bmad-output/planning-artifacts/launch-readiness-2026-05-07.md` — Added launch readiness report, verified items, blockers, and go-live requirements.
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Checked off database index verification.
+- `_bmad-output/implementation-artifacts/JOURNAL.md` — Recorded this partial launch-readiness entry.
+- `.env.example` — Added `AUTH_URL` and `AUTH_TRUST_HOST` placeholders for Auth.js host trust.
+- `.env` — Filled `AUTH_URL` and `AUTH_TRUST_HOST` locally; not tracked or committed.
+
+**Decisions Made:**
+- Left production environment variables unchecked because local `.env` presence does not prove Vercel production secrets are configured.
+- Left custom domain and SSL unchecked because both `linksnap.id` and `www.linksnap.id` failed DNS resolution from this environment.
+- Marked database indexes complete because the connected PostgreSQL database returned the expected link, click-event, campaign, and smart-rule indexes.
+
+**Tests:**
+- ✅ Env presence check: required local `.env` keys are present without printing secret values.
+- ✅ MaxMind files: ASN, city, and country `.mmdb` files exist; `MAXMIND_DB_PATH` matches the city DB path.
+- ✅ Database indexes: queried `pg_indexes` through the configured `DATABASE_URL` and verified expected index names.
+- ✅ Domain check: `rtk curl -I --max-time 10 https://linksnap.id` and `https://www.linksnap.id` both failed DNS resolution, confirming domain setup is not complete.
+- ✅ Code verification inherited from Task 10.4 after the latest runtime code changes: typecheck, lint, full tests, build, and runtime header/API guard checks passed.
+
+**Issues Encountered:**
+- Production DNS/domain is not configured yet, so SSL, external penetration testing, and load testing cannot be completed.
+- Monitoring/alerting, backup/PITR, Redis cache warming, and go-live require production platform access.
+
+**Security Checks:**
+- ✅ `.env` remains untracked.
+- ✅ No production secrets were printed or committed.
+- ✅ Auth host trust variables are documented in `.env.example` and filled locally.
+- ✅ Database index verification did not expose connection strings or credentials.
+
+**Next Task:** None — remaining launch items require production infrastructure access
