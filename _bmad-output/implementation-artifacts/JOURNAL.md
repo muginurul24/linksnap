@@ -5214,3 +5214,53 @@ Moved settings page data loading behind a guarded helper so database failures re
 - ✅ Query failures are logged without sensitive request data.
 
 **Next Task:** 16.2 — Implement 2FA (TOTP)
+
+### 16.2 — Implement 2FA (TOTP)
+- **Date:** 2026-05-07 23:07 GMT+7
+- **Duration:** 1h 10m
+- **Status:** ✅ Complete
+
+**What I Did:**
+Implemented TOTP-based two-factor authentication with setup, verification, disable, backup-code regeneration, and login challenge completion. Settings now has a real 2FA panel with QR setup and one-time backup code display, while login routes password-verified users through `/2fa` when required.
+
+**Files Changed:**
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Checked off Task 16.2.
+- `package.json`, `bun.lock` — Added `otpauth`.
+- `src/lib/db/schema.ts` — Added 2FA secret, enabled flag, and backup-code hash storage.
+- `src/lib/auth/two-factor.ts` — Added TOTP URI/token verification and hashed backup-code helpers.
+- `src/lib/auth/two-factor-challenge.ts` — Added short-lived Redis-backed login challenge helpers.
+- `src/lib/db/queries/two-factor.ts` — Added 2FA user lookup and mutation queries.
+- `src/app/api/v1/auth/2fa/*/route.ts` — Added challenge, setup, verify, disable, and backup-code endpoints.
+- `src/lib/auth/credentials.ts`, `src/lib/auth/index.ts` — Added challenge-based credentials authorization and 2FA token/backup code support.
+- `src/app/(marketing)/login/login-form.tsx` — Starts password verification through the challenge endpoint before creating a session.
+- `src/app/(marketing)/2fa/page.tsx`, `src/app/(marketing)/2fa/two-factor-login-form.tsx` — Added 2FA verification page.
+- `src/app/(dashboard)/settings/page.tsx`, `src/app/(dashboard)/settings/two-factor-panel.tsx` — Replaced the dead 2FA button with the real setup/disable/regenerate flow.
+- `src/lib/db/queries/settings.ts`, `tests/integration/settings-page-data.test.ts` — Exposed 2FA enabled state to the settings page.
+- `tests/unit/two-factor.test.ts` — Added TOTP and backup-code unit coverage.
+- `tests/integration/two-factor-auth-flow.test.ts` — Added setup, required-login, and backup-code consumption coverage.
+
+**Decisions Made:**
+- Used short-lived Redis challenges so verified passwords are never passed through URLs or local storage while still letting NextAuth create the final JWT session.
+- Stored backup codes as SHA256 hashes and returned the plain codes only once after setup or regeneration.
+- Added a backup-code regeneration endpoint because regeneration is required to invalidate old codes cleanly.
+
+**Tests:**
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Database: `rtk bun run db:push` — Changes applied.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Targeted Unit/Integration: `rtk bun run test -- tests/unit/two-factor.test.ts tests/integration/two-factor-auth-flow.test.ts tests/integration/auth-flow.test.ts tests/integration/settings-page-data.test.ts` — 4 files passed, 11 tests passed.
+- ✅ Unit/Integration: `rtk bun run test` — 111 files passed, 498 tests passed.
+- ✅ Build: `rtk bun run build` — Passed.
+
+**Issues Encountered:**
+- The first settings QR implementation used a raw `<img>` and triggered a Next lint warning → Switched to `next/image` with `unoptimized` for the data URL QR code.
+- The setup route originally accepted an unused request parameter → Removed it and adjusted the integration test call.
+
+**Security Checks:**
+- ✅ Password confirmation is required for disabling 2FA and regenerating backup codes.
+- ✅ Backup codes are stored only as SHA256 hashes.
+- ✅ 2FA login challenges are random, short-lived Redis entries and are deleted after successful use.
+- ✅ Existing rate limiting remains on password verification before a challenge is issued.
+- ✅ No secrets, raw SQL, or `dangerouslySetInnerHTML` introduced.
+
+**Next Task:** 16.3 — Refresh Profile Across Dashboard After Save

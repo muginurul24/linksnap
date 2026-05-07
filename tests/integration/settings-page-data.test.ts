@@ -27,10 +27,12 @@ const mockState = vi.hoisted(() => ({
       productUpdates: true,
       weeklyAnalyticsReport: true,
     } satisfies UserNotificationPreferences,
+    twoFactorEnabled: false,
   } as {
     email: string;
     name: string | null;
     notifications: UserNotificationPreferences;
+    twoFactorEnabled: boolean;
   } | null,
 }));
 
@@ -72,6 +74,7 @@ describe("settings page data", () => {
         productUpdates: true,
         weeklyAnalyticsReport: true,
       },
+      twoFactorEnabled: false,
     };
   });
 

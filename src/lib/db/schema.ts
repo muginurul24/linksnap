@@ -60,6 +60,12 @@ export const users = pgTable("users", {
   otpCode: varchar("otp_code", { length: 6 }),
   otpExpiresAt: timestamp("otp_expires_at"),
   refreshTokenHash: text("refresh_token_hash"),
+  twoFactorSecret: text("two_factor_secret"),
+  twoFactorEnabled: boolean("two_factor_enabled").default(false).notNull(),
+  twoFactorBackupCodeHashes: jsonb("two_factor_backup_code_hashes")
+    .$type<string[]>()
+    .default([])
+    .notNull(),
   notifications: jsonb("notifications")
     .$type<UserNotificationPreferences>()
     .default(DEFAULT_NOTIFICATION_PREFERENCES)

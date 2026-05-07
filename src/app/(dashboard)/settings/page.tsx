@@ -6,7 +6,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { User, Bell, Shield, Key } from "lucide-react";
 import { auth } from "@/lib/auth";
@@ -20,6 +19,7 @@ import {
   ProfileSettingsForm,
   SecuritySettingsForm,
 } from "@/app/(dashboard)/settings/settings-forms";
+import { TwoFactorSettingsPanel } from "@/app/(dashboard)/settings/two-factor-panel";
 import { loadSettingsPageData } from "./settings-page-data";
 
 type SessionWithUserId = {
@@ -151,15 +151,9 @@ export default async function SettingsPage({ searchParams }: SettingsPageProps) 
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium">Authenticator App</p>
-                    <p className="text-xs text-muted-foreground">
-                      Use Google Authenticator or similar.
-                    </p>
-                  </div>
-                  <Button variant="outline" size="sm">Enable 2FA</Button>
-                </div>
+                <TwoFactorSettingsPanel
+                  initialEnabled={settingsData.settingsUser.twoFactorEnabled}
+                />
               </CardContent>
             </Card>
           </TabsContent>

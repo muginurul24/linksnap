@@ -10,6 +10,7 @@ export type SettingsUser = {
   email: string;
   name: string | null;
   notifications: UserNotificationPreferences;
+  twoFactorEnabled: boolean;
 };
 
 export type PasswordUser = {
@@ -31,6 +32,7 @@ export async function findSettingsUserById(
       email: true,
       name: true,
       notifications: true,
+      twoFactorEnabled: true,
     },
     where: eq(users.id, userId),
   });
@@ -41,6 +43,7 @@ export async function findSettingsUserById(
     email: user.email,
     name: user.name,
     notifications: normalizeNotificationPreferences(user.notifications),
+    twoFactorEnabled: user.twoFactorEnabled,
   };
 }
 
@@ -59,6 +62,7 @@ export async function updateSettingsUserProfile({
       email: users.email,
       name: users.name,
       notifications: users.notifications,
+      twoFactorEnabled: users.twoFactorEnabled,
     });
 
   if (!user) return null;
@@ -67,6 +71,7 @@ export async function updateSettingsUserProfile({
     email: user.email,
     name: user.name,
     notifications: normalizeNotificationPreferences(user.notifications),
+    twoFactorEnabled: user.twoFactorEnabled,
   };
 }
 

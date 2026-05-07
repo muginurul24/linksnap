@@ -25,6 +25,18 @@ import { loginSchema, type LoginInput } from "@/lib/validations/auth";
 
 type LoginField = Extract<keyof LoginInput, string>;
 
+type ApiEnvelope<T> =
+  | {
+      data: T;
+      success: true;
+    }
+  | {
+      error: {
+        message: string;
+      };
+      success: false;
+    };
+
 const initialForm: LoginInput = {
   email: "",
   password: "",
@@ -36,9 +48,19 @@ function signInErrorMessage(error: string): string {
     AccessDenied: "Email is not verified.",
     EmailNotVerified: "Email is not verified.",
     email_not_verified: "Email is not verified.",
+    two_factor_required: "Two-factor verification is required.",
   };
 
   return messages[error] ?? "Unable to sign in.";
+}
+
+type SignInChallenge = {
+  challengeId: string;
+  twoFactorRequired: boolean;
+};
+
+async function readResponse<T>(response: Response): Promise<ApiEnvelope<T>> {
+  return response.json() as Promise<ApiEnvelope<T>>;
 }
 
 export function LoginForm() {
@@ -80,11 +102,34 @@ export function LoginForm() {
     setFormError(null);
 
     try {
+      const challengeResponse = await fetch("/api/v1/auth/2fa/challenge", {
+        body: JSON.stringify(parsed.data),
+        headers: {
+          "content-type": "application/json",
+          "X-Requested-With": "XMLHttpRequest",
+        },
+        method: "POST",
+      });
+      const challengeBody = await readResponse<SignInChallenge>(challengeResponse);
+
+      if (!challengeBody.success) {
+        setFormError(challengeBody.error.message);
+        return;
+      }
+
+      if (challengeBody.data.twoFactorRequired) {
+        const params = new URLSearchParams({
+          callbackUrl,
+          challenge: challengeBody.data.challengeId,
+        });
+        router.push(`/2fa?${params.toString()}`);
+        return;
+      }
+
       const result = await signIn("credentials", {
-        email: parsed.data.email,
-        password: parsed.data.password,
-        redirect: false,
         callbackUrl,
+        challengeId: challengeBody.data.challengeId,
+        redirect: false,
       });
 
       if (result?.error) {

@@ -50,8 +50,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     Credentials({
       name: "credentials",
       credentials: {
+        backupCode: { label: "Backup code", type: "text" },
+        challengeId: { label: "Challenge", type: "text" },
         email: { label: "Email", type: "email" },
         password: { label: "Password", type: "password" },
+        totpToken: { label: "Verification code", type: "text" },
       },
       async authorize(credentials, request) {
         return authorizeCredentials(credentials, request);

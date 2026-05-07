@@ -1263,16 +1263,16 @@ rtk bun run db:studio    # Open Drizzle Studio (in another terminal)
 - [x] Tests: unit (null handling), integration (settings renders with error recovery)
 
 ### TASK 16.2 — Implement 2FA (TOTP)
-- [ ] Add `otpauth`: `rtk bun add otpauth`
-- [ ] Add DB columns: `twoFactorSecret` (text), `twoFactorEnabled` (boolean)
-- [ ] `rtk bun run db:push`
-- [ ] Create `src/lib/auth/two-factor.ts` — generate TOTP secret, verify token, generate backup codes (8 codes, SHA256 stored)
-- [ ] Create `src/app/api/v1/auth/2fa/setup/route.ts` — POST: return QR code otpauth:// URL
-- [ ] Create `src/app/api/v1/auth/2fa/verify/route.ts` — POST: verify setup token, enable 2FA, return backup codes
-- [ ] Create `src/app/api/v1/auth/2fa/disable/route.ts` — POST: require password, disable 2FA
-- [ ] Update login flow: after password valid, if `twoFactorEnabled` → show 2FA step
-- [ ] Create `src/app/(marketing)/2fa/page.tsx` — OTP input + backup code link
-- [ ] File: settings page — replace dead "Enable 2FA" button with real modal/flow:
+- [x] Add `otpauth`: `rtk bun add otpauth`
+- [x] Add DB columns: `twoFactorSecret` (text), `twoFactorEnabled` (boolean)
+- [x] `rtk bun run db:push`
+- [x] Create `src/lib/auth/two-factor.ts` — generate TOTP secret, verify token, generate backup codes (8 codes, SHA256 stored)
+- [x] Create `src/app/api/v1/auth/2fa/setup/route.ts` — POST: return QR code otpauth:// URL
+- [x] Create `src/app/api/v1/auth/2fa/verify/route.ts` — POST: verify setup token, enable 2FA, return backup codes
+- [x] Create `src/app/api/v1/auth/2fa/disable/route.ts` — POST: require password, disable 2FA
+- [x] Update login flow: after password valid, if `twoFactorEnabled` → show 2FA step
+- [x] Create `src/app/(marketing)/2fa/page.tsx` — OTP input + backup code link
+- [x] File: settings page — replace dead "Enable 2FA" button with real modal/flow:
   ```
   ┌───────────────────────────────────────┐
   │ Two-Factor Authentication            │
@@ -1284,8 +1284,8 @@ rtk bun run db:studio    # Open Drizzle Studio (in another terminal)
   │   [Disable 2FA]  [Regenerate codes]   │
   └───────────────────────────────────────┘
   ```
-- [ ] Backup codes shown once after setup; regenerate invalidates old codes
-- [ ] Tests: unit (TOTP verify, backup codes), integration (2FA setup + login)
+- [x] Backup codes shown once after setup; regenerate invalidates old codes
+- [x] Tests: unit (TOTP verify, backup codes), integration (2FA setup + login)
 
 ### TASK 16.3 — Refresh Profile Across Dashboard After Save
 - [ ] After saving profile name, sidebar still shows old name until page refresh

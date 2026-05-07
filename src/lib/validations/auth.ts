@@ -67,6 +67,50 @@ export const loginSchema = z
 
 export type LoginInput = z.infer<typeof loginSchema>;
 
+export const twoFactorChallengeSchema = loginSchema;
+
+export type TwoFactorChallengeInput = z.infer<typeof twoFactorChallengeSchema>;
+
+export const twoFactorTokenSchema = z
+  .string()
+  .trim()
+  .regex(/^\d{6}$/, "Enter the 6-digit code");
+
+export const twoFactorVerifySchema = z
+  .object({
+    token: twoFactorTokenSchema,
+  })
+  .strict();
+
+export type TwoFactorVerifyInput = z.infer<typeof twoFactorVerifySchema>;
+
+export const twoFactorLoginSchema = z
+  .object({
+    backupCode: z.string().trim().min(4).max(32).optional(),
+    challengeId: z.string().trim().length(64, "Challenge expired or invalid"),
+    token: twoFactorTokenSchema.optional(),
+  })
+  .strict()
+  .superRefine((data, ctx) => {
+    if (!data.token && !data.backupCode) {
+      ctx.addIssue({
+        code: "custom",
+        message: "Enter a verification code or backup code",
+        path: ["token"],
+      });
+    }
+  });
+
+export type TwoFactorLoginInput = z.infer<typeof twoFactorLoginSchema>;
+
+export const twoFactorPasswordSchema = z
+  .object({
+    password: z.string().min(1, "Password is required"),
+  })
+  .strict();
+
+export type TwoFactorPasswordInput = z.infer<typeof twoFactorPasswordSchema>;
+
 export const forgotPasswordSchema = z
   .object({
     email: emailSchema,
