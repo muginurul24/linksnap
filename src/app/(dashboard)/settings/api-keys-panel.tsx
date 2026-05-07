@@ -4,6 +4,7 @@ import { useState } from "react";
 import { CheckCircle2, Copy, Key, Loader2, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
+import { DeleteConfirmationDialog } from "@/components/dashboard/delete-confirmation-dialog";
 import { Button } from "@/components/ui/button";
 import { ButtonLink } from "@/components/ui/button-link";
 import { Input } from "@/components/ui/input";
@@ -88,6 +89,9 @@ export function ApiKeysPanel({ initialApiKeys, plan }: ApiKeysPanelProps) {
   const [keyName, setKeyName] = useState("");
   const [isCreating, setIsCreating] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [apiKeyToDelete, setApiKeyToDelete] = useState<ApiKeyPanelItem | null>(
+    null,
+  );
 
   async function createApiKey() {
     setIsCreating(true);
@@ -140,6 +144,7 @@ export function ApiKeysPanel({ initialApiKeys, plan }: ApiKeysPanelProps) {
       }
 
       setApiKeys((current) => current.filter((apiKey) => apiKey.id !== id));
+      setApiKeyToDelete(null);
       toast.success("API key revoked.");
     } catch {
       toast.error("Unable to revoke API key.");
@@ -249,7 +254,7 @@ export function ApiKeysPanel({ initialApiKeys, plan }: ApiKeysPanelProps) {
                   <Button
                     aria-label={`Revoke ${apiKey.name}`}
                     disabled={deletingId === apiKey.id}
-                    onClick={() => void deleteApiKey(apiKey.id)}
+                    onClick={() => setApiKeyToDelete(apiKey)}
                     size="icon-sm"
                     type="button"
                     variant="ghost"
@@ -266,6 +271,17 @@ export function ApiKeysPanel({ initialApiKeys, plan }: ApiKeysPanelProps) {
           </TableBody>
         </Table>
       )}
+      <DeleteConfirmationDialog
+        isDeleting={apiKeyToDelete ? deletingId === apiKeyToDelete.id : false}
+        name={apiKeyToDelete?.name ?? "this API key"}
+        onConfirm={() => {
+          if (apiKeyToDelete) void deleteApiKey(apiKeyToDelete.id);
+        }}
+        onOpenChange={(open) => {
+          if (!open) setApiKeyToDelete(null);
+        }}
+        open={apiKeyToDelete !== null}
+      />
     </div>
   );
 }

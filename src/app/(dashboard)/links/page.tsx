@@ -1,36 +1,18 @@
 import { redirect } from "next/navigation";
 import {
-  BarChart3,
-  Copy,
-  Download,
-  Edit,
-  ExternalLink,
   Filter,
   Globe,
   Link2,
-  MoreHorizontal,
   Plus,
   QrCode,
   Search,
-  Trash2,
 } from "lucide-react";
 import { auth } from "@/lib/auth";
 import { listLinksByUserId, type ListedLink } from "@/lib/db/queries/links";
-import {
-  getQrDownloadFilename,
-  getQrDownloadHref,
-} from "@/lib/qr/downloads";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ButtonLink } from "@/components/ui/button-link";
 import { Card, CardContent } from "@/components/ui/card";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import {
   Table,
@@ -41,6 +23,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { EmptyState } from "@/components/dashboard/empty-state";
+import { LinkActions } from "@/app/(dashboard)/links/link-actions";
 import { LinkPagePreviewDialog } from "@/app/(dashboard)/links/link-page-preview-dialog";
 import {
   getLinksSearchQuery,
@@ -139,58 +122,11 @@ function LinkRows({ links }: { links: ListedLink[] }) {
             />
           </TableCell>
           <TableCell>
-            <DropdownMenu>
-              <DropdownMenuTrigger
-                className="inline-flex size-8 items-center justify-center rounded-lg text-muted-foreground outline-none transition-colors hover:bg-muted hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50"
-              >
-                <MoreHorizontal className="size-4" />
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-48">
-                <DropdownMenuItem>
-                  <Edit className="mr-2 size-4" />
-                  Edit
-                </DropdownMenuItem>
-                <DropdownMenuItem>
-                  <ExternalLink className="mr-2 size-4" />
-                  Open
-                </DropdownMenuItem>
-                <DropdownMenuItem>
-                  <Copy className="mr-2 size-4" />
-                  Copy URL
-                </DropdownMenuItem>
-                <DropdownMenuItem>
-                  <a
-                    aria-label={`Download PNG QR for ${link.slug}`}
-                    className="flex w-full items-center gap-1.5"
-                    download={getQrDownloadFilename(link.slug, "png")}
-                    href={getQrDownloadHref(link.slug, "png")}
-                  >
-                    <Download className="mr-2 size-4" />
-                    Download QR PNG
-                  </a>
-                </DropdownMenuItem>
-                <DropdownMenuItem>
-                  <a
-                    aria-label={`Download SVG QR for ${link.slug}`}
-                    className="flex w-full items-center gap-1.5"
-                    download={getQrDownloadFilename(link.slug, "svg")}
-                    href={getQrDownloadHref(link.slug, "svg")}
-                  >
-                    <Download className="mr-2 size-4" />
-                    Download QR SVG
-                  </a>
-                </DropdownMenuItem>
-                <DropdownMenuItem>
-                  <BarChart3 className="mr-2 size-4" />
-                  Analytics
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem className="text-destructive">
-                  <Trash2 className="mr-2 size-4" />
-                  Delete
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <LinkActions
+              id={link.id}
+              shortUrl={getShortUrl(link.slug)}
+              slug={link.slug}
+            />
           </TableCell>
         </TableRow>
       ))}

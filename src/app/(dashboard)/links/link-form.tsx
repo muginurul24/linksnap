@@ -12,6 +12,7 @@ import {
   Trash2,
 } from "lucide-react";
 import { toast } from "sonner";
+import { DeleteConfirmationDialog } from "@/components/dashboard/delete-confirmation-dialog";
 import { Button } from "@/components/ui/button";
 import { RuleBuilder } from "@/components/smart-rules/rule-builder";
 import {
@@ -21,16 +22,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import {
-  Dialog,
-  DialogClose,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
@@ -834,42 +825,24 @@ export function CreateLinkForm({ initialLink, userPlan }: LinkFormProps) {
 
           <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-between">
             {isEditMode ? (
-              <Dialog open={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
-                <DialogTrigger
-                  render={
-                    <Button type="button" variant="destructive" disabled={isSubmitting} />
-                  }
+              <>
+                <Button
+                  disabled={isSubmitting}
+                  onClick={() => setIsDeleteOpen(true)}
+                  type="button"
+                  variant="destructive"
                 >
                   <Trash2 className="size-4" />
                   Delete link
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>Delete link</DialogTitle>
-                    <DialogDescription>
-                      This disables the short link and removes it from active use.
-                    </DialogDescription>
-                  </DialogHeader>
-                  <DialogFooter>
-                    <DialogClose render={<Button type="button" variant="outline" />}>
-                      Cancel
-                    </DialogClose>
-                    <Button
-                      type="button"
-                      variant="destructive"
-                      onClick={() => void handleDelete()}
-                      disabled={isDeleting}
-                    >
-                      {isDeleting ? (
-                        <Loader2 className="size-4 animate-spin" />
-                      ) : (
-                        <Trash2 className="size-4" />
-                      )}
-                      Delete
-                    </Button>
-                  </DialogFooter>
-                </DialogContent>
-              </Dialog>
+                </Button>
+                <DeleteConfirmationDialog
+                  isDeleting={isDeleting}
+                  name={`/${initialLink.slug}`}
+                  onConfirm={() => void handleDelete()}
+                  onOpenChange={setIsDeleteOpen}
+                  open={isDeleteOpen}
+                />
+              </>
             ) : (
               <span />
             )}

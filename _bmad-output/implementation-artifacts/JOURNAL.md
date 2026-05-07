@@ -4504,6 +4504,46 @@ Updated the dashboard analytics zero-click empty state to use the requested copy
 
 **Next Task:** 15.8 — Confirm Before Delete (All Delete Actions)
 
+### 15.8 — Confirm Before Delete (All Delete Actions)
+- **Date:** 2026-05-07 21:07 GMT+7
+- **Duration:** 0 hours 25 minutes
+- **Status:** ✅ Complete
+
+**What I Did:**
+Added a shared delete confirmation dialog with the required destructive copy and wired it into link list deletion, campaign deletion, API key revocation, and the edit-link delete action. The link list now has a real client-side delete action that calls the existing owned-link DELETE endpoint only after confirmation.
+
+**Files Changed:**
+- `_bmad-output/planning-artifacts/spec-phase-15-delete-confirmations.md` — Added the delete confirmation mini-spec.
+- `src/components/dashboard/delete-confirmation-dialog.tsx` — Added shared confirmation dialog and testable content helper.
+- `src/app/(dashboard)/links/link-actions.tsx` — Added link list actions with copy/open/download/analytics/delete behavior.
+- `src/app/(dashboard)/links/page.tsx` — Replaced static link dropdown markup with `LinkActions`.
+- `src/app/(dashboard)/links/link-form.tsx` — Reused the shared confirmation dialog for edit-link deletion.
+- `src/app/(dashboard)/campaigns/campaign-actions.tsx` — Reused the shared confirmation dialog for campaign deletion.
+- `src/app/(dashboard)/settings/api-keys-panel.tsx` — Added confirmation before API key revocation.
+- `tests/unit/delete-confirmation-dialog.test.tsx` — Added dialog copy and confirm-callback coverage.
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Checked off Task 15.8.
+- `_bmad-output/implementation-artifacts/JOURNAL.md` — Recorded this completion entry.
+
+**Decisions Made:**
+- Centralized destructive confirmation copy so future delete actions use the same title, irreversible warning, and Cancel/Delete actions.
+- Kept API ownership checks untouched; dialogs only prevent accidental client-side clicks.
+
+**Tests:**
+- ✅ Unit: `rtk bun run test -- tests/unit/delete-confirmation-dialog.test.tsx` — 1 file passed, 2 tests passed.
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Unit/Integration: `rtk bun run test` — 102 files passed, 463 tests passed.
+
+**Issues Encountered:**
+- Base UI dialog content renders through a portal and requires dialog context, so the unit test uses the shared inner content helper for deterministic copy/callback coverage.
+
+**Security Checks:**
+- ✅ Destructive requests still go through authenticated, owner-checked API routes.
+- ✅ All client DELETE calls include `X-Requested-With` for the CSRF guard.
+- ✅ No secrets, raw SQL, or unsafe rendering introduced.
+
+**Next Task:** 15.9 — Loading State for All Interactive Actions
+
 ### 13.3 — Rule Engine Logic (Ordered Priority)
 - **Date:** 2026-05-07 18:41 GMT+7
 - **Duration:** 0h 30m

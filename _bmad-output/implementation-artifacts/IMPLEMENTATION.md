@@ -1163,15 +1163,15 @@ rtk bun run db:studio    # Open Drizzle Studio (in another terminal)
 - [x] Tests: unit (empty state rendering)
 
 ### TASK 15.8 — Confirm Before Delete (All Delete Actions)
-- [ ] File: `src/app/(dashboard)/links/page.tsx` — delete link action
-- [ ] File: `src/app/(dashboard)/campaigns/campaign-actions.tsx` — delete campaign
-- [ ] File: `src/app/(dashboard)/settings/api-keys-panel.tsx` — revoke API key
-- [ ] All delete actions must show a confirmation dialog (already using shadcn Dialog):
+- [x] File: `src/app/(dashboard)/links/page.tsx` — delete link action
+- [x] File: `src/app/(dashboard)/campaigns/campaign-actions.tsx` — delete campaign
+- [x] File: `src/app/(dashboard)/settings/api-keys-panel.tsx` — revoke API key
+- [x] All delete actions must show a confirmation dialog (already using shadcn Dialog):
   - "Are you sure you want to delete [name]?"
   - "This action cannot be undone."
   - Cancel + Delete buttons
-- [ ] Verify: existing delete confirmations work, add where missing
-- [ ] Tests: unit (dialog renders, confirm/cancel callbacks)
+- [x] Verify: existing delete confirmations work, add where missing
+- [x] Tests: unit (dialog renders, confirm/cancel callbacks)
 
 ### TASK 15.9 — Loading State for All Interactive Actions
 - [ ] Scan all forms across the app for missing loading states:

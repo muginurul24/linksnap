@@ -3,7 +3,15 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { BarChart3, Edit, MoreHorizontal, Trash2 } from "lucide-react";
+import {
+  BarChart3,
+  Copy,
+  Download,
+  Edit,
+  ExternalLink,
+  MoreHorizontal,
+  Trash2,
+} from "lucide-react";
 import { toast } from "sonner";
 import { DeleteConfirmationDialog } from "@/components/dashboard/delete-confirmation-dialog";
 import { Button } from "@/components/ui/button";
@@ -14,10 +22,15 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  getQrDownloadFilename,
+  getQrDownloadHref,
+} from "@/lib/qr/downloads";
 
-type CampaignActionsProps = {
+type LinkActionsProps = {
   id: string;
-  name: string;
+  shortUrl: string;
+  slug: string;
 };
 
 type ApiEnvelope<T> =
@@ -51,15 +64,20 @@ function apiErrorMessage(
   }
 
   const messages: Record<string, string> = {
-    CAMPAIGN_NOT_FOUND: "Campaign not found.",
-    FORBIDDEN: "You do not have access to this campaign.",
+    FORBIDDEN: "You do not have access to this link.",
+    LINK_NOT_FOUND: "Link not found.",
     RATE_LIMITED: "Too many requests. Try again later.",
   };
 
-  return messages[code] ?? fallback ?? "Unable to delete campaign.";
+  return messages[code] ?? fallback ?? "Unable to delete link.";
 }
 
-export function CampaignActions({ id, name }: CampaignActionsProps) {
+async function copyToClipboard(value: string): Promise<void> {
+  await navigator.clipboard.writeText(value);
+  toast.success("Copied.");
+}
+
+export function LinkActions({ id, shortUrl, slug }: LinkActionsProps) {
   const router = useRouter();
   const [isDeleting, setIsDeleting] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
@@ -68,7 +86,7 @@ export function CampaignActions({ id, name }: CampaignActionsProps) {
     setIsDeleting(true);
 
     try {
-      const response = await fetch(`/api/v1/campaigns/${id}`, {
+      const response = await fetch(`/api/v1/links/${id}`, {
         headers: {
           "X-Requested-With": "XMLHttpRequest",
         },
@@ -86,11 +104,11 @@ export function CampaignActions({ id, name }: CampaignActionsProps) {
         return;
       }
 
-      toast.success("Campaign deleted.", { description: name });
+      toast.success("Link deleted.", { description: `/${slug}` });
       setIsDeleteOpen(false);
       router.refresh();
     } catch {
-      toast.error("Unable to reach the campaign service.");
+      toast.error("Unable to reach the link service.");
     } finally {
       setIsDeleting(false);
     }
@@ -104,10 +122,44 @@ export function CampaignActions({ id, name }: CampaignActionsProps) {
         >
           <MoreHorizontal className="size-4" />
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end">
-          <DropdownMenuItem render={<Link href={`/campaigns/${id}/edit`} />}>
+        <DropdownMenuContent align="end" className="w-48">
+          <DropdownMenuItem render={<Link href={`/links/${slug}/edit`} />}>
             <Edit className="mr-2 size-4" />
             Edit
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            render={<a href={shortUrl} rel="noreferrer" target="_blank" />}
+          >
+            <ExternalLink className="mr-2 size-4" />
+            Open
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => void copyToClipboard(shortUrl)}>
+            <Copy className="mr-2 size-4" />
+            Copy URL
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            render={
+              <a
+                aria-label={`Download PNG QR for ${slug}`}
+                download={getQrDownloadFilename(slug, "png")}
+                href={getQrDownloadHref(slug, "png")}
+              />
+            }
+          >
+            <Download className="mr-2 size-4" />
+            Download QR PNG
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            render={
+              <a
+                aria-label={`Download SVG QR for ${slug}`}
+                download={getQrDownloadFilename(slug, "svg")}
+                href={getQrDownloadHref(slug, "svg")}
+              />
+            }
+          >
+            <Download className="mr-2 size-4" />
+            Download QR SVG
           </DropdownMenuItem>
           <DropdownMenuItem render={<Link href="/analytics" />}>
             <BarChart3 className="mr-2 size-4" />
@@ -126,7 +178,7 @@ export function CampaignActions({ id, name }: CampaignActionsProps) {
 
       <DeleteConfirmationDialog
         isDeleting={isDeleting}
-        name={name}
+        name={`/${slug}`}
         onConfirm={() => void handleDelete()}
         onOpenChange={setIsDeleteOpen}
         open={isDeleteOpen}
