@@ -1214,17 +1214,17 @@ rtk bun run db:studio    # Open Drizzle Studio (in another terminal)
 ### TASK 15.13 — Apply PlanGate to ALL Gated Features
 > **Principle:** Never show an error after the fact. Disable the control upfront with a clear reason and upgrade path.
 
-- [ ] Pass `userPlan` to `CreateLinkForm` from `NewLinkPage` and `EditLinkPage`
-- [ ] Apply `PlanGate` to custom slug input (FREE users)
-- [ ] Apply `PlanGate` to "Enable Link Page" toggle (FREE users)
-- [ ] Apply `PlanGate` to "Enable Smart Rules" toggle (FREE users)
-- [ ] Apply `PlanGate.Quota` to "Enable Link Page" toggle when quota exhausted (PRO/BUSINESS with quota)
-- [ ] Apply `PlanGate.Quota` to "Enable Smart Rules" toggle when quota exhausted
-- [ ] Apply `PlanGate.Quota` to "New Campaign" button on `/campaigns` page (when quota reached)
-- [ ] Apply `PlanGate` to "API Keys" tab content in Settings (FREE users already gated via upgrade prompt, but make input area use PlanGate for consistency)
-- [ ] Apply `PlanGate` to "API Docs" sidebar nav item (already hidden for FREE — verify it works)
-- [ ] Scan ALL pages for any remaining plan-gated features without proper UX gating
-- [ ] Tests: unit (each gated control renders correctly per plan), integration (full flow with FREE user hitting gates)
+- [x] Pass `userPlan` to `CreateLinkForm` from `NewLinkPage` and `EditLinkPage`
+- [x] Apply `PlanGate` to custom slug input (FREE users)
+- [x] Apply `PlanGate` to "Enable Link Page" toggle (FREE users)
+- [x] Apply `PlanGate` to "Enable Smart Rules" toggle (FREE users)
+- [x] Apply `PlanGate.Quota` to "Enable Link Page" toggle when quota exhausted (PRO/BUSINESS with quota)
+- [x] Apply `PlanGate.Quota` to "Enable Smart Rules" toggle when quota exhausted
+- [x] Apply `PlanGate.Quota` to "New Campaign" button on `/campaigns` page (when quota reached)
+- [x] Apply `PlanGate` to "API Keys" tab content in Settings (FREE users already gated via upgrade prompt, but make input area use PlanGate for consistency)
+- [x] Apply `PlanGate` to "API Docs" sidebar nav item (already hidden for FREE — verify it works)
+- [x] Scan ALL pages for any remaining plan-gated features without proper UX gating
+- [x] Tests: unit (each gated control renders correctly per plan), integration (full flow with FREE user hitting gates)
 
 ### TASK 15.14 — Pass userPlan Through Dashboard Hierarchy
 - [ ] `DashboardLayout` already has `billingUser.plan` — pass to `AppSidebar` (✅ done) and `AppHeader`

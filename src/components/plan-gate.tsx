@@ -23,6 +23,8 @@ type DisableableProps = {
   checked?: unknown;
   defaultChecked?: unknown;
   defaultValue?: unknown;
+  href?: unknown;
+  tabIndex?: number;
   "aria-disabled"?: boolean;
 };
 
@@ -59,6 +61,7 @@ function isLikelyInteractiveCustomElement(props: DisableableProps): boolean {
     "checked" in props ||
     "defaultChecked" in props ||
     "defaultValue" in props ||
+    "href" in props ||
     "name" in props ||
     Boolean(props.type) ||
     Boolean(props.id)
@@ -85,6 +88,7 @@ function disableInteractiveChildren(children: ReactNode): ReactNode {
       ? {
           "aria-disabled": true,
           disabled: true,
+          tabIndex: -1,
         }
       : {};
 

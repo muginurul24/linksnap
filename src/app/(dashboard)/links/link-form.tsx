@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, type ReactNode, useEffect, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   AlertCircle,
@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { DeleteConfirmationDialog } from "@/components/dashboard/delete-confirmation-dialog";
+import { PlanGate } from "@/components/plan-gate";
 import { Button } from "@/components/ui/button";
 import { RuleBuilder } from "@/components/smart-rules/rule-builder";
 import {
@@ -48,7 +49,12 @@ import {
   type CreateLinkInput,
 } from "@/lib/validations/link";
 import { upsertLinkPageSchema } from "@/lib/validations/link-page";
-import type { UserPlan } from "@/lib/links/limits";
+import {
+  canUseCustomSlug,
+  getLinkPageQuota,
+  getSmartRuleQuota,
+  type UserPlan,
+} from "@/lib/links/limits";
 
 type LinkFormField = Extract<keyof CreateLinkInput, string>;
 type LinkFormValues = {
@@ -129,8 +135,20 @@ export type EditableLinkInitialData = {
 
 type LinkFormProps = {
   initialLink?: EditableLinkInitialData;
+  linkPageCount?: number;
   userPlan: UserPlan;
 };
+
+const CUSTOM_SLUG_UPGRADE_MESSAGE =
+  "Custom slugs require Pro or Business plan.";
+const LINK_PAGE_UPGRADE_MESSAGE = "Link Pages require Pro or Business plan.";
+const LINK_PAGE_QUOTA_MESSAGE =
+  "Link Page quota reached. Upgrade for more Link Pages.";
+const SMART_RULES_UPGRADE_MESSAGE =
+  "Smart Rules require Pro or Business plan.";
+const SMART_RULES_QUOTA_MESSAGE =
+  "Smart Rule quota reached. Upgrade for more Smart Rules.";
+const BILLING_UPGRADE_URL = "/settings/billing";
 
 const initialSlugState: SlugState = { status: "idle" };
 
@@ -243,26 +261,6 @@ export function getPlanGatedToggleState({
   };
 }
 
-function GatedToggle({
-  children,
-  message,
-}: {
-  children: ReactNode;
-  message?: string;
-}) {
-  if (!message) return <>{children}</>;
-
-  return (
-    <span
-      aria-label={message}
-      className="inline-flex cursor-not-allowed opacity-60"
-      title={message}
-    >
-      {children}
-    </span>
-  );
-}
-
 export function getLinkSubmitSuccessFeedback({
   isEditMode,
   shortUrl,
@@ -277,7 +275,11 @@ export function getLinkSubmitSuccessFeedback({
   };
 }
 
-export function CreateLinkForm({ initialLink, userPlan }: LinkFormProps) {
+export function CreateLinkForm({
+  initialLink,
+  linkPageCount = 0,
+  userPlan,
+}: LinkFormProps) {
   const router = useRouter();
   const isEditMode = initialLink !== undefined;
   const initialLinkPage = initialLink?.linkPage;
@@ -323,16 +325,21 @@ export function CreateLinkForm({ initialLink, userPlan }: LinkFormProps) {
   const safeCtaColor = /^#[0-9a-fA-F]{6}$/.test(linkPageCtaColor)
     ? linkPageCtaColor
     : "#111827";
-  const linkPageToggle = getPlanGatedToggleState({
-    feature: "LINK_PAGE",
-    isSubmitting,
-    userPlan,
-  });
-  const smartRulesToggle = getPlanGatedToggleState({
-    feature: "SMART_RULES",
-    isSubmitting,
-    userPlan,
-  });
+  const customSlugAllowed = canUseCustomSlug(userPlan);
+  const linkPageLimit = getLinkPageQuota(userPlan);
+  const linkPageCountsExistingSlot = Boolean(initialLink?.hasLinkPage || initialLinkPage);
+  const linkPageQuotaUsed = linkPageCountsExistingSlot
+    ? Math.max(0, linkPageCount - 1)
+    : linkPageCount;
+  const linkPagePlanAllowed = userPlan !== "FREE";
+  const linkPageQuotaAvailable = linkPageQuotaUsed < linkPageLimit;
+  const smartRulesLimit = getSmartRuleQuota(userPlan);
+  const smartRulesPlanAllowed = userPlan !== "FREE";
+  const smartRulesQuotaUsedForToggle = enableSmartRules
+    ? Math.max(0, smartRulesValue.rules.length - 1)
+    : smartRulesValue.rules.length;
+  const smartRulesQuotaAvailable =
+    smartRulesQuotaUsedForToggle < smartRulesLimit;
 
   const currentFieldValues = (): LinkFormValues => ({
     destinationUrl,
@@ -684,23 +691,29 @@ export function CreateLinkForm({ initialLink, userPlan }: LinkFormProps) {
           </div>
 
           <div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
-            <div className="space-y-1.5">
-              <Label htmlFor="slug">Custom slug</Label>
-              <Input
-                id="slug"
-                inputMode="url"
-                placeholder="promo-2026"
-                value={slug}
-                onChange={(event) => updateSlug(event.target.value)}
-                onBlur={() => validateField("slug")}
-                aria-invalid={Boolean(fieldErrors.slug)}
-                disabled={isSubmitting}
-              />
-              <SlugStatusMessage state={slugState} />
-              {fieldErrors.slug && (
-                <p className="text-xs text-destructive">{fieldErrors.slug}</p>
-              )}
-            </div>
+            <PlanGate
+              allowed={customSlugAllowed}
+              upgradeMessage={CUSTOM_SLUG_UPGRADE_MESSAGE}
+              upgradeUrl={`${BILLING_UPGRADE_URL}?upgrade=custom-slug`}
+            >
+              <div className="space-y-1.5">
+                <Label htmlFor="slug">Custom slug</Label>
+                <Input
+                  id="slug"
+                  inputMode="url"
+                  placeholder="promo-2026"
+                  value={slug}
+                  onChange={(event) => updateSlug(event.target.value)}
+                  onBlur={() => validateField("slug")}
+                  aria-invalid={Boolean(fieldErrors.slug)}
+                  disabled={isSubmitting || !customSlugAllowed}
+                />
+                <SlugStatusMessage state={slugState} />
+                {fieldErrors.slug && (
+                  <p className="text-xs text-destructive">{fieldErrors.slug}</p>
+                )}
+              </div>
+            </PlanGate>
 
             <div className="space-y-1.5">
               <Label htmlFor="title">Title</Label>
@@ -725,128 +738,169 @@ export function CreateLinkForm({ initialLink, userPlan }: LinkFormProps) {
             </div>
           </div>
 
-          <div className="space-y-3 rounded-lg border border-border p-3">
-            <div className="flex items-center justify-between gap-3">
-              <div className="flex min-w-0 items-center gap-2">
-                <Globe2 className="size-4 text-muted-foreground" />
-                <Label htmlFor="enableLinkPage">Enable Link Page</Label>
-              </div>
-              <GatedToggle message={linkPageToggle.message}>
-                <Switch
-                  id="enableLinkPage"
-                  checked={enableLinkPage}
-                  onCheckedChange={(checked) => {
-                    if (linkPageToggle.disabled) return;
-                    setEnableLinkPage(checked);
-                  }}
-                  disabled={linkPageToggle.disabled}
-                />
-              </GatedToggle>
-            </div>
-            {linkPageToggle.message && (
-              <p className="text-xs text-muted-foreground">
-                {linkPageToggle.message}
-              </p>
-            )}
-
-            {enableLinkPage && (
-              <div className="grid gap-3 pt-1 sm:grid-cols-2">
-                <div className="space-y-1.5">
-                  <Label htmlFor="linkPageBrandName">Brand name</Label>
-                  <Input
-                    id="linkPageBrandName"
-                    value={linkPageBrandName}
-                    onChange={(event) => setLinkPageBrandName(event.target.value)}
-                    disabled={isSubmitting}
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <Label htmlFor="linkPageTitle">Page title</Label>
-                  <Input
-                    id="linkPageTitle"
-                    value={linkPageTitle}
-                    onChange={(event) => setLinkPageTitle(event.target.value)}
-                    disabled={isSubmitting}
-                  />
-                </div>
-                <div className="space-y-1.5 sm:col-span-2">
-                  <Label htmlFor="linkPageDescription">Description</Label>
-                  <textarea
-                    id="linkPageDescription"
-                    className="min-h-20 w-full resize-y rounded-lg border border-input bg-transparent px-2.5 py-2 text-sm outline-none transition-colors placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:pointer-events-none disabled:cursor-not-allowed disabled:bg-input/50 disabled:opacity-50 dark:bg-input/30"
-                    value={linkPageDescription}
-                    onChange={(event) => setLinkPageDescription(event.target.value)}
-                    disabled={isSubmitting}
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <Label htmlFor="linkPageCtaText">CTA text</Label>
-                  <Input
-                    id="linkPageCtaText"
-                    value={linkPageCtaText}
-                    onChange={(event) => setLinkPageCtaText(event.target.value)}
-                    disabled={isSubmitting}
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <Label htmlFor="linkPageCtaColor">CTA color</Label>
-                  <div className="flex gap-2">
-                    <Input
-                      id="linkPageCtaColor"
-                      type="color"
-                      className="w-12 p-1"
-                      value={linkPageCtaColor}
-                      onChange={(event) => setLinkPageCtaColor(event.target.value)}
-                      disabled={isSubmitting}
-                    />
-                    <Input
-                      value={linkPageCtaColor}
-                      onChange={(event) => setLinkPageCtaColor(event.target.value)}
+          <PlanGate
+            allowed={linkPagePlanAllowed}
+            upgradeMessage={LINK_PAGE_UPGRADE_MESSAGE}
+            upgradeUrl={`${BILLING_UPGRADE_URL}?upgrade=link-pages`}
+          >
+            <PlanGate.Quota
+              limit={linkPageLimit}
+              used={linkPageQuotaUsed}
+              upgradeMessage={LINK_PAGE_QUOTA_MESSAGE}
+              upgradeUrl={`${BILLING_UPGRADE_URL}?upgrade=link-pages`}
+            >
+              <div className="space-y-3 rounded-lg border border-border p-3">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex min-w-0 items-center gap-2">
+                    <Globe2 className="size-4 text-muted-foreground" />
+                    <Label htmlFor="enableLinkPage">Enable Link Page</Label>
+                  </div>
+                  <div className="inline-flex">
+                    <Switch
+                      id="enableLinkPage"
+                      checked={enableLinkPage}
+                      onCheckedChange={(checked) => {
+                        if (
+                          isSubmitting ||
+                          !linkPagePlanAllowed ||
+                          !linkPageQuotaAvailable
+                        ) {
+                          return;
+                        }
+                        setEnableLinkPage(checked);
+                      }}
                       disabled={isSubmitting}
                     />
                   </div>
                 </div>
-              </div>
-            )}
-          </div>
 
-          <div className="space-y-3 rounded-lg border border-border p-3">
-            <div className="flex items-center justify-between gap-3">
-              <div className="flex min-w-0 items-center gap-2">
-                <Route className="size-4 text-muted-foreground" />
-                <Label htmlFor="enableSmartRules">Enable Smart Rules</Label>
+                {enableLinkPage && (
+                  <div className="grid gap-3 pt-1 sm:grid-cols-2">
+                    <div className="space-y-1.5">
+                      <Label htmlFor="linkPageBrandName">Brand name</Label>
+                      <Input
+                        id="linkPageBrandName"
+                        value={linkPageBrandName}
+                        onChange={(event) =>
+                          setLinkPageBrandName(event.target.value)
+                        }
+                        disabled={isSubmitting}
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="linkPageTitle">Page title</Label>
+                      <Input
+                        id="linkPageTitle"
+                        value={linkPageTitle}
+                        onChange={(event) => setLinkPageTitle(event.target.value)}
+                        disabled={isSubmitting}
+                      />
+                    </div>
+                    <div className="space-y-1.5 sm:col-span-2">
+                      <Label htmlFor="linkPageDescription">Description</Label>
+                      <textarea
+                        id="linkPageDescription"
+                        className="min-h-20 w-full resize-y rounded-lg border border-input bg-transparent px-2.5 py-2 text-sm outline-none transition-colors placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:pointer-events-none disabled:cursor-not-allowed disabled:bg-input/50 disabled:opacity-50 dark:bg-input/30"
+                        value={linkPageDescription}
+                        onChange={(event) =>
+                          setLinkPageDescription(event.target.value)
+                        }
+                        disabled={isSubmitting}
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="linkPageCtaText">CTA text</Label>
+                      <Input
+                        id="linkPageCtaText"
+                        value={linkPageCtaText}
+                        onChange={(event) => setLinkPageCtaText(event.target.value)}
+                        disabled={isSubmitting}
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="linkPageCtaColor">CTA color</Label>
+                      <div className="flex gap-2">
+                        <Input
+                          id="linkPageCtaColor"
+                          type="color"
+                          className="w-12 p-1"
+                          value={linkPageCtaColor}
+                          onChange={(event) =>
+                            setLinkPageCtaColor(event.target.value)
+                          }
+                          disabled={isSubmitting}
+                        />
+                        <Input
+                          value={linkPageCtaColor}
+                          onChange={(event) =>
+                            setLinkPageCtaColor(event.target.value)
+                          }
+                          disabled={isSubmitting}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
-              <GatedToggle message={smartRulesToggle.message}>
-                <Switch
-                  id="enableSmartRules"
-                  checked={enableSmartRules}
-                  onCheckedChange={(checked) => {
-                    if (smartRulesToggle.disabled) return;
-                    setEnableSmartRules(checked);
-                  }}
-                  disabled={smartRulesToggle.disabled}
-                />
-              </GatedToggle>
-            </div>
-            {smartRulesToggle.message && (
-              <p className="text-xs text-muted-foreground">
-                {smartRulesToggle.message}
-              </p>
-            )}
+            </PlanGate.Quota>
+          </PlanGate>
 
-            {enableSmartRules && (
-              <RuleBuilder
-                className="pt-1"
-                defaultDestinationUrl={destinationUrl}
-                disabled={isSubmitting}
-                value={smartRulesValue}
-                onChange={(value) => {
-                  setSmartRulesValue(value);
-                  setFormError(null);
-                }}
-              />
-            )}
-          </div>
+          <PlanGate
+            allowed={smartRulesPlanAllowed}
+            upgradeMessage={SMART_RULES_UPGRADE_MESSAGE}
+            upgradeUrl={`${BILLING_UPGRADE_URL}?upgrade=smart-rules`}
+          >
+            <PlanGate.Quota
+              limit={smartRulesLimit}
+              used={smartRulesQuotaUsedForToggle}
+              upgradeMessage={SMART_RULES_QUOTA_MESSAGE}
+              upgradeUrl={`${BILLING_UPGRADE_URL}?upgrade=smart-rules`}
+            >
+              <div className="space-y-3 rounded-lg border border-border p-3">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex min-w-0 items-center gap-2">
+                    <Route className="size-4 text-muted-foreground" />
+                    <Label htmlFor="enableSmartRules">Enable Smart Rules</Label>
+                  </div>
+                  <div className="inline-flex">
+                    <Switch
+                      id="enableSmartRules"
+                      checked={enableSmartRules}
+                      onCheckedChange={(checked) => {
+                        if (
+                          isSubmitting ||
+                          !smartRulesPlanAllowed ||
+                          !smartRulesQuotaAvailable
+                        ) {
+                          return;
+                        }
+                        setEnableSmartRules(checked);
+                      }}
+                      disabled={isSubmitting}
+                    />
+                  </div>
+                </div>
+
+                {enableSmartRules && (
+                  <RuleBuilder
+                    className="pt-1"
+                    defaultDestinationUrl={destinationUrl}
+                    disabled={isSubmitting}
+                    quota={{
+                      limit: smartRulesLimit,
+                      upgradeMessage: SMART_RULES_QUOTA_MESSAGE,
+                      upgradeUrl: `${BILLING_UPGRADE_URL}?upgrade=smart-rules`,
+                    }}
+                    value={smartRulesValue}
+                    onChange={(value) => {
+                      setSmartRulesValue(value);
+                      setFormError(null);
+                    }}
+                  />
+                )}
+              </div>
+            </PlanGate.Quota>
+          </PlanGate>
 
           {formError && (
             <div className="rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">

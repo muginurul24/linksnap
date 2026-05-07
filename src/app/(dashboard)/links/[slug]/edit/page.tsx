@@ -1,7 +1,10 @@
 import { notFound, redirect } from "next/navigation";
 import { BackNavigationLink } from "@/components/dashboard/back-navigation-link";
 import { auth } from "@/lib/auth";
-import { findEditableLinkBySlugForUser } from "@/lib/db/queries/links";
+import {
+  countLinkPagesByUserId,
+  findEditableLinkBySlugForUser,
+} from "@/lib/db/queries/links";
 import { findBillingUserById } from "@/lib/db/queries/payments";
 import { linkSlugParamsSchema } from "@/lib/validations/link";
 import {
@@ -47,9 +50,10 @@ export default async function EditLinkPage({ params }: EditLinkPageProps) {
     redirect(`/login?callbackUrl=/links/${parsedParams.data.slug}/edit`);
   }
 
-  const [link, billingUser] = await Promise.all([
+  const [link, billingUser, linkPageCount] = await Promise.all([
     findEditableLinkBySlugForUser(parsedParams.data.slug, userId),
     findBillingUserById(userId),
+    countLinkPagesByUserId(userId),
   ]);
   const initialLink = toInitialLink(link);
   const userPlan = billingUser?.plan ?? "FREE";
@@ -66,7 +70,11 @@ export default async function EditLinkPage({ params }: EditLinkPageProps) {
         </div>
       </div>
 
-      <CreateLinkForm initialLink={initialLink} userPlan={userPlan} />
+      <CreateLinkForm
+        initialLink={initialLink}
+        linkPageCount={linkPageCount}
+        userPlan={userPlan}
+      />
     </>
   );
 }

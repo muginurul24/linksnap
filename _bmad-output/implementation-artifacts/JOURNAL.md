@@ -5080,3 +5080,52 @@ Added and hardened E2E coverage for the core user paths: auth registration throu
 - ✅ No secrets, raw SQL, or `dangerouslySetInnerHTML` introduced.
 
 **Next Task:** 15.13 — Apply PlanGate to ALL Gated Features
+
+### 15.13 — Apply PlanGate to ALL Gated Features
+- **Date:** 2026-05-07 22:12 GMT+7
+- **Duration:** 0h 45m
+- **Status:** ✅ Complete
+
+**What I Did:**
+Applied upfront PlanGate and quota gates across paid/gated dashboard features. Custom slugs, Link Pages, Smart Rules, API keys, campaign creation, link creation, and QR downloads now present disabled upgrade/quota states before users submit or click into an API error.
+
+**Files Changed:**
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Checked off Task 15.13.
+- `src/components/plan-gate.tsx` — Made locked links/anchors keyboard-inert with `aria-disabled` and `tabIndex`.
+- `src/app/(dashboard)/links/link-form.tsx` — Replaced ad hoc toggle gating with PlanGate, added custom slug and Link Page quota gates, and passed Smart Rule quota to the builder.
+- `src/components/smart-rules/rule-builder.tsx` — Added quota-aware PlanGate around the Add Rule control.
+- `src/app/(dashboard)/links/new/page.tsx` — Passed Link Page usage into the link form.
+- `src/app/(dashboard)/links/[slug]/edit/page.tsx` — Passed Link Page usage into edit form while allowing existing Link Pages at quota.
+- `src/app/(dashboard)/links/page.tsx` — Added Create Link quota gate.
+- `src/app/(dashboard)/links/link-plan-gates.ts` — Added pure link quota state helper.
+- `src/app/(dashboard)/campaigns/page.tsx` — Added New Campaign quota gate.
+- `src/app/(dashboard)/campaigns/campaign-plan-gates.ts` — Added pure campaign quota state helper.
+- `src/app/(dashboard)/qr/page.tsx` — Added QR download quota gate.
+- `src/app/(dashboard)/qr/qr-plan-gates.ts` — Added pure QR quota usage helper.
+- `src/app/(dashboard)/settings/api-keys-panel.tsx` — Wrapped API key creation controls in PlanGate for FREE users.
+- `tests/unit/link-form-plan-gates.test.tsx` — Added LinkForm PlanGate and quota coverage.
+- `tests/unit/dashboard-plan-gates.test.tsx` — Added API key, Smart Rule, link, campaign, and QR gate coverage.
+
+**Decisions Made:**
+- Kept API Docs hidden for FREE users and verified the existing sidebar behavior with unit coverage, matching the task note that it was already hidden.
+- Allowed editing an existing Link Page even when the user is at quota by subtracting that existing slot from the gate calculation.
+- Added QR and Create Link gates during the scan because their APIs already enforce quotas and they were still user-visible actions.
+
+**Tests:**
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Targeted Unit: `rtk bun run test -- tests/unit/link-form-plan-gates.test.tsx tests/unit/dashboard-plan-gates.test.tsx tests/unit/plan-gate.test.tsx tests/unit/app-sidebar.test.ts` — 4 files passed, 23 tests passed.
+- ✅ Unit/Integration: `rtk bun run test` — 106 files passed, 485 tests passed.
+- ✅ Full E2E: `rtk bun run test:e2e` — 16 tests passed.
+
+**Issues Encountered:**
+- Importing the server `campaigns/page.tsx` in unit tests pulled in NextAuth's server module resolution → Moved quota helper logic into a pure `campaign-plan-gates.ts` file.
+- The scan found additional quota-gated link creation and QR download controls beyond the explicit checklist → Added PlanGate coverage for both so the UX is consistent.
+
+**Security Checks:**
+- ✅ Gating is UI-only and does not weaken existing API-side plan, quota, ownership, or rate-limit enforcement.
+- ✅ No secrets, raw SQL, or `dangerouslySetInnerHTML` introduced.
+- ✅ Locked gated links are marked `aria-disabled` and removed from tab order.
+- ✅ Existing CSRF headers and authenticated dashboard flows remain unchanged.
+
+**Next Task:** 15.14 — Pass userPlan Through Dashboard Hierarchy

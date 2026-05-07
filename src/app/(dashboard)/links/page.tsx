@@ -7,8 +7,15 @@ import {
   QrCode,
   Search,
 } from "lucide-react";
+import { PlanGate } from "@/components/plan-gate";
 import { auth } from "@/lib/auth";
-import { listLinksByUserId, type ListedLink } from "@/lib/db/queries/links";
+import {
+  countLinksByUserId,
+  listLinksByUserId,
+  type ListedLink,
+} from "@/lib/db/queries/links";
+import { findBillingUserById } from "@/lib/db/queries/payments";
+import type { UserPlan } from "@/lib/links/limits";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ButtonLink } from "@/components/ui/button-link";
@@ -29,6 +36,7 @@ import {
   getLinksSearchQuery,
   LINKS_SEARCH_MAX_LENGTH,
 } from "@/lib/links/search";
+import { getLinkCreateQuotaState } from "./link-plan-gates";
 
 const PAGE_LIMIT = 20;
 
@@ -53,11 +61,17 @@ function getShortUrl(slug: string): string {
   return `${baseUrl || "https://www.justqiu.cloud"}/${slug}`;
 }
 
-function LinksEmptyState({ search }: { search?: string }) {
+function LinksEmptyState({
+  canCreateLink,
+  search,
+}: {
+  canCreateLink: boolean;
+  search?: string;
+}) {
   return (
     <EmptyState
-      actionHref="/links/new"
-      actionLabel="Create link"
+      actionHref={canCreateLink ? "/links/new" : undefined}
+      actionLabel={canCreateLink ? "Create link" : undefined}
       icon={<Link2 className="size-5" />}
       title={
         search
@@ -65,6 +79,30 @@ function LinksEmptyState({ search }: { search?: string }) {
           : "No links yet. Create your first short link!"
       }
     />
+  );
+}
+
+function CreateLinkButton({
+  linkCount,
+  userPlan,
+}: {
+  linkCount: number;
+  userPlan: UserPlan;
+}) {
+  const quota = getLinkCreateQuotaState({ linkCount, userPlan });
+
+  return (
+    <PlanGate.Quota
+      limit={quota.limit}
+      used={quota.used}
+      upgradeMessage="Link quota reached. Upgrade for more short links."
+      upgradeUrl="/settings/billing?upgrade=links"
+    >
+      <ButtonLink href="/links/new" size="sm" className="mt-2 sm:mt-0">
+        <Plus className="size-4" />
+        Create Link
+      </ButtonLink>
+    </PlanGate.Quota>
   );
 }
 
@@ -141,12 +179,20 @@ export default async function LinksPage({ searchParams }: LinksPageProps) {
 
   const params = await searchParams;
   const search = getLinksSearchQuery(params.search);
-  const { items: links } = await listLinksByUserId({
-    limit: PAGE_LIMIT,
-    page: 1,
-    search,
-    userId,
-  });
+  const [linkResult, linkCount, billingUser] = await Promise.all([
+    listLinksByUserId({
+      limit: PAGE_LIMIT,
+      page: 1,
+      search,
+      userId,
+    }),
+    countLinksByUserId(userId),
+    findBillingUserById(userId),
+  ]);
+  const { items: links } = linkResult;
+  const userPlan = billingUser?.plan ?? "FREE";
+  const createLinkQuota = getLinkCreateQuotaState({ linkCount, userPlan });
+  const canCreateLink = createLinkQuota.used < createLinkQuota.limit;
 
   return (
     <>
@@ -157,10 +203,7 @@ export default async function LinksPage({ searchParams }: LinksPageProps) {
             Manage your short links, smart rules, and link pages.
           </p>
         </div>
-        <ButtonLink href="/links/new" size="sm" className="mt-2 sm:mt-0">
-          <Plus className="size-4" />
-          Create Link
-        </ButtonLink>
+        <CreateLinkButton linkCount={linkCount} userPlan={userPlan} />
       </div>
 
       <form action="/links" className="flex flex-col gap-3 sm:flex-row">
@@ -181,7 +224,7 @@ export default async function LinksPage({ searchParams }: LinksPageProps) {
       </form>
 
       {links.length === 0 ? (
-        <LinksEmptyState search={search} />
+        <LinksEmptyState canCreateLink={canCreateLink} search={search} />
       ) : (
         <Card>
           <CardContent className="p-0">

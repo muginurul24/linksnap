@@ -2,11 +2,13 @@ import { redirect } from "next/navigation";
 import { Download, QrCode } from "lucide-react";
 import { auth } from "@/lib/auth";
 import { listLinksByUserId, type ListedLink } from "@/lib/db/queries/links";
+import { findBillingUserById } from "@/lib/db/queries/payments";
 import {
   getQrDownloadFilename,
   getQrDownloadHref,
   type QrDownloadFormat,
 } from "@/lib/qr/downloads";
+import { PlanGate } from "@/components/plan-gate";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import {
@@ -17,6 +19,8 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { EmptyState } from "@/components/dashboard/empty-state";
+import type { UserPlan } from "@/lib/links/limits";
+import { getQrDownloadQuotaState } from "./qr-plan-gates";
 
 const PAGE_LIMIT = 60;
 
@@ -66,7 +70,17 @@ function QrEmptyState() {
   );
 }
 
-function QrCodeCard({ link }: { link: ListedLink }) {
+function QrCodeCard({
+  link,
+  links,
+  userPlan,
+}: {
+  link: ListedLink;
+  links: readonly ListedLink[];
+  userPlan: UserPlan;
+}) {
+  const quota = getQrDownloadQuotaState({ link, links, userPlan });
+
   return (
     <Card>
       <CardHeader className="pb-3">
@@ -99,10 +113,17 @@ function QrCodeCard({ link }: { link: ListedLink }) {
             </Badge>
           </div>
         </div>
-        <div className="flex gap-2">
-          <DownloadButton format="png" slug={link.slug} />
-          <DownloadButton format="svg" slug={link.slug} />
-        </div>
+        <PlanGate.Quota
+          limit={quota.limit}
+          used={quota.used}
+          upgradeMessage="QR code quota reached. Upgrade for more QR codes."
+          upgradeUrl="/settings/billing?upgrade=qr-codes"
+        >
+          <div className="flex gap-2">
+            <DownloadButton format="png" slug={link.slug} />
+            <DownloadButton format="svg" slug={link.slug} />
+          </div>
+        </PlanGate.Quota>
       </CardContent>
     </Card>
   );
@@ -113,11 +134,16 @@ export default async function QrCodesPage() {
   const userId = getSessionUserId(session);
   if (!userId) redirect("/login?callbackUrl=/qr");
 
-  const { items: links } = await listLinksByUserId({
-    limit: PAGE_LIMIT,
-    page: 1,
-    userId,
-  });
+  const [linkResult, billingUser] = await Promise.all([
+    listLinksByUserId({
+      limit: PAGE_LIMIT,
+      page: 1,
+      userId,
+    }),
+    findBillingUserById(userId),
+  ]);
+  const { items: links } = linkResult;
+  const userPlan = billingUser?.plan ?? "FREE";
 
   return (
     <>
@@ -133,7 +159,12 @@ export default async function QrCodesPage() {
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {links.map((link) => (
-            <QrCodeCard key={link.id} link={link} />
+            <QrCodeCard
+              key={link.id}
+              link={link}
+              links={links}
+              userPlan={userPlan}
+            />
           ))}
         </div>
       )}

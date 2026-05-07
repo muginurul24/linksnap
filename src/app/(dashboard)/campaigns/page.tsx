@@ -7,6 +7,7 @@ import {
   TrendingUp,
 } from "lucide-react";
 import { EmptyState } from "@/components/dashboard/empty-state";
+import { PlanGate } from "@/components/plan-gate";
 import { Badge } from "@/components/ui/badge";
 import { ButtonLink } from "@/components/ui/button-link";
 import {
@@ -21,7 +22,10 @@ import {
   listCampaignsByUserId,
   type CampaignWithLinkCount,
 } from "@/lib/db/queries/campaigns";
+import { findBillingUserById } from "@/lib/db/queries/payments";
+import type { UserPlan } from "@/lib/links/limits";
 import { CampaignActions } from "./campaign-actions";
+import { getCampaignCreateQuotaState } from "./campaign-plan-gates";
 
 const PAGE_LIMIT = 50;
 
@@ -104,16 +108,45 @@ function CampaignCard({ campaign }: { campaign: CampaignWithLinkCount }) {
   );
 }
 
+function NewCampaignButton({
+  campaignCount,
+  userPlan,
+}: {
+  campaignCount: number;
+  userPlan: UserPlan;
+}) {
+  const quota = getCampaignCreateQuotaState({ campaignCount, userPlan });
+
+  return (
+    <PlanGate.Quota
+      limit={quota.limit}
+      used={quota.used}
+      upgradeMessage="Campaign quota reached. Upgrade for more campaigns."
+      upgradeUrl="/settings/billing?upgrade=campaigns"
+    >
+      <ButtonLink href="/campaigns/new" size="sm" className="mt-2 sm:mt-0">
+        <Plus className="size-4" />
+        New Campaign
+      </ButtonLink>
+    </PlanGate.Quota>
+  );
+}
+
 export default async function CampaignsPage() {
   const session = await auth();
   const userId = getSessionUserId(session);
   if (!userId) redirect("/login?callbackUrl=/campaigns");
 
-  const { items: campaigns } = await listCampaignsByUserId({
-    limit: PAGE_LIMIT,
-    page: 1,
-    userId,
-  });
+  const [campaignResult, billingUser] = await Promise.all([
+    listCampaignsByUserId({
+      limit: PAGE_LIMIT,
+      page: 1,
+      userId,
+    }),
+    findBillingUserById(userId),
+  ]);
+  const { items: campaigns, total: campaignCount } = campaignResult;
+  const userPlan = billingUser?.plan ?? "FREE";
 
   return (
     <>
@@ -124,10 +157,7 @@ export default async function CampaignsPage() {
             Group links into campaigns with auto UTM and unified analytics.
           </p>
         </div>
-        <ButtonLink href="/campaigns/new" size="sm" className="mt-2 sm:mt-0">
-          <Plus className="size-4" />
-          New Campaign
-        </ButtonLink>
+        <NewCampaignButton campaignCount={campaignCount} userPlan={userPlan} />
       </div>
 
       {campaigns.length === 0 ? (

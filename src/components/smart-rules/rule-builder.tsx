@@ -12,6 +12,7 @@ import {
   Trash2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { PlanGate } from "@/components/plan-gate";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
@@ -49,6 +50,11 @@ type RuleBuilderProps = {
   defaultDestinationUrl?: string;
   disabled?: boolean;
   onChange: (value: RuleBuilderValue) => void;
+  quota?: {
+    limit: number;
+    upgradeMessage: string;
+    upgradeUrl: string;
+  };
   value: RuleBuilderValue;
 };
 
@@ -255,6 +261,7 @@ export function RuleBuilder({
   defaultDestinationUrl,
   disabled = false,
   onChange,
+  quota,
   value,
 }: RuleBuilderProps) {
   const updateRule = (nextRule: SmartRuleBuilderRule) => {
@@ -377,15 +384,22 @@ export function RuleBuilder({
         ))}
       </div>
 
-      <Button
-        type="button"
-        variant="outline"
-        onClick={() => onChange(addRuleToBuilder(value))}
-        disabled={disabled}
+      <PlanGate.Quota
+        limit={quota?.limit ?? Number.POSITIVE_INFINITY}
+        used={quota ? value.rules.length : 0}
+        upgradeMessage={quota?.upgradeMessage ?? ""}
+        upgradeUrl={quota?.upgradeUrl ?? "#"}
       >
-        <Plus className="size-4" />
-        Add rule
-      </Button>
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => onChange(addRuleToBuilder(value))}
+          disabled={disabled}
+        >
+          <Plus className="size-4" />
+          Add rule
+        </Button>
+      </PlanGate.Quota>
 
       <div className="space-y-1.5 rounded-lg border border-border p-3">
         <Label htmlFor="smartRulesFallbackDestination">Default destination</Label>

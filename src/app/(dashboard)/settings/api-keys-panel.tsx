@@ -3,10 +3,10 @@
 import { useState } from "react";
 import { CheckCircle2, Copy, Key, Loader2, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import { PlanGate } from "@/components/plan-gate";
 import { Badge } from "@/components/ui/badge";
 import { DeleteConfirmationDialog } from "@/components/dashboard/delete-confirmation-dialog";
 import { Button } from "@/components/ui/button";
-import { ButtonLink } from "@/components/ui/button-link";
 import { Input } from "@/components/ui/input";
 import {
   Table,
@@ -153,54 +153,45 @@ export function ApiKeysPanel({ initialApiKeys, plan }: ApiKeysPanelProps) {
     }
   }
 
-  if (!canManageApiKeys(plan)) {
-    return (
-      <div className="rounded-lg border bg-muted/50 p-6 text-center">
-        <Key className="mx-auto mb-3 size-8 text-muted-foreground" />
-        <p className="text-sm font-medium">Upgrade to Pro to access API keys</p>
-        <p className="mt-1 text-xs text-muted-foreground">
-          API access is available on Pro and Business plans.
-        </p>
-        <ButtonLink
-          className="mt-4"
-          href="/settings/billing?upgrade=api-keys"
-          size="sm"
-          variant="outline"
-        >
-          Upgrade Plan
-        </ButtonLink>
-      </div>
-    );
-  }
+  const canCreateApiKeys = canManageApiKeys(plan);
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-col gap-2 sm:flex-row">
-        <label className="sr-only" htmlFor="api-key-name">
-          API key name
-        </label>
-        <Input
-          className="flex-1"
-          id="api-key-name"
-          maxLength={80}
-          onChange={(event) => setKeyName(event.target.value)}
-          placeholder="Production integration"
-          value={keyName}
-        />
-        <Button
-          disabled={isCreating || keyName.trim().length === 0}
-          onClick={() => void createApiKey()}
-          size="sm"
-          type="button"
-        >
-          {isCreating ? (
-            <Loader2 className="size-4 animate-spin" />
-          ) : (
-            <Plus className="size-4" />
-          )}
-          Create Key
-        </Button>
-      </div>
+      <PlanGate
+        allowed={canCreateApiKeys}
+        upgradeMessage="API key access requires Pro or Business plan."
+        upgradeUrl="/settings/billing?upgrade=api-keys"
+      >
+        <div className="flex flex-col gap-2 sm:flex-row">
+          <label className="sr-only" htmlFor="api-key-name">
+            API key name
+          </label>
+          <Input
+            className="flex-1"
+            disabled={!canCreateApiKeys}
+            id="api-key-name"
+            maxLength={80}
+            onChange={(event) => setKeyName(event.target.value)}
+            placeholder="Production integration"
+            value={keyName}
+          />
+          <Button
+            disabled={
+              !canCreateApiKeys || isCreating || keyName.trim().length === 0
+            }
+            onClick={() => void createApiKey()}
+            size="sm"
+            type="button"
+          >
+            {isCreating ? (
+              <Loader2 className="size-4 animate-spin" />
+            ) : (
+              <Plus className="size-4" />
+            )}
+            Create Key
+          </Button>
+        </div>
+      </PlanGate>
 
       {createdKey ? (
         <div className="rounded-lg border border-primary/30 bg-primary/5 p-3">
@@ -223,12 +214,14 @@ export function ApiKeysPanel({ initialApiKeys, plan }: ApiKeysPanelProps) {
         </div>
       ) : null}
 
-      {apiKeys.length === 0 ? (
+      {canCreateApiKeys && apiKeys.length === 0 ? (
         <div className="rounded-lg border border-dashed p-6 text-center">
           <Key className="mx-auto mb-3 size-8 text-muted-foreground" />
           <p className="text-sm font-medium">No API keys yet</p>
         </div>
-      ) : (
+      ) : null}
+
+      {apiKeys.length > 0 ? (
         <Table>
           <TableHeader>
             <TableRow>
@@ -270,7 +263,7 @@ export function ApiKeysPanel({ initialApiKeys, plan }: ApiKeysPanelProps) {
             ))}
           </TableBody>
         </Table>
-      )}
+      ) : null}
       <DeleteConfirmationDialog
         isDeleting={apiKeyToDelete ? deletingId === apiKeyToDelete.id : false}
         name={apiKeyToDelete?.name ?? "this API key"}
