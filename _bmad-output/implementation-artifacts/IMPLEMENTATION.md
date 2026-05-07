@@ -808,18 +808,18 @@ rtk bun run db:studio    # Open Drizzle Studio (in another terminal)
 - [x] Tests: integration (campaigns list API, create campaign flow)
 
 ### TASK 12.17 — Connect Analytics Dashboard to Real Data
-- [ ] File: `src/app/(dashboard)/analytics/page.tsx`
-- [ ] Make page `async` server component
-- [ ] Query real analytics from DB:
+- [x] File: `src/app/(dashboard)/analytics/page.tsx`
+- [x] Make page `async` server component
+- [x] Query real analytics from DB:
   - Daily click counts for last 7/30 days from `clickEvents`
   - Device breakdown (mobile/desktop/tablet) from `clickEvents.userAgent`
   - Top referrers from `clickEvents.referrer`
   - Top countries from `clickEvents.country`
-- [ ] Add date range picker (last 7 days, 30 days, 90 days, custom)
-- [ ] Add "Export CSV" button
-- [ ] Replace ALL empty mock arrays with real data
-- [ ] Add loading state (already has loading.tsx)
-- [ ] Tests: unit (data aggregation), integration (analytics API queries)
+- [x] Add date range picker (last 7 days, 30 days, 90 days, custom)
+- [x] Add "Export CSV" button
+- [x] Replace ALL empty mock arrays with real data
+- [x] Add loading state (already has loading.tsx)
+- [x] Tests: unit (data aggregation), integration (analytics API queries)
 
 ### TASK 12.18 — Post-Payment Checkout Pages
 - [ ] Create `src/app/(marketing)/checkout/success/page.tsx`
