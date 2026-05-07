@@ -30,6 +30,15 @@ access.
 - `https://www.justqiu.cloud` returns `200` from Vercel with managed TLS.
 - Production security headers are present on `https://www.justqiu.cloud`.
 - Canonical app domain in source now points to `https://www.justqiu.cloud`.
+- PR #6 was merged to `main`; main CI run `25476850023` passed and triggered
+  the Vercel deployment hook.
+- Production smoke after deployment passed:
+  - `/`, `/pricing`, `/blog`, `/login`, `/register`, `/verify`,
+    `/sitemap.xml`, and `/robots.txt` return `200`.
+  - `sitemap.xml` and `robots.txt` use `https://www.justqiu.cloud`.
+  - API mutation guard rejects missing CSRF header and untrusted origins.
+  - Browser smoke confirmed home canonical URL, register noindex metadata, and
+    zero browser console errors.
 
 ## Blocked
 - Production environment variables in Vercel cannot be verified from local files.
