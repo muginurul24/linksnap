@@ -1744,3 +1744,44 @@ Implemented authenticated Campaign CRUD APIs. Users can create campaigns, list t
 - ✅ No raw SQL, secrets, plaintext IP storage, or sensitive logging added.
 
 **Next Task:** 6.2 — Campaign Links API
+
+### 6.2 — Campaign Links API
+- **Date:** 2026-05-07 07:15 GMT+7
+- **Duration:** 0h 30m
+- **Status:** ✅ Complete
+
+**What I Did:**
+Implemented authenticated campaign link membership APIs. Users can list links assigned to an owned campaign, add multiple owned links to a campaign in one request, and remove a link from a campaign without deleting the link.
+
+**Files Changed:**
+- `src/app/api/v1/campaigns/[id]/links/route.ts` — Added GET, POST, and DELETE campaign link handlers with auth, ownership checks, validation, and rate limiting.
+- `src/lib/db/queries/links.ts` — Added batch helpers for owned link lookup, campaign assignment, and campaign removal.
+- `src/lib/validations/campaign.ts` — Added strict Zod schemas for campaign link assignment and removal inputs.
+- `tests/integration/campaign-links-api.test.ts` — Added API coverage for list, add, remove, ownership failures, validation failures, and rate limits.
+- `tests/unit/campaign-validation.test.ts` — Added campaign link validation coverage.
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Checked off Task 6.2.
+- `_bmad-output/implementation-artifacts/JOURNAL.md` — Recorded this completion entry.
+
+**Decisions Made:**
+- Adding links validates all requested IDs belong to the authenticated user before updating anything.
+- Link membership uses `links.campaignId`; removing a link clears that field and keeps the link active.
+- Campaign link list reuses the existing paginated link listing helper with a campaign filter to avoid duplicate query logic.
+
+**Tests:**
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Unit/Integration: `rtk bun run test` — 43 files passed, 209 tests passed.
+- ✅ Build: `rtk bun run build` — Passed; `/api/v1/campaigns/[id]/links` is registered.
+
+**Issues Encountered:**
+- TypeScript inferred route handler responses too loosely in tests → Added explicit `Promise<Response>` return types and a typed list-query parse result.
+
+**Security Checks:**
+- ✅ Campaign ID, query string, add body, and remove body are validated with Zod.
+- ✅ Auth required for all campaign link endpoints.
+- ✅ Campaign ownership is verified before list, add, or remove operations.
+- ✅ Link ownership is verified before campaign assignment to prevent cross-user linking.
+- ✅ API rate limiting uses the existing plan-based limits.
+- ✅ No raw SQL, secrets, plaintext IP storage, or sensitive logging added.
+
+**Next Task:** 6.3 — Campaign Analytics API

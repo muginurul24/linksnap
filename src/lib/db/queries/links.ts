@@ -1,4 +1,4 @@
-import { and, count, desc, eq, ilike, or, type SQL } from "drizzle-orm";
+import { and, count, desc, eq, ilike, inArray, or, type SQL } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { linkPages, links, smartRules, users } from "@/lib/db/schema";
 import type { UserPlan } from "@/lib/links/limits";
@@ -102,6 +102,18 @@ type UpdateLinkRecordInput = {
   id: string;
   slug?: string;
   title?: string | null;
+  userId: string;
+};
+
+type SetLinksCampaignInput = {
+  campaignId: string;
+  linkIds: string[];
+  userId: string;
+};
+
+type RemoveLinkFromCampaignInput = {
+  campaignId: string;
+  linkId: string;
   userId: string;
 };
 
@@ -369,6 +381,59 @@ export async function setLinkPageEnabledForUser({
     .update(links)
     .set({ hasLinkPage: enabled, updatedAt: new Date() })
     .where(and(eq(links.id, id), eq(links.userId, userId)))
+    .returning({ id: links.id });
+
+  return link ?? null;
+}
+
+export async function listOwnedLinkIdsByIds({
+  linkIds,
+  userId,
+}: {
+  linkIds: string[];
+  userId: string;
+}): Promise<string[]> {
+  if (linkIds.length === 0) return [];
+
+  const rows = await db
+    .select({ id: links.id })
+    .from(links)
+    .where(and(eq(links.userId, userId), inArray(links.id, linkIds)));
+
+  return rows.map((row) => row.id);
+}
+
+export async function setLinksCampaignForUser({
+  campaignId,
+  linkIds,
+  userId,
+}: SetLinksCampaignInput): Promise<string[]> {
+  if (linkIds.length === 0) return [];
+
+  const updated = await db
+    .update(links)
+    .set({ campaignId, updatedAt: new Date() })
+    .where(and(eq(links.userId, userId), inArray(links.id, linkIds)))
+    .returning({ id: links.id });
+
+  return updated.map((link) => link.id);
+}
+
+export async function removeLinkFromCampaignForUser({
+  campaignId,
+  linkId,
+  userId,
+}: RemoveLinkFromCampaignInput): Promise<{ id: string } | null> {
+  const [link] = await db
+    .update(links)
+    .set({ campaignId: null, updatedAt: new Date() })
+    .where(
+      and(
+        eq(links.id, linkId),
+        eq(links.userId, userId),
+        eq(links.campaignId, campaignId),
+      ),
+    )
     .returning({ id: links.id });
 
   return link ?? null;

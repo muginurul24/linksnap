@@ -1,8 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
+  addCampaignLinksSchema,
   campaignIdParamsSchema,
   createCampaignSchema,
   listCampaignsQuerySchema,
+  removeCampaignLinkSchema,
   updateCampaignSchema,
 } from "../../src/lib/validations/campaign";
 
@@ -68,5 +70,20 @@ describe("campaign validation", () => {
         id: "f4bd85a6-2e8c-47fc-894d-3dbe3c7d86b0",
       }).success,
     ).toBe(true);
+  });
+
+  it("should validate campaign link assignment inputs", () => {
+    const linkId = "f4bd85a6-2e8c-47fc-894d-3dbe3c7d86b0";
+    const parsed = addCampaignLinksSchema.safeParse({
+      linkIds: [linkId, linkId],
+    });
+
+    expect(parsed.success).toBe(true);
+    if (!parsed.success) return;
+    expect(parsed.data.linkIds).toEqual([linkId]);
+    expect(removeCampaignLinkSchema.safeParse({ linkId }).success).toBe(true);
+    expect(addCampaignLinksSchema.safeParse({ linkIds: [] }).success).toBe(
+      false,
+    );
   });
 });

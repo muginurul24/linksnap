@@ -99,3 +99,23 @@ export const listCampaignsQuerySchema = z
   .strict();
 
 export type ListCampaignsQuery = z.infer<typeof listCampaignsQuerySchema>;
+
+export const addCampaignLinksSchema = z
+  .object({
+    linkIds: z
+      .array(z.string().uuid("Link ID must be a valid UUID"))
+      .min(1, "At least one link is required")
+      .max(100, "Too many links in one request")
+      .transform((value) => [...new Set(value)]),
+  })
+  .strict();
+
+export type AddCampaignLinksInput = z.infer<typeof addCampaignLinksSchema>;
+
+export const removeCampaignLinkSchema = z
+  .object({
+    linkId: z.string().uuid("Link ID must be a valid UUID"),
+  })
+  .strict();
+
+export type RemoveCampaignLinkInput = z.infer<typeof removeCampaignLinkSchema>;

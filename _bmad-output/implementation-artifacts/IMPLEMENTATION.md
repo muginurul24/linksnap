@@ -373,10 +373,10 @@ src/
 - [x] DELETE: delete campaign (links become ungrouped, not deleted)
 
 ### TASK 6.2 — Campaign Links API
-- File: `src/app/api/v1/campaigns/[id]/links/route.ts`
-- POST: add links to campaign `{ linkIds: [...] }`
-- DELETE: remove link from campaign `{ linkId }`
-- GET: list links in campaign (paginated)
+- [x] File: `src/app/api/v1/campaigns/[id]/links/route.ts`
+- [x] POST: add links to campaign `{ linkIds: [...] }`
+- [x] DELETE: remove link from campaign `{ linkId }`
+- [x] GET: list links in campaign (paginated)
 
 ### TASK 6.3 — Campaign Analytics API
 - File: `src/app/api/v1/campaigns/[id]/analytics/route.ts`
