@@ -4,6 +4,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AppSidebar, type AppSidebarUser } from "@/components/dashboard/app-sidebar";
 import { AppHeader } from "@/components/dashboard/app-header";
+import { SessionTimeout } from "@/components/dashboard/session-timeout";
 import { auth } from "@/lib/auth";
 import { PlanProvider } from "@/lib/auth/plan-context";
 import { findBillingUserById } from "@/lib/db/queries/payments";
@@ -11,6 +12,7 @@ import type { UserPlan } from "@/lib/links/limits";
 import { syncSubscriptionStatusForUser } from "@/lib/payments/subscription";
 
 type SessionWithUserId = {
+  expires?: unknown;
   user?: {
     email?: unknown;
     id?: unknown;
@@ -25,9 +27,9 @@ function getSessionUserId(session: SessionWithUserId): string | null {
 
 function getSessionString(
   session: SessionWithUserId,
-  field: "email" | "image" | "name",
+  field: "email" | "expires" | "image" | "name",
 ): string | null {
-  const value = session?.user?.[field];
+  const value = field === "expires" ? session?.expires : session?.user?.[field];
   return typeof value === "string" ? value : null;
 }
 
@@ -67,6 +69,7 @@ export default async function DashboardLayout({
               <div className="flex-1 space-y-6 p-6 pt-4 md:p-8 md:pt-6">
                 {children}
               </div>
+              <SessionTimeout expiresAt={getSessionString(session, "expires")} />
             </main>
           </PlanProvider>
         </SidebarProvider>

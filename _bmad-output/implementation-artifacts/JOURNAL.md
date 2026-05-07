@@ -5544,3 +5544,37 @@ Added a protected dashboard Help page with FAQ, support contact, and security re
 - ✅ No secrets, raw SQL, or `dangerouslySetInnerHTML` introduced.
 
 **Next Task:** 16.11 — Session Timeout Warning
+
+### 16.11 — Session Timeout Warning
+- **Date:** 2026-05-07 23:35 GMT+7
+- **Duration:** 0h 25m
+- **Status:** ✅ Complete
+
+**What I Did:**
+Added a dashboard session timeout warning that appears during the final five minutes before session expiry. The warning offers Extend Session and Sign Out actions and is mounted from the dashboard layout.
+
+**Files Changed:**
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Checked off Task 16.11.
+- `src/components/dashboard/session-timeout.tsx` — Added session expiry monitoring, formatting helpers, warning UI, and actions.
+- `src/app/(dashboard)/layout.tsx` — Mounted `SessionTimeout` with the current session expiry.
+- `tests/unit/session-timeout.test.ts` — Added timeout state and formatting coverage.
+
+**Decisions Made:**
+- Passed the server session expiry into a client component instead of introducing a session provider dependency.
+- Used `router.refresh()` for Extend Session so the dashboard shell requests fresh server session data without losing client state.
+
+**Tests:**
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Targeted Unit: `rtk bun run test -- tests/unit/session-timeout.test.ts` — 1 file passed, 4 tests passed.
+- ✅ Unit/Integration: `rtk bun run test` — 115 files passed, 511 tests passed.
+
+**Issues Encountered:**
+- None.
+
+**Security Checks:**
+- ✅ Sign-out uses the existing NextAuth callback URL.
+- ✅ Extend action only refreshes session-backed server state.
+- ✅ No secrets, raw SQL, or `dangerouslySetInnerHTML` introduced.
+
+**Next Task:** 16.12 — Production DB Migration Check

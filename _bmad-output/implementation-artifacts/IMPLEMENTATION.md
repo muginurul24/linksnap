@@ -1335,11 +1335,11 @@ rtk bun run db:studio    # Open Drizzle Studio (in another terminal)
 - [x] Tests: unit (page renders)
 
 ### TASK 16.11 — Session Timeout Warning
-- [ ] Create `src/components/dashboard/session-timeout.tsx`
-- [ ] Monitor JWT expiry, warn at 5min remaining
-- [ ] "Extend Session" + "Sign Out" buttons
-- [ ] Include in dashboard layout
-- [ ] Tests: unit (timeout logic)
+- [x] Create `src/components/dashboard/session-timeout.tsx`
+- [x] Monitor JWT expiry, warn at 5min remaining
+- [x] "Extend Session" + "Sign Out" buttons
+- [x] Include in dashboard layout
+- [x] Tests: unit (timeout logic)
 
 ### TASK 16.12 — Production DB Migration Check
 - [ ] Verify all new columns/tables pushed to production: notifications, resetTokens, apiKeys, twoFactorSecret, twoFactorEnabled, deletedAt
