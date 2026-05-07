@@ -1,4 +1,4 @@
-import { and, count, desc, eq, ilike, or, type SQL } from "drizzle-orm";
+import { and, count, desc, eq, ilike, inArray, or, type SQL } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { campaigns, links } from "@/lib/db/schema";
 import type {
@@ -34,6 +34,11 @@ type ListCampaignsInput = {
 
 type UpdateCampaignRecordInput = UpdateCampaignInput & {
   id: string;
+  userId: string;
+};
+
+type FindCampaignsBySlugsInput = {
+  slugs: string[];
   userId: string;
 };
 
@@ -177,6 +182,20 @@ export async function findCampaignById(
     .limit(1);
 
   return campaign ?? null;
+}
+
+export async function findCampaignsBySlugsForUser({
+  slugs,
+  userId,
+}: FindCampaignsBySlugsInput): Promise<CampaignWithLinkCount[]> {
+  if (slugs.length === 0) return [];
+
+  return db
+    .select(campaignSelectColumns)
+    .from(campaigns)
+    .leftJoin(links, eq(links.campaignId, campaigns.id))
+    .where(and(eq(campaigns.userId, userId), inArray(campaigns.slug, slugs)))
+    .groupBy(...getCampaignGroupByColumns());
 }
 
 export async function updateCampaignRecordForUser({

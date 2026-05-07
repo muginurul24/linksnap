@@ -379,10 +379,10 @@ src/
 - [x] GET: list links in campaign (paginated)
 
 ### TASK 6.3 — Campaign Analytics API
-- File: `src/app/api/v1/campaigns/[id]/analytics/route.ts`
-- Return: aggregated analytics across all campaign links
-- Total clicks, clicks per day, top links, top countries
-- Compare campaigns: `?compare=ramadhan-2026,launch-q2-2026`
+- [x] File: `src/app/api/v1/campaigns/[id]/analytics/route.ts`
+- [x] Return: aggregated analytics across all campaign links
+- [x] Total clicks, clicks per day, top links, top countries
+- [x] Compare campaigns: `?compare=ramadhan-2026,launch-q2-2026`
 
 ### TASK 6.4 — UTM Auto-Builder
 - File: `src/lib/campaigns/utm-builder.ts`

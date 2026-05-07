@@ -1785,3 +1785,45 @@ Implemented authenticated campaign link membership APIs. Users can list links as
 - ✅ No raw SQL, secrets, plaintext IP storage, or sensitive logging added.
 
 **Next Task:** 6.3 — Campaign Analytics API
+
+### 6.3 — Campaign Analytics API
+- **Date:** 2026-05-07 07:20 GMT+7
+- **Duration:** 0h 25m
+- **Status:** ✅ Complete
+
+**What I Did:**
+Implemented authenticated campaign analytics. The endpoint aggregates click analytics across all links in an owned campaign, returns top links, and supports comparison against other owned campaigns by slug.
+
+**Files Changed:**
+- `src/app/api/v1/campaigns/[id]/analytics/route.ts` — Added campaign analytics GET handler with auth, ownership checks, range validation, comparison support, and rate limiting.
+- `src/lib/db/queries/click-events.ts` — Added batch campaign click-event query and top campaign links query.
+- `src/lib/db/queries/campaigns.ts` — Added owned campaign lookup by comparison slugs.
+- `src/lib/validations/campaign.ts` — Added campaign analytics query validation for date range and compare slugs.
+- `tests/integration/campaign-analytics-api.test.ts` — Added API coverage for aggregation, comparisons, IDOR, missing comparisons, validation, auth, and rate limits.
+- `tests/unit/campaign-validation.test.ts` — Added campaign analytics query validation coverage.
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Checked off Task 6.3.
+- `_bmad-output/implementation-artifacts/JOURNAL.md` — Recorded this completion entry.
+
+**Decisions Made:**
+- Reused the existing click-event summarizer so campaign analytics stay consistent with link analytics.
+- Batched campaign click-event reads by campaign IDs for the main campaign and comparisons instead of querying one campaign at a time.
+- Comparison campaigns are resolved by slug within the authenticated user's campaign set; missing or unowned slugs return a generic not-found error.
+
+**Tests:**
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Unit/Integration: `rtk bun run test` — 44 files passed, 217 tests passed.
+- ✅ Build: `rtk bun run build` — Passed; `/api/v1/campaigns/[id]/analytics` is registered.
+
+**Issues Encountered:**
+- None.
+
+**Security Checks:**
+- ✅ Campaign ID, date range, and comparison slugs are validated with Zod.
+- ✅ Auth required for campaign analytics.
+- ✅ Campaign ownership is verified before returning analytics.
+- ✅ Comparison campaign slugs are scoped to the authenticated user.
+- ✅ API rate limiting uses the existing plan-based limits.
+- ✅ No raw SQL, secrets, plaintext IP storage, or sensitive logging added.
+
+**Next Task:** 6.4 — UTM Auto-Builder

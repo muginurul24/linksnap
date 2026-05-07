@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   addCampaignLinksSchema,
+  campaignAnalyticsQuerySchema,
   campaignIdParamsSchema,
   createCampaignSchema,
   listCampaignsQuerySchema,
@@ -85,5 +86,22 @@ describe("campaign validation", () => {
     expect(addCampaignLinksSchema.safeParse({ linkIds: [] }).success).toBe(
       false,
     );
+  });
+
+  it("should validate campaign analytics query inputs", () => {
+    const parsed = campaignAnalyticsQuerySchema.safeParse({
+      compare: "launch-q2-2026,ramadhan-sale,launch-q2-2026",
+      from: "2026-05-01T00:00:00.000Z",
+      to: "2026-05-06T00:00:00.000Z",
+    });
+
+    expect(parsed.success).toBe(true);
+    if (!parsed.success) return;
+    expect(parsed.data.compare).toEqual(["launch-q2-2026", "ramadhan-sale"]);
+    expect(parsed.data.from).toEqual(new Date("2026-05-01T00:00:00.000Z"));
+    expect(parsed.data.to).toEqual(new Date("2026-05-06T00:00:00.000Z"));
+    expect(
+      campaignAnalyticsQuerySchema.safeParse({ compare: "Bad Slug" }).success,
+    ).toBe(false);
   });
 });

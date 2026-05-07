@@ -16,6 +16,26 @@ function emptyStringToUndefined(value: unknown): unknown {
   return trimmed ? trimmed : undefined;
 }
 
+function emptyStringToDate(value: unknown): unknown {
+  if (typeof value !== "string") return value;
+  const trimmed = value.trim();
+  if (!trimmed) return undefined;
+
+  const date = new Date(trimmed);
+  return Number.isNaN(date.getTime()) ? value : date;
+}
+
+function emptyStringToCompareSlugs(value: unknown): unknown {
+  if (typeof value !== "string") return value;
+
+  const slugs = value
+    .split(",")
+    .map((slug) => slug.trim())
+    .filter(Boolean);
+
+  return slugs.length > 0 ? [...new Set(slugs)] : undefined;
+}
+
 const campaignSlugSchema = z
   .string()
   .trim()
@@ -99,6 +119,19 @@ export const listCampaignsQuerySchema = z
   .strict();
 
 export type ListCampaignsQuery = z.infer<typeof listCampaignsQuerySchema>;
+
+export const campaignAnalyticsQuerySchema = z
+  .object({
+    compare: z.preprocess(
+      emptyStringToCompareSlugs,
+      z.array(campaignSlugSchema).max(5, "Too many comparison campaigns").optional(),
+    ),
+    from: z.preprocess(emptyStringToDate, z.date().optional()),
+    to: z.preprocess(emptyStringToDate, z.date().optional()),
+  })
+  .strict();
+
+export type CampaignAnalyticsQuery = z.infer<typeof campaignAnalyticsQuerySchema>;
 
 export const addCampaignLinksSchema = z
   .object({
