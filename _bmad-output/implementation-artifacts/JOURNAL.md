@@ -2028,3 +2028,47 @@ Completed split test coverage. Unit coverage verifies deterministic weighted var
 - ✅ No secrets, plaintext IP storage, raw SQL, or sensitive logging added.
 
 **Next Task:** 8.1 — Midtrans Integration
+
+### 8.1 — Midtrans Integration
+- **Date:** 2026-05-07 07:57 GMT+7
+- **Duration:** 0h 30m
+- **Status:** ✅ Complete
+
+**What I Did:**
+Implemented Midtrans Snap transaction creation for paid plan upgrades. The new API validates payment input, calculates USD to IDR totals from `USD_IDR_RATE`, creates a pending transaction record, requests a Snap token from Midtrans, stores the token, and returns checkout data to the client.
+
+**Files Changed:**
+- `src/lib/payments/midtrans.ts` — Added Snap client payload building, Basic Auth, sandbox/production endpoint selection, and provider error handling.
+- `src/lib/payments/pricing.ts` — Added paid plan pricing, duration calculation, USD to IDR rate parsing, and item naming helpers.
+- `src/lib/validations/payment.ts` — Added strict payment create validation for paid plans and durations.
+- `src/lib/db/queries/payments.ts` — Added billing user lookup and pending transaction insert/update helpers.
+- `src/app/api/v1/payments/create/route.ts` — Added authenticated, rate-limited create-payment route.
+- `tests/unit/midtrans-client.test.ts` — Added Snap payload, endpoint, auth header, config, and provider error coverage.
+- `tests/unit/payment-pricing-validation.test.ts` — Added validation and pricing coverage.
+- `tests/integration/create-payment-api.test.ts` — Added API coverage for successful creation, validation, auth, rate limit, config errors, and provider errors.
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Checked off Task 8.1.
+- `_bmad-output/implementation-artifacts/JOURNAL.md` — Recorded this completion entry.
+
+**Decisions Made:**
+- Used direct Snap API calls with `fetch` instead of adding a payment SDK dependency, keeping the integration small and testable.
+- Stored a local pending transaction before calling Midtrans so webhook processing in later tasks can match an existing order ID.
+- Kept canonical API values uppercase (`PRO`, `BUSINESS`, `MONTHLY`, `YEARLY`) to match existing database enum style.
+
+**Tests:**
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Unit/Integration: `rtk bun run test` — 54 files passed, 250 tests passed.
+- ✅ Build: `rtk bun run build` — Passed; `/api/v1/payments/create` is registered.
+
+**Issues Encountered:**
+- Drizzle returns the full plan enum from the `transactions` table, so the query return type was widened to the database plan type while keeping create-payment input restricted to paid plans.
+
+**Security Checks:**
+- ✅ Input validated with Zod.
+- ✅ Auth required before payment creation.
+- ✅ Plan-based rate limiting applied.
+- ✅ No Midtrans keys or `.env` values committed.
+- ✅ Provider errors avoid exposing sensitive configuration.
+- ✅ No raw SQL added.
+
+**Next Task:** 8.2 — Payment Webhook

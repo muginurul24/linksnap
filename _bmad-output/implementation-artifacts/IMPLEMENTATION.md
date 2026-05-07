@@ -426,13 +426,13 @@ src/
 ## 🟤 Phase 8: Payments (5 tasks)
 
 ### TASK 8.1 — Midtrans Integration
-- File: `src/lib/payments/midtrans.ts`
-- Initialize Midtrans Snap client
-- Create transaction: `POST /api/v1/payments/create`
-  - Input: `{ plan, duration }`
-  - Calculate amount in IDR (USD price × `USD_IDR_RATE`)
-  - Generate Snap token
-  - Return: `{ snapToken, orderId }`
+- [x] File: `src/lib/payments/midtrans.ts`
+- [x] Initialize Midtrans Snap client
+- [x] Create transaction: `POST /api/v1/payments/create`
+  - [x] Input: `{ plan, duration }`
+  - [x] Calculate amount in IDR (USD price × `USD_IDR_RATE`)
+  - [x] Generate Snap token
+  - [x] Return: `{ snapToken, orderId }`
 
 ### TASK 8.2 — Payment Webhook
 - File: `src/app/api/v1/payments/webhook/route.ts`
