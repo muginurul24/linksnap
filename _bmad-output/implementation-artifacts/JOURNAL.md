@@ -2997,3 +2997,43 @@ shared limit functions.
 - ✅ No secrets were printed or committed.
 
 **Next Task:** 12.5 — Fix Sidebar Dynamic Data
+
+### 12.5 — Fix Sidebar Dynamic Data
+- **Date:** 2026-05-07 14:23 GMT+7
+- **Duration:** 0h 20m
+- **Status:** ✅ Complete
+
+**What I Did:**
+Replaced hardcoded dashboard sidebar account data with session/database-backed
+user identity and plan display data. The server layout now passes serializable
+sidebar user props into the client sidebar, while the sidebar keeps its
+interactive route highlighting and sign-out behavior.
+
+**Files Changed:**
+- `src/app/(dashboard)/layout.tsx` — Loaded session identity, synced subscription status, and passed the resolved sidebar user to the sidebar.
+- `src/components/dashboard/app-sidebar.tsx` — Replaced hardcoded plan/name/email/avatar fallback with derived display values.
+- `tests/unit/app-sidebar.test.ts` — Added coverage for plan labels, identity display, and fallback account values.
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Checked off Task 12.5.
+- `_bmad-output/implementation-artifacts/JOURNAL.md` — Recorded this completion entry.
+
+**Decisions Made:**
+- Kept `AppSidebar` as a client component because it uses `usePathname` and the NextAuth client sign-out flow.
+- Passed account data as props from the server layout, matching the Server/Client Component boundary and avoiding server-only imports in the sidebar bundle.
+- Used billing user data after subscription sync so expired subscriptions can downgrade the displayed plan.
+
+**Tests:**
+- ✅ Targeted: `rtk bun run test -- tests/unit/app-sidebar.test.ts` — 1 file passed, 3 tests passed.
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Unit/Integration: `rtk bun run test` — 73 files passed, 317 tests passed.
+- ✅ Build: `rtk bun run build` — Passed.
+
+**Issues Encountered:**
+- The sidebar cannot become a pure server component without splitting out the interactive pathname and sign-out behavior. Passing a serializable user prop is the smaller, safer path for this task.
+
+**Security Checks:**
+- ✅ Sidebar data is resolved from the authenticated server session/user id.
+- ✅ No new user input or unsafe HTML added.
+- ✅ No secrets were printed or committed.
+
+**Next Task:** 12.6 — Fix Dashboard App Bar Issues
