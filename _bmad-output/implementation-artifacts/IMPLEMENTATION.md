@@ -701,11 +701,11 @@ For EVERY interactive component, implement these states:
 - [x] Tests: unit (sidebar renders correct plan label per plan type)
 
 ### TASK 12.6 — Fix Dashboard App Bar Issues
-- [ ] File: `src/components/dashboard/app-header.tsx`
-- [ ] Fix breadcrumb "Dashboard" link: change `href: "/"` → `href: "/dashboard"`
-- [ ] Either implement search functionality (filter links by slug/destination) or remove the search input
-- [ ] Either wire bell icon to a notifications dropdown or remove it
-- [ ] Tests: update breadcrumb test expectations
+- [x] File: `src/components/dashboard/app-header.tsx`
+- [x] Fix breadcrumb "Dashboard" link: change `href: "/"` → `href: "/dashboard"`
+- [x] Either implement search functionality (filter links by slug/destination) or remove the search input
+- [x] Either wire bell icon to a notifications dropdown or remove it
+- [x] Tests: update breadcrumb test expectations
 
 ### TASK 12.7 — Add Missing Quota Enforcement
 - [ ] File: `src/lib/links/limits.ts`

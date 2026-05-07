@@ -42,6 +42,10 @@ import {
 } from "@/components/ui/table";
 import { EmptyState } from "@/components/dashboard/empty-state";
 import { LinkPagePreviewDialog } from "@/app/(dashboard)/links/link-page-preview-dialog";
+import {
+  getLinksSearchQuery,
+  LINKS_SEARCH_MAX_LENGTH,
+} from "@/lib/links/search";
 
 const PAGE_LIMIT = 20;
 
@@ -50,6 +54,12 @@ type SessionWithUserId = {
     id?: unknown;
   } | null;
 } | null;
+
+type LinksPageProps = {
+  searchParams: Promise<{
+    search?: string | string[];
+  }>;
+};
 
 function getSessionUserId(session: SessionWithUserId): string | null {
   return typeof session?.user?.id === "string" ? session.user.id : null;
@@ -60,13 +70,17 @@ function getShortUrl(slug: string): string {
   return `${baseUrl || "https://www.justqiu.cloud"}/${slug}`;
 }
 
-function LinksEmptyState() {
+function LinksEmptyState({ search }: { search?: string }) {
   return (
     <EmptyState
       actionHref="/links/new"
       actionLabel="Create link"
       icon={<Link2 className="size-5" />}
-      title="No links yet. Create your first short link!"
+      title={
+        search
+          ? "No links match your search."
+          : "No links yet. Create your first short link!"
+      }
     />
   );
 }
@@ -184,14 +198,17 @@ function LinkRows({ links }: { links: ListedLink[] }) {
   );
 }
 
-export default async function LinksPage() {
+export default async function LinksPage({ searchParams }: LinksPageProps) {
   const session = await auth();
   const userId = getSessionUserId(session);
   if (!userId) redirect("/login?callbackUrl=/links");
 
+  const params = await searchParams;
+  const search = getLinksSearchQuery(params.search);
   const { items: links } = await listLinksByUserId({
     limit: PAGE_LIMIT,
     page: 1,
+    search,
     userId,
   });
 
@@ -210,18 +227,25 @@ export default async function LinksPage() {
         </ButtonLink>
       </div>
 
-      <div className="flex flex-col gap-3 sm:flex-row">
+      <form action="/links" className="flex flex-col gap-3 sm:flex-row">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-3 size-4 text-muted-foreground" />
-          <Input placeholder="Search by slug or destination..." className="pl-9" />
+          <Input
+            className="pl-9"
+            defaultValue={search ?? ""}
+            maxLength={LINKS_SEARCH_MAX_LENGTH}
+            name="search"
+            placeholder="Search by slug or destination..."
+            type="search"
+          />
         </div>
-        <Button variant="outline" size="icon">
+        <Button aria-label="Search links" variant="outline" size="icon" type="submit">
           <Filter className="size-4" />
         </Button>
-      </div>
+      </form>
 
       {links.length === 0 ? (
-        <LinksEmptyState />
+        <LinksEmptyState search={search} />
       ) : (
         <Card>
           <CardContent className="p-0">
