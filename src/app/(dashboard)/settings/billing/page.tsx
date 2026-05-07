@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { headers } from "next/headers";
-import { Building, Check, CreditCard, Sparkles, Zap } from "lucide-react";
+import { Building, Check, CreditCard, Landmark, Sparkles, Zap } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -133,6 +133,29 @@ function formatPaymentStatus(status: BillingTransaction["status"]): string {
     .split("_")
     .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
     .join(" ");
+}
+
+function formatGatewayLabel(gateway: BillingTransaction["gateway"]): string {
+  return gateway === "stripe" ? "Stripe" : "Midtrans";
+}
+
+function formatPaymentMethodName(value: string): string {
+  return value
+    .split(/[_\s-]+/)
+    .filter(Boolean)
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(" ");
+}
+
+function formatPaymentMethod(transaction: BillingTransaction): string {
+  const method = transaction.paymentMethod?.trim();
+  if (!method) return "Pending";
+
+  if (transaction.gateway === "stripe") {
+    return method.toLowerCase() === "card" ? "Card" : formatPaymentMethodName(method);
+  }
+
+  return formatPaymentMethodName(method);
 }
 
 function getStatusVariant(
@@ -305,6 +328,7 @@ export default async function BillingPage({ searchParams }: BillingPageProps) {
                     <TableHead>Order</TableHead>
                     <TableHead>Plan</TableHead>
                     <TableHead>Status</TableHead>
+                    <TableHead>Gateway</TableHead>
                     <TableHead>Method</TableHead>
                     <TableHead className="text-right">Amount</TableHead>
                     <TableHead className="text-right">Paid</TableHead>
@@ -324,8 +348,18 @@ export default async function BillingPage({ searchParams }: BillingPageProps) {
                           {formatPaymentStatus(transaction.status)}
                         </Badge>
                       </TableCell>
+                      <TableCell>
+                        <Badge className="gap-1.5" variant="outline">
+                          {transaction.gateway === "stripe" ? (
+                            <CreditCard className="size-3" />
+                          ) : (
+                            <Landmark className="size-3" />
+                          )}
+                          {formatGatewayLabel(transaction.gateway)}
+                        </Badge>
+                      </TableCell>
                       <TableCell className="text-muted-foreground">
-                        {transaction.paymentMethod ?? "Pending"}
+                        {formatPaymentMethod(transaction)}
                       </TableCell>
                       <TableCell className="text-right font-medium tabular-nums">
                         {formatCurrencyIdr(transaction.grossAmountIdr)}

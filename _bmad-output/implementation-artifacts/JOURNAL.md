@@ -430,6 +430,41 @@ Refactored the billing plan upgrade control to render gateway radio options and 
 
 **Next Task:** 14.6 — Unify Transaction History
 
+### 14.6 — Unify Transaction History
+- **Date:** 2026-05-07 19:27 GMT+7
+- **Duration:** 0 hours 8 minutes
+- **Status:** ✅ Complete
+
+**What I Did:**
+Updated the billing history table to show both payment gateways in one unified transaction list. Added gateway badges with icons and normalized payment method display for Midtrans methods and Stripe card descriptors.
+
+**Files Changed:**
+- `src/app/(dashboard)/settings/billing/page.tsx` — Added Gateway column, gateway badges, and payment method formatting.
+- `tests/integration/billing-page-gateway-detection.test.tsx` — Added transaction history coverage for Stripe and Midtrans rows.
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Marked task 14.6 complete.
+- `_bmad-output/implementation-artifacts/JOURNAL.md` — Logged task completion.
+
+**Decisions Made:**
+- Used the existing transaction history query without gateway filtering so both Stripe and Midtrans rows naturally appear together.
+- Normalized method strings like `bank_transfer` to display labels while preserving Stripe card brand strings such as `visa`.
+
+**Tests:**
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Unit/Integration: `rtk bun run test` — Passed, 101 files / 466 tests.
+- ✅ Targeted: `rtk bun run test tests/integration/billing-page-gateway-detection.test.tsx` — Passed.
+
+**Issues Encountered:**
+- None.
+
+**Security Checks:**
+- ✅ Billing history still uses authenticated server-side ownership-scoped transaction queries.
+- ✅ No new user input is accepted.
+- ✅ No sensitive provider identifiers are exposed.
+- ✅ Payment method display is derived from stored non-card-data descriptors only.
+
+**Next Task:** 14.7 — End-to-End Payment Flow Tests
+
 ### 0.4 — CI/CD Pipeline
 - **Date:** 2026-05-06 20:10 GMT+7
 - **Duration:** 0 hours 35 minutes

@@ -13,6 +13,21 @@ type MockBillingUser = {
   plan: UserPlan;
 };
 
+type MockBillingTransaction = {
+  createdAt: Date;
+  duration: string;
+  gateway: "midtrans" | "stripe";
+  grossAmountIdr: number;
+  grossAmountUsd: number;
+  id: string;
+  orderId: string;
+  paidAt: Date | null;
+  paymentMethod: string | null;
+  plan: UserPlan;
+  status: "PENDING" | "SETTLEMENT" | "CANCEL" | "DENY" | "EXPIRE";
+  updatedAt: Date;
+};
+
 const mockHeaders = vi.hoisted<MockHeaders>(() => ({
   value: new Headers(),
 }));
@@ -29,7 +44,7 @@ const mockState = vi.hoisted(() => ({
     region: string | null;
   } | null,
   history: {
-    items: [],
+    items: [] as MockBillingTransaction[],
     total: 0,
   },
   session: {
@@ -110,5 +125,55 @@ describe("billing page gateway country detection", () => {
     expect(markup).toContain('data-payment-gateways="stripe"');
     expect(markup).toContain("Stripe");
     expect(markup).not.toContain("Midtrans");
+  });
+
+  it("should render unified transaction history for Stripe and Midtrans", async () => {
+    mockHeaders.value = new Headers({
+      "x-vercel-ip-country": "ID",
+    });
+    mockState.history = {
+      items: [
+        {
+          createdAt: new Date("2026-05-07T08:00:00.000Z"),
+          duration: "MONTHLY",
+          gateway: "stripe",
+          grossAmountIdr: 128000,
+          grossAmountUsd: 8,
+          id: "transaction-stripe",
+          orderId: "LS-ST-1777777777777-abcdef123456",
+          paidAt: new Date("2026-05-07T08:05:00.000Z"),
+          paymentMethod: "visa",
+          plan: "PRO",
+          status: "SETTLEMENT",
+          updatedAt: new Date("2026-05-07T08:05:00.000Z"),
+        },
+        {
+          createdAt: new Date("2026-05-07T07:00:00.000Z"),
+          duration: "MONTHLY",
+          gateway: "midtrans",
+          grossAmountIdr: 128000,
+          grossAmountUsd: 8,
+          id: "transaction-midtrans",
+          orderId: "LS-1777777777777-abcdef123456",
+          paidAt: new Date("2026-05-07T07:05:00.000Z"),
+          paymentMethod: "bank_transfer",
+          plan: "PRO",
+          status: "SETTLEMENT",
+          updatedAt: new Date("2026-05-07T07:05:00.000Z"),
+        },
+      ],
+      total: 2,
+    };
+
+    const element = await BillingPage({
+      searchParams: Promise.resolve({}),
+    });
+    const markup = renderToStaticMarkup(element);
+
+    expect(markup).toContain("Gateway");
+    expect(markup).toContain("Stripe");
+    expect(markup).toContain("Visa");
+    expect(markup).toContain("Midtrans");
+    expect(markup).toContain("Bank Transfer");
   });
 });

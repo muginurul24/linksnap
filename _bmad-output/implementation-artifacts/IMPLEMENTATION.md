@@ -1118,11 +1118,11 @@ Stripe handles credit card globally. Midtrans handles Indonesian local banks (BC
 - [x] Tests: unit (gateway selector rendering), integration (billing page with country detection)
 
 ### TASK 14.6 — Unify Transaction History
-- [ ] File: `src/app/(dashboard)/settings/billing/page.tsx` (billing history table)
-- [ ] Add "Gateway" column showing Stripe or Midtrans badge/icon
-- [ ] Ensure both gateways' transactions appear in unified history
-- [ ] Add payment method display (Midtrans: bank_transfer, gopay; Stripe: card brand)
-- [ ] Tests: integration (transaction history shows both gateways)
+- [x] File: `src/app/(dashboard)/settings/billing/page.tsx` (billing history table)
+- [x] Add "Gateway" column showing Stripe or Midtrans badge/icon
+- [x] Ensure both gateways' transactions appear in unified history
+- [x] Add payment method display (Midtrans: bank_transfer, gopay; Stripe: card brand)
+- [x] Tests: integration (transaction history shows both gateways)
 
 ### TASK 14.7 — End-to-End Payment Flow Tests
 - [ ] Update E2E tests to cover Stripe flow
