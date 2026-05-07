@@ -24,6 +24,7 @@ import {
   buildRuleEvaluationContext,
   evaluateSmartRulesForLink,
 } from "@/lib/rules/rule-engine";
+import { resolveSplitTestRedirect } from "@/lib/split-tests/router";
 
 type LinkPageCtaRouteContext = {
   params: Promise<{ slug: string }>;
@@ -75,6 +76,12 @@ export async function GET(_request: Request, context: LinkPageCtaRouteContext) {
     linkId: link.id,
     slug: link.slug,
   });
+  const splitTestResult = ruleResult
+    ? null
+    : await resolveSplitTestRedirect({
+        defaultDestinationUrl: link.destinationUrl,
+        linkId: link.id,
+      });
 
   scheduleClickLog(
     buildRedirectClickInput(link.id, headersList, {
@@ -86,7 +93,9 @@ export async function GET(_request: Request, context: LinkPageCtaRouteContext) {
   );
 
   return NextResponse.redirect(
-    ruleResult?.destinationUrl ?? link.destinationUrl,
+    ruleResult?.destinationUrl ??
+      splitTestResult?.destinationUrl ??
+      link.destinationUrl,
     308,
   );
 }

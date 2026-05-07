@@ -119,6 +119,11 @@ vi.mock("@/lib/db/queries/smart-rules", () => ({
   },
 }));
 
+vi.mock("@/lib/db/queries/split-tests", () => ({
+  findSplitTestByLinkId: async () => null,
+  updateSplitTestVariantClickCount: async () => undefined,
+}));
+
 vi.mock("@/lib/analytics/click-logger", () => ({
   buildRedirectClickInput: (
     linkId: string,

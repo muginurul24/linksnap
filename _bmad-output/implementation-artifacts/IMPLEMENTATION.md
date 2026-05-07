@@ -408,57 +408,57 @@ src/
 - [x] Auth: required, ownership check
 
 ### TASK 7.2 — Split Test Router
-- Integrate into redirect handler (`[slug]/page.tsx`)
-- If link has active split test:
+- [x] Integrate into redirect handler (`[slug]/page.tsx`)
+- [x] If link has active split test:
   1. Calculate total weight
   2. Generate random number 0-totalWeight
   3. Select variant based on weight range
   4. Log which variant was selected
-- Increment `clickCount` on variant
+- [x] Increment `clickCount` on variant
 
 ### TASK 7.3 — Split Test Tests
-- Unit: variant selection algorithm
-- Integration: create split test → make 100 requests → verify distribution ≈ weights
-- E2E: configure A/B test from dashboard
+- [x] Unit: variant selection algorithm
+- [x] Integration: create split test → make 100 requests → verify distribution ≈ weights
+- [x] E2E: configure A/B test from dashboard
 
 ---
 
 ## 🟤 Phase 8: Payments (5 tasks)
 
 ### TASK 8.1 — Midtrans Integration
-- File: `src/lib/payments/midtrans.ts`
-- Initialize Midtrans Snap client
-- Create transaction: `POST /api/v1/payments/create`
-  - Input: `{ plan, duration }`
-  - Calculate amount in IDR (USD price × `USD_IDR_RATE`)
-  - Generate Snap token
-  - Return: `{ snapToken, orderId }`
+- [x] File: `src/lib/payments/midtrans.ts`
+- [x] Initialize Midtrans Snap client
+- [x] Create transaction: `POST /api/v1/payments/create`
+  - [x] Input: `{ plan, duration }`
+  - [x] Calculate amount in IDR (USD price × `USD_IDR_RATE`)
+  - [x] Generate Snap token
+  - [x] Return: `{ snapToken, orderId }`
 
 ### TASK 8.2 — Payment Webhook
-- File: `src/app/api/v1/payments/webhook/route.ts`
-- Verify Midtrans signature (SHA512)
-- Handle notification types: `settlement`, `cancel`, `deny`, `expire`, `pending`
-- On settlement: create/upgrade subscription, update user plan
-- Idempotent: check `orderId` before processing
-- Send invoice email via Resend
+- [x] File: `src/app/api/v1/payments/webhook/route.ts`
+- [x] Verify Midtrans signature (SHA512)
+- [x] Handle notification types: `settlement`, `cancel`, `deny`, `expire`, `pending`
+- [x] On settlement: create/upgrade subscription, update user plan
+- [x] Idempotent: check `orderId` before processing
+- [x] Send invoice email via Resend
 
 ### TASK 8.3 — Subscription Management
-- File: `src/lib/payments/subscription.ts`
-- Create subscription on successful payment
-- Check subscription status on dashboard load
-- Handle expiry: downgrade to Free plan
-- Handle renewal cron job (Vercel Cron)
+- [x] File: `src/lib/payments/subscription.ts`
+- [x] Create subscription on successful payment
+- [x] Check subscription status on dashboard load
+- [x] Handle expiry: downgrade to Free plan
+- [x] Handle renewal cron job (Vercel Cron)
 
 ### TASK 8.4 — Billing Page (API + Frontend)
-- File: `src/app/api/v1/payments/history/route.ts`
-- Return user's transaction history (paginated)
-- Dashboard billing page already created — connect to real data
-- Show: current plan, billing history, next billing date, upgrade CTA
+- [x] File: `src/app/api/v1/payments/history/route.ts`
+- [x] Return user's transaction history (paginated)
+- [x] Dashboard billing page already created — connect to real data
+- [x] Show: current plan, billing history, next billing date, upgrade CTA
 
 ### TASK 8.5 — Payment Tests
-- Unit: Midtrans signature verification, amount calculation
-- Integration: create transaction → mock webhook → verify subscription created
-- E2E: full payment flow (use Midtrans sandbox)
+- [x] Unit: Midtrans signature verification, amount calculation
+- [x] Integration: create transaction → mock webhook → verify subscription created
+- [x] E2E: full payment flow (use Midtrans sandbox)
 
 ---
 

@@ -7,6 +7,7 @@ loadEnvConfig(process.cwd());
 const port = Number(process.env.E2E_PORT ?? 3100);
 const baseURL = process.env.E2E_BASE_URL ?? `http://localhost:${port}`;
 const authEmailFile = join(process.cwd(), ".e2e/auth-emails.jsonl");
+const paymentEmailFile = join(process.cwd(), ".e2e/payment-emails.jsonl");
 
 export default defineConfig({
   testDir: "./tests/e2e",
@@ -34,6 +35,8 @@ export default defineConfig({
       AUTH_URL: baseURL,
       NEXTAUTH_URL: baseURL,
       NEXT_PUBLIC_APP_URL: baseURL,
+      PAYMENT_EMAIL_DELIVERY: "file",
+      PAYMENT_EMAIL_FILE: paymentEmailFile,
     },
     gracefulShutdown: { signal: "SIGTERM", timeout: 500 },
     reuseExistingServer: false,

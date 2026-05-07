@@ -106,3 +106,16 @@ export async function deleteSplitTestForLink(
 
   return splitTest ?? null;
 }
+
+export async function updateSplitTestVariantClickCount({
+  clickCount,
+  id,
+}: {
+  clickCount: number;
+  id: string;
+}): Promise<void> {
+  await db
+    .update(splitTestVariants)
+    .set({ clickCount })
+    .where(eq(splitTestVariants.id, id));
+}

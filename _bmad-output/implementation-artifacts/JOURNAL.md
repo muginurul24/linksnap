@@ -1950,3 +1950,300 @@ Implemented authenticated split test management for links. Users can create or u
 - ✅ No raw SQL, secrets, plaintext IP storage, or sensitive logging added.
 
 **Next Task:** 7.2 — Split Test Router
+
+### 7.2 — Split Test Router
+- **Date:** 2026-05-07 07:43 GMT+7
+- **Duration:** 0h 30m
+- **Status:** ✅ Complete
+
+**What I Did:**
+Integrated split-test routing into public redirects. Direct redirects and Link Page CTA redirects now select an active split-test variant when no Smart Rule destination is selected, redirect to the selected variant destination, and increment the variant click counter.
+
+**Files Changed:**
+- `src/lib/split-tests/router.ts` — Added weighted variant selection and split-test redirect resolution.
+- `src/lib/db/queries/split-tests.ts` — Added variant click-count update helper.
+- `src/app/[slug]/page.tsx` — Integrated split-test destination selection into direct redirects.
+- `src/app/[slug]/go/route.ts` — Integrated split-test destination selection into Link Page CTA redirects.
+- `tests/unit/split-test-router.test.ts` — Added deterministic weighted selection tests.
+- `tests/integration/create-redirect-click-flow.test.ts` — Added redirect flow coverage for split-test selection and variant click increment.
+- `tests/integration/smart-rule-redirect-flow.test.ts` — Added split-test query mock so Smart Rule tests remain isolated.
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Checked off Task 7.2.
+- `_bmad-output/implementation-artifacts/JOURNAL.md` — Recorded this completion entry.
+
+**Decisions Made:**
+- Smart Rules keep precedence over split tests; if a rule matches, the rule destination is used and split-test selection is skipped.
+- Variant selection is deterministic under injected random values for unit tests and uses runtime randomness in production.
+- Variant click count is the selected-variant log for the current schema; click events do not yet have a split-test variant column.
+
+**Tests:**
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Unit/Integration: `rtk bun run test` — 50 files passed, 233 tests passed.
+- ✅ Build: `rtk bun run build` — Passed.
+
+**Issues Encountered:**
+- Existing Smart Rule redirect test needed a no-op split-test query mock after the redirect handler began checking split tests.
+
+**Security Checks:**
+- ✅ Public slug validation remains in place before redirect handling.
+- ✅ Split-test destinations come from the validated management API.
+- ✅ Smart Rule precedence avoids changing existing conditional redirect behavior.
+- ✅ No secrets, plaintext IP storage, raw SQL, or sensitive logging added.
+
+**Next Task:** 7.3 — Split Test Tests
+
+### 7.3 — Split Test Tests
+- **Date:** 2026-05-07 07:49 GMT+7
+- **Duration:** 0h 30m
+- **Status:** ✅ Complete
+
+**What I Did:**
+Completed split test coverage. Unit coverage verifies deterministic weighted variant selection, integration coverage runs 100 redirect selections and verifies a 70/30 distribution, and E2E coverage configures an A/B split test from an authenticated dashboard session and verifies redirect performance counters.
+
+**Files Changed:**
+- `tests/integration/split-test-redirect-distribution.test.ts` — Added 100-request split-test distribution integration coverage.
+- `tests/e2e/link-flow.spec.ts` — Added authenticated dashboard-session A/B split-test configuration and redirect E2E coverage.
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Checked off Task 7.3.
+- `_bmad-output/implementation-artifacts/JOURNAL.md` — Recorded this completion entry.
+
+**Decisions Made:**
+- Used deterministic `Math.random()` values in integration to make the 70/30 distribution test exact and non-flaky.
+- E2E configures split tests through authenticated dashboard API requests because the dashboard UI does not yet expose A/B split-test controls.
+- E2E validates both saved variant config and that a public redirect increments split-test performance counters.
+
+**Tests:**
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Unit/Integration: `rtk bun run test` — 51 files passed, 234 tests passed.
+- ✅ Build: `rtk bun run build` — Passed.
+- ✅ E2E: `rtk bun run test:e2e` — 8 specs passed.
+
+**Issues Encountered:**
+- Initial E2E locator for the split-test slug matched both short slug and full URL text → Switched to exact text matching for the short slug.
+
+**Security Checks:**
+- ✅ E2E uses authenticated users and user-owned links.
+- ✅ Split-test API validation and ownership checks are exercised by prior Task 7.1 tests.
+- ✅ E2E cleanup removes test users and link data.
+- ✅ No secrets, plaintext IP storage, raw SQL, or sensitive logging added.
+
+**Next Task:** 8.1 — Midtrans Integration
+
+### 8.1 — Midtrans Integration
+- **Date:** 2026-05-07 07:57 GMT+7
+- **Duration:** 0h 30m
+- **Status:** ✅ Complete
+
+**What I Did:**
+Implemented Midtrans Snap transaction creation for paid plan upgrades. The new API validates payment input, calculates USD to IDR totals from `USD_IDR_RATE`, creates a pending transaction record, requests a Snap token from Midtrans, stores the token, and returns checkout data to the client.
+
+**Files Changed:**
+- `src/lib/payments/midtrans.ts` — Added Snap client payload building, Basic Auth, sandbox/production endpoint selection, and provider error handling.
+- `src/lib/payments/pricing.ts` — Added paid plan pricing, duration calculation, USD to IDR rate parsing, and item naming helpers.
+- `src/lib/validations/payment.ts` — Added strict payment create validation for paid plans and durations.
+- `src/lib/db/queries/payments.ts` — Added billing user lookup and pending transaction insert/update helpers.
+- `src/app/api/v1/payments/create/route.ts` — Added authenticated, rate-limited create-payment route.
+- `tests/unit/midtrans-client.test.ts` — Added Snap payload, endpoint, auth header, config, and provider error coverage.
+- `tests/unit/payment-pricing-validation.test.ts` — Added validation and pricing coverage.
+- `tests/integration/create-payment-api.test.ts` — Added API coverage for successful creation, validation, auth, rate limit, config errors, and provider errors.
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Checked off Task 8.1.
+- `_bmad-output/implementation-artifacts/JOURNAL.md` — Recorded this completion entry.
+
+**Decisions Made:**
+- Used direct Snap API calls with `fetch` instead of adding a payment SDK dependency, keeping the integration small and testable.
+- Stored a local pending transaction before calling Midtrans so webhook processing in later tasks can match an existing order ID.
+- Kept canonical API values uppercase (`PRO`, `BUSINESS`, `MONTHLY`, `YEARLY`) to match existing database enum style.
+
+**Tests:**
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Unit/Integration: `rtk bun run test` — 54 files passed, 250 tests passed.
+- ✅ Build: `rtk bun run build` — Passed; `/api/v1/payments/create` is registered.
+
+**Issues Encountered:**
+- Drizzle returns the full plan enum from the `transactions` table, so the query return type was widened to the database plan type while keeping create-payment input restricted to paid plans.
+
+**Security Checks:**
+- ✅ Input validated with Zod.
+- ✅ Auth required before payment creation.
+- ✅ Plan-based rate limiting applied.
+- ✅ No Midtrans keys or `.env` values committed.
+- ✅ Provider errors avoid exposing sensitive configuration.
+- ✅ No raw SQL added.
+
+**Next Task:** 8.2 — Payment Webhook
+
+### 8.2 — Payment Webhook
+- **Date:** 2026-05-07 08:03 GMT+7
+- **Duration:** 0h 35m
+- **Status:** ✅ Complete
+
+**What I Did:**
+Implemented the Midtrans payment webhook. Notifications are validated, signature-checked with SHA512, mapped to local payment statuses, matched against existing order IDs, and processed idempotently. Settlement notifications activate or upgrade subscriptions, update the user plan, and send an invoice email.
+
+**Files Changed:**
+- `src/app/api/v1/payments/webhook/route.ts` — Added signed Midtrans webhook route with standard API responses.
+- `src/lib/payments/webhook.ts` — Added signature generation/verification, status mapping, timestamp parsing, and gross amount parsing.
+- `src/lib/payments/webhook-handler.ts` — Added idempotent webhook processing, amount verification, subscription activation, user plan updates, and invoice email dispatch.
+- `src/lib/db/queries/payments.ts` — Added webhook transaction lookup, optimistic status update, subscription upsert, and user plan update helpers.
+- `src/lib/email/payment-emails.ts` — Added Resend invoice email sending with file delivery support for non-production tests.
+- `src/lib/payments/midtrans.ts` — Exported configured server key access for webhook verification.
+- `src/lib/validations/payment.ts` — Added Midtrans webhook payload validation.
+- `tests/unit/midtrans-webhook.test.ts` — Added signature, status mapping, fraud status, timestamp, and amount parsing coverage.
+- `tests/integration/payment-webhook-api.test.ts` — Added route coverage for settlement, pending, duplicate settlement, invalid signature, amount mismatch, and unknown orders.
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Checked off Task 8.2.
+- `_bmad-output/implementation-artifacts/JOURNAL.md` — Recorded this completion entry.
+
+**Decisions Made:**
+- Webhook authentication uses Midtrans signature verification instead of session auth because the caller is Midtrans.
+- Duplicate or terminal-state notifications are acknowledged without replaying subscription activation or invoice sending.
+- Invoice email failures are logged but do not fail an already-processed payment webhook.
+- Signed amount is compared to the local transaction amount before any subscription mutation.
+
+**Tests:**
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Unit/Integration: `rtk bun run test` — 56 files passed, 261 tests passed.
+- ✅ Build: `rtk bun run build` — Passed; `/api/v1/payments/webhook` is registered.
+
+**Issues Encountered:**
+- None.
+
+**Security Checks:**
+- ✅ Webhook input validated with Zod.
+- ✅ Midtrans signature verified with SHA512 and timing-safe comparison.
+- ✅ Order ID must exist locally before processing.
+- ✅ Gross amount must match the local transaction before activation.
+- ✅ Processing is idempotent for duplicate and terminal notifications.
+- ✅ No secrets, raw SQL, or sensitive payload logging added.
+
+**Next Task:** 8.3 — Subscription Management
+
+### 8.3 — Subscription Management
+- **Date:** 2026-05-07 08:09 GMT+7
+- **Duration:** 0h 30m
+- **Status:** ✅ Complete
+
+**What I Did:**
+Added subscription lifecycle management. Successful payment settlement now flows through a dedicated subscription module, dashboard loads sync subscription expiry, expired users are downgraded to Free, and a secured Vercel Cron route processes due expirations daily.
+
+**Files Changed:**
+- `src/lib/payments/subscription.ts` — Added subscription creation/renewal, expiry sync, period calculation, and batch expiry processing.
+- `src/lib/payments/webhook-handler.ts` — Moved settlement activation into the subscription module.
+- `src/lib/db/queries/payments.ts` — Added subscription lookup, expiry, batch expiry, and Free-plan downgrade helpers.
+- `src/app/(dashboard)/layout.tsx` — Converted dashboard layout to server-side subscription status sync on load.
+- `src/app/api/v1/payments/subscriptions/renew/route.ts` — Added secured cron endpoint for subscription expiry processing.
+- `vercel.json` — Added daily Vercel Cron schedule for subscription renewal/expiry checks.
+- `.env.example` — Documented `CRON_SECRET`.
+- `.env` — Added local `CRON_SECRET` value without staging or committing it.
+- `tests/unit/subscription.test.ts` — Added period calculation, renewal, dashboard expiry sync, and batch cron coverage.
+- `tests/integration/subscription-renew-cron-api.test.ts` — Added cron auth and success coverage.
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Checked off Task 8.3.
+- `_bmad-output/implementation-artifacts/JOURNAL.md` — Recorded this completion entry.
+
+**Decisions Made:**
+- Cron route requires `Authorization: Bearer $CRON_SECRET`, matching current Vercel Cron security guidance.
+- The cron runs once daily at `0 0 * * *` UTC to remain compatible with Hobby plan daily cron limits.
+- Dashboard status sync downgrades expired subscriptions opportunistically, while cron handles batch expiry as the background safety net.
+
+**Tests:**
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Unit/Integration: `rtk bun run test` — 58 files passed, 268 tests passed.
+- ✅ Build: `rtk bun run build` — Passed; `/api/v1/payments/subscriptions/renew` is registered.
+
+**Issues Encountered:**
+- None.
+
+**Security Checks:**
+- ✅ Cron endpoint requires `CRON_SECRET`.
+- ✅ Dashboard sync only uses authenticated session user ID.
+- ✅ Expiry processing updates users in batches and avoids raw SQL.
+- ✅ `.env` was updated locally but not staged or committed.
+- ✅ No payment secrets or sensitive values logged.
+
+**Next Task:** 8.4 — Billing Page (API + Frontend)
+
+### 8.4 — Billing Page (API + Frontend)
+- **Date:** 2026-05-07 08:13 GMT+7
+- **Duration:** 0h 25m
+- **Status:** ✅ Complete
+
+**What I Did:**
+Connected billing to real payment and subscription data. Added a paginated payment history API, rendered the current plan and next billing date from the database, showed recent billing history, and added upgrade buttons that start a Midtrans checkout session through the create-payment endpoint.
+
+**Files Changed:**
+- `src/app/api/v1/payments/history/route.ts` — Added authenticated, rate-limited paginated payment history endpoint.
+- `src/app/(dashboard)/settings/billing/page.tsx` — Replaced static billing content with real plan, subscription, and transaction data.
+- `src/app/(dashboard)/settings/billing/upgrade-button.tsx` — Added client upgrade CTA that creates a Snap payment and redirects to Midtrans.
+- `src/lib/db/queries/payments.ts` — Added paginated payment transaction history query.
+- `src/lib/validations/payment.ts` — Added payment history query validation.
+- `tests/integration/payment-history-api.test.ts` — Added history API coverage for success, auth, validation, and rate limiting.
+- `tests/unit/payment-pricing-validation.test.ts` — Added history pagination validation coverage.
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Checked off Task 8.4.
+- `_bmad-output/implementation-artifacts/JOURNAL.md` — Recorded this completion entry.
+
+**Decisions Made:**
+- Billing page reads directly from server-side query helpers while exposing the separate API route for external/API consumers.
+- Upgrade CTA uses the existing create-payment route and redirects to Midtrans `redirectUrl`; no payment secrets are exposed to the client.
+- Billing history shows the most recent 10 transactions in the dashboard and leaves full pagination to the API.
+
+**Tests:**
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Unit/Integration: `rtk bun run test` — 59 files passed, 273 tests passed.
+- ✅ Build: `rtk bun run build` — Passed; `/api/v1/payments/history` is registered.
+
+**Issues Encountered:**
+- None.
+
+**Security Checks:**
+- ✅ Payment history input validated with Zod.
+- ✅ API route requires authentication.
+- ✅ API route applies plan-based rate limiting.
+- ✅ Billing page only loads data for the authenticated user.
+- ✅ Upgrade CTA calls server-side payment creation; no Midtrans server key reaches the browser.
+
+**Next Task:** 8.5 — Payment Tests
+
+### 8.5 — Payment Tests
+- **Date:** 2026-05-07 08:33 GMT+7
+- **Duration:** 0h 50m
+- **Status:** ✅ Complete
+
+**What I Did:**
+Completed payment test coverage across unit, integration, and E2E. Added an integration test that creates a payment transaction, processes a signed mock Midtrans settlement webhook, and verifies subscription activation. Added a Playwright sandbox payment flow that creates a real Midtrans sandbox transaction, processes a local signed webhook, and verifies billing UI activation.
+
+**Files Changed:**
+- `tests/integration/payment-create-webhook-flow.test.ts` — Added create transaction → webhook → subscription activation coverage.
+- `tests/e2e/payment-flow.spec.ts` — Added authenticated billing payment flow using Midtrans sandbox transaction creation and local webhook processing.
+- `tests/e2e/link-flow.spec.ts` — Stabilized existing preview, redirect, and split-test E2E assertions while running the payment suite.
+- `playwright.config.ts` — Routed payment invoice email delivery to a local E2E file.
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Checked off Task 8.5.
+- `_bmad-output/implementation-artifacts/JOURNAL.md` — Recorded this completion entry.
+
+**Decisions Made:**
+- E2E uses real Midtrans sandbox transaction creation, then simulates settlement with a signed local webhook because automated payment completion through the hosted checkout UI is not deterministic.
+- Payment invoice email uses file delivery during E2E to avoid hitting Resend while still exercising the webhook path.
+- Existing Link Page and Smart Rule E2E assertions were made less order/timing-sensitive after repeated full-suite runs exposed flakes unrelated to payment logic.
+
+**Tests:**
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Unit/Integration: `rtk bun run test` — 60 files passed, 274 tests passed.
+- ✅ Build: `rtk bun run build` — Passed.
+- ✅ E2E: `rtk bun run test:e2e` — 9 specs passed.
+
+**Issues Encountered:**
+- Initial payment E2E lost the create-payment response body after browser navigation to Midtrans → switched transaction creation to authenticated `page.request`.
+- Existing split-test E2E assumed variant ordering → changed to order-insensitive assertion.
+- Existing preview and Smart Rule E2E checks were timing-sensitive → increased targeted waits and used faster redirect commit waiting.
+
+**Security Checks:**
+- ✅ Midtrans signature verification and amount calculation have unit coverage.
+- ✅ Integration verifies subscription activation only after a signed webhook.
+- ✅ E2E signs webhook payloads with the server key from environment without printing it.
+- ✅ No `.env` or payment secrets committed.
+- ✅ E2E cleans up payment test user data through cascading deletes.
+
+**Next Task:** 9.1 — Landing Page

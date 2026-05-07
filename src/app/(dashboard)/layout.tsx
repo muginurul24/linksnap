@@ -1,10 +1,31 @@
-"use client";
-
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/dashboard/app-sidebar";
 import { AppHeader } from "@/components/dashboard/app-header";
+import { auth } from "@/lib/auth";
+import { syncSubscriptionStatusForUser } from "@/lib/payments/subscription";
 
-export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+type SessionWithUserId = {
+  user?: {
+    id?: unknown;
+  } | null;
+} | null;
+
+function getSessionUserId(session: SessionWithUserId): string | null {
+  return typeof session?.user?.id === "string" ? session.user.id : null;
+}
+
+export default async function DashboardLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  const session = await auth();
+  const userId = getSessionUserId(session);
+
+  if (userId) {
+    await syncSubscriptionStatusForUser(userId);
+  }
+
   return (
     <SidebarProvider defaultOpen>
       <AppSidebar />

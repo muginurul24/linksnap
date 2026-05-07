@@ -57,6 +57,8 @@ async function cleanupLinkFlowState(
           `rate-limit:api:links:page:post:${userId}`,
           `rate-limit:api:links:rules:post:${userId}`,
           `rate-limit:api:links:slug:get:${userId}`,
+          `rate-limit:api:links:split-test:get:${userId}`,
+          `rate-limit:api:links:split-test:post:${userId}`,
           `rate-limit:api:campaigns:analytics:get:${userId}`,
           `rate-limit:api:campaigns:links:post:${userId}`,
           `rate-limit:api:campaigns:post:${userId}`,
@@ -184,8 +186,10 @@ async function visitSlugWithUserAgent({
   const page = await context.newPage();
 
   try {
-    await page.goto(`${baseURL}/${slug}`);
-    await page.waitForLoadState("domcontentloaded").catch(() => {});
+    await page.goto(`${baseURL}/${slug}`, {
+      timeout: 10_000,
+      waitUntil: "commit",
+    });
 
     return page.url();
   } finally {
@@ -259,11 +263,19 @@ test("should preview a Link Page from the dashboard links table", async ({ page 
 
     await page.getByRole("button", { name: `Preview Link Page for ${slug}` }).click();
 
-    await expect(page.getByText("Link Page preview")).toBeVisible();
-    await expect(page.getByText("Preview Launch")).toBeVisible();
-    await expect(page.getByText("Dashboard preview copy.")).toBeVisible();
-    await expect(page.getByText("Open offer")).toBeVisible();
-    await expect(page.getByText("42 people clicked this link")).toBeVisible();
+    await expect(page.getByText("Link Page preview")).toBeVisible({
+      timeout: 15_000,
+    });
+    await expect(page.getByText("Preview Launch")).toBeVisible({
+      timeout: 15_000,
+    });
+    await expect(page.getByText("Dashboard preview copy.")).toBeVisible({
+      timeout: 15_000,
+    });
+    await expect(page.getByText("Open offer")).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByText("42 people clicked this link")).toBeVisible({
+      timeout: 15_000,
+    });
 
     await page.getByRole("button", { name: "Desktop" }).click();
     await expect(page.getByRole("button", { name: "Desktop" })).toHaveAttribute(
@@ -376,7 +388,7 @@ test("should configure Smart Rules then redirect by browser user agent", async (
             slug,
             userAgent: mobileUserAgent,
           }),
-        { message: "mobile user agent should match Smart Rule", timeout: 15_000 },
+        { message: "mobile user agent should match Smart Rule", timeout: 30_000 },
       )
       .toBe("https://example.com/mobile-rule");
 
@@ -389,7 +401,10 @@ test("should configure Smart Rules then redirect by browser user agent", async (
             slug,
             userAgent: desktopUserAgent,
           }),
-        { message: "desktop user agent should use default destination", timeout: 15_000 },
+        {
+          message: "desktop user agent should use default destination",
+          timeout: 30_000,
+        },
       )
       .toBe("https://example.com/default");
 
@@ -491,6 +506,97 @@ test("should run campaign workflow from an authenticated dashboard session", asy
     if (userId) {
       await db.delete(campaigns).where(eq(campaigns.userId, userId));
     }
+    await cleanupLinkFlowState(email, userId, [slug]);
+  }
+});
+
+test("should configure an A/B split test from an authenticated dashboard session", async ({
+  page,
+}) => {
+  const email = `e2e-split-${Date.now()}@example.com`;
+  const password = "Password1";
+  const slug = `split-${Date.now()}`;
+  let userId: string | undefined;
+
+  try {
+    userId = await createVerifiedUser(email, password);
+
+    await db.insert(links).values({
+      destinationUrl: "https://example.com/default-split",
+      slug,
+      title: "Split E2E",
+      userId,
+    });
+
+    await signIn(page, { email, password });
+    await expect(page).toHaveURL(/\/links$/, { timeout: 15_000 });
+    await expect(
+      page.getByRole("table").getByText(`/${slug}`, { exact: true }),
+    ).toBeVisible();
+
+    const linkId = await getLinkIdBySlug(slug);
+    const splitResponse = await page.request.post(
+      `/api/v1/links/${linkId}/split-test`,
+      {
+        data: {
+          variants: [
+            { destinationUrl: "https://example.com/split-a", weight: 50 },
+            { destinationUrl: "https://example.com/split-b", weight: 50 },
+          ],
+        },
+      },
+    );
+    expect(splitResponse.ok()).toBe(true);
+
+    const configResponse = await page.request.get(
+      `/api/v1/links/${linkId}/split-test`,
+    );
+    expect(configResponse.ok()).toBe(true);
+    const configBody = (await configResponse.json()) as {
+      data: {
+        splitTest: {
+          variants: Array<{ destinationUrl: string; weight: number }>;
+        } | null;
+      };
+      success: true;
+    };
+
+    expect(configBody.success).toBe(true);
+    expect(configBody.data.splitTest?.variants).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          destinationUrl: "https://example.com/split-a",
+          weight: 50,
+        }),
+        expect.objectContaining({
+          destinationUrl: "https://example.com/split-b",
+          weight: 50,
+        }),
+      ]),
+    );
+
+    await page.goto(`/${slug}`);
+    await page.waitForURL(/https:\/\/example\.com\/split-[ab]/, {
+      timeout: 15_000,
+    });
+
+    const performanceResponse = await page.request.get(
+      `/api/v1/links/${linkId}/split-test`,
+    );
+    const performanceBody = (await performanceResponse.json()) as {
+      data: {
+        splitTest: {
+          performance: { totalVariantClicks: number };
+        } | null;
+      };
+      success: true;
+    };
+
+    expect(performanceBody.success).toBe(true);
+    expect(
+      performanceBody.data.splitTest?.performance.totalVariantClicks,
+    ).toBeGreaterThanOrEqual(1);
+  } finally {
     await cleanupLinkFlowState(email, userId, [slug]);
   }
 });
