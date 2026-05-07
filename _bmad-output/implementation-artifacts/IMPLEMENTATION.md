@@ -797,15 +797,15 @@ rtk bun run db:studio    # Open Drizzle Studio (in another terminal)
 - [x] Tests: integration (link pages list API response)
 
 ### TASK 12.16 — Connect Campaigns Dashboard to Real Data
-- [ ] File: `src/app/(dashboard)/campaigns/page.tsx`
-- [ ] Make page `async` server component
-- [ ] Query real campaigns from DB via `listCampaignsByUserId` query (already exists)
-- [ ] Replace ALL hardcoded mock data array
-- [ ] Create `src/app/(dashboard)/campaigns/new/page.tsx` — campaign creation form (the route is currently a 404!)
-- [ ] Add empty state when user has 0 campaigns
-- [ ] Add loading state (create `loading.tsx`)
-- [ ] Wire "Edit" and "Delete" dropdown actions
-- [ ] Tests: integration (campaigns list API, create campaign flow)
+- [x] File: `src/app/(dashboard)/campaigns/page.tsx`
+- [x] Make page `async` server component
+- [x] Query real campaigns from DB via `listCampaignsByUserId` query (already exists)
+- [x] Replace ALL hardcoded mock data array
+- [x] Create `src/app/(dashboard)/campaigns/new/page.tsx` — campaign creation form (the route is currently a 404!)
+- [x] Add empty state when user has 0 campaigns
+- [x] Add loading state (create `loading.tsx`)
+- [x] Wire "Edit" and "Delete" dropdown actions
+- [x] Tests: integration (campaigns list API, create campaign flow)
 
 ### TASK 12.17 — Connect Analytics Dashboard to Real Data
 - [ ] File: `src/app/(dashboard)/analytics/page.tsx`

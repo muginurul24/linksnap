@@ -3482,3 +3482,51 @@ contract is covered by integration tests.
 - ✅ No secrets or raw SQL introduced.
 
 **Next Task:** 12.16 — Connect Campaigns Dashboard to Real Data
+
+### 12.16 — Connect Campaigns Dashboard to Real Data
+- **Date:** 2026-05-07 16:16 GMT+7
+- **Duration:** 0h 20m
+- **Status:** ✅ Complete
+
+**What I Did:**
+Connected the Campaigns dashboard to real owner-scoped campaign data, added
+campaign creation and edit pages, and wired dashboard delete actions to the
+existing campaign API. Mock campaign dates/status/click totals were removed in
+favor of schema-backed fields.
+
+**Files Changed:**
+- `_bmad-output/planning-artifacts/spec-campaigns-dashboard-real-data.md` — Added task spec and security decisions.
+- `src/app/(dashboard)/campaigns/page.tsx` — Replaced mock cards with an async authenticated server component.
+- `src/app/(dashboard)/campaigns/campaign-form.tsx` — Added shared client form for create/edit campaign flows.
+- `src/app/(dashboard)/campaigns/campaign-actions.tsx` — Added edit, analytics, and confirmed delete dropdown actions.
+- `src/app/(dashboard)/campaigns/new/page.tsx` — Added campaign creation route.
+- `src/app/(dashboard)/campaigns/[id]/edit/page.tsx` — Added owner-verified campaign edit route.
+- `src/app/(dashboard)/campaigns/loading.tsx` — Added Campaigns skeleton loading state.
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Checked off Task 12.16.
+- `_bmad-output/implementation-artifacts/JOURNAL.md` — Recorded this completion entry.
+
+**Decisions Made:**
+- Campaign cards show real schema fields only: name, slug, link count, UTM values, and timestamps.
+- Campaign status is displayed as `Live` when links are assigned and `Setup` otherwise.
+- Edit uses a dedicated `/campaigns/[id]/edit` route because the existing API already supports updates.
+- Delete stays in the dashboard dropdown with a confirmation dialog and server component refresh.
+
+**Tests:**
+- ✅ Targeted: `rtk bun run test -- tests/integration/campaigns-api.test.ts tests/integration/campaign-workflow.test.ts` — 2 files passed, 11 tests passed.
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Unit/Integration: `rtk bun run test` — 83 files passed, 373 tests passed.
+- ✅ Build: `rtk bun run build` — Passed.
+
+**Issues Encountered:**
+- Campaign schema has no start/end date or active status columns, so those mock-only fields were intentionally removed from the dashboard UI.
+
+**Security Checks:**
+- ✅ Campaign dashboard, create, and edit pages require authenticated sessions.
+- ✅ Edit page verifies ownership before rendering campaign data.
+- ✅ Create/edit form input is validated with existing Zod schemas and route handlers validate again server-side.
+- ✅ Delete action sends the required CSRF custom header.
+- ✅ Campaign API routes remain rate limited.
+- ✅ No secrets or raw SQL introduced.
+
+**Next Task:** 12.17 — Connect Analytics Dashboard to Real Data
