@@ -1084,7 +1084,7 @@ rtk bun run db:studio    # Open Drizzle Studio (in another terminal)
 - [x] Tests: unit (redirect behavior for authed users on each auth page)
 
 ### TASK 15.2 — Create Reusable `PlanGate` Component
-- [ ] Create `src/components/plan-gate.tsx` — reusable component for plan-gated features:
+- [x] Create `src/components/plan-gate.tsx` — reusable component for plan-gated features:
   ```tsx
   <PlanGate
     allowed={userPlan !== "FREE"}
@@ -1094,14 +1094,14 @@ rtk bun run db:studio    # Open Drizzle Studio (in another terminal)
     <Input id="slug" ... />
   </PlanGate>
   ```
-- [ ] Behavior:
+- [x] Behavior:
   - If `allowed === true` → render children normally
   - If `allowed === false` → wrap children in a disabled container:
     - Show lock icon (🔒) next to label
     - Show `upgradeMessage` as muted text below the control
     - Show "Upgrade →" link pointing to `upgradeUrl`
     - Children inputs get `disabled` prop applied
-- [ ] Also support `PlanGate.Quota` variant for quota-exhausted cases:
+- [x] Also support `PlanGate.Quota` variant for quota-exhausted cases:
   ```tsx
   <PlanGate.Quota
     used={3}
@@ -1112,7 +1112,7 @@ rtk bun run db:studio    # Open Drizzle Studio (in another terminal)
     <Switch ... />
   </PlanGate.Quota>
   ```
-- [ ] Tests: unit (render children when allowed, show gate when not, quota display)
+- [x] Tests: unit (render children when allowed, show gate when not, quota display)
 
 ### TASK 15.3 — Hide Upgrade Card for Paid Users
 - [ ] File: `src/components/dashboard/app-sidebar.tsx`

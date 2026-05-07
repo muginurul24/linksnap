@@ -4289,6 +4289,41 @@ Added server-side auth guards to the marketing auth pages so active sessions do 
 
 **Next Task:** 15.2 — Create Reusable `PlanGate` Component
 
+### 15.2 — Create Reusable `PlanGate` Component
+- **Date:** 2026-05-07 20:47 GMT+7
+- **Duration:** 0 hours 15 minutes
+- **Status:** ✅ Complete
+
+**What I Did:**
+Added a reusable `PlanGate` component for plan-gated controls and a `PlanGate.Quota` variant for exhausted quota states. Locked gates now render a disabled wrapper, lock indicator, upgrade message, upgrade link, and disabled child controls.
+
+**Files Changed:**
+- `_bmad-output/planning-artifacts/spec-phase-15-plan-gate.md` — Added the PlanGate mini-spec.
+- `src/components/plan-gate.tsx` — Added `PlanGate` and `PlanGate.Quota`.
+- `tests/unit/plan-gate.test.tsx` — Added render, locked-state, and quota coverage.
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Checked off Task 15.2.
+- `_bmad-output/implementation-artifacts/JOURNAL.md` — Recorded this completion entry.
+
+**Decisions Made:**
+- Used `fieldset disabled` plus targeted child prop cloning so native controls and common shadcn/Base UI controls are disabled upfront.
+- Used lucide icons for lock and upgrade affordances instead of emoji/text arrows to match the app UI conventions.
+
+**Tests:**
+- ✅ Unit: `rtk bun run test -- tests/unit/plan-gate.test.tsx` — 1 file passed, 4 tests passed.
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Unit/Integration: `rtk bun run test` — 97 files passed, 449 tests passed.
+
+**Issues Encountered:**
+- None.
+
+**Security Checks:**
+- ✅ PlanGate is presentation-only; API authorization remains unchanged.
+- ✅ No user input or persistence changes introduced.
+- ✅ No secrets, raw SQL, or `dangerouslySetInnerHTML` introduced.
+
+**Next Task:** 15.3 — Hide Upgrade Card for Paid Users
+
 ### 13.3 — Rule Engine Logic (Ordered Priority)
 - **Date:** 2026-05-07 18:41 GMT+7
 - **Duration:** 0h 30m
