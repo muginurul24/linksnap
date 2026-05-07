@@ -708,14 +708,14 @@ For EVERY interactive component, implement these states:
 - [x] Tests: update breadcrumb test expectations
 
 ### TASK 12.7 — Add Missing Quota Enforcement
-- [ ] File: `src/lib/links/limits.ts`
-- [ ] Add `CAMPAIGN_QUOTAS` — FREE: 1, PRO: 10, BUSINESS: Infinity
-- [ ] Add `QR_QUOTAS` — FREE: 10, PRO: 100, BUSINESS: 500
-- [ ] Add `getCampaignQuota(plan)` and `getQrQuota(plan)` functions
-- [ ] Add `hasReachedCampaignQuota(plan, count)` and `hasReachedQrQuota(plan, count)`
-- [ ] Enforce campaign quota in `POST /api/v1/campaigns`
-- [ ] Enforce QR quota in `POST /api/v1/qr/[slug]` (or relevant create endpoint)
-- [ ] Tests: unit (quota boundary checks), integration (quota enforcement in API)
+- [x] File: `src/lib/links/limits.ts`
+- [x] Add `CAMPAIGN_QUOTAS` — FREE: 1, PRO: 10, BUSINESS: Infinity
+- [x] Add `QR_QUOTAS` — FREE: 10, PRO: 100, BUSINESS: 500
+- [x] Add `getCampaignQuota(plan)` and `getQrQuota(plan)` functions
+- [x] Add `hasReachedCampaignQuota(plan, count)` and `hasReachedQrQuota(plan, count)`
+- [x] Enforce campaign quota in `POST /api/v1/campaigns`
+- [x] Enforce QR quota in `POST /api/v1/qr/[slug]` (or relevant create endpoint)
+- [x] Tests: unit (quota boundary checks), integration (quota enforcement in API)
 
 ### TASK 12.8 — Landing Page Hero Stats
 - [ ] File: `src/components/landing/landing-page.tsx`

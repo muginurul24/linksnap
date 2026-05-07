@@ -111,6 +111,15 @@ async function countCampaignLinks(campaignId: string): Promise<number> {
   return row?.value ?? 0;
 }
 
+export async function countCampaignsByUserId(userId: string): Promise<number> {
+  const [row] = await db
+    .select({ value: count() })
+    .from(campaigns)
+    .where(eq(campaigns.userId, userId));
+
+  return row?.value ?? 0;
+}
+
 export async function createCampaignRecord({
   description,
   name,

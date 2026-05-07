@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { auth } from "@/lib/auth";
 import { createRequestId, errorResponse, successResponse } from "@/lib/api/response";
 import {
+  countCampaignsByUserId,
   createCampaignRecord,
   isUniqueCampaignConstraintViolation,
   listCampaignsByUserId,
@@ -9,7 +10,11 @@ import {
   type CampaignWithLinkCount,
 } from "@/lib/db/queries/campaigns";
 import { getUserPlanById } from "@/lib/db/queries/links";
-import { getApiEndpointRateLimit, type UserPlan } from "@/lib/links/limits";
+import {
+  getApiEndpointRateLimit,
+  hasReachedCampaignQuota,
+  type UserPlan,
+} from "@/lib/links/limits";
 import { slidingWindowRateLimit } from "@/lib/redis/rate-limit";
 import {
   createCampaignSchema,
@@ -173,6 +178,16 @@ export async function POST(request: NextRequest) {
         400,
         requestId,
         parsedBody.error.flatten(),
+      );
+    }
+
+    const campaignCount = await countCampaignsByUserId(authResult.userId);
+    if (hasReachedCampaignQuota(authResult.userPlan, campaignCount)) {
+      return errorResponse(
+        "CAMPAIGN_QUOTA_EXCEEDED",
+        "Campaign quota exceeded.",
+        403,
+        requestId,
       );
     }
 

@@ -1,6 +1,8 @@
 import { NextRequest } from "next/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+type UserPlan = "FREE" | "PRO" | "BUSINESS";
+
 type MockLink = {
   clickCount: number;
   destinationUrl: string;
@@ -8,8 +10,10 @@ type MockLink = {
   hasLinkPage: boolean;
   id: string;
   isActive: boolean;
+  qrCodeCountBefore: number;
   scheduledAt: Date | null;
   slug: string;
+  userPlan: UserPlan;
 };
 
 type RateLimitResult =
@@ -33,7 +37,7 @@ const mockState = vi.hoisted(() => ({
 }));
 
 vi.mock("@/lib/db/queries/links", () => ({
-  findRedirectLinkBySlug: async (slug: string) =>
+  findQrGenerationLinkBySlug: async (slug: string) =>
     mockState.links.find((link) => link.slug === slug) ?? null,
 }));
 
@@ -63,8 +67,10 @@ function createMockLink(overrides: Partial<MockLink> = {}): MockLink {
     hasLinkPage: false,
     id: "link-1",
     isActive: true,
+    qrCodeCountBefore: 0,
     scheduledAt: null,
     slug: "promo",
+    userPlan: "PRO",
     ...overrides,
   };
 }
@@ -152,6 +158,21 @@ describe("QR API", () => {
     expect(body.success).toBe(false);
     if (body.success) return;
     expect(body.error.code).toBe("LINK_NOT_FOUND");
+  });
+
+  it("should reject QR generation when plan quota has been reached", async () => {
+    mockState.links = [
+      createMockLink({ qrCodeCountBefore: 10, userPlan: "FREE" }),
+    ];
+
+    const response = await GET(createRequest(), createContext());
+    const body = await readJson(response);
+
+    expect(response.status).toBe(403);
+    expect(body.success).toBe(false);
+    if (body.success) return;
+    expect(body.error.code).toBe("QR_QUOTA_EXCEEDED");
+    expect(mockState.cacheSetCalls).toEqual([]);
   });
 
   it("should rate limit public QR generation requests", async () => {

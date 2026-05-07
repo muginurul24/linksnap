@@ -2,7 +2,8 @@ import { NextRequest } from "next/server";
 import QRCode from "qrcode";
 import { createRequestId, errorResponse } from "@/lib/api/response";
 import { getClientIpFromHeaders } from "@/lib/analytics/ip";
-import { findRedirectLinkBySlug } from "@/lib/db/queries/links";
+import { findQrGenerationLinkBySlug } from "@/lib/db/queries/links";
+import { hasReachedQrQuota } from "@/lib/links/limits";
 import { isRedirectLinkAvailable } from "@/lib/links/redirect";
 import { cacheGet, cacheSet } from "@/lib/redis";
 import { slidingWindowRateLimit } from "@/lib/redis/rate-limit";
@@ -149,9 +150,18 @@ export async function GET(request: NextRequest, context: QrRouteContext) {
     const parsedQuery = parseQuery(request, requestId);
     if ("response" in parsedQuery) return parsedQuery.response;
 
-    const link = await findRedirectLinkBySlug(parsedParams.params.slug);
+    const link = await findQrGenerationLinkBySlug(parsedParams.params.slug);
     if (!link || !isRedirectLinkAvailable(link)) {
       return errorResponse("LINK_NOT_FOUND", "Link not found.", 404, requestId);
+    }
+
+    if (hasReachedQrQuota(link.userPlan, link.qrCodeCountBefore)) {
+      return errorResponse(
+        "QR_QUOTA_EXCEEDED",
+        "QR code quota exceeded.",
+        403,
+        requestId,
+      );
     }
 
     const cacheKey = getQrCodeCacheKey({

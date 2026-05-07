@@ -3079,3 +3079,51 @@ owner-scoped link list query.
 - ✅ No secrets were printed or committed.
 
 **Next Task:** 12.7 — Enforce Plan Limits for Campaigns/QR
+
+### 12.7 — Add Missing Quota Enforcement
+- **Date:** 2026-05-07 14:42 GMT+7
+- **Duration:** 0h 35m
+- **Status:** ✅ Complete
+
+**What I Did:**
+Enforced campaign and QR quota limits at the API layer. Campaign creation now
+checks the authenticated user's campaign count before insert. QR generation now
+loads the link owner's plan and rejects QR generation once the link sits beyond
+the owner's available QR slots.
+
+**Files Changed:**
+- `src/lib/links/limits.ts` — Existing campaign/QR quota helpers are now covered by focused boundary tests.
+- `src/lib/db/queries/campaigns.ts` — Added `countCampaignsByUserId`.
+- `src/lib/db/queries/links.ts` — Added QR generation lookup with owner plan and prior QR slot count.
+- `src/app/api/v1/campaigns/route.ts` — Enforced campaign quota before campaign insert.
+- `src/app/api/v1/qr/[slug]/route.ts` — Enforced QR quota before serving cached or newly generated QR content.
+- `tests/unit/link-limits.test.ts` — Added campaign/QR quota boundary coverage.
+- `tests/integration/campaigns-api.test.ts` — Added campaign quota enforcement coverage.
+- `tests/integration/campaign-workflow.test.ts` — Updated campaign query mock for the new count contract.
+- `tests/integration/qr-api.test.ts` — Added QR quota enforcement coverage.
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Checked off Task 12.7.
+- `_bmad-output/implementation-artifacts/JOURNAL.md` — Recorded this completion entry.
+
+**Decisions Made:**
+- Used the existing public QR `GET /api/v1/qr/[slug]` endpoint as the relevant QR generation endpoint because no QR create POST route exists.
+- Treated QR quota as one QR slot per active link, ordered by link creation time, because the current schema has no first-class QR table.
+- Checked QR quota before cache reads so cached QR content cannot bypass a later plan downgrade or quota change.
+
+**Tests:**
+- ✅ Targeted: `rtk bun run test -- tests/unit/link-limits.test.ts tests/integration/campaigns-api.test.ts tests/integration/qr-api.test.ts` — 3 files passed, 27 tests passed.
+- ✅ Workflow regression: `rtk bun run test -- tests/integration/campaign-workflow.test.ts` — 1 file passed, 1 test passed.
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Unit/Integration: `rtk bun run test` — 74 files passed, 326 tests passed.
+- ✅ Build: `rtk bun run build` — Passed.
+
+**Issues Encountered:**
+- Full test initially failed because `campaign-workflow.test.ts` mocked the campaigns query module without the new `countCampaignsByUserId` export. I updated that mock and reran the failing test plus the full suite.
+
+**Security Checks:**
+- ✅ Campaign quota is enforced after authentication and before insert.
+- ✅ QR quota is enforced against owner plan data from the database.
+- ✅ Campaign and QR responses use standard error envelopes.
+- ✅ No raw SQL, unsafe HTML, or secrets added.
+
+**Next Task:** 12.8 — Landing Page Hero Stats
