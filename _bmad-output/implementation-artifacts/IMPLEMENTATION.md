@@ -1000,7 +1000,152 @@ rtk bun run db:studio    # Open Drizzle Studio (in another terminal)
 
 **Priority order:** 13.1 → 13.2 → 13.3 → 13.4 → 13.5
 
-**Estimated total:** 54 + 22 + 5 = 81 tasks
+**Estimated total:** 81 + 7 = 88 tasks
+
+---
+
+## 🟣 Phase 14: Dual Payment Gateway — Stripe + Midtrans
+
+> **Source:** Rafi product spec — 2026-05-07. Dynamic gateway selection based on client country. Indonesia → both gateways; non-Indonesia → Stripe only.
+
+### Behavior
+
+| Client Country | Available Gateways |
+|---|---|
+| Indonesia | Midtrans (bank lokal) + Stripe (credit card) |
+| Non-Indonesia | Stripe (credit card) only |
+
+Stripe handles credit card globally. Midtrans handles Indonesian local banks (BCA, Mandiri, BNI, GoPay, etc.).
+
+### TASK 14.1 — Stripe Configuration & Client
+- [ ] Add Stripe SDK: `rtk bun add stripe`
+- [ ] Add to `.env` and `.env.example`:
+  - `STRIPE_SECRET_KEY` — Stripe secret key
+  - `STRIPE_WEBHOOK_SECRET` — Stripe webhook signing secret
+  - `STRIPE_IS_TEST_MODE` — boolean (default true for sandbox)
+- [ ] Create `src/lib/payments/stripe.ts` — Stripe client singleton:
+  - Export `stripe` client instance
+  - `assertStripeConfigured()` — check env vars
+  - `StripeConfigurationError` class
+- [ ] Tests: unit (config validation, client initialization)
+
+### TASK 14.2 — Stripe Checkout Session Creation
+- [ ] Create `src/lib/payments/stripe-checkout.ts`
+- [ ] `createStripeCheckoutSession(input)`:
+  - Create Stripe Checkout Session with mode: `subscription`
+  - Line item: price from Stripe product/price IDs (not dynamic amount)
+  - Or: create dynamic price via `unit_amount` + `currency: usd`
+  - `success_url`: `{APP_URL}/checkout/success?session_id={CHECKOUT_SESSION_ID}`
+  - `cancel_url`: `{APP_URL}/checkout/cancel`
+  - `client_reference_id`: user ID
+  - `metadata`: plan + duration
+- [ ] Create `src/lib/validations/stripe.ts` — `createStripeCheckoutSchema`
+- [ ] Create `src/app/api/v1/payments/stripe/create/route.ts` — POST handler:
+  - Auth required, rate limited
+  - Validate input (plan, duration)
+  - Calculate USD price from existing pricing module
+  - Create pending transaction record in DB (reuse existing transactions table, add `gateway: "midtrans" | "stripe"`)
+  - Create Stripe Checkout Session
+  - Return `{ url: session.url }` — client redirects
+- [ ] Update `transactions` table schema: add `gateway` column (default `"midtrans"`)
+- [ ] Run `rtk bun run db:push`
+- [ ] Tests: unit (session creation params), integration (create checkout API)
+
+### TASK 14.3 — Stripe Webhook Handler
+- [ ] Create `src/lib/payments/stripe-webhook.ts`
+- [ ] `verifyStripeWebhookSignature(body, signature, secret)` — verify Stripe signature
+- [ ] `handleStripeWebhook(event)`:
+  - `checkout.session.completed`:
+    - Find transaction by `client_reference_id`
+    - Update transaction status to `SETTLEMENT`
+    - Activate subscription via existing `createOrRenewSubscriptionForPayment`
+    - Send invoice email
+  - `customer.subscription.updated`:
+    - Sync subscription status (renewal, plan change)
+  - `customer.subscription.deleted`:
+    - Expire subscription, downgrade to FREE
+  - `invoice.payment_failed`:
+    - Log failure, optionally notify user
+- [ ] Create `src/app/api/v1/payments/stripe/webhook/route.ts` — POST handler:
+  - Verify Stripe signature
+  - Parse event type
+  - Delegate to handler
+  - Return 200 quickly (Stripe expects fast response)
+  - Exempt from CSRF guard (like Midtrans webhook)
+- [ ] Update proxy CSRF exemption list to include Stripe webhook path
+- [ ] Tests: unit (signature verification, event handling), integration (webhook endpoint)
+
+### TASK 14.4 — Country Detection on Billing Page
+- [ ] File: `src/app/(dashboard)/settings/billing/page.tsx`
+- [ ] Server-side: detect client country from IP using existing MaxMind GeoLite2 (`src/lib/geo/geoip.ts`)
+- [ ] Pass `clientCountry: string | null` to billing page component
+- [ ] Logic:
+  ```typescript
+  const isIndonesia = clientCountry === "ID"
+  const gateways = isIndonesia
+    ? ["midtrans", "stripe"]
+    : ["stripe"]
+  ```
+- [ ] Tests: unit (country detection flow), integration (billing page renders correct gateways)
+
+### TASK 14.5 — Dual Gateway UI in Billing Page
+- [ ] File: `src/app/(dashboard)/settings/billing/page.tsx`
+- [ ] Refactor plan cards: instead of single "Upgrade" button, show gateway selector
+- [ ] UI for Indonesia clients:
+  ```
+  Pro — $8/month
+  ┌──────────────────────────┐
+  │ ○ Stripe (Credit Card)   │
+  │ ○ Midtrans (Bank Lokal)  │
+  │                          │
+  │ [  Upgrade to Pro  ]     │
+  └──────────────────────────┘
+  ```
+- [ ] UI for non-Indonesia clients:
+  ```
+  Pro — $8/month
+  ┌──────────────────────────┐
+  │ ● Stripe (Credit Card)   │  ← auto-selected, single option
+  │                          │
+  │ [  Upgrade to Pro  ]     │
+  └──────────────────────────┘
+  ```
+- [ ] Gateway selector: radio buttons with icon (Stripe logo, Midtrans logo)
+- [ ] Update `UpgradeButton` to accept `gateway` prop
+- [ ] On click: call appropriate endpoint
+  - `/api/v1/payments/stripe/create` → redirect to Stripe Checkout
+  - `/api/v1/payments/create` → redirect to Midtrans Snap
+- [ ] Tests: unit (gateway selector rendering), integration (billing page with country detection)
+
+### TASK 14.6 — Unify Transaction History
+- [ ] File: `src/app/(dashboard)/settings/billing/page.tsx` (billing history table)
+- [ ] Add "Gateway" column showing Stripe or Midtrans badge/icon
+- [ ] Ensure both gateways' transactions appear in unified history
+- [ ] Add payment method display (Midtrans: bank_transfer, gopay; Stripe: card brand)
+- [ ] Tests: integration (transaction history shows both gateways)
+
+### TASK 14.7 — End-to-End Payment Flow Tests
+- [ ] Update E2E tests to cover Stripe flow
+- [ ] Test: Indonesia client sees both gateways
+- [ ] Test: non-Indonesia client sees only Stripe
+- [ ] Test: Stripe checkout session creation
+- [ ] Test: Stripe webhook handling (mock signature)
+- [ ] Test: gateway badge in transaction history
+- [ ] Ensure all existing Midtrans tests still pass
+
+---
+
+## 🚀 Ready to Start?
+
+```bash
+cd ~/projects/linksnap
+rtk bun run dev          # Start development
+rtk bun run db:studio    # Open Drizzle Studio (in another terminal)
+```
+
+**Priority order:** 14.1 → 14.2 → 14.3 → 14.4 → 14.5 → 14.6 → 14.7
+
+**Estimated total:** 81 + 7 = 88 tasks
 **Estimated timeline:** 12 weeks (3 months) for 1 full-time developer
 
 Good luck. Ship it. 🚀

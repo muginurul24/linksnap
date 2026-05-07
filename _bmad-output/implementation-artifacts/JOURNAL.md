@@ -4018,6 +4018,48 @@ Extended the Smart Rules engine for V2 ordered rule evaluation. V2 rules now sup
 **Next Task:** 13.4 — Smart Rules API Update
 
 ### 13.4 — Smart Rules API Update
+- **Date:** 2026-05-07 18:47 GMT+7
+- **Duration:** 0h 30m
+- **Status:** ✅ Complete
+
+**What I Did:**
+Extended the Smart Rules API to accept V2 ordered rule payloads while preserving legacy payload support. V2 requests now include `isActive`, ordered `conditions`, `destinationUrl`, optional `fallbackDestinationUrl`, POST/PUT replacement semantics, V2 response serialization, and hidden fallback-only sentinel handling.
+
+**Files Changed:**
+- `_bmad-output/planning-artifacts/spec-smart-rules-api-v2.md` — Added API V2 task spec, acceptance criteria, and risks.
+- `src/lib/validations/smart-rule.ts` — Added V2 condition/rule/upsert schemas, country/device/time validation, optional fallback URL validation, and V2-to-current-table normalization.
+- `src/app/api/v1/links/[id]/rules/route.ts` — Added V2 parsing, PUT support, response serialization, quota counting by visible rules, fallback sentinel handling, and legacy fallback parsing.
+- `tests/unit/smart-rule-validation.test.ts` — Added V2 validation and persistence normalization coverage.
+- `tests/integration/smart-rules-api.test.ts` — Added V2 POST/PUT/GET, fallback-only, invalid V2, ordering, and backward-compatibility coverage.
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Checked off Task 13.4.
+- `_bmad-output/implementation-artifacts/JOURNAL.md` — Recorded this completion entry.
+
+**Decisions Made:**
+- Stored V2 payloads inside the existing `smart_rules.condition` JSON field to avoid a schema migration before the UI/redirect integration is complete.
+- Used an internal fallback-only sentinel row when a link has a fallback URL but no visible rules; API responses hide the sentinel.
+- Counted quota against visible V2 rules only, not fallback-only sentinel rows.
+- Kept legacy `{ type, condition, destinationUrl, priority }` payloads valid so existing clients do not need an immediate migration.
+
+**Tests:**
+- ✅ Targeted: `rtk bun run test -- tests/unit/smart-rule-validation.test.ts tests/integration/smart-rules-api.test.ts` — 2 files passed, 18 tests passed.
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Unit/Integration: `rtk bun run test` — 92 files passed, 428 tests passed.
+- ✅ Build: `rtk bun run build` — Passed.
+
+**Issues Encountered:**
+- V2 country values initially accepted arrays when the first item was valid → tightened validation so country/device/time stay single/range shaped and bot remains the multi-value condition.
+
+**Security Checks:**
+- ✅ API route still authenticates, rate limits, and verifies link ownership before reads/writes.
+- ✅ Destination and fallback URLs use the existing safe URL validator.
+- ✅ Legacy and V2 payloads are both validated by Zod before persistence.
+- ✅ No raw SQL, secrets, or `dangerouslySetInnerHTML` introduced.
+- ✅ Cache invalidation still clears redirect and Smart Rules cache after writes/deletes.
+
+**Next Task:** 13.5 — Integrate into Link Form & Redirect Handler
+
+### 13.4 — Smart Rules API Update
 - **Date:** 2026-05-07 18:46 GMT+7
 - **Duration:** 0h 35m
 - **Status:** ✅ Complete
