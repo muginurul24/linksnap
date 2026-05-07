@@ -2419,3 +2419,45 @@ Added public-site Playwright coverage for the landing/pricing/demo/register flow
 - ✅ No secrets, tokens, raw SQL, or new public write endpoints added.
 
 **Next Task:** 10.1 — Error Handling & Logging
+
+### 10.1 — Error Handling & Logging
+- **Date:** 2026-05-07 09:55 GMT+7
+- **Duration:** 0h 30m
+- **Status:** ✅ Complete
+
+**What I Did:**
+Added branded root error and not-found pages, introduced a structured logger, strengthened API error responses with an `x-request-id` header, and added unit coverage for the response contract and internal-error logging.
+
+**Files Changed:**
+- `_bmad-output/planning-artifacts/spec-error-handling-logging.md` — Added the BMad quick-dev mini-spec and acceptance criteria.
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Checked off Task 10.1 items.
+- `src/app/error.tsx` — Added root error boundary UI with retry and safe home navigation.
+- `src/app/not-found.tsx` — Added root 404 UI with safe home navigation.
+- `src/lib/observability/logger.ts` — Added structured JSON logging helper.
+- `src/lib/api/response.ts` — Added request ID response headers and structured 5xx logging.
+- `tests/unit/api-response.test.ts` — Added response helper contract tests.
+- `_bmad-output/implementation-artifacts/JOURNAL.md` — Recorded this completion entry.
+
+**Decisions Made:**
+- API 4xx responses keep the request ID in the response but are not logged by default to avoid noisy logs for expected validation/auth failures.
+- API 5xx responses are logged centrally from `errorResponse()` so every internal error response has a structured `requestId` record even if the route also has local diagnostics.
+- Error boundary UI renders generic copy and only exposes the Next.js digest when available, avoiding sensitive server details in the page.
+
+**Tests:**
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Unit/Integration: `rtk bun run test` — 62 files passed, 280 tests passed.
+- ✅ Build: `rtk bun run build` — Passed.
+- ✅ Browser: Playwright loaded `/missing/path`, verified the branded 404 content and home action.
+
+**Issues Encountered:**
+- Running Vitest in parallel with `next build` caused one auth-flow timeout due resource contention → reran the full test suite separately and it passed.
+- Initial structured log context used `message` and overwrote the event name → renamed it to `responseMessage`.
+
+**Security Checks:**
+- ✅ Error UI does not render raw server exception messages.
+- ✅ API errors continue using the standard `{ success: false, error: { code, message, requestId } }` shape.
+- ✅ `x-request-id` is returned without exposing stack traces or secrets.
+- ✅ Structured 5xx logs include request ID, code, status, and safe response copy only.
+
+**Next Task:** 10.2 — Loading States

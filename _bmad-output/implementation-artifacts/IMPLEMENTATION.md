@@ -497,10 +497,10 @@ src/
 ## 🔵 Phase 10: Polish & Launch (5 tasks)
 
 ### TASK 10.1 — Error Handling & Logging
-- Global error boundary (app/error.tsx)
-- Global not-found page (app/not-found.tsx)
-- API error standardization: `{ success: false, error: { code, message, requestId } }`
-- Structured logging with requestId
+- [x] Global error boundary (app/error.tsx)
+- [x] Global not-found page (app/not-found.tsx)
+- [x] API error standardization: `{ success: false, error: { code, message, requestId } }`
+- [x] Structured logging with requestId
 
 ### TASK 10.2 — Loading States
 - Dashboard skeleton (matching layout grid)
