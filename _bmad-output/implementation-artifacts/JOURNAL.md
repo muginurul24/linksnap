@@ -3200,3 +3200,32 @@ Free 30/min, Pro 60/min, and Business 120/min.
 - ✅ No secrets were printed or committed.
 
 **Next Task:** 12.10 — Forgot Password Link Temporary Removal
+
+### 12.10 — Forgot Password Link Temporary Removal
+- **Date:** 2026-05-07 15:00 GMT+7
+- **Duration:** 0h 5m
+- **Status:** ✅ Complete
+
+**What I Did:**
+Skipped the temporary forgot-password link removal because Task 12.1 already
+implemented the full forgot/reset password flow and the `/forgot-password` route
+exists.
+
+**Files Changed:**
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Marked the deferred-only checklist items as skipped because 12.1 is complete.
+- `_bmad-output/implementation-artifacts/JOURNAL.md` — Recorded this skip entry.
+
+**Decisions Made:**
+- Kept the login "Forgot password?" link active because removing it would regress the completed password reset flow.
+
+**Tests:**
+- ✅ Not run for this no-code documentation-only skip.
+
+**Issues Encountered:**
+- None.
+
+**Security Checks:**
+- ✅ No runtime code changes.
+- ✅ No secrets were printed or committed.
+
+**Next Task:** 12.11 — Fix Sidebar Active Route for Settings
