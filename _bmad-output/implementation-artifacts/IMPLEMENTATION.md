@@ -532,7 +532,7 @@ src/
 - [x] Monitoring/alerting configured (baseline scheduled production smoke)
 - [ ] Backup strategy verified
 - [ ] Load test: 5000 concurrent redirects
-- [ ] Penetration test (basic)
+- [x] Penetration test (basic)
 - [ ] Go-live! 🚀
 
 ---
