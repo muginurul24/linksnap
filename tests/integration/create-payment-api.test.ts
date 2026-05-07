@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 type UserPlan = "FREE" | "PRO" | "BUSINESS";
 type PaymentPlan = "PRO" | "BUSINESS";
@@ -37,6 +37,11 @@ type PendingTransactionInput = {
 };
 
 type MidtransInput = {
+  callbackUrls: {
+    error: string;
+    finish: string;
+    unfinish: string;
+  };
   customer: {
     email: string | null;
     name: string | null;
@@ -55,6 +60,9 @@ type ApiEnvelope<T> =
       };
       success: false;
     };
+
+const previousAppUrl = process.env.APP_URL;
+const previousPublicAppUrl = process.env.NEXT_PUBLIC_APP_URL;
 
 const mockState = vi.hoisted(() => ({
   attachedTokens: [] as Array<{ orderId: string; snapToken: string }>,
@@ -151,6 +159,15 @@ vi.mock("@/lib/payments/midtrans", () => {
 import { MidtransApiError } from "../../src/lib/payments/midtrans";
 import { POST } from "../../src/app/api/v1/payments/create/route";
 
+function restoreEnv(key: "APP_URL" | "NEXT_PUBLIC_APP_URL", value: string | undefined) {
+  if (value === undefined) {
+    delete process.env[key];
+    return;
+  }
+
+  process.env[key] = value;
+}
+
 function createRequest(body?: unknown): NextRequest {
   return new NextRequest("http://localhost:3000/api/v1/payments/create", {
     body: body === undefined ? undefined : JSON.stringify(body),
@@ -165,6 +182,8 @@ async function readJson<T>(response: Response): Promise<ApiEnvelope<T>> {
 
 describe("create payment API", () => {
   beforeEach(() => {
+    process.env.APP_URL = "https://www.justqiu.cloud/";
+    restoreEnv("NEXT_PUBLIC_APP_URL", previousPublicAppUrl);
     process.env.USD_IDR_RATE = "16000";
     mockState.attachedTokens = [];
     mockState.billingUser = {
@@ -183,6 +202,11 @@ describe("create payment API", () => {
     mockState.rateLimitOptions = [];
     mockState.rateLimitResult = { limited: false, remaining: 99 };
     mockState.session = { user: { id: "user-1" } };
+  });
+
+  afterEach(() => {
+    restoreEnv("APP_URL", previousAppUrl);
+    restoreEnv("NEXT_PUBLIC_APP_URL", previousPublicAppUrl);
   });
 
   it("should create a Midtrans Snap transaction for a paid plan", async () => {
@@ -222,6 +246,11 @@ describe("create payment API", () => {
     ]);
     expect(mockState.midtransInputs).toEqual([
       {
+        callbackUrls: {
+          error: `https://www.justqiu.cloud/checkout/cancel?order_id=${body.data.orderId}&status=error`,
+          finish: `https://www.justqiu.cloud/checkout/success?order_id=${body.data.orderId}`,
+          unfinish: `https://www.justqiu.cloud/checkout/cancel?order_id=${body.data.orderId}&status=unfinish`,
+        },
         customer: {
           email: "buyer@example.com",
           name: "Rafi Link",

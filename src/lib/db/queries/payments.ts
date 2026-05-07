@@ -54,6 +54,19 @@ export type BillingTransaction = {
   updatedAt: Date;
 };
 
+export type CheckoutTransactionSummary = {
+  createdAt: Date;
+  duration: string;
+  grossAmountIdr: number;
+  grossAmountUsd: number;
+  orderId: string;
+  paidAt: Date | null;
+  paymentMethod: string | null;
+  plan: UserPlan;
+  status: PaymentStatus;
+  updatedAt: Date;
+};
+
 type CreatePendingTransactionInput = {
   duration: PaymentDuration;
   grossAmountIdr: number;
@@ -165,6 +178,33 @@ export async function findPaymentTransactionByOrderId(
     .from(transactions)
     .innerJoin(users, eq(transactions.userId, users.id))
     .where(eq(transactions.orderId, orderId));
+
+  return transaction ?? null;
+}
+
+export async function findCheckoutTransactionByOrderId({
+  orderId,
+  userId,
+}: {
+  orderId: string;
+  userId: string;
+}): Promise<CheckoutTransactionSummary | null> {
+  const [transaction] = await db
+    .select({
+      createdAt: transactions.createdAt,
+      duration: transactions.duration,
+      grossAmountIdr: transactions.grossAmountIdr,
+      grossAmountUsd: transactions.grossAmountUsd,
+      orderId: transactions.orderId,
+      paidAt: transactions.paidAt,
+      paymentMethod: transactions.paymentMethod,
+      plan: transactions.plan,
+      status: transactions.status,
+      updatedAt: transactions.updatedAt,
+    })
+    .from(transactions)
+    .where(and(eq(transactions.orderId, orderId), eq(transactions.userId, userId)))
+    .limit(1);
 
   return transaction ?? null;
 }

@@ -3580,3 +3580,57 @@ referrer, and country charts, and exports the same summary as CSV.
 - ✅ No secrets or raw SQL introduced.
 
 **Next Task:** 12.18 — Post-Payment Checkout Pages
+
+### 12.18 — Post-Payment Checkout Pages
+- **Date:** 2026-05-07 16:39 GMT+7
+- **Duration:** 0h 15m
+- **Status:** ✅ Complete
+
+**What I Did:**
+Added post-payment success and cancellation pages, wired deterministic checkout
+return URLs into the Midtrans payment create flow, and documented the provider
+callback decision. The success page reads owner-scoped checkout data and shows
+plan, status, order ID, and next billing state.
+
+**Files Changed:**
+- `_bmad-output/planning-artifacts/spec-post-payment-checkout-pages.md` — Added task spec and Midtrans redirect decision.
+- `src/app/(marketing)/checkout/success/page.tsx` — Added authenticated checkout success page.
+- `src/app/(marketing)/checkout/cancel/page.tsx` — Added checkout cancellation page.
+- `src/app/api/v1/payments/create/route.ts` — Added payment redirect URL generation before Snap transaction creation.
+- `src/lib/db/queries/payments.ts` — Added owner-scoped checkout transaction summary query.
+- `src/lib/payments/midtrans.ts` — Added documented Snap `callbacks.finish` support.
+- `src/lib/payments/redirects.ts` — Added checkout finish, error, and unfinish URL builder.
+- `src/lib/validations/payment.ts` — Added checkout query param validation schemas.
+- `tests/unit/checkout-pages.test.tsx` — Added checkout page render coverage.
+- `tests/unit/payment-redirects.test.ts` — Added redirect URL helper coverage.
+- `tests/unit/midtrans-client.test.ts` — Verified Snap callback payload output.
+- `tests/integration/create-payment-api.test.ts` — Verified payment creation passes checkout callback URLs.
+- `tests/e2e/payment-flow.spec.ts` — Added checkout success page assertion to the payment E2E flow.
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Checked off Task 12.18.
+- `_bmad-output/implementation-artifacts/JOURNAL.md` — Recorded this completion entry.
+
+**Decisions Made:**
+- Midtrans webhook remains the payment source of truth; the success page explains pending activation when the webhook has not finalized the subscription yet.
+- The Snap API payload sends the documented `callbacks.finish` override only; generated error and unfinish URLs are intended for Snap Preference/dashboard redirect settings.
+- Success details are scoped by both `order_id` and authenticated `userId` to avoid leaking another user's payment information.
+
+**Tests:**
+- ✅ Targeted: `rtk bun run test -- tests/unit/payment-redirects.test.ts tests/unit/midtrans-client.test.ts tests/unit/checkout-pages.test.tsx tests/integration/create-payment-api.test.ts` — 4 files passed, 17 tests passed.
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Unit/Integration: `rtk bun run test` — 87 files passed, 387 tests passed.
+- ✅ Build: `rtk bun run build` — Passed.
+- ⚠️ E2E: `rtk bun run test:e2e -- --grep "should create sandbox payment"` — Blocked by Neon `fetch failed` while loading existing `/settings/billing` before the new checkout assertion.
+
+**Issues Encountered:**
+- The task requested finish/error/unfinish callbacks in the Snap payload, but Midtrans documents only `callbacks.finish` for token creation. I kept the provider request to the documented field and generated the other redirect URLs for dashboard configuration.
+- Targeted Playwright payment E2E could not complete locally because the dev server failed to connect to Neon before reaching checkout-specific assertions.
+
+**Security Checks:**
+- ✅ Success page requires authentication.
+- ✅ Checkout transaction reads are owner-scoped by `userId`.
+- ✅ Checkout query params are validated with Zod.
+- ✅ Payment create route continues to authenticate and rate limit before transaction creation.
+- ✅ No secrets or raw SQL introduced.
+
+**Next Task:** 12.19 — Individual Blog Post Pages

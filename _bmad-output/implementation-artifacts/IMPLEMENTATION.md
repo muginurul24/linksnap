@@ -822,15 +822,15 @@ rtk bun run db:studio    # Open Drizzle Studio (in another terminal)
 - [x] Tests: unit (data aggregation), integration (analytics API queries)
 
 ### TASK 12.18 — Post-Payment Checkout Pages
-- [ ] Create `src/app/(marketing)/checkout/success/page.tsx`
+- [x] Create `src/app/(marketing)/checkout/success/page.tsx`
   - Accept `?order_id=` query param
   - Show success message with plan name, next billing date
   - "Go to Dashboard" CTA button
-- [ ] Create `src/app/(marketing)/checkout/cancel/page.tsx`
+- [x] Create `src/app/(marketing)/checkout/cancel/page.tsx`
   - Show "Payment was cancelled" message
   - "Try Again" link back to `/settings/billing`
-- [ ] Update Midtrans Snap payload to include `redirect_url` finish/error/unfinish callbacks
-- [ ] Tests: unit (checkout page renders), integration (payment flow end-to-end)
+- [x] Update Midtrans Snap payload to include `redirect_url` finish/error/unfinish callbacks
+- [x] Tests: unit (checkout page renders), integration (payment flow end-to-end)
 
 ### TASK 12.19 — Individual Blog Post Pages
 - [ ] Create `src/app/(marketing)/blog/[slug]/page.tsx`

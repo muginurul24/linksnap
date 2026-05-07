@@ -19,6 +19,10 @@ import {
   getUsdIdrRate,
   PaymentConfigurationError,
 } from "@/lib/payments/pricing";
+import {
+  buildPaymentRedirectUrls,
+  getConfiguredPaymentBaseUrl,
+} from "@/lib/payments/redirects";
 import { slidingWindowRateLimit } from "@/lib/redis/rate-limit";
 import {
   createPaymentSchema,
@@ -135,6 +139,10 @@ export async function POST(request: NextRequest) {
 
     const { grossAmountIdr, grossAmountUsd } = calculatePaymentAmount(parsedBody.data);
     const orderId = generatePaymentOrderId();
+    const callbackUrls = buildPaymentRedirectUrls({
+      baseUrl: getConfiguredPaymentBaseUrl() ?? request.nextUrl.origin,
+      orderId,
+    });
 
     await createPendingTransactionRecord({
       duration: parsedBody.data.duration,
@@ -146,6 +154,7 @@ export async function POST(request: NextRequest) {
     });
 
     const snapTransaction = await createMidtransSnapTransaction({
+      callbackUrls,
       customer: {
         email: authResult.email,
         name: authResult.name,
