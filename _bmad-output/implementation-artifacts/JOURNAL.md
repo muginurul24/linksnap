@@ -227,6 +227,46 @@ Verified the Upstash Redis connection using the application's Redis client. Conf
 
 **Next Task:** 0.4 — CI/CD Pipeline
 
+### 14.1 — Stripe Configuration & Client
+- **Date:** 2026-05-07 19:08 GMT+7
+- **Duration:** 0 hours 18 minutes
+- **Status:** ✅ Complete
+
+**What I Did:**
+Added the Stripe SDK and configured Stripe environment placeholders for local, example, and CI environments. Created the Stripe payment client module with explicit configuration validation, test-mode parsing, and a reusable configuration error.
+
+**Files Changed:**
+- `package.json` — Added Stripe SDK dependency.
+- `bun.lock` — Updated dependency lockfile for Stripe.
+- `.env` — Added local Stripe placeholder keys.
+- `.env.example` — Documented required Stripe environment variables.
+- `.github/workflows/ci.yml` — Added CI placeholder Stripe environment variables.
+- `src/lib/payments/stripe.ts` — Added Stripe client singleton and configuration helpers.
+- `tests/unit/stripe-client.test.ts` — Added Stripe configuration and initialization tests.
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Marked task 14.1 complete.
+- `_bmad-output/implementation-artifacts/JOURNAL.md` — Logged task completion.
+
+**Decisions Made:**
+- Used explicit placeholder values locally and in CI so imports and builds stay deterministic before real Stripe credentials are configured.
+- Kept provider validation in a dedicated payment module so checkout and webhook routes can fail with consistent payment configuration errors.
+
+**Tests:**
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Unit/Integration: `rtk bun run test` — Passed on rerun, 94 files / 437 tests.
+- ✅ Targeted retry: `rtk bun run test tests/integration/change-password-api.test.ts` — Passed after the first full-suite run timed out one existing slow test.
+
+**Issues Encountered:**
+- Initial full Vitest run timed out `change-password-api.test.ts` under suite load → reran that file successfully, then reran the full suite successfully.
+
+**Security Checks:**
+- ✅ No real Stripe secrets were committed.
+- ✅ Stripe webhook secret presence is validated before webhook use.
+- ✅ No card data is stored or logged.
+- ✅ Configuration failures raise explicit payment errors.
+
+**Next Task:** 14.2 — Stripe Checkout Session Creation
+
 ### 0.4 — CI/CD Pipeline
 - **Date:** 2026-05-06 20:10 GMT+7
 - **Duration:** 0 hours 35 minutes

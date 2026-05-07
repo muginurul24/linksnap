@@ -1018,16 +1018,16 @@ rtk bun run db:studio    # Open Drizzle Studio (in another terminal)
 Stripe handles credit card globally. Midtrans handles Indonesian local banks (BCA, Mandiri, BNI, GoPay, etc.).
 
 ### TASK 14.1 — Stripe Configuration & Client
-- [ ] Add Stripe SDK: `rtk bun add stripe`
-- [ ] Add to `.env` and `.env.example`:
+- [x] Add Stripe SDK: `rtk bun add stripe`
+- [x] Add to `.env` and `.env.example`:
   - `STRIPE_SECRET_KEY` — Stripe secret key
   - `STRIPE_WEBHOOK_SECRET` — Stripe webhook signing secret
   - `STRIPE_IS_TEST_MODE` — boolean (default true for sandbox)
-- [ ] Create `src/lib/payments/stripe.ts` — Stripe client singleton:
-  - Export `stripe` client instance
-  - `assertStripeConfigured()` — check env vars
-  - `StripeConfigurationError` class
-- [ ] Tests: unit (config validation, client initialization)
+- [x] Create `src/lib/payments/stripe.ts` — Stripe client singleton:
+  - [x] Export `stripe` client instance
+  - [x] `assertStripeConfigured()` — check env vars
+  - [x] `StripeConfigurationError` class
+- [x] Tests: unit (config validation, client initialization)
 
 ### TASK 14.2 — Stripe Checkout Session Creation
 - [ ] Create `src/lib/payments/stripe-checkout.ts`
