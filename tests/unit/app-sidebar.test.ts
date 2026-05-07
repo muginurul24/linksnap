@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { getSidebarDisplayUser } from "../../src/components/dashboard/app-sidebar";
+import {
+  getSidebarDisplayUser,
+  isSidebarItemActive,
+} from "../../src/components/dashboard/app-sidebar";
 
 describe("app sidebar user display", () => {
   it("should render the matching plan label for each user plan", () => {
@@ -33,5 +36,18 @@ describe("app sidebar user display", () => {
       name: "User",
       planLabel: "Free Plan",
     });
+  });
+
+  it("should only mark settings active on the exact settings route", () => {
+    expect(isSidebarItemActive("/settings", "/settings")).toBe(true);
+    expect(isSidebarItemActive("/settings/billing", "/settings")).toBe(false);
+    expect(isSidebarItemActive("/settings/billing", "/settings/billing")).toBe(
+      true,
+    );
+  });
+
+  it("should keep nested non-settings routes active", () => {
+    expect(isSidebarItemActive("/links/new", "/links")).toBe(true);
+    expect(isSidebarItemActive("/dashboard/extra", "/dashboard")).toBe(false);
   });
 });

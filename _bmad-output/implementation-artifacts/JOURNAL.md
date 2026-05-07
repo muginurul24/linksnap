@@ -3229,3 +3229,39 @@ exists.
 - ✅ No secrets were printed or committed.
 
 **Next Task:** 12.11 — Fix Sidebar Active Route for Settings
+
+### 12.11 — Fix Sidebar Active Route for Settings
+- **Date:** 2026-05-07 15:06 GMT+7
+- **Duration:** 0h 15m
+- **Status:** ✅ Complete
+
+**What I Did:**
+Fixed sidebar active-state matching so `/settings/billing` no longer also
+activates the parent `/settings` item. Added focused unit coverage for exact
+settings matching and nested route behavior.
+
+**Files Changed:**
+- `src/components/dashboard/app-sidebar.tsx` — Added `isSidebarItemActive` helper and used it for nav active state.
+- `tests/unit/app-sidebar.test.ts` — Added settings-vs-billing active route coverage.
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Checked off Task 12.11.
+- `_bmad-output/implementation-artifacts/JOURNAL.md` — Recorded this completion entry.
+
+**Decisions Made:**
+- Kept nested matching for non-settings routes like `/links/new`.
+- Kept dashboard exact-only matching because `/dashboard/extra` is not a real dashboard section.
+
+**Tests:**
+- ✅ Targeted: `rtk bun run test -- tests/unit/app-sidebar.test.ts` — 1 file passed, 5 tests passed.
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Unit/Integration: `rtk bun run test` — 75 files passed, 331 tests passed.
+- ✅ Build: `rtk bun run build` — Passed.
+
+**Issues Encountered:**
+- None.
+
+**Security Checks:**
+- ✅ No input, auth, ownership, database, or secret handling changes.
+- ✅ No secrets were printed or committed.
+
+**Next Task:** 12.12 — API Documentation Page (Paid Users)

@@ -78,14 +78,16 @@ export function getSidebarDisplayUser(user: AppSidebarUser): SidebarDisplayUser 
   };
 }
 
+export function isSidebarItemActive(pathname: string, url: string): boolean {
+  if (url === "/dashboard") return pathname === "/dashboard";
+  if (url === "/settings") return pathname === "/settings";
+
+  return pathname === url || pathname.startsWith(`${url}/`);
+}
+
 export function AppSidebar({ user }: { user: AppSidebarUser }) {
   const pathname = usePathname();
   const displayUser = getSidebarDisplayUser(user);
-
-  const isActive = (url: string) => {
-    if (url === "/dashboard") return pathname === "/dashboard";
-    return pathname.startsWith(url);
-  };
 
   return (
     <Sidebar collapsible="icon" variant="sidebar">
@@ -115,7 +117,7 @@ export function AppSidebar({ user }: { user: AppSidebarUser }) {
               {mainNav.map((item) => (
                 <SidebarMenuItem key={item.url}>
                   <SidebarMenuButton
-                    isActive={isActive(item.url)}
+                    isActive={isSidebarItemActive(pathname, item.url)}
                     render={<Link href={item.url} />}
                     tooltip={item.title}
                   >
@@ -135,7 +137,7 @@ export function AppSidebar({ user }: { user: AppSidebarUser }) {
               {accountNav.map((item) => (
                 <SidebarMenuItem key={item.url}>
                   <SidebarMenuButton
-                    isActive={isActive(item.url)}
+                    isActive={isSidebarItemActive(pathname, item.url)}
                     render={<Link href={item.url} />}
                     tooltip={item.title}
                   >
