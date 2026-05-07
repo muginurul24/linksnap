@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Toaster } from "@/components/ui/sonner";
 import { registerSchema, type RegisterInput } from "@/lib/validations/auth";
 
 type RegisterField = keyof RegisterInput;
@@ -186,6 +187,7 @@ export default function RegisterPage() {
           </p>
         </CardContent>
       </Card>
+      <Toaster richColors closeButton position="top-right" theme="dark" />
     </main>
   );
 }

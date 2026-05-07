@@ -488,9 +488,9 @@ src/
   3. "How Link Pages 5x'd Our Click-Through Rate"
 
 ### TASK 9.4 — Public Site Tests
-- Lighthouse: target 90+ on all public pages
-- E2E: landing → pricing → demo generator → register
-- A11y: WCAG 2.1 AA audit
+- [x] Lighthouse: target 90+ on all public pages
+- [x] E2E: landing → pricing → demo generator → register
+- [x] A11y: WCAG 2.1 AA audit
 
 ---
 

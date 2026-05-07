@@ -1,15 +1,10 @@
-"use client";
-
-import type { FormEvent } from "react";
-import { useMemo, useState } from "react";
+import type { ReactNode } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { motion } from "framer-motion";
 import {
   ArrowRight,
   BarChart3,
   Check,
-  Copy,
   Globe2,
   Layers3,
   Link2,
@@ -21,9 +16,7 @@ import {
   Zap,
   type LucideIcon,
 } from "lucide-react";
-import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { DemoGenerator } from "@/components/landing/demo-generator";
 import { cn } from "@/lib/utils";
 
 type Feature = {
@@ -45,16 +38,6 @@ type Testimonial = {
   name: string;
   role: string;
   metric: string;
-};
-
-const container = {
-  hidden: {},
-  visible: { transition: { staggerChildren: 0.08 } },
-};
-
-const item = {
-  hidden: { opacity: 0, y: 18 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.45 } },
 };
 
 const features: Feature[] = [
@@ -173,7 +156,7 @@ function Container({
   children,
   className,
 }: {
-  children: React.ReactNode;
+  children: ReactNode;
   className?: string;
 }) {
   return (
@@ -208,26 +191,9 @@ function SectionHeading({
 function Hero() {
   return (
     <section className="relative isolate overflow-hidden border-b bg-[#080b0e]">
-      <div className="absolute inset-0">
-        <Image
-          src="/landing-preview"
-          alt=""
-          fill
-          priority
-          unoptimized
-          sizes="100vw"
-          className="object-cover opacity-45"
-        />
-        <div className="absolute inset-0 bg-[linear-gradient(90deg,#080b0e_0%,rgba(8,11,14,0.9)_35%,rgba(8,11,14,0.55)_100%)]" />
-        <div className="absolute inset-x-0 bottom-0 h-32 bg-linear-to-t from-background to-transparent" />
-      </div>
-      <Container className="relative flex min-h-[82svh] flex-col justify-center py-24 sm:py-28">
-        <motion.div
-          initial={{ opacity: 0, y: 18 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.55 }}
-          className="max-w-3xl"
-        >
+      <div className="absolute inset-0 bg-[linear-gradient(135deg,#080b0e_0%,#101820_52%,#082018_100%)]" />
+      <Container className="relative flex min-h-[78svh] flex-col justify-center py-24 sm:py-28">
+        <div className="max-w-3xl">
           <p className="inline-flex items-center gap-2 rounded-lg border border-white/15 bg-white/10 px-3 py-1 text-sm font-medium text-white backdrop-blur">
             <Sparkles className="size-4 text-emerald-300" />
             Link intelligence for conversion-focused campaigns
@@ -255,7 +221,7 @@ function Hero() {
               Try Demo
             </Link>
           </div>
-        </motion.div>
+        </div>
         <div className="mt-14 grid max-w-3xl grid-cols-2 gap-3 sm:grid-cols-4">
           {stats.map(([value, label]) => (
             <div key={label} className="border-l border-white/15 pl-4">
@@ -269,14 +235,28 @@ function Hero() {
   );
 }
 
+function ProductPreview() {
+  return (
+    <section className="border-b bg-background py-10">
+      <Container>
+        <Image
+          src="/landing-preview.png"
+          alt="LinkSnap campaign dashboard preview"
+          width={1200}
+          height={630}
+          sizes="(min-width: 1024px) 1024px, 100vw"
+          className="mx-auto h-auto w-full max-w-5xl rounded-md border shadow-sm"
+        />
+      </Container>
+    </section>
+  );
+}
+
 function FeatureCard({ feature }: { feature: Feature }) {
   const Icon = feature.icon;
 
   return (
-    <motion.div
-      variants={item}
-      className="rounded-md border bg-card p-6 shadow-sm transition hover:border-emerald-400/50"
-    >
+    <div className="rounded-md border bg-card p-6 shadow-sm transition hover:border-emerald-400/50">
       <div className="flex size-11 items-center justify-center rounded-md bg-emerald-500/10 text-emerald-400">
         <Icon className="size-5" />
       </div>
@@ -284,7 +264,7 @@ function FeatureCard({ feature }: { feature: Feature }) {
       <p className="mt-3 text-sm leading-6 text-muted-foreground">
         {feature.description}
       </p>
-    </motion.div>
+    </div>
   );
 }
 
@@ -297,131 +277,10 @@ function Features() {
           title="Six tools marketers usually buy separately"
           description="LinkSnap keeps short links, micro landing pages, campaign tracking, QR workflows, and redirect logic in one focused product."
         />
-        <motion.div
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true, margin: "-80px" }}
-          variants={container}
-          className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3"
-        >
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {features.map((feature) => (
             <FeatureCard key={feature.title} feature={feature} />
           ))}
-        </motion.div>
-      </Container>
-    </section>
-  );
-}
-
-function DemoGenerator() {
-  const [url, setUrl] = useState("https://myshop.id/ramadhan-sale?utm_source=instagram");
-  const [shortLink, setShortLink] = useState("https://linksnap.id/myshop-k7p3");
-  const [error, setError] = useState<string | null>(null);
-
-  const destinationHost = useMemo(() => {
-    try {
-      return new URL(url).hostname.replace(/^www\./, "");
-    } catch {
-      return "destination";
-    }
-  }, [url]);
-
-  function submitDemo(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const validationError = validateDemoUrl(url);
-
-    if (validationError) {
-      setError(validationError);
-      return;
-    }
-
-    setError(null);
-    setShortLink(`https://linksnap.id/${generateDemoSlug(url)}`);
-  }
-
-  async function copyShortLink() {
-    await navigator.clipboard.writeText(shortLink);
-    toast.success("Demo link copied.");
-  }
-
-  return (
-    <section id="demo" className="border-y bg-muted/40 py-20 sm:py-24">
-      <Container>
-        <div className="grid items-center gap-10 lg:grid-cols-[0.95fr_1.05fr]">
-          <div>
-            <p className="text-sm font-semibold uppercase text-emerald-400">
-              Demo Generator
-            </p>
-            <h2 className="mt-3 text-3xl font-semibold sm:text-4xl">
-              Generate a short link preview before signing up
-            </h2>
-            <p className="mt-4 text-base leading-7 text-muted-foreground">
-              Paste a public URL and LinkSnap creates a live browser-side short
-              link preview with the same slug style used in the dashboard.
-            </p>
-          </div>
-
-          <div className="rounded-md border bg-background p-5 shadow-sm sm:p-6">
-            <form className="space-y-4" onSubmit={submitDemo}>
-              <label className="block text-sm font-medium" htmlFor="demo-url">
-                Destination URL
-              </label>
-              <div className="flex flex-col gap-3 sm:flex-row">
-                <Input
-                  id="demo-url"
-                  type="url"
-                  value={url}
-                  onChange={(event) => setUrl(event.target.value)}
-                  placeholder="https://example.com/campaign"
-                  className="h-11"
-                  aria-invalid={Boolean(error)}
-                />
-                <Button type="submit" className="h-11 px-4">
-                  Generate
-                  <Zap className="size-4" />
-                </Button>
-              </div>
-              {error ? <p className="text-sm text-destructive">{error}</p> : null}
-            </form>
-
-            <div className="mt-6 rounded-md border bg-muted/50 p-4">
-              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                <div className="min-w-0">
-                  <p className="text-xs font-medium uppercase text-muted-foreground">
-                    Short link
-                  </p>
-                  <p className="mt-1 break-all font-mono text-base text-foreground">
-                    {shortLink}
-                  </p>
-                </div>
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="h-9"
-                  onClick={copyShortLink}
-                >
-                  <Copy className="size-4" />
-                  Copy
-                </Button>
-              </div>
-              <div className="mt-5 grid gap-3 sm:grid-cols-3">
-                {[
-                  ["Destination", destinationHost],
-                  ["Rule", "HTTP 308"],
-                  ["Status", "Preview"],
-                ].map(([label, value]) => (
-                  <div key={label} className="rounded-md border bg-background p-3">
-                    <p className="text-xs text-muted-foreground">{label}</p>
-                    <p className="mt-1 truncate text-sm font-medium">{value}</p>
-                  </div>
-                ))}
-              </div>
-              <p className="mt-4 text-xs leading-5 text-muted-foreground">
-                Preview only. Create an account to publish real redirects, QR
-                codes, analytics, and Link Pages.
-              </p>
-            </div>
-          </div>
         </div>
       </Container>
     </section>
@@ -430,8 +289,7 @@ function DemoGenerator() {
 
 function PricingCard({ plan }: { plan: Plan }) {
   return (
-    <motion.div
-      variants={item}
+    <div
       className={cn(
         "rounded-md border bg-card p-6 shadow-sm",
         plan.highlighted && "border-emerald-400 bg-emerald-500/5",
@@ -472,7 +330,7 @@ function PricingCard({ plan }: { plan: Plan }) {
         Get Started Free
         <ArrowRight className="size-4" />
       </Link>
-    </motion.div>
+    </div>
   );
 }
 
@@ -485,17 +343,11 @@ function Pricing() {
           title="Start free, upgrade when campaigns need more room"
           description="The free tier includes real short links, Link Pages, Smart Rules, QR codes, and analytics retention for MVP launches."
         />
-        <motion.div
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true, margin: "-80px" }}
-          variants={container}
-          className="grid gap-4 lg:grid-cols-3"
-        >
+        <div className="grid gap-4 lg:grid-cols-3">
           {plans.map((plan) => (
             <PricingCard key={plan.name} plan={plan} />
           ))}
-        </motion.div>
+        </div>
       </Container>
     </section>
   );
@@ -597,60 +449,12 @@ function Footer() {
   );
 }
 
-function validateDemoUrl(value: string): string | null {
-  try {
-    const parsed = new URL(value);
-    const hostname = parsed.hostname.toLowerCase();
-
-    if (!["https:", "http:"].includes(parsed.protocol)) {
-      return "Use an http or https URL.";
-    }
-
-    if (isInternalHostname(hostname)) {
-      return "Use a public destination URL.";
-    }
-
-    return null;
-  } catch {
-    return "Enter a valid public URL.";
-  }
-}
-
-function isInternalHostname(hostname: string): boolean {
-  return (
-    hostname === "localhost" ||
-    hostname === "127.0.0.1" ||
-    hostname === "0.0.0.0" ||
-    hostname === "::1" ||
-    hostname.endsWith(".local") ||
-    hostname.startsWith("10.") ||
-    hostname.startsWith("192.168.") ||
-    hostname.match(/^172\.(1[6-9]|2\d|3[0-1])\./) !== null
-  );
-}
-
-function generateDemoSlug(value: string): string {
-  const hostname = new URL(value).hostname
-    .replace(/^www\./, "")
-    .split(".")[0]
-    .replace(/[^a-z0-9-]/gi, "")
-    .toLowerCase()
-    .slice(0, 10);
-  const bytes = new Uint8Array(3);
-  crypto.getRandomValues(bytes);
-  const suffix = Array.from(bytes)
-    .map((byte) => byte.toString(36).padStart(2, "0"))
-    .join("")
-    .slice(0, 5);
-
-  return `${hostname || "snap"}-${suffix}`;
-}
-
 export default function LandingPage() {
   return (
     <main className="min-h-screen bg-background text-foreground">
       <Hero />
       <Features />
+      <ProductPreview />
       <DemoGenerator />
       <Pricing />
       <Testimonials />

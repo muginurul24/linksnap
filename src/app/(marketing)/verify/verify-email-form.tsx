@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Toaster } from "@/components/ui/sonner";
 import {
   verifyEmailSchema,
   type VerifyEmailInput,
@@ -239,6 +240,7 @@ export function VerifyEmailForm() {
           </div>
         </CardContent>
       </Card>
+      <Toaster richColors closeButton position="top-right" theme="dark" />
     </main>
   );
 }

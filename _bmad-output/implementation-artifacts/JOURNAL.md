@@ -2373,3 +2373,49 @@ Added the public blog index and three launch MDX articles. The blog page reads M
 - ✅ No raw SQL, public write endpoint, secrets, or user-controlled fetch URLs added.
 
 **Next Task:** 9.4 — Public Site Tests
+
+### 9.4 — Public Site Tests
+- **Date:** 2026-05-07 09:47 GMT+7
+- **Duration:** 0h 35m
+- **Status:** ✅ Complete
+
+**What I Did:**
+Added public-site Playwright coverage for the landing/pricing/demo/register flow, added axe WCAG 2.1 AA audits for public pages, and optimized marketing routes so mobile Lighthouse stays at or above the 90 target.
+
+**Files Changed:**
+- `tests/e2e/public-site.spec.ts` — Added public navigation flow and axe accessibility checks.
+- `package.json` — Added `@axe-core/playwright` for E2E accessibility audits.
+- `bun.lock` — Locked the new E2E accessibility dependency.
+- `src/components/landing/demo-generator.tsx` — Split the interactive demo into a dedicated client component and removed global toast dependency.
+- `src/components/landing/landing-page.tsx` — Kept the landing shell server-rendered and moved preview imagery to a static public asset.
+- `public/landing-preview.png` — Added static marketing preview image for faster public-page rendering.
+- `src/app/layout.tsx` — Removed global client providers from all public routes and kept the default dark theme static.
+- `src/app/(dashboard)/layout.tsx` — Scoped theme, tooltip, and toast providers to the dashboard.
+- `src/app/(marketing)/register/page.tsx` — Added local toast rendering for registration feedback.
+- `src/app/(marketing)/verify/verify-email-form.tsx` — Added local toast rendering for verification feedback.
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Checked off Task 9.4.
+- `_bmad-output/implementation-artifacts/JOURNAL.md` — Recorded this completion entry.
+
+**Decisions Made:**
+- Used HTTP 308 copy in public marketing stats because permanent redirects are the correct production behavior for stable short links.
+- Kept Lighthouse checks against `next start` production output instead of dev mode so scores reflect optimized assets.
+- Scoped global providers out of static public pages to reduce hydration cost and keep marketing performance within target.
+
+**Tests:**
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Unit/Integration: `rtk bun run test` — 61 files passed, 276 tests passed.
+- ✅ Build: `rtk bun run build` — Passed.
+- ✅ E2E: `rtk bun run test:e2e -- tests/e2e/public-site.spec.ts` — 5 tests passed.
+- ✅ Lighthouse Mobile: `/` 90, `/pricing` 94, `/blog` 97, `/register` 96; accessibility, best-practices, and SEO all 100.
+
+**Issues Encountered:**
+- Initial mobile Lighthouse for `/` was below 90 due to unnecessary client provider and font work on public routes → split the demo client component, removed landing toast usage, stopped preloading the mono font globally, and scoped providers to dashboard/forms.
+
+**Security Checks:**
+- ✅ Public demo URL validation remains client-only and does not create persisted redirects.
+- ✅ E2E tests exercise public navigation without authenticated state.
+- ✅ Axe checks pass WCAG 2.1 AA on `/`, `/pricing`, `/blog`, and `/register`.
+- ✅ No secrets, tokens, raw SQL, or new public write endpoints added.
+
+**Next Task:** 10.1 — Error Handling & Logging

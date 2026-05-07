@@ -1,8 +1,5 @@
 import type { Metadata } from "next";
 import { Inter, JetBrains_Mono } from "next/font/google";
-import { ThemeProvider } from "next-themes";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { Toaster } from "@/components/ui/sonner";
 import "./globals.css";
 
 const inter = Inter({
@@ -15,6 +12,7 @@ const jetbrainsMono = JetBrains_Mono({
   subsets: ["latin"],
   variable: "--font-jetbrains-mono",
   display: "swap",
+  preload: false,
 });
 
 export const metadata: Metadata = {
@@ -29,13 +27,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       lang="en"
       data-scroll-behavior="smooth"
       suppressHydrationWarning
-      className={`${inter.variable} ${jetbrainsMono.variable}`}
+      className={`${inter.variable} ${jetbrainsMono.variable} dark`}
     >
       <body className="min-h-screen bg-background font-sans antialiased">
-        <ThemeProvider attribute="class" defaultTheme="dark" enableSystem disableTransitionOnChange>
-          <TooltipProvider>{children}</TooltipProvider>
-          <Toaster richColors closeButton position="top-right" />
-        </ThemeProvider>
+        {children}
       </body>
     </html>
   );

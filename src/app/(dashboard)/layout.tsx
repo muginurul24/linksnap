@@ -1,4 +1,7 @@
+import { ThemeProvider } from "next-themes";
 import { SidebarProvider } from "@/components/ui/sidebar";
+import { Toaster } from "@/components/ui/sonner";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import { AppSidebar } from "@/components/dashboard/app-sidebar";
 import { AppHeader } from "@/components/dashboard/app-header";
 import { auth } from "@/lib/auth";
@@ -27,12 +30,19 @@ export default async function DashboardLayout({
   }
 
   return (
-    <SidebarProvider defaultOpen>
-      <AppSidebar />
-      <main className="flex min-h-screen w-full flex-col">
-        <AppHeader />
-        <div className="flex-1 space-y-6 p-6 pt-4 md:p-8 md:pt-6">{children}</div>
-      </main>
-    </SidebarProvider>
+    <ThemeProvider attribute="class" defaultTheme="dark" enableSystem disableTransitionOnChange>
+      <TooltipProvider>
+        <SidebarProvider defaultOpen>
+          <AppSidebar />
+          <main className="flex min-h-screen w-full flex-col">
+            <AppHeader />
+            <div className="flex-1 space-y-6 p-6 pt-4 md:p-8 md:pt-6">
+              {children}
+            </div>
+          </main>
+        </SidebarProvider>
+      </TooltipProvider>
+      <Toaster richColors closeButton position="top-right" />
+    </ThemeProvider>
   );
 }
