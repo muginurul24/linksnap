@@ -1,6 +1,7 @@
 import { getTableName } from "drizzle-orm";
 import { describe, expect, it } from "vitest";
 import {
+  apiKeys,
   campaigns,
   clickEvents,
   linkPages,
@@ -18,6 +19,7 @@ describe("database schema", () => {
   it("should expose required public tables when schema is imported", () => {
     const tableNames = [
       users,
+      apiKeys,
       links,
       linkPages,
       smartRules,
@@ -32,6 +34,7 @@ describe("database schema", () => {
 
     expect(tableNames).toEqual([
       "users",
+      "api_keys",
       "links",
       "link_pages",
       "smart_rules",

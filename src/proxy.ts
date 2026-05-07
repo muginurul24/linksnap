@@ -32,6 +32,7 @@ const runDashboardAuthProxy = dashboardAuthProxy as unknown as MiddlewareHandler
 export default function proxy(request: NextRequest, event: NextFetchEvent) {
   const { pathname } = request.nextUrl;
   const apiSecurityError = validateApiMutationRequest({
+    authorization: request.headers.get("authorization"),
     method: request.method,
     origin: request.headers.get("origin"),
     pathname,

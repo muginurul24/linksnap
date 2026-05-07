@@ -1,4 +1,9 @@
-export type ApiAuthKind = "API key" | "Cron secret" | "Midtrans signature" | "Public";
+export type ApiAuthKind =
+  | "API key"
+  | "Cron secret"
+  | "Midtrans signature"
+  | "Public"
+  | "Session";
 
 export type ApiEndpointDoc = {
   auth: ApiAuthKind;
@@ -78,6 +83,31 @@ export const API_DOC_SECTIONS: ApiDocSection[] = [
         rateLimit: PLAN_RATE_LIMIT,
         responseExample: { data: { openapi: "3.1.0" }, success: true },
         summary: "Return the LinkSnap OpenAPI JSON document.",
+      },
+      {
+        auth: "Session",
+        method: "GET",
+        path: "/api/v1/settings/api-keys",
+        rateLimit: PLAN_RATE_LIMIT,
+        responseExample: { data: [{ id: "key-id", keyPrefix: "lsnap_sk_abcd1234" }], success: true },
+        summary: "List API keys for the authenticated paid user.",
+      },
+      {
+        auth: "Session",
+        method: "POST",
+        path: "/api/v1/settings/api-keys",
+        rateLimit: PLAN_RATE_LIMIT,
+        requestExample: { name: "Production integration" },
+        responseExample: { data: { apiKey: { id: "key-id" }, maskedKey: "lsnap_sk_abcd1234...wxyz" }, success: true },
+        summary: "Create an API key and return the secret once.",
+      },
+      {
+        auth: "Session",
+        method: "DELETE",
+        path: "/api/v1/settings/api-keys/{id}",
+        rateLimit: PLAN_RATE_LIMIT,
+        responseExample: { data: { deleted: true, id: "key-id" }, success: true },
+        summary: "Revoke one owned API key.",
       },
     ],
     title: "Authentication",
@@ -426,6 +456,8 @@ export function createOpenApiSpec() {
             ? [{ bearerAuth: [] }]
             : endpoint.auth === "Cron secret"
               ? [{ cronSecret: [] }]
+              : endpoint.auth === "Session"
+                ? [{ sessionCookie: [] }]
               : [],
         summary: endpoint.summary,
         tags: [
@@ -451,6 +483,11 @@ export function createOpenApiSpec() {
         cronSecret: {
           in: "header",
           name: "Authorization",
+          type: "apiKey",
+        },
+        sessionCookie: {
+          in: "cookie",
+          name: "authjs.session-token",
           type: "apiKey",
         },
       },

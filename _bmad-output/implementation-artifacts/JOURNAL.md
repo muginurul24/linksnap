@@ -3317,3 +3317,65 @@ OpenAPI route stay aligned.
 - ✅ API responses use the standard envelope.
 
 **Next Task:** 12.13 — API Keys Management (Settings Tab)
+
+### 12.13 — API Keys Management (Settings Tab)
+- **Date:** 2026-05-07 15:38 GMT+7
+- **Duration:** 1h 10m
+- **Status:** ✅ Complete
+
+**What I Did:**
+Added real API key management for paid users. Pro and Business users can list,
+create, copy, and revoke keys from Settings. API keys are generated once,
+stored as hashes, displayed later only by prefix, and can authenticate selected
+API requests through `Authorization: Bearer lsnap_sk_...`.
+
+**Files Changed:**
+- `_bmad-output/planning-artifacts/spec-api-keys-management.md` — Added quick-dev tech spec for the task.
+- `src/lib/db/schema.ts` — Added the `api_keys` table.
+- `src/lib/db/queries/api-keys.ts` — Added list/create/delete/auth lookup/update queries.
+- `src/lib/auth/api-key-format.ts` — Added API key prefix, bearer parsing, masking, and format validation helpers.
+- `src/lib/auth/api-key.ts` — Added generation, hashing, paid-plan gating, and bearer key validation.
+- `src/lib/validations/api-key.ts` — Added create and route param validation schemas.
+- `src/app/api/v1/settings/api-keys/route.ts` — Added GET and POST API key management endpoints.
+- `src/app/api/v1/settings/api-keys/[id]/route.ts` — Added DELETE revoke endpoint with ownership check.
+- `src/app/(dashboard)/settings/page.tsx` — Loaded real plan/key data and opened the API tab from `?tab=api`.
+- `src/app/(dashboard)/settings/api-keys-panel.tsx` — Added client UI for create/copy/revoke and Free upgrade gate.
+- `src/app/(dashboard)/settings/billing/page.tsx` — Added `?upgrade=api-keys` upgrade prompt.
+- `src/app/api/v1/links/route.ts` — Allowed session or valid bearer API key auth for link list/create.
+- `src/app/api/v1/docs/route.ts` and `src/lib/api-docs/spec.ts` — Added API key route docs and bearer access to OpenAPI JSON.
+- `src/lib/security/api-request.ts` and `src/proxy.ts` — Allowed valid-looking bearer key mutations without the browser-only custom header.
+- `tests/unit/api-key.test.ts` — Added API key helper coverage.
+- `tests/unit/api-security.test.ts` — Added bearer-vs-CSRF guard coverage.
+- `tests/unit/db-schema.test.ts` — Added `api_keys` schema coverage.
+- `tests/integration/api-keys-api.test.ts` — Added API key CRUD route coverage.
+- `tests/integration/api-docs-route.test.ts` — Added bearer auth coverage.
+- `tests/integration/create-link-api.test.ts` — Added bearer key link creation coverage.
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Checked off Task 12.13.
+- `_bmad-output/implementation-artifacts/JOURNAL.md` — Recorded this completion entry.
+
+**Decisions Made:**
+- Stored only SHA-256 hashes plus display prefixes; the full key is returned only in the create response so the UI can copy it once.
+- Let downgraded users revoke existing keys, but validation rejects Free-plan API key use.
+- Scoped bearer API key route adoption to link list/create and docs first; other documented API surfaces still use existing session auth until they are explicitly migrated.
+- Kept the proxy DB-free: it only exempts syntactically valid bearer keys from the browser CSRF header, while route handlers perform real key validation.
+
+**Tests:**
+- ✅ Targeted: `rtk bun run test -- tests/unit/api-key.test.ts tests/unit/api-security.test.ts tests/unit/db-schema.test.ts tests/integration/api-keys-api.test.ts tests/integration/api-docs-route.test.ts tests/integration/create-link-api.test.ts` — 6 files passed, 31 tests passed.
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed with zero warnings after cleanup.
+- ✅ Unit/Integration: `rtk bun run test` — 79 files passed, 354 tests passed.
+- ✅ Build: `rtk bun run build` — Passed after one retry; first run failed because `next/font` could not fetch Google Fonts.
+- ✅ Database: `rtk bun run db:push` — Applied schema changes.
+
+**Issues Encountered:**
+- The first production build attempt failed while fetching Google Fonts (`Inter`, `JetBrains Mono`). A direct `curl` to Google Fonts succeeded immediately afterward, and the build passed on retry.
+
+**Security Checks:**
+- ✅ API key input is validated with Zod.
+- ✅ API key delete verifies ownership through `id + userId`.
+- ✅ API key create/list/delete endpoints are authenticated and rate limited.
+- ✅ API key plaintext is not persisted; only hash and prefix are stored.
+- ✅ Bearer key mutations still reject untrusted `Origin` values.
+- ✅ No raw SQL detected in source.
+
+**Next Task:** 12.14 — Connect Settings Tabs to Real APIs
