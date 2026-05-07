@@ -1703,3 +1703,44 @@ Completed QR test coverage by adding E2E download verification from the QR dashb
 - ✅ No secrets, plaintext IP storage, or sensitive logging added.
 
 **Next Task:** 6.1 — Campaign API
+
+### 6.1 — Campaign API
+- **Date:** 2026-05-07 07:09 GMT+7
+- **Duration:** 0h 45m
+- **Status:** ✅ Complete
+
+**What I Did:**
+Implemented authenticated Campaign CRUD APIs. Users can create campaigns, list their campaigns with link counts, fetch campaign details, update campaign metadata and UTM templates, and delete campaigns. Campaign deletes rely on the existing foreign key behavior so related links become ungrouped instead of being deleted.
+
+**Files Changed:**
+- `src/app/api/v1/campaigns/route.ts` — Added authenticated POST and GET handlers for campaign creation and listing.
+- `src/app/api/v1/campaigns/[id]/route.ts` — Added authenticated GET, PATCH, and DELETE handlers with ownership checks.
+- `src/lib/db/queries/campaigns.ts` — Added campaign create/list/detail/update/delete query helpers with link counts.
+- `src/lib/validations/campaign.ts` — Added strict Zod schemas for campaign params, create/update bodies, and list queries.
+- `tests/integration/campaigns-api.test.ts` — Added API coverage for create, list, detail, update, delete, IDOR, duplicate slug, validation, auth, and rate limits.
+- `tests/unit/campaign-validation.test.ts` — Added campaign validation coverage.
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Checked off Task 6.1.
+- `_bmad-output/implementation-artifacts/JOURNAL.md` — Recorded this completion entry.
+
+**Decisions Made:**
+- Campaign slugs are unique per user and return `CAMPAIGN_SLUG_ALREADY_EXISTS` on unique constraint conflicts.
+- List and detail responses include `linkCount` while omitting `userId` from API payloads.
+- Deleting a campaign uses the existing `ON DELETE SET NULL` relationship from `links.campaignId` to keep links intact and ungrouped.
+
+**Tests:**
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Unit/Integration: `rtk bun run test` — 42 files passed, 202 tests passed.
+- ✅ Build: `rtk bun run build` — Passed; `/api/v1/campaigns` and `/api/v1/campaigns/[id]` are registered.
+
+**Issues Encountered:**
+- ESLint flagged an unused destructured `userId` in campaign response formatting → Replaced it with explicit response mapping.
+
+**Security Checks:**
+- ✅ Campaign params, query strings, create bodies, and update bodies are validated with Zod.
+- ✅ Auth required for all campaign endpoints.
+- ✅ Campaign detail, update, and delete verify ownership before returning or mutating data.
+- ✅ API rate limiting uses the existing plan-based limits.
+- ✅ No raw SQL, secrets, plaintext IP storage, or sensitive logging added.
+
+**Next Task:** 6.2 — Campaign Links API

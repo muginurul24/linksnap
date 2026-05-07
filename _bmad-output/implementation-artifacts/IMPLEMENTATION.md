@@ -364,13 +364,13 @@ src/
 ## 🔴 Phase 6: Campaign Workbench (5 tasks)
 
 ### TASK 6.1 — Campaign API
-- File: `src/app/api/v1/campaigns/route.ts`
-- POST: create campaign `{ name, slug, description, utmSource, utmMedium, utmCampaign, utmTerm, utmContent }`
-- GET: list user campaigns (with link count)
-- File: `src/app/api/v1/campaigns/[id]/route.ts`
-- GET: campaign details
-- PATCH: update campaign (utm templates, name)
-- DELETE: delete campaign (links become ungrouped, not deleted)
+- [x] File: `src/app/api/v1/campaigns/route.ts`
+- [x] POST: create campaign `{ name, slug, description, utmSource, utmMedium, utmCampaign, utmTerm, utmContent }`
+- [x] GET: list user campaigns (with link count)
+- [x] File: `src/app/api/v1/campaigns/[id]/route.ts`
+- [x] GET: campaign details
+- [x] PATCH: update campaign (utm templates, name)
+- [x] DELETE: delete campaign (links become ungrouped, not deleted)
 
 ### TASK 6.2 — Campaign Links API
 - File: `src/app/api/v1/campaigns/[id]/links/route.ts`
