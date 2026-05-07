@@ -1134,12 +1134,12 @@ rtk bun run db:studio    # Open Drizzle Studio (in another terminal)
 - [x] Tests: unit (toggle states per plan)
 
 ### TASK 15.5 — Add Back Navigation to Create/Edit Pages
-- [ ] File: `src/app/(dashboard)/links/new/page.tsx` — add "← Back to Links" link at top
-- [ ] File: `src/app/(dashboard)/links/[slug]/edit/page.tsx` — add "← Back to Links" link
-- [ ] File: `src/app/(dashboard)/campaigns/new/page.tsx` — add "← Back to Campaigns" link
-- [ ] File: `src/app/(dashboard)/campaigns/[id]/edit/page.tsx` — add "← Back to Campaigns" link
-- [ ] Use consistent styling: small text link with arrow, positioned above the form title
-- [ ] Tests: unit (back link renders with correct href)
+- [x] File: `src/app/(dashboard)/links/new/page.tsx` — add "← Back to Links" link at top
+- [x] File: `src/app/(dashboard)/links/[slug]/edit/page.tsx` — add "← Back to Links" link
+- [x] File: `src/app/(dashboard)/campaigns/new/page.tsx` — add "← Back to Campaigns" link
+- [x] File: `src/app/(dashboard)/campaigns/[id]/edit/page.tsx` — add "← Back to Campaigns" link
+- [x] Use consistent styling: small text link with arrow, positioned above the form title
+- [x] Tests: unit (back link renders with correct href)
 
 ### TASK 15.6 — Form Submit Success UX
 - [ ] File: `src/app/(dashboard)/links/link-form.tsx`

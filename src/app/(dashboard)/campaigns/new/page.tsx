@@ -1,6 +1,5 @@
 import { redirect } from "next/navigation";
-import { ArrowLeft } from "lucide-react";
-import { ButtonLink } from "@/components/ui/button-link";
+import { BackNavigationLink } from "@/components/dashboard/back-navigation-link";
 import { auth } from "@/lib/auth";
 import { CampaignForm } from "../campaign-form";
 
@@ -21,17 +20,16 @@ export default async function NewCampaignPage() {
 
   return (
     <>
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div className="space-y-3">
+        <BackNavigationLink href="/campaigns">
+          Back to Campaigns
+        </BackNavigationLink>
         <div>
           <h1 className="text-2xl font-bold tracking-tight">New Campaign</h1>
           <p className="text-sm text-muted-foreground">
             Define campaign metadata and UTM defaults.
           </p>
         </div>
-        <ButtonLink href="/campaigns" size="sm" variant="outline">
-          <ArrowLeft className="size-4" />
-          Back
-        </ButtonLink>
       </div>
 
       <CampaignForm />

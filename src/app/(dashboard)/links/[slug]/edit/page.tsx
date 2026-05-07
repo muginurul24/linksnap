@@ -1,6 +1,5 @@
 import { notFound, redirect } from "next/navigation";
-import { ArrowLeft } from "lucide-react";
-import { ButtonLink } from "@/components/ui/button-link";
+import { BackNavigationLink } from "@/components/dashboard/back-navigation-link";
 import { auth } from "@/lib/auth";
 import { findEditableLinkBySlugForUser } from "@/lib/db/queries/links";
 import { findBillingUserById } from "@/lib/db/queries/payments";
@@ -57,17 +56,14 @@ export default async function EditLinkPage({ params }: EditLinkPageProps) {
 
   return (
     <>
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div className="space-y-3">
+        <BackNavigationLink href="/links">Back to Links</BackNavigationLink>
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Edit Link</h1>
           <p className="text-sm text-muted-foreground">
             Update destination, slug, and routing settings.
           </p>
         </div>
-        <ButtonLink href="/links" size="sm" variant="outline">
-          <ArrowLeft className="size-4" />
-          Back
-        </ButtonLink>
       </div>
 
       <CreateLinkForm initialLink={initialLink} userPlan={userPlan} />

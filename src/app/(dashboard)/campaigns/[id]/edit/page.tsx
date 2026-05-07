@@ -1,6 +1,5 @@
 import { notFound, redirect } from "next/navigation";
-import { ArrowLeft } from "lucide-react";
-import { ButtonLink } from "@/components/ui/button-link";
+import { BackNavigationLink } from "@/components/dashboard/back-navigation-link";
 import { auth } from "@/lib/auth";
 import { findCampaignById } from "@/lib/db/queries/campaigns";
 import { campaignIdParamsSchema } from "@/lib/validations/campaign";
@@ -58,17 +57,16 @@ export default async function EditCampaignPage({ params }: EditCampaignPageProps
 
   return (
     <>
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div className="space-y-3">
+        <BackNavigationLink href="/campaigns">
+          Back to Campaigns
+        </BackNavigationLink>
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Edit Campaign</h1>
           <p className="text-sm text-muted-foreground">
             Update campaign metadata and UTM defaults.
           </p>
         </div>
-        <ButtonLink href="/campaigns" size="sm" variant="outline">
-          <ArrowLeft className="size-4" />
-          Back
-        </ButtonLink>
       </div>
 
       <CampaignForm initialCampaign={initialCampaign} />

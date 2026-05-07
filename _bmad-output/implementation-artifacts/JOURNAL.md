@@ -4395,6 +4395,44 @@ Passed `userPlan` into `CreateLinkForm` from both create and edit link pages. Fr
 
 **Next Task:** 15.5 — Add Back Navigation to Create/Edit Pages
 
+### 15.5 — Add Back Navigation to Create/Edit Pages
+- **Date:** 2026-05-07 20:54 GMT+7
+- **Duration:** 0 hours 15 minutes
+- **Status:** ✅ Complete
+
+**What I Did:**
+Replaced the outline back buttons on link and campaign create/edit pages with consistent small text back links above each page title. Added a reusable dashboard `BackNavigationLink` component and unit coverage for Links and Campaigns destinations.
+
+**Files Changed:**
+- `_bmad-output/planning-artifacts/spec-phase-15-back-navigation.md` — Added the back-navigation mini-spec.
+- `src/components/dashboard/back-navigation-link.tsx` — Added the shared text back-link component.
+- `src/app/(dashboard)/links/new/page.tsx` — Added "Back to Links" above the title.
+- `src/app/(dashboard)/links/[slug]/edit/page.tsx` — Added "Back to Links" above the title.
+- `src/app/(dashboard)/campaigns/new/page.tsx` — Added "Back to Campaigns" above the title.
+- `src/app/(dashboard)/campaigns/[id]/edit/page.tsx` — Added "Back to Campaigns" above the title.
+- `tests/unit/back-navigation-link.test.tsx` — Added href/copy coverage.
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Checked off Task 15.5.
+- `_bmad-output/implementation-artifacts/JOURNAL.md` — Recorded this completion entry.
+
+**Decisions Made:**
+- Centralized the back-link styling to avoid future drift across dashboard form pages.
+- Kept existing page titles, descriptions, auth checks, and form behavior unchanged.
+
+**Tests:**
+- ✅ Unit: `rtk bun run test -- tests/unit/back-navigation-link.test.tsx` — 1 file passed, 2 tests passed.
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Unit/Integration: `rtk bun run test` — 99 files passed, 456 tests passed.
+
+**Issues Encountered:**
+- None.
+
+**Security Checks:**
+- ✅ Navigation-only change; no API, auth, ownership, or persistence behavior changed.
+- ✅ No user input, secrets, raw SQL, or unsafe rendering introduced.
+
+**Next Task:** 15.6 — Form Submit Success UX
+
 ### 13.3 — Rule Engine Logic (Ordered Priority)
 - **Date:** 2026-05-07 18:41 GMT+7
 - **Duration:** 0h 30m
