@@ -80,7 +80,7 @@ describe("billing page Midtrans checkout", () => {
     expect(markup).toContain("Upgrade to Pro");
     expect(markup).toContain("Upgrade to Business");
     expect(markup).not.toContain('type="radio"');
-    expect(markup).not.toContain("data-payment-gateways");
+    expect(markup).not.toContain("data-payment-options");
     expect(markup).not.toContain("data-client-country");
   });
 

@@ -6,8 +6,8 @@ import {
   getPaymentRedirectUrl,
 } from "../../src/app/(dashboard)/settings/billing/upgrade-button";
 
-describe("billing gateway selector", () => {
-  it("should render a single upgrade button without gateway radio controls", () => {
+describe("billing upgrade button", () => {
+  it("should render a single upgrade button without radio controls", () => {
     const markup = renderToStaticMarkup(
       <UpgradeButton current={false} plan="PRO" />,
     );

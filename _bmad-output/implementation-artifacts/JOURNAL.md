@@ -4418,6 +4418,42 @@ Removed the `gateway` column from the Drizzle `transactions` schema, payment que
 
 **Next Task:** 14.4 — Remove Stripe Tests
 
+### 14.4 — Remove Stripe Tests
+- **Date:** 2026-05-07 20:28 GMT+7
+- **Duration:** 0 hours 12 minutes
+- **Status:** ✅ Complete
+
+**What I Did:**
+Verified all Stripe-specific unit, integration, and E2E coverage was removed, then renamed the remaining billing tests away from stale gateway-selector naming. Ran the full verification set including production build.
+
+**Files Changed:**
+- `tests/unit/billing-upgrade-button.test.tsx` — Renamed from the old gateway selector test and kept single-button coverage.
+- `tests/integration/billing-page-midtrans.test.tsx` — Renamed from the old gateway detection test and kept Midtrans billing coverage.
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Checked off Task 14.4.
+- `_bmad-output/implementation-artifacts/JOURNAL.md` — Recorded this completion entry.
+
+**Decisions Made:**
+- Treated Stripe test deletion as already completed by Task 14.1 because removing the Stripe SDK and source files made those tests invalid under the repository-wide TypeScript check.
+- Renamed remaining billing tests so future test names match the Midtrans-only product surface.
+
+**Tests:**
+- ✅ Stripe reference check: no `Stripe`, `stripe`, or `STRIPE` references remain in `src`, `tests`, `package.json`, `.env.example`, or CI config.
+- ✅ Stripe test file check: `rtk proxy find tests -iname '*stripe*'` — No files found.
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Unit/Integration: `rtk bun run test` — 95 files passed, 438 tests passed.
+- ✅ Build: `rtk bun run build` — Passed.
+
+**Issues Encountered:**
+- None.
+
+**Security Checks:**
+- ✅ No Stripe credentials, webhook secrets, or card-processing code remain.
+- ✅ Payment endpoints are Midtrans-only and still protected by existing auth/rate-limit/API request guards.
+- ✅ No new secrets, raw SQL, or unsafe rendering introduced.
+
+**Next Task:** Phase 14 complete — await next implementation task
+
 ### 13.4 — Smart Rules API Update
 - **Date:** 2026-05-07 18:47 GMT+7
 - **Duration:** 0h 30m

@@ -1040,13 +1040,13 @@ rtk bun run db:studio    # Open Drizzle Studio (in another terminal)
 - [x] Tests: integration (billing history without gateway column)
 
 ### TASK 14.4 — Remove Stripe Tests
-- [ ] Delete Stripe test files:
+- [x] Delete Stripe test files:
   - `tests/unit/stripe-*.test.ts`
   - `tests/integration/stripe-*.test.ts`
   - Any E2E tests referencing Stripe
-- [ ] Run full test suite — all remaining tests must pass
-- [ ] Typecheck + lint must be clean
-- [ ] Build must pass
+- [x] Run full test suite — all remaining tests must pass
+- [x] Typecheck + lint must be clean
+- [x] Build must pass
 
 ---
 
