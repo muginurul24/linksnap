@@ -5,6 +5,7 @@ import {
 } from "@/lib/security/api-request";
 
 const allowedOrigins = ["https://www.justqiu.cloud"];
+const validApiKey = `lsnap_sk_${"a".repeat(43)}`;
 
 describe("API mutation security", () => {
   it("should allow safe methods without CSRF headers", () => {
@@ -57,6 +58,34 @@ describe("API mutation security", () => {
     });
 
     expect(result).toBeNull();
+  });
+
+  it("should allow bearer API key mutations without the browser CSRF header", () => {
+    const result = validateApiMutationRequest({
+      allowedOrigins,
+      authorization: `Bearer ${validApiKey}`,
+      method: "POST",
+      origin: null,
+      pathname: "/api/v1/links",
+      requestedWith: null,
+    });
+
+    expect(result).toBeNull();
+  });
+
+  it("should reject malformed bearer mutations without the browser CSRF header", () => {
+    const result = validateApiMutationRequest({
+      allowedOrigins,
+      authorization: "Bearer not-a-linksnap-key",
+      method: "POST",
+      origin: null,
+      pathname: "/api/v1/links",
+      requestedWith: null,
+    });
+
+    expect(result).toMatchObject({
+      code: "CSRF_HEADER_REQUIRED",
+    });
   });
 
   it("should exempt Midtrans webhook callbacks from custom browser headers", () => {

@@ -1,4 +1,6 @@
+import { NextRequest } from "next/server";
 import { auth } from "@/lib/auth";
+import { authenticateApiKeyRequest } from "@/lib/auth/api-key";
 import { createRequestId, errorResponse, successResponse } from "@/lib/api/response";
 import { canAccessApiDocs } from "@/lib/api-docs/access";
 import { createOpenApiSpec } from "@/lib/api-docs/spec";
@@ -14,10 +16,15 @@ function getSessionUserId(session: SessionWithUserId): string | null {
   return typeof session?.user?.id === "string" ? session.user.id : null;
 }
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   const requestId = createRequestId();
 
   try {
+    const apiKeyAuth = await authenticateApiKeyRequest(request);
+    if (apiKeyAuth) {
+      return successResponse(createOpenApiSpec());
+    }
+
     const session = await auth();
     const userId = getSessionUserId(session);
 

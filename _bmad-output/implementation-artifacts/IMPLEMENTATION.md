@@ -765,16 +765,16 @@ rtk bun run db:studio    # Open Drizzle Studio (in another terminal)
 - [x] Tests: unit (docs page gating), integration (OpenAPI spec validity)
 
 ### TASK 12.13 — API Keys Management (Settings Tab)
-- [ ] File: `src/app/(dashboard)/settings/page.tsx` — "API Keys" tab
-- [ ] Replace mock "Upgrade to Pro" gate with real API key management for PRO/BUSINESS
-- [ ] Add `apiKeys` table to `src/lib/db/schema.ts` (id, userId, name, keyHash, keyPrefix, lastUsedAt, createdAt)
-- [ ] Create `src/app/api/v1/settings/api-keys/route.ts` — GET (list keys), POST (create key)
-- [ ] Create `src/app/api/v1/settings/api-keys/[id]/route.ts` — DELETE (revoke key)
-- [ ] Show masked key on creation only (e.g. `lsnap_sk_xxxx...xxxx`), hash stored in DB
-- [ ] Auth: API key passed as `Authorization: Bearer lsnap_sk_xxx` header
-- [ ] Add API key auth to `src/lib/auth/api-key.ts` — validate key, attach user to request
-- [ ] Integrate API key auth into proxy guard (allow API key OR session cookie)
-- [ ] Tests: unit (key hashing, prefix validation), integration (CRUD + auth with key)
+- [x] File: `src/app/(dashboard)/settings/page.tsx` — "API Keys" tab
+- [x] Replace mock "Upgrade to Pro" gate with real API key management for PRO/BUSINESS
+- [x] Add `apiKeys` table to `src/lib/db/schema.ts` (id, userId, name, keyHash, keyPrefix, lastUsedAt, createdAt)
+- [x] Create `src/app/api/v1/settings/api-keys/route.ts` — GET (list keys), POST (create key)
+- [x] Create `src/app/api/v1/settings/api-keys/[id]/route.ts` — DELETE (revoke key)
+- [x] Show masked key on creation only (e.g. `lsnap_sk_xxxx...xxxx`), hash stored in DB
+- [x] Auth: API key passed as `Authorization: Bearer lsnap_sk_xxx` header
+- [x] Add API key auth to `src/lib/auth/api-key.ts` — validate key, attach user to request
+- [x] Integrate API key auth into proxy guard (allow API key OR session cookie)
+- [x] Tests: unit (key hashing, prefix validation), integration (CRUD + auth with key)
 
 ### TASK 12.14 — Connect Settings Tabs to Real APIs
 - [ ] File: `src/app/(dashboard)/settings/page.tsx`

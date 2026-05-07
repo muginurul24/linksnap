@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
 import { auth } from "@/lib/auth";
+import { authenticateApiKeyRequest } from "@/lib/auth/api-key";
 import { createRequestId, errorResponse, successResponse } from "@/lib/api/response";
 import {
   countLinksByUserId,
@@ -118,21 +119,79 @@ async function createLinkWithAvailableSlug({
   throw new LinkSlugGenerationError();
 }
 
-export async function POST(request: NextRequest) {
-  const requestId = createRequestId();
+async function getAuthenticatedUser(
+  request: NextRequest,
+  requestId: string,
+): Promise<{ userId: string; userPlan: UserPlan } | { response: Response }> {
+  const apiKeyAuth = await authenticateApiKeyRequest(request);
+  if (apiKeyAuth) {
+    return {
+      userId: apiKeyAuth.userId,
+      userPlan: apiKeyAuth.userPlan,
+    };
+  }
 
-  try {
-    const session = await auth();
-    const userId = getSessionUserId(session);
+  const session = await auth();
+  const userId = getSessionUserId(session);
 
-    if (!userId) {
-      return errorResponse(
+  if (!userId) {
+    return {
+      response: errorResponse(
         "AUTHENTICATION_REQUIRED",
         "Authentication is required.",
         401,
         requestId,
-      );
-    }
+      ),
+    };
+  }
+
+  const userPlan = await getUserPlanById(userId);
+  if (!userPlan) {
+    return {
+      response: errorResponse(
+        "AUTHENTICATION_REQUIRED",
+        "Authenticated user no longer exists.",
+        401,
+        requestId,
+      ),
+    };
+  }
+
+  return { userId, userPlan };
+}
+
+async function checkRateLimit({
+  key,
+  limit,
+  requestId,
+}: {
+  key: string;
+  limit: number;
+  requestId: string;
+}): Promise<Response | null> {
+  const rateLimit = await slidingWindowRateLimit({
+    key,
+    limit,
+    windowSeconds: 60,
+  });
+
+  if (!rateLimit.limited) return null;
+
+  return errorResponse(
+    "RATE_LIMITED",
+    "Too many API requests.",
+    429,
+    requestId,
+    { retryAfter: rateLimit.retryAfter },
+  );
+}
+
+export async function POST(request: NextRequest) {
+  const requestId = createRequestId();
+
+  try {
+    const authResult = await getAuthenticatedUser(request, requestId);
+    if ("response" in authResult) return authResult.response;
 
     const body = await request.json().catch(() => null);
     const parsed = createLinkSchema.safeParse(body);
@@ -147,33 +206,18 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const userPlan = await getUserPlanById(userId);
-    if (!userPlan) {
-      return errorResponse(
-        "AUTHENTICATION_REQUIRED",
-        "Authenticated user no longer exists.",
-        401,
-        requestId,
-      );
-    }
-
-    const rateLimit = await slidingWindowRateLimit({
-      key: `links:create:${userId}`,
-      limit: getLinkCreationRateLimit(userPlan),
-      windowSeconds: 60,
+    const rateLimitResponse = await checkRateLimit({
+      key: `links:create:${authResult.userId}`,
+      limit: getLinkCreationRateLimit(authResult.userPlan),
+      requestId,
     });
+    if (rateLimitResponse) return rateLimitResponse;
 
-    if (rateLimit.limited) {
-      return errorResponse(
-        "RATE_LIMITED",
-        "Too many link creation attempts.",
-        429,
-        requestId,
-        { retryAfter: rateLimit.retryAfter },
-      );
-    }
-
-    const result = await createLink(parsed.data, userId, userPlan);
+    const result = await createLink(
+      parsed.data,
+      authResult.userId,
+      authResult.userPlan,
+    );
 
     return successResponse(
       {
@@ -228,17 +272,8 @@ export async function GET(request: NextRequest) {
   const requestId = createRequestId();
 
   try {
-    const session = await auth();
-    const userId = getSessionUserId(session);
-
-    if (!userId) {
-      return errorResponse(
-        "AUTHENTICATION_REQUIRED",
-        "Authentication is required.",
-        401,
-        requestId,
-      );
-    }
+    const authResult = await getAuthenticatedUser(request, requestId);
+    if ("response" in authResult) return authResult.response;
 
     const parsed = listLinksQuerySchema.safeParse(getQueryParams(request));
     if (!parsed.success) {
@@ -251,33 +286,14 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const userPlan = await getUserPlanById(userId);
-    if (!userPlan) {
-      return errorResponse(
-        "AUTHENTICATION_REQUIRED",
-        "Authenticated user no longer exists.",
-        401,
-        requestId,
-      );
-    }
-
-    const rateLimit = await slidingWindowRateLimit({
-      key: `api:links:list:${userId}`,
-      limit: getApiEndpointRateLimit(userPlan),
-      windowSeconds: 60,
+    const rateLimit = await checkRateLimit({
+      key: `api:links:list:${authResult.userId}`,
+      limit: getApiEndpointRateLimit(authResult.userPlan),
+      requestId,
     });
+    if (rateLimit) return rateLimit;
 
-    if (rateLimit.limited) {
-      return errorResponse(
-        "RATE_LIMITED",
-        "Too many API requests.",
-        429,
-        requestId,
-        { retryAfter: rateLimit.retryAfter },
-      );
-    }
-
-    const result = await listLinks(parsed.data, userId);
+    const result = await listLinks(parsed.data, authResult.userId);
     const data = result.items.map((link) => withShortUrl(request, link));
 
     return successResponse(data, 200, {

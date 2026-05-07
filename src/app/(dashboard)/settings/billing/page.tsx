@@ -81,6 +81,29 @@ function getUpgradeReason(value: string | string[] | undefined): string | null {
   return raw?.trim() || null;
 }
 
+function getUpgradePrompt(upgradeReason: string | null): {
+  description: string;
+  title: string;
+} | null {
+  if (upgradeReason === "api-docs") {
+    return {
+      description:
+        "Upgrade to unlock API docs, API key access, and advanced automation workflows.",
+      title: "API documentation requires Pro or Business.",
+    };
+  }
+
+  if (upgradeReason === "api-keys") {
+    return {
+      description:
+        "Upgrade to create bearer API keys for integrations and automation.",
+      title: "API keys require Pro or Business.",
+    };
+  }
+
+  return null;
+}
+
 function formatDate(date: Date | null): string {
   if (!date) return "Not scheduled";
 
@@ -142,6 +165,7 @@ export default async function BillingPage({ searchParams }: BillingPageProps) {
   if (!billingUser) redirect("/login");
 
   const currentPlan = getCurrentPlanConfig(billingUser.plan);
+  const upgradePrompt = getUpgradePrompt(upgradeReason);
   const isActivePaidSubscription =
     subscription?.status === "ACTIVE" && billingUser.plan !== "FREE";
 
@@ -154,17 +178,14 @@ export default async function BillingPage({ searchParams }: BillingPageProps) {
         </p>
       </div>
 
-      {upgradeReason === "api-docs" ? (
+      {upgradePrompt ? (
         <div className="rounded-lg border border-primary/30 bg-primary/5 p-4">
           <div className="flex items-start gap-3">
             <Sparkles className="mt-0.5 size-4 text-primary" />
             <div>
-              <p className="text-sm font-medium">
-                API documentation requires Pro or Business.
-              </p>
+              <p className="text-sm font-medium">{upgradePrompt.title}</p>
               <p className="mt-1 text-sm text-muted-foreground">
-                Upgrade to unlock API docs, API key access, and advanced
-                automation workflows.
+                {upgradePrompt.description}
               </p>
             </div>
           </div>

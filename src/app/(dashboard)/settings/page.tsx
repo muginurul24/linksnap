@@ -1,3 +1,4 @@
+import { redirect } from "next/navigation";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -5,8 +6,73 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
 import { Save, User, Bell, Shield, Key } from "lucide-react";
+import { auth } from "@/lib/auth";
+import {
+  listApiKeysByUserId,
+  type ApiKeyListItem,
+} from "@/lib/db/queries/api-keys";
+import { findBillingUserById } from "@/lib/db/queries/payments";
+import type { UserPlan } from "@/lib/links/limits";
+import {
+  ApiKeysPanel,
+  type ApiKeyPanelItem,
+} from "@/app/(dashboard)/settings/api-keys-panel";
 
-export default function SettingsPage() {
+type SessionWithUserId = {
+  user?: {
+    id?: unknown;
+  } | null;
+} | null;
+
+type SettingsPageProps = {
+  searchParams: Promise<{
+    tab?: string | string[];
+  }>;
+};
+
+const SETTINGS_TABS = new Set(["api", "notifications", "profile", "security"]);
+
+function getSessionUserId(session: SessionWithUserId): string | null {
+  return typeof session?.user?.id === "string" ? session.user.id : null;
+}
+
+function getDefaultSettingsTab(value: string | string[] | undefined): string {
+  const raw = Array.isArray(value) ? value[0] : value;
+  const tab = raw?.trim();
+
+  return tab && SETTINGS_TABS.has(tab) ? tab : "profile";
+}
+
+function toApiKeyPanelItem(apiKey: ApiKeyListItem): ApiKeyPanelItem {
+  return {
+    createdAt: apiKey.createdAt.toISOString(),
+    id: apiKey.id,
+    keyPrefix: apiKey.keyPrefix,
+    lastUsedAt: apiKey.lastUsedAt?.toISOString() ?? null,
+    name: apiKey.name,
+  };
+}
+
+function canManageApiKeys(plan: UserPlan): boolean {
+  return plan === "PRO" || plan === "BUSINESS";
+}
+
+export default async function SettingsPage({ searchParams }: SettingsPageProps) {
+  const session = await auth();
+  const userId = getSessionUserId(session);
+
+  if (!userId) {
+    redirect("/login?callbackUrl=/settings");
+  }
+
+  const params = await searchParams;
+  const defaultTab = getDefaultSettingsTab(params.tab);
+  const billingUser = await findBillingUserById(userId);
+  const plan = billingUser?.plan ?? "FREE";
+  const apiKeys = canManageApiKeys(plan)
+    ? await listApiKeysByUserId(userId)
+    : [];
+
   return (
     <>
       <div>
@@ -14,7 +80,7 @@ export default function SettingsPage() {
         <p className="text-sm text-muted-foreground">Manage your account and preferences.</p>
       </div>
 
-      <Tabs defaultValue="profile" className="w-full">
+      <Tabs defaultValue={defaultTab} className="w-full">
         <TabsList>
           <TabsTrigger value="profile"><User className="mr-2 size-4" /> Profile</TabsTrigger>
           <TabsTrigger value="notifications"><Bell className="mr-2 size-4" /> Notifications</TabsTrigger>
@@ -32,11 +98,15 @@ export default function SettingsPage() {
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
                   <Label htmlFor="name">Full Name</Label>
-                  <Input id="name" defaultValue="Rafi" />
+                  <Input id="name" defaultValue={billingUser?.name ?? ""} />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="email">Email</Label>
-                  <Input id="email" type="email" defaultValue="rafi@email.com" />
+                  <Input
+                    id="email"
+                    type="email"
+                    defaultValue={billingUser?.email ?? ""}
+                  />
                 </div>
               </div>
               <Button size="sm"><Save className="mr-2 size-4" /> Save Changes</Button>
@@ -104,14 +174,10 @@ export default function SettingsPage() {
               <CardDescription>Manage your API keys for programmatic access.</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="rounded-lg border bg-muted/50 p-6 text-center">
-                <Key className="mx-auto mb-3 size-8 text-muted-foreground" />
-                <p className="text-sm font-medium">Upgrade to Pro to access API keys</p>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  API access is available on Pro and Business plans.
-                </p>
-                <Button size="sm" className="mt-4" variant="outline">Upgrade Plan</Button>
-              </div>
+              <ApiKeysPanel
+                initialApiKeys={apiKeys.map((apiKey) => toApiKeyPanelItem(apiKey))}
+                plan={plan}
+              />
             </CardContent>
           </Card>
         </TabsContent>

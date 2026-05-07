@@ -17,6 +17,12 @@ type MockLink = {
   userId: string;
 };
 
+type MockApiKeyAuthRecord = {
+  id: string;
+  userId: string;
+  userPlan: UserPlan;
+};
+
 type CreateLinkRecordInput = {
   destinationUrl: string;
   slug: string;
@@ -51,11 +57,13 @@ type CreateLinkResponse = {
 };
 
 const mockState = vi.hoisted(() => ({
+  apiKeyAuthRecord: null as MockApiKeyAuthRecord | null,
   linkCount: 0,
   links: [] as MockLink[],
   rateLimitOptions: [] as RateLimitOptions[],
   rateLimitResult: { limited: false as const, remaining: 99 } as RateLimitResult,
   session: { user: { id: "user-1" } } as MockSession,
+  touchedApiKeyIds: [] as string[],
   userPlan: "FREE" as UserPlan | null,
 }));
 
@@ -67,6 +75,13 @@ vi.mock("@/lib/redis/rate-limit", () => ({
   slidingWindowRateLimit: async (options: RateLimitOptions) => {
     mockState.rateLimitOptions.push(options);
     return mockState.rateLimitResult;
+  },
+}));
+
+vi.mock("@/lib/db/queries/api-keys", () => ({
+  findApiKeyAuthByHash: async () => mockState.apiKeyAuthRecord,
+  touchApiKeyLastUsedAt: async (id: string) => {
+    mockState.touchedApiKeyIds.push(id);
   },
 }));
 
@@ -106,6 +121,7 @@ vi.mock("@/lib/db/queries/links", () => ({
 import { POST } from "../../src/app/api/v1/links/route";
 
 const previousBaseUrl = process.env.NEXT_PUBLIC_APP_URL;
+const validApiKey = `lsnap_sk_${"a".repeat(43)}`;
 
 function createJsonRequest(body: unknown): NextRequest {
   return new Request("http://localhost:3000/api/v1/links", {
@@ -122,11 +138,13 @@ async function readJson<T>(response: Response): Promise<ApiEnvelope<T>> {
 describe("create link API", () => {
   beforeEach(() => {
     process.env.NEXT_PUBLIC_APP_URL = "https://linksnap.test/";
+    mockState.apiKeyAuthRecord = null;
     mockState.linkCount = 0;
     mockState.links.length = 0;
     mockState.rateLimitOptions.length = 0;
     mockState.rateLimitResult = { limited: false, remaining: 99 };
     mockState.session = { user: { id: "user-1" } };
+    mockState.touchedApiKeyIds.length = 0;
     mockState.userPlan = "FREE";
   });
 
@@ -159,6 +177,45 @@ describe("create link API", () => {
     });
     expect(mockState.rateLimitOptions).toEqual([
       { key: "links:create:user-1", limit: 10, windowSeconds: 60 },
+    ]);
+  });
+
+  it("should create a link with a bearer API key when no session exists", async () => {
+    mockState.session = null;
+    mockState.apiKeyAuthRecord = {
+      id: "api-key-1",
+      userId: "api-user",
+      userPlan: "PRO",
+    };
+
+    const response = await POST(
+      new Request("http://localhost:3000/api/v1/links", {
+        method: "POST",
+        headers: {
+          authorization: `Bearer ${validApiKey}`,
+          "content-type": "application/json",
+        },
+        body: JSON.stringify({
+          destinationUrl: "https://example.com/api",
+          slug: "api-link",
+        }),
+      }) as NextRequest,
+    );
+    const body = await readJson<CreateLinkResponse>(response);
+
+    expect(response.status).toBe(201);
+    expect(body.success).toBe(true);
+    if (!body.success) return;
+
+    expect(body.data.slug).toBe("api-link");
+    expect(mockState.links[0]).toMatchObject({
+      destinationUrl: "https://example.com/api",
+      slug: "api-link",
+      userId: "api-user",
+    });
+    expect(mockState.touchedApiKeyIds).toEqual(["api-key-1"]);
+    expect(mockState.rateLimitOptions).toEqual([
+      { key: "links:create:api-user", limit: 30, windowSeconds: 60 },
     ]);
   });
 

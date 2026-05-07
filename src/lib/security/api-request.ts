@@ -1,3 +1,5 @@
+import { hasApiKeyBearerAuthorization } from "@/lib/auth/api-key-format";
+
 const MUTATING_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
 const CUSTOM_HEADER_EXEMPT_PATHS = new Set(["/api/v1/payments/webhook"]);
 
@@ -12,6 +14,7 @@ export type ApiSecurityError = {
 };
 
 type ApiSecurityInput = {
+  authorization?: string | null;
   method: string;
   origin: string | null;
   pathname: string;
@@ -33,6 +36,7 @@ export function getAllowedOrigins(): string[] {
 }
 
 export function validateApiMutationRequest({
+  authorization,
   method,
   origin,
   pathname,
@@ -52,6 +56,7 @@ export function validateApiMutationRequest({
 
   if (
     !CUSTOM_HEADER_EXEMPT_PATHS.has(pathname) &&
+    !hasApiKeyBearerAuthorization(authorization ?? null) &&
     requestedWith !== API_CSRF_HEADER_VALUE
   ) {
     return {

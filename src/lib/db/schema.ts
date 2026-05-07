@@ -71,6 +71,26 @@ export const resetTokens = pgTable(
   }),
 );
 
+// ─── API Keys ───
+export const apiKeys = pgTable(
+  "api_keys",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    userId: uuid("user_id")
+      .references(() => users.id, { onDelete: "cascade" })
+      .notNull(),
+    name: varchar("name", { length: 80 }).notNull(),
+    keyHash: varchar("key_hash", { length: 64 }).notNull().unique(),
+    keyPrefix: varchar("key_prefix", { length: 32 }).notNull(),
+    lastUsedAt: timestamp("last_used_at"),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (table) => ({
+    keyHashIdx: uniqueIndex("api_keys_key_hash_idx").on(table.keyHash),
+    userIdIdx: index("api_keys_user_id_idx").on(table.userId),
+  }),
+);
+
 // ─── Links ───
 export const links = pgTable(
   "links",

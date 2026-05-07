@@ -107,8 +107,8 @@ export default async function ApiDocsPage() {
             Authentication
           </CardTitle>
           <CardDescription>
-            Send API keys with a bearer token header. Real API key creation and
-            revocation are tracked in Task 12.13.
+            Send API keys with a bearer token header. Create and revoke keys
+            from the API Keys tab in Settings.
           </CardDescription>
         </CardHeader>
         <CardContent>
