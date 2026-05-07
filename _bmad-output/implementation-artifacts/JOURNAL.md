@@ -4003,6 +4003,8 @@ Extended the Smart Rules engine for V2 ordered rule evaluation. V2 rules now sup
 - ✅ Targeted: `rtk bun run test -- tests/unit/rule-builder.test.ts tests/unit/rule-engine.test.ts` — 2 files passed, 20 tests passed.
 - ✅ Typecheck: `rtk bun run typecheck` — Passed.
 - ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Unit/Integration: `rtk bun run test` — 92 files passed, 422 tests passed.
+- ✅ Build: `rtk bun run build` — Passed.
 
 **Issues Encountered:**
 - The current branch already contained Task 13.2 work; I kept the builder changes aligned with the V2 rule engine contract instead of changing persistence or link-form integration in this task.
