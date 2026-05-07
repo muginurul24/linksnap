@@ -209,6 +209,16 @@ test("should create sandbox payment and activate billing through webhook", async
         userPlan: "PRO",
       });
 
+    await page.goto(`/checkout/success?order_id=${orderId}`);
+    await expect(
+      page.getByRole("heading", { name: "Checkout complete" }),
+    ).toBeVisible();
+    await expect(page.getByText("Pro Plan")).toBeVisible();
+    await expect(page.getByText("Next billing date")).toBeVisible();
+    await expect(
+      page.getByRole("link", { name: "Go to Dashboard" }),
+    ).toBeVisible();
+
     await page.goto("/settings/billing");
     await expect(
       page.getByText("Pro Plan", { exact: true }).last(),

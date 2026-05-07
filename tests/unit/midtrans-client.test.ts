@@ -16,6 +16,12 @@ function createJsonResponse(status: number, body: unknown): Response {
 describe("Midtrans Snap client", () => {
   it("should build Snap payload with transaction, item, and customer details", () => {
     const payload = buildMidtransSnapPayload({
+      callbackUrls: {
+        error: "https://linksnap.test/checkout/cancel?order_id=LS-123&status=error",
+        finish: "https://linksnap.test/checkout/success?order_id=LS-123",
+        unfinish:
+          "https://linksnap.test/checkout/cancel?order_id=LS-123&status=unfinish",
+      },
       customer: {
         email: "buyer@example.com",
         name: "Rafi Link",
@@ -27,6 +33,9 @@ describe("Midtrans Snap client", () => {
     });
 
     expect(payload).toEqual({
+      callbacks: {
+        finish: "https://linksnap.test/checkout/success?order_id=LS-123",
+      },
       credit_card: { secure: true },
       customer_details: {
         email: "buyer@example.com",

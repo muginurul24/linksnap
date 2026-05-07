@@ -17,6 +17,27 @@ export const paymentHistoryQuerySchema = z
   })
   .strict();
 
+export const checkoutSuccessQuerySchema = z
+  .object({
+    order_id: z
+      .string()
+      .min(1, "Order ID is required")
+      .max(100, "Order ID is too long")
+      .regex(/^LS-\d{13}-[a-f0-9]{12}$/, "Order ID is invalid"),
+  })
+  .strict();
+
+export const checkoutCancelQuerySchema = z
+  .object({
+    order_id: z
+      .string()
+      .max(100, "Order ID is too long")
+      .regex(/^LS-\d{13}-[a-f0-9]{12}$/, "Order ID is invalid")
+      .optional(),
+    status: z.enum(["error", "unfinish"]).optional(),
+  })
+  .strict();
+
 export const midtransWebhookNotificationSchema = z
   .object({
     fraud_status: z.string().optional(),
@@ -32,6 +53,8 @@ export const midtransWebhookNotificationSchema = z
   .passthrough();
 
 export type CreatePaymentInput = z.infer<typeof createPaymentSchema>;
+export type CheckoutCancelQuery = z.infer<typeof checkoutCancelQuerySchema>;
+export type CheckoutSuccessQuery = z.infer<typeof checkoutSuccessQuerySchema>;
 export type PaymentHistoryQuery = z.infer<typeof paymentHistoryQuerySchema>;
 export type MidtransWebhookNotification = z.infer<
   typeof midtransWebhookNotificationSchema

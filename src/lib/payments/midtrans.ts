@@ -1,4 +1,5 @@
 import type { PaidPlan, PaymentDuration } from "@/lib/validations/payment";
+import type { PaymentRedirectUrls } from "@/lib/payments/redirects";
 import { formatPaymentItemName } from "@/lib/payments/pricing";
 
 const SNAP_ENDPOINTS = {
@@ -22,6 +23,9 @@ type MidtransItemDetails = {
 };
 
 type MidtransSnapPayload = {
+  callbacks?: {
+    finish: string;
+  };
   credit_card: {
     secure: true;
   };
@@ -44,6 +48,7 @@ type MidtransSnapCustomer = {
 };
 
 export type CreateMidtransSnapTransactionInput = {
+  callbackUrls?: PaymentRedirectUrls;
   customer: MidtransSnapCustomer;
   duration: PaymentDuration;
   grossAmountIdr: number;
@@ -140,6 +145,7 @@ function buildCustomerDetails(
 }
 
 export function buildMidtransSnapPayload({
+  callbackUrls,
   customer,
   duration,
   grossAmountIdr,
@@ -149,6 +155,7 @@ export function buildMidtransSnapPayload({
   const customerDetails = buildCustomerDetails(customer);
 
   return {
+    ...(callbackUrls ? { callbacks: { finish: callbackUrls.finish } } : {}),
     credit_card: { secure: true },
     ...(customerDetails ? { customer_details: customerDetails } : {}),
     item_details: [
