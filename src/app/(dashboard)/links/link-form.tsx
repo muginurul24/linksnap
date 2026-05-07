@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { FormEvent, type ReactNode, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   AlertCircle,
@@ -51,9 +51,11 @@ import {
   type CreateLinkInput,
 } from "@/lib/validations/link";
 import { upsertLinkPageSchema } from "@/lib/validations/link-page";
+import type { UserPlan } from "@/lib/links/limits";
 
 type LinkFormField = keyof CreateLinkInput;
 type FieldErrors = Partial<Record<LinkFormField, string>>;
+type GatedToggleFeature = "LINK_PAGE" | "SMART_RULES";
 type SmartRuleType = "GEO" | "DEVICE" | "TIME" | "LANGUAGE";
 type SlugStatus =
   | "idle"
@@ -126,6 +128,7 @@ export type EditableLinkInitialData = {
 
 type LinkFormProps = {
   initialLink?: EditableLinkInitialData;
+  userPlan: UserPlan;
 };
 
 const initialSlugState: SlugState = { status: "idle" };
@@ -214,7 +217,48 @@ function SlugStatusMessage({ state }: { state: SlugState }) {
   );
 }
 
-export function CreateLinkForm({ initialLink }: LinkFormProps) {
+export function getPlanGatedToggleState({
+  feature,
+  isSubmitting,
+  userPlan,
+}: {
+  feature: GatedToggleFeature;
+  isSubmitting: boolean;
+  userPlan: UserPlan;
+}): { disabled: boolean; message?: string } {
+  if (isSubmitting) return { disabled: true };
+  if (userPlan !== "FREE") return { disabled: false };
+
+  return {
+    disabled: true,
+    message:
+      feature === "LINK_PAGE"
+        ? "Link Pages require Pro plan"
+        : "Smart Rules require Pro plan",
+  };
+}
+
+function GatedToggle({
+  children,
+  message,
+}: {
+  children: ReactNode;
+  message?: string;
+}) {
+  if (!message) return <>{children}</>;
+
+  return (
+    <span
+      aria-label={message}
+      className="inline-flex cursor-not-allowed opacity-60"
+      title={message}
+    >
+      {children}
+    </span>
+  );
+}
+
+export function CreateLinkForm({ initialLink, userPlan }: LinkFormProps) {
   const router = useRouter();
   const isEditMode = initialLink !== undefined;
   const initialLinkPage = initialLink?.linkPage;
@@ -260,6 +304,16 @@ export function CreateLinkForm({ initialLink }: LinkFormProps) {
   const safeCtaColor = /^#[0-9a-fA-F]{6}$/.test(linkPageCtaColor)
     ? linkPageCtaColor
     : "#111827";
+  const linkPageToggle = getPlanGatedToggleState({
+    feature: "LINK_PAGE",
+    isSubmitting,
+    userPlan,
+  });
+  const smartRulesToggle = getPlanGatedToggleState({
+    feature: "SMART_RULES",
+    isSubmitting,
+    userPlan,
+  });
 
   useEffect(() => {
     const trimmedSlug = slug.trim();
@@ -639,13 +693,23 @@ export function CreateLinkForm({ initialLink }: LinkFormProps) {
                 <Globe2 className="size-4 text-muted-foreground" />
                 <Label htmlFor="enableLinkPage">Enable Link Page</Label>
               </div>
-              <Switch
-                id="enableLinkPage"
-                checked={enableLinkPage}
-                onCheckedChange={setEnableLinkPage}
-                disabled={isSubmitting}
-              />
+              <GatedToggle message={linkPageToggle.message}>
+                <Switch
+                  id="enableLinkPage"
+                  checked={enableLinkPage}
+                  onCheckedChange={(checked) => {
+                    if (linkPageToggle.disabled) return;
+                    setEnableLinkPage(checked);
+                  }}
+                  disabled={linkPageToggle.disabled}
+                />
+              </GatedToggle>
             </div>
+            {linkPageToggle.message && (
+              <p className="text-xs text-muted-foreground">
+                {linkPageToggle.message}
+              </p>
+            )}
 
             {enableLinkPage && (
               <div className="grid gap-3 pt-1 sm:grid-cols-2">
@@ -714,13 +778,23 @@ export function CreateLinkForm({ initialLink }: LinkFormProps) {
                 <Route className="size-4 text-muted-foreground" />
                 <Label htmlFor="enableSmartRules">Enable Smart Rules</Label>
               </div>
-              <Switch
-                id="enableSmartRules"
-                checked={enableSmartRules}
-                onCheckedChange={setEnableSmartRules}
-                disabled={isSubmitting}
-              />
+              <GatedToggle message={smartRulesToggle.message}>
+                <Switch
+                  id="enableSmartRules"
+                  checked={enableSmartRules}
+                  onCheckedChange={(checked) => {
+                    if (smartRulesToggle.disabled) return;
+                    setEnableSmartRules(checked);
+                  }}
+                  disabled={smartRulesToggle.disabled}
+                />
+              </GatedToggle>
             </div>
+            {smartRulesToggle.message && (
+              <p className="text-xs text-muted-foreground">
+                {smartRulesToggle.message}
+              </p>
+            )}
 
             {enableSmartRules && (
               <RuleBuilder

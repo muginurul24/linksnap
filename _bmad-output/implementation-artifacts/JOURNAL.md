@@ -4358,6 +4358,43 @@ Updated the dashboard sidebar so the "Upgrade to Pro" card renders only for Free
 
 **Next Task:** 15.4 — Plan-Gate Smart Rules & Link Page Toggles
 
+### 15.4 — Plan-Gate Smart Rules & Link Page Toggles
+- **Date:** 2026-05-07 20:52 GMT+7
+- **Duration:** 0 hours 20 minutes
+- **Status:** ✅ Complete
+
+**What I Did:**
+Passed `userPlan` into `CreateLinkForm` from both create and edit link pages. Free users now see disabled Link Page and Smart Rules toggles with upgrade reasons, while Pro and Business users retain normal toggle behavior.
+
+**Files Changed:**
+- `_bmad-output/planning-artifacts/spec-phase-15-link-form-plan-toggles.md` — Added the link-form gating mini-spec.
+- `src/app/(dashboard)/links/link-form.tsx` — Added plan-aware toggle state, disabled gated toggles, and upgrade reason tooltips/copy.
+- `src/app/(dashboard)/links/new/page.tsx` — Loaded billing user plan and passed it to `CreateLinkForm`.
+- `src/app/(dashboard)/links/[slug]/edit/page.tsx` — Loaded billing user plan alongside editable link data and passed it to `CreateLinkForm`.
+- `tests/unit/link-form-plan-gates.test.tsx` — Added plan gate helper and render coverage.
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Checked off Task 15.4.
+- `_bmad-output/implementation-artifacts/JOURNAL.md` — Recorded this completion entry.
+
+**Decisions Made:**
+- Kept plan gating as a UX layer only; existing API-side quota and plan checks remain authoritative.
+- Used native `title` tooltip copy on the disabled switch wrapper so the reason is still available even though disabled controls do not receive pointer events.
+
+**Tests:**
+- ✅ Unit: `rtk bun run test -- tests/unit/link-form-plan-gates.test.tsx` — 1 file passed, 4 tests passed.
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Unit/Integration: `rtk bun run test` — 98 files passed, 454 tests passed.
+
+**Issues Encountered:**
+- None.
+
+**Security Checks:**
+- ✅ No authorization checks were moved out of API routes.
+- ✅ Billing plan reads use existing Drizzle query helpers.
+- ✅ No new user input, secrets, raw SQL, or unsafe rendering introduced.
+
+**Next Task:** 15.5 — Add Back Navigation to Create/Edit Pages
+
 ### 13.3 — Rule Engine Logic (Ordered Priority)
 - **Date:** 2026-05-07 18:41 GMT+7
 - **Duration:** 0h 30m

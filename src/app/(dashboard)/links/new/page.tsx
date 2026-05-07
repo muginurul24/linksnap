@@ -1,8 +1,28 @@
+import { redirect } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { ButtonLink } from "@/components/ui/button-link";
+import { auth } from "@/lib/auth";
+import { findBillingUserById } from "@/lib/db/queries/payments";
 import { CreateLinkForm } from "../link-form";
 
-export default function NewLinkPage() {
+type SessionWithUserId = {
+  user?: {
+    id?: unknown;
+  } | null;
+} | null;
+
+function getSessionUserId(session: SessionWithUserId): string | null {
+  return typeof session?.user?.id === "string" ? session.user.id : null;
+}
+
+export default async function NewLinkPage() {
+  const session = await auth();
+  const userId = getSessionUserId(session);
+  if (!userId) redirect("/login?callbackUrl=/links/new");
+
+  const billingUser = await findBillingUserById(userId);
+  const userPlan = billingUser?.plan ?? "FREE";
+
   return (
     <>
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -18,7 +38,7 @@ export default function NewLinkPage() {
         </ButtonLink>
       </div>
 
-      <CreateLinkForm />
+      <CreateLinkForm userPlan={userPlan} />
     </>
   );
 }

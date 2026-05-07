@@ -1122,16 +1122,16 @@ rtk bun run db:studio    # Open Drizzle Studio (in another terminal)
 - [x] Tests: unit (sidebar upgrade card visibility per plan)
 
 ### TASK 15.4 — Plan-Gate Smart Rules & Link Page Toggles
-- [ ] File: `src/app/(dashboard)/links/link-form.tsx`
-- [ ] Pass `userPlan` from parent to LinkForm
-- [ ] For FREE users:
+- [x] File: `src/app/(dashboard)/links/link-form.tsx`
+- [x] Pass `userPlan` from parent to LinkForm
+- [x] For FREE users:
   - "Enable Link Page" toggle → disabled with tooltip: "Link Pages require Pro plan"
   - "Enable Smart Rules" toggle → disabled with tooltip: "Smart Rules require Pro plan"
   - Greyed out, not clickable
-- [ ] For PRO/BUSINESS: toggles work as normal
-- [ ] File: `src/app/(dashboard)/links/new/page.tsx` — pass `userPlan` to form
-- [ ] File: `src/app/(dashboard)/links/[slug]/edit/page.tsx` — pass `userPlan` to form
-- [ ] Tests: unit (toggle states per plan)
+- [x] For PRO/BUSINESS: toggles work as normal
+- [x] File: `src/app/(dashboard)/links/new/page.tsx` — pass `userPlan` to form
+- [x] File: `src/app/(dashboard)/links/[slug]/edit/page.tsx` — pass `userPlan` to form
+- [x] Tests: unit (toggle states per plan)
 
 ### TASK 15.5 — Add Back Navigation to Create/Edit Pages
 - [ ] File: `src/app/(dashboard)/links/new/page.tsx` — add "← Back to Links" link at top

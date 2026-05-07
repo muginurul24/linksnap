@@ -3,6 +3,7 @@ import { ArrowLeft } from "lucide-react";
 import { ButtonLink } from "@/components/ui/button-link";
 import { auth } from "@/lib/auth";
 import { findEditableLinkBySlugForUser } from "@/lib/db/queries/links";
+import { findBillingUserById } from "@/lib/db/queries/payments";
 import { linkSlugParamsSchema } from "@/lib/validations/link";
 import {
   CreateLinkForm,
@@ -47,8 +48,12 @@ export default async function EditLinkPage({ params }: EditLinkPageProps) {
     redirect(`/login?callbackUrl=/links/${parsedParams.data.slug}/edit`);
   }
 
-  const link = await findEditableLinkBySlugForUser(parsedParams.data.slug, userId);
+  const [link, billingUser] = await Promise.all([
+    findEditableLinkBySlugForUser(parsedParams.data.slug, userId),
+    findBillingUserById(userId),
+  ]);
   const initialLink = toInitialLink(link);
+  const userPlan = billingUser?.plan ?? "FREE";
 
   return (
     <>
@@ -65,7 +70,7 @@ export default async function EditLinkPage({ params }: EditLinkPageProps) {
         </ButtonLink>
       </div>
 
-      <CreateLinkForm initialLink={initialLink} />
+      <CreateLinkForm initialLink={initialLink} userPlan={userPlan} />
     </>
   );
 }
