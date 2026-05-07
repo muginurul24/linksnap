@@ -6,7 +6,7 @@ in good shape, local `.env` has required app values, database indexes are presen
 in the connected database, and the public domain now resolves through Vercel with
 managed TLS. Production environment verification, monitoring, backups, load
 testing, penetration testing, and go-live still require production platform
-access.
+access; baseline production smoke monitoring is now configured in GitHub Actions.
 
 ## Verified
 - Local environment values are present for database, auth, Redis, Resend,
@@ -39,12 +39,17 @@ access.
   - API mutation guard rejects missing CSRF header and untrusted origins.
   - Browser smoke confirmed home canonical URL, register noindex metadata, and
     zero browser console errors.
+- Baseline production monitoring is configured through
+  `.github/workflows/production-smoke.yml`, scheduled every 30 minutes and
+  available for manual dispatch. It checks domain redirect, public routes,
+  canonical sitemap/robots output, security headers, and API guard behavior.
 
 ## Blocked
 - Production environment variables in Vercel cannot be verified from local files.
 - Redis cache warming cannot be run safely without production/staging URL and
   known hot slugs.
-- Monitoring/alerting is not configured in the repository.
+- External APM and business-event alerts are not configured yet for API error
+  rates, payment webhook failures, and unusual traffic spikes.
 - Backup/PITR policy requires Neon project/dashboard verification.
 - 5000 concurrent redirect load test requires a staging or production URL.
 - Basic penetration test requires a reachable staging or production deployment.
@@ -60,7 +65,7 @@ access.
   `https://www.justqiu.cloud/api/auth/callback/google`.
 - Configure Cloudflare WAF/rate rules for `/:slug` and `/:slug/go`.
 - Confirm Neon backup/PITR policy and database role permissions.
-- Add monitoring/alerting for API errors, payment webhook failures, rate-limit
-  spikes, and redirect error rates.
+- Add external APM/business-event alerting for API errors, payment webhook
+  failures, rate-limit spikes, and redirect error rates.
 - Run OWASP ZAP against staging.
 - Run redirect load test at the launch target of 5000 concurrent redirects.
