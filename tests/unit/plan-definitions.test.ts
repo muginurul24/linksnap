@@ -59,6 +59,20 @@ describe("plan definitions", () => {
     ]);
   });
 
+  it("should document API rate limits in minutes for every plan", () => {
+    expect(getPlanDefinition("FREE").features).toContain("API rate limit: 30/min");
+    expect(getPlanDefinition("PRO").features).toContain("API rate limit: 60/min");
+    expect(getPlanDefinition("BUSINESS").features).toContain(
+      "API rate limit: 120/min",
+    );
+    expect(PLAN_COMPARISON_ROWS.find((row) => row.feature === "API rate limit"))
+      .toMatchObject({
+        business: "120/min",
+        free: "30/min",
+        pro: "60/min",
+      });
+  });
+
   it("should format pricing and yearly savings consistently", () => {
     expect(formatUsdPrice(0)).toBe("$0");
     expect(formatUsdPrice(8)).toBe("$8");

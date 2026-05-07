@@ -52,8 +52,8 @@ function formatLimit(value: number, unlimited = "Unlimited"): string {
   return Number.isFinite(value) ? String(value) : unlimited;
 }
 
-function reqPerHour(plan: UserPlan): number {
-  return getApiEndpointRateLimit(plan) * 60;
+function formatApiRateLimit(plan: UserPlan): string {
+  return `${getApiEndpointRateLimit(plan)}/min`;
 }
 
 function buildLimits(plan: UserPlan): PlanDefinition["limits"] {
@@ -78,6 +78,7 @@ function featureList(plan: UserPlan): string[] {
     `${formatLimit(limits.qrCodes)} QR codes`,
     `${limits.analyticsRetentionDays}-day analytics retention`,
     `${formatLimit(limits.campaigns)} campaign groups`,
+    `API rate limit: ${limits.apiRequestsPerMinute}/min`,
   ];
 
   if (plan === "FREE") return base;
@@ -87,7 +88,7 @@ function featureList(plan: UserPlan): string[] {
     limits.splitTestVariants === 0
       ? "A/B split testing not included"
       : `${formatLimit(limits.splitTestVariants)} A/B split variants`,
-    `API access at ${reqPerHour(plan)} req/hr`,
+    "API key access",
     ...(plan === "BUSINESS" ? ["Webhook callbacks", "Priority support"] : []),
   ];
 }
@@ -182,10 +183,10 @@ export const PLAN_COMPARISON_ROWS: PlanComparisonRow[] = [
     pro: `${SPLIT_TEST_VARIANTS.PRO} variants`,
   },
   {
-    business: `${reqPerHour("BUSINESS")} req/hr`,
+    business: formatApiRateLimit("BUSINESS"),
     feature: "API rate limit",
-    free: `${reqPerHour("FREE")} req/hr`,
-    pro: `${reqPerHour("PRO")} req/hr`,
+    free: formatApiRateLimit("FREE"),
+    pro: formatApiRateLimit("PRO"),
   },
   {
     business: "Included",

@@ -725,11 +725,11 @@ For EVERY interactive component, implement these states:
 - [x] Tests: if dynamic, integration test the stats query
 
 ### TASK 12.9 — API Rate Limit Documentation Fix
-- [ ] File: `src/lib/plans/definitions.ts` (created in 12.4)
-- [ ] Document actual API rate limits: FREE: 30/min, PRO: 60/min, BUSINESS: 120/min
-- [ ] Update all plan feature lists to show correct rate limit numbers
-- [ ] Or adjust `limits.ts` to match marketed numbers — pick one direction and be consistent
-- [ ] Tests: unit (plan definitions match limits.ts values)
+- [x] File: `src/lib/plans/definitions.ts` (created in 12.4)
+- [x] Document actual API rate limits: FREE: 30/min, PRO: 60/min, BUSINESS: 120/min
+- [x] Update all plan feature lists to show correct rate limit numbers
+- [x] Or adjust `limits.ts` to match marketed numbers — pick one direction and be consistent
+- [x] Tests: unit (plan definitions match limits.ts values)
 
 ### TASK 12.10 — Fix Forgot Password Dead Link (Quick Fix)
 - [ ] If 12.1 is deferred: temporarily remove the "Forgot password?" link from `login-form.tsx`

@@ -3164,3 +3164,39 @@ actual rule types, API limit, analytics retention, and QR quota.
 - ✅ No secrets were printed or committed.
 
 **Next Task:** 12.9 — API Rate Limit Documentation Fix
+
+### 12.9 — API Rate Limit Documentation Fix
+- **Date:** 2026-05-07 14:55 GMT+7
+- **Duration:** 0h 15m
+- **Status:** ✅ Complete
+
+**What I Did:**
+Aligned plan definition copy with the actual API endpoint rate limits in
+`limits.ts`. Plan feature lists and comparison rows now show per-minute limits:
+Free 30/min, Pro 60/min, and Business 120/min.
+
+**Files Changed:**
+- `src/lib/plans/definitions.ts` — Replaced `req/hr` copy with `/min` API rate limit copy derived from `getApiEndpointRateLimit`.
+- `tests/unit/plan-definitions.test.ts` — Added exact coverage for all plan API rate limit text.
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Checked off Task 12.9.
+- `_bmad-output/implementation-artifacts/JOURNAL.md` — Recorded this completion entry.
+
+**Decisions Made:**
+- Kept `limits.ts` as the source of truth and changed marketing/product copy to match it.
+- Separated "API rate limit" from "API key access" so Free can show its real endpoint limit without implying API key management is available.
+
+**Tests:**
+- ✅ Targeted: `rtk bun run test -- tests/unit/plan-definitions.test.ts` — 1 file passed, 5 tests passed.
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Unit/Integration: `rtk bun run test` — 75 files passed, 329 tests passed.
+- ✅ Build: `rtk bun run build` — Passed.
+
+**Issues Encountered:**
+- None.
+
+**Security Checks:**
+- ✅ No runtime logic, input handling, auth, or ownership changes.
+- ✅ No secrets were printed or committed.
+
+**Next Task:** 12.10 — Forgot Password Link Temporary Removal
