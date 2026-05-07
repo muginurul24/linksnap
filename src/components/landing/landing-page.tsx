@@ -17,20 +17,17 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { DemoGenerator } from "@/components/landing/demo-generator";
+import {
+  PLANS,
+  formatUsdPrice,
+  type PlanDefinition,
+} from "@/lib/plans/definitions";
 import { cn } from "@/lib/utils";
 
 type Feature = {
   icon: LucideIcon;
   title: string;
   description: string;
-};
-
-type Plan = {
-  name: string;
-  price: string;
-  description: string;
-  features: string[];
-  highlighted?: boolean;
 };
 
 type Testimonial = {
@@ -76,48 +73,6 @@ const features: Feature[] = [
     title: "Link Scheduler",
     description:
       "Prepare limited-time links that activate and expire automatically for launch windows.",
-  },
-];
-
-const plans: Plan[] = [
-  {
-    name: "Free",
-    price: "$0",
-    description: "For creators and small tests.",
-    features: [
-      "25 short links",
-      "3 Link Pages",
-      "2 Smart Rules per link",
-      "10 QR codes",
-      "30-day analytics",
-    ],
-  },
-  {
-    name: "Pro",
-    price: "$8",
-    description: "For active marketers.",
-    highlighted: true,
-    features: [
-      "500 short links",
-      "50 Link Pages",
-      "10 campaign groups",
-      "UTM auto-builder",
-      "A/B split testing",
-      "API access",
-    ],
-  },
-  {
-    name: "Business",
-    price: "$19",
-    description: "For teams and high-volume launches.",
-    features: [
-      "Unlimited short links",
-      "Unlimited Link Pages",
-      "500 QR codes",
-      "Webhook callbacks",
-      "API at 5000 req/hr",
-      "Priority support",
-    ],
   },
 ];
 
@@ -287,7 +242,7 @@ function Features() {
   );
 }
 
-function PricingCard({ plan }: { plan: Plan }) {
+function PricingCard({ plan }: { plan: PlanDefinition }) {
   return (
     <div
       className={cn(
@@ -307,7 +262,9 @@ function PricingCard({ plan }: { plan: Plan }) {
         ) : null}
       </div>
       <div className="mt-6 flex items-baseline gap-1">
-        <span className="text-4xl font-semibold">{plan.price}</span>
+        <span className="text-4xl font-semibold">
+          {formatUsdPrice(plan.monthlyUsd)}
+        </span>
         <span className="text-sm text-muted-foreground">/month</span>
       </div>
       <ul className="mt-6 space-y-3">
@@ -327,7 +284,7 @@ function PricingCard({ plan }: { plan: Plan }) {
             : "bg-background hover:bg-muted",
         )}
       >
-        Get Started Free
+        {plan.cta}
         <ArrowRight className="size-4" />
       </Link>
     </div>
@@ -344,7 +301,7 @@ function Pricing() {
           description="The free tier includes real short links, Link Pages, Smart Rules, QR codes, and analytics retention for MVP launches."
         />
         <div className="grid gap-4 lg:grid-cols-3">
-          {plans.map((plan) => (
+          {PLANS.map((plan) => (
             <PricingCard key={plan.name} plan={plan} />
           ))}
         </div>

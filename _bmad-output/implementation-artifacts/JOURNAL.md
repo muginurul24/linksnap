@@ -2954,3 +2954,46 @@ API response for test coverage and future client consumers.
 - ✅ No secrets were printed or committed.
 
 **Next Task:** 12.4 — Unify Plan Definitions
+
+### 12.4 — Unify Plan Definitions
+- **Date:** 2026-05-07 14:10 GMT+7
+- **Duration:** 0h 35m
+- **Status:** ✅ Complete
+
+**What I Did:**
+Created a single plan definition source and refactored the landing pricing
+cards, pricing page, and dashboard billing page to read from it. Added quota
+helpers for campaign and QR limits so displayed plan features are backed by
+shared limit functions.
+
+**Files Changed:**
+- `src/lib/plans/definitions.ts` — Added shared `PLANS`, comparison rows, pricing helpers, and plan limits.
+- `src/lib/links/limits.ts` — Added campaign and QR quota helpers used by plan definitions.
+- `src/components/landing/landing-page.tsx` — Replaced inline plan cards with `PLANS`.
+- `src/components/landing/pricing-page.tsx` — Replaced inline plans and comparison table rows with shared definitions.
+- `src/app/(dashboard)/settings/billing/page.tsx` — Replaced inline billing plan cards with shared definitions.
+- `tests/unit/plan-definitions.test.ts` — Added plan integrity and limit-alignment coverage.
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Checked off Task 12.4.
+- `_bmad-output/implementation-artifacts/JOURNAL.md` — Recorded this completion entry.
+
+**Decisions Made:**
+- Kept plan definitions free of React icons; UI layers map icons locally.
+- Added campaign/QR quota helpers now because plan definitions need one authoritative source for those numbers; API enforcement remains part of Task 12.7.
+- Used `getApiEndpointRateLimit(plan) * 60` for hourly API limit copy so displayed values track `limits.ts`.
+
+**Tests:**
+- ✅ Targeted: `rtk bun run test -- tests/unit/plan-definitions.test.ts` — 1 file passed, 4 tests passed.
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Unit/Integration: `rtk bun run test` — 72 files passed, 314 tests passed.
+- ✅ Build: `rtk bun run build` — Passed.
+
+**Issues Encountered:**
+- Campaign and QR limit values were previously only present as marketing copy. I added shared helpers rather than leaving another hardcoded source.
+
+**Security Checks:**
+- ✅ No user input added.
+- ✅ No ownership-sensitive query changes.
+- ✅ No secrets were printed or committed.
+
+**Next Task:** 12.5 — Fix Sidebar Dynamic Data

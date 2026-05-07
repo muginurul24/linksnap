@@ -684,13 +684,13 @@ For EVERY interactive component, implement these states:
 - [x] Tests: unit (data transformation), integration (dashboard API response)
 
 ### TASK 12.4 — Unify Plan Definitions (Single Source of Truth)
-- [ ] Create `src/lib/plans/definitions.ts` — export a single `PLANS` constant array with all plan metadata (name, price, period, description, features[], limits, highlighted, cta)
-- [ ] `features` must be an exhaustive list of ALL features per plan, matching actual `limits.ts` values
-- [ ] Refactor `src/components/landing/landing-page.tsx` — use `PLANS` instead of inline definition
-- [ ] Refactor `src/components/landing/pricing-page.tsx` — use `PLANS` instead of inline definition
-- [ ] Refactor `src/app/(dashboard)/settings/billing/page.tsx` — use `PLANS` instead of inline definition
-- [ ] Verify: all 3 pages show identical features, prices, and limits
-- [ ] Tests: unit (plan data integrity — no missing fields, prices match limits)
+- [x] Create `src/lib/plans/definitions.ts` — export a single `PLANS` constant array with all plan metadata (name, price, period, description, features[], limits, highlighted, cta)
+- [x] `features` must be an exhaustive list of ALL features per plan, matching actual `limits.ts` values
+- [x] Refactor `src/components/landing/landing-page.tsx` — use `PLANS` instead of inline definition
+- [x] Refactor `src/components/landing/pricing-page.tsx` — use `PLANS` instead of inline definition
+- [x] Refactor `src/app/(dashboard)/settings/billing/page.tsx` — use `PLANS` instead of inline definition
+- [x] Verify: all 3 pages show identical features, prices, and limits
+- [x] Tests: unit (plan data integrity — no missing fields, prices match limits)
 
 ### TASK 12.5 — Fix Sidebar Dynamic Data
 - [ ] File: `src/components/dashboard/app-sidebar.tsx`

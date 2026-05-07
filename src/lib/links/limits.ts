@@ -20,6 +20,18 @@ const SMART_RULE_QUOTAS: Record<UserPlan, number> = {
   BUSINESS: Number.POSITIVE_INFINITY,
 };
 
+const CAMPAIGN_QUOTAS: Record<UserPlan, number> = {
+  FREE: 1,
+  PRO: 10,
+  BUSINESS: Number.POSITIVE_INFINITY,
+};
+
+const QR_QUOTAS: Record<UserPlan, number> = {
+  FREE: 10,
+  PRO: 100,
+  BUSINESS: 500,
+};
+
 const LINK_CREATION_RATE_LIMITS: Record<UserPlan, number> = {
   FREE: 10,
   PRO: 30,
@@ -48,6 +60,14 @@ export function getSmartRuleQuota(plan: UserPlan): number {
   return SMART_RULE_QUOTAS[plan];
 }
 
+export function getCampaignQuota(plan: UserPlan): number {
+  return CAMPAIGN_QUOTAS[plan];
+}
+
+export function getQrQuota(plan: UserPlan): number {
+  return QR_QUOTAS[plan];
+}
+
 export function getLinkCreationRateLimit(plan: UserPlan): number {
   return LINK_CREATION_RATE_LIMITS[plan];
 }
@@ -65,6 +85,17 @@ export function hasReachedLinkPageQuota(
   linkPageCount: number,
 ): boolean {
   return linkPageCount >= getLinkPageQuota(plan);
+}
+
+export function hasReachedCampaignQuota(
+  plan: UserPlan,
+  campaignCount: number,
+): boolean {
+  return campaignCount >= getCampaignQuota(plan);
+}
+
+export function hasReachedQrQuota(plan: UserPlan, qrCount: number): boolean {
+  return qrCount >= getQrQuota(plan);
 }
 
 export function exceedsSmartRuleQuota(
