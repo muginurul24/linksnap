@@ -315,6 +315,47 @@ Added Stripe subscription Checkout session creation using dynamic USD price data
 
 **Next Task:** 14.3 — Stripe Webhook Handler
 
+### 14.3 — Stripe Webhook Handler
+- **Date:** 2026-05-07 19:20 GMT+7
+- **Duration:** 0 hours 25 minutes
+- **Status:** ✅ Complete
+
+**What I Did:**
+Added Stripe webhook signature verification using the raw request body and implemented event handling for completed checkout sessions, subscription updates/deletions, and failed invoices. Added the Stripe webhook route and exempted it from the browser CSRF header guard like the existing Midtrans webhook.
+
+**Files Changed:**
+- `src/lib/payments/stripe-webhook.ts` — Added signature verification and Stripe event handling.
+- `src/app/api/v1/payments/stripe/webhook/route.ts` — Added Stripe webhook POST route.
+- `src/lib/security/api-request.ts` — Exempted Stripe webhook path from custom browser CSRF header.
+- `tests/unit/api-security.test.ts` — Covered Stripe webhook CSRF exemption.
+- `tests/unit/stripe-webhook.test.ts` — Covered signature verification, checkout completion, duplicate handling, and subscription sync/expiry.
+- `tests/integration/stripe-webhook-api.test.ts` — Covered signed webhook endpoint behavior and error responses.
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Marked task 14.3 complete.
+- `_bmad-output/implementation-artifacts/JOURNAL.md` — Logged task completion.
+
+**Decisions Made:**
+- Used Stripe Checkout metadata `orderId` as the primary transaction lookup key because `client_reference_id` is the user ID and is not unique across pending checkouts.
+- Kept Stripe webhook processing idempotent by ignoring already-settled transactions before activating subscriptions.
+
+**Tests:**
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Unit/Integration: `rtk bun run test` — Passed on rerun, 98 files / 456 tests.
+- ✅ Targeted: `rtk bun run test tests/unit/stripe-webhook.test.ts tests/integration/stripe-webhook-api.test.ts tests/unit/api-security.test.ts` — Passed.
+
+**Issues Encountered:**
+- Stripe subscription test fixtures needed `unknown` casts because real Stripe subscription event types include many fields irrelevant to this handler.
+- Full-suite Vitest again timed out the existing password-change integration test under load → The isolated suite passed, and the full suite passed on rerun.
+
+**Security Checks:**
+- ✅ Stripe webhook signatures verified against raw body.
+- ✅ Webhook route is CSRF-exempt only for the server-to-server Stripe path.
+- ✅ Webhook metadata is validated before state changes.
+- ✅ Idempotent settlement prevents duplicate subscription activation.
+- ✅ No Stripe secrets or card data logged.
+
+**Next Task:** 14.4 — Country Detection on Billing Page
+
 ### 0.4 — CI/CD Pipeline
 - **Date:** 2026-05-06 20:10 GMT+7
 - **Duration:** 0 hours 35 minutes

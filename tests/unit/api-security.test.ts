@@ -99,4 +99,16 @@ describe("API mutation security", () => {
 
     expect(result).toBeNull();
   });
+
+  it("should exempt Stripe webhook callbacks from custom browser headers", () => {
+    const result = validateApiMutationRequest({
+      allowedOrigins,
+      method: "POST",
+      origin: null,
+      pathname: "/api/v1/payments/stripe/webhook",
+      requestedWith: null,
+    });
+
+    expect(result).toBeNull();
+  });
 });

@@ -1052,28 +1052,28 @@ Stripe handles credit card globally. Midtrans handles Indonesian local banks (BC
 - [x] Tests: unit (session creation params), integration (create checkout API)
 
 ### TASK 14.3 — Stripe Webhook Handler
-- [ ] Create `src/lib/payments/stripe-webhook.ts`
-- [ ] `verifyStripeWebhookSignature(body, signature, secret)` — verify Stripe signature
-- [ ] `handleStripeWebhook(event)`:
-  - `checkout.session.completed`:
-    - Find transaction by `client_reference_id`
-    - Update transaction status to `SETTLEMENT`
-    - Activate subscription via existing `createOrRenewSubscriptionForPayment`
-    - Send invoice email
-  - `customer.subscription.updated`:
-    - Sync subscription status (renewal, plan change)
-  - `customer.subscription.deleted`:
-    - Expire subscription, downgrade to FREE
-  - `invoice.payment_failed`:
-    - Log failure, optionally notify user
-- [ ] Create `src/app/api/v1/payments/stripe/webhook/route.ts` — POST handler:
-  - Verify Stripe signature
-  - Parse event type
-  - Delegate to handler
-  - Return 200 quickly (Stripe expects fast response)
-  - Exempt from CSRF guard (like Midtrans webhook)
-- [ ] Update proxy CSRF exemption list to include Stripe webhook path
-- [ ] Tests: unit (signature verification, event handling), integration (webhook endpoint)
+- [x] Create `src/lib/payments/stripe-webhook.ts`
+- [x] `verifyStripeWebhookSignature(body, signature, secret)` — verify Stripe signature
+- [x] `handleStripeWebhook(event)`:
+  - [x] `checkout.session.completed`:
+    - [x] Find transaction by `client_reference_id`
+    - [x] Update transaction status to `SETTLEMENT`
+    - [x] Activate subscription via existing `createOrRenewSubscriptionForPayment`
+    - [x] Send invoice email
+  - [x] `customer.subscription.updated`:
+    - [x] Sync subscription status (renewal, plan change)
+  - [x] `customer.subscription.deleted`:
+    - [x] Expire subscription, downgrade to FREE
+  - [x] `invoice.payment_failed`:
+    - [x] Log failure, optionally notify user
+- [x] Create `src/app/api/v1/payments/stripe/webhook/route.ts` — POST handler:
+  - [x] Verify Stripe signature
+  - [x] Parse event type
+  - [x] Delegate to handler
+  - [x] Return 200 quickly (Stripe expects fast response)
+  - [x] Exempt from CSRF guard (like Midtrans webhook)
+- [x] Update proxy CSRF exemption list to include Stripe webhook path
+- [x] Tests: unit (signature verification, event handling), integration (webhook endpoint)
 
 ### TASK 14.4 — Country Detection on Billing Page
 - [ ] File: `src/app/(dashboard)/settings/billing/page.tsx`

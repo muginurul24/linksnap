@@ -1,7 +1,10 @@
 import { hasApiKeyBearerAuthorization } from "@/lib/auth/api-key-format";
 
 const MUTATING_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
-const CUSTOM_HEADER_EXEMPT_PATHS = new Set(["/api/v1/payments/webhook"]);
+const CUSTOM_HEADER_EXEMPT_PATHS = new Set([
+  "/api/v1/payments/webhook",
+  "/api/v1/payments/stripe/webhook",
+]);
 
 export const API_CSRF_HEADER = "x-requested-with";
 export const API_CSRF_HEADER_VALUE = "XMLHttpRequest";
