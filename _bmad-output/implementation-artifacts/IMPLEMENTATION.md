@@ -528,7 +528,7 @@ src/
 - [x] Custom domain configured (`justqiu.cloud` redirects to `www.justqiu.cloud`)
 - [x] SSL certificate active
 - [x] Database indexes verified
-- [ ] Redis cache warming
+- [x] Redis cache warming
 - [x] Monitoring/alerting configured (baseline scheduled production smoke)
 - [ ] Backup strategy verified
 - [ ] Load test: 5000 concurrent redirects

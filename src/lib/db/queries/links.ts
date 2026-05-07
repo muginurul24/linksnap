@@ -3,9 +3,12 @@ import {
   count,
   desc,
   eq,
+  gt,
   ilike,
   inArray,
+  isNull,
   lt,
+  lte,
   or,
   type SQL,
 } from "drizzle-orm";
@@ -353,6 +356,36 @@ export async function findRedirectLinkBySlug(
   });
 
   return link ?? null;
+}
+
+export async function listRedirectLinksForCacheWarmup({
+  limit,
+}: {
+  limit: number;
+}): Promise<RedirectLink[]> {
+  const now = new Date();
+
+  return db
+    .select({
+      clickCount: links.clickCount,
+      destinationUrl: links.destinationUrl,
+      expiresAt: links.expiresAt,
+      hasLinkPage: links.hasLinkPage,
+      id: links.id,
+      isActive: links.isActive,
+      scheduledAt: links.scheduledAt,
+      slug: links.slug,
+    })
+    .from(links)
+    .where(
+      and(
+        eq(links.isActive, true),
+        or(isNull(links.scheduledAt), lte(links.scheduledAt, now)),
+        or(isNull(links.expiresAt), gt(links.expiresAt, now)),
+      ),
+    )
+    .orderBy(desc(links.clickCount), desc(links.updatedAt))
+    .limit(limit);
 }
 
 export async function findQrGenerationLinkBySlug(
