@@ -1,9 +1,24 @@
 import { describe, expect, it } from "vitest";
-import { contentSecurityPolicy, securityHeaders } from "@/lib/security/headers";
+import {
+  CSP_NONCE_HEADER,
+  createContentSecurityPolicy,
+  createCspNonce,
+  createRequestSecurityHeaders,
+  createSecurityHeaders,
+  staticSecurityHeaders,
+} from "@/lib/security/headers";
+
+function getDirective(csp: string, directive: string): string {
+  return (
+    csp
+      .split("; ")
+      .find((value) => value.startsWith(`${directive} `)) ?? ""
+  );
+}
 
 describe("security headers", () => {
   it("should include baseline browser hardening headers", () => {
-    expect(securityHeaders).toEqual(
+    expect(staticSecurityHeaders).toEqual(
       expect.arrayContaining([
         {
           key: "Strict-Transport-Security",
@@ -20,10 +35,57 @@ describe("security headers", () => {
     );
   });
 
-  it("should deny framing and unsafe object embedding in CSP", () => {
-    expect(contentSecurityPolicy).toContain("default-src 'self'");
-    expect(contentSecurityPolicy).toContain("frame-ancestors 'none'");
-    expect(contentSecurityPolicy).toContain("object-src 'none'");
-    expect(contentSecurityPolicy).toContain("base-uri 'self'");
+  it("should create a base64 nonce from a random UUID", () => {
+    expect(createCspNonce(() => "00000000-0000-4000-8000-000000000000")).toBe(
+      "MDAwMDAwMDAtMDAwMC00MDAwLTgwMDAtMDAwMDAwMDAwMDAw",
+    );
+  });
+
+  it("should build a nonce-based CSP without unsafe inline script or style blocks", () => {
+    const csp = createContentSecurityPolicy({
+      isDev: false,
+      nonce: "test-nonce",
+    });
+
+    expect(csp).toContain("default-src 'self'");
+    expect(csp).toContain("script-src 'self' 'nonce-test-nonce' 'strict-dynamic'");
+    expect(csp).toContain("script-src-attr 'none'");
+    expect(csp).toContain("style-src 'self' 'nonce-test-nonce'");
+    expect(csp).toContain("style-src-attr 'unsafe-inline'");
+    expect(csp).toContain("frame-ancestors 'none'");
+    expect(csp).toContain("object-src 'none'");
+    expect(csp).toContain("base-uri 'self'");
+    expect(getDirective(csp, "script-src")).not.toContain("'unsafe-inline'");
+    expect(getDirective(csp, "style-src")).not.toContain("'unsafe-inline'");
+  });
+
+  it("should allow unsafe eval only in development CSP", () => {
+    expect(
+      createContentSecurityPolicy({ isDev: true, nonce: "dev-nonce" }),
+    ).toContain("'unsafe-eval'");
+    expect(
+      createContentSecurityPolicy({ isDev: false, nonce: "prod-nonce" }),
+    ).not.toContain("'unsafe-eval'");
+  });
+
+  it("should attach matching nonce and CSP to request headers", () => {
+    const security = createRequestSecurityHeaders(new Headers());
+    const nonce = security.requestHeaders.get(CSP_NONCE_HEADER);
+    const requestCsp = security.requestHeaders.get("Content-Security-Policy");
+
+    expect(nonce).toBe(security.nonce);
+    expect(requestCsp).toBe(security.contentSecurityPolicy);
+    expect(security.contentSecurityPolicy).toContain(`'nonce-${nonce}'`);
+  });
+
+  it("should include CSP when creating full response headers", () => {
+    expect(createSecurityHeaders({ isDev: false, nonce: "test-nonce" })).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          key: "Content-Security-Policy",
+          value: expect.stringContaining("'nonce-test-nonce'"),
+        }),
+      ]),
+    );
   });
 });

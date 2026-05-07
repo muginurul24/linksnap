@@ -2,12 +2,13 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowRight, BookOpen, CalendarDays, Clock, Zap } from "lucide-react";
 import { MarketingFooter } from "@/components/landing/marketing-footer";
+import { JsonLdScript } from "@/components/seo/json-ld-script";
 import { getBlogPosts, type BlogPostSummary } from "@/lib/blog/posts";
 import {
   buildBlogIndexJsonLd,
   createPublicMetadata,
-  serializeJsonLd,
 } from "@/lib/seo/metadata";
+import { getCspNonce } from "@/lib/security/server-nonce";
 
 const description =
   "Practical guides for short links, Link Pages, smart redirects, QR campaigns, and conversion-focused link analytics.";
@@ -116,13 +117,12 @@ function BlogCard({ post, featured }: { post: BlogPostSummary; featured?: boolea
 
 export default async function BlogPage() {
   const posts = await getBlogPosts();
+  const nonce = await getCspNonce();
   const [featuredPost, ...secondaryPosts] = posts;
 
   return (
     <main className="min-h-screen bg-background text-foreground">
-      <script type="application/ld+json">
-        {serializeJsonLd(buildBlogIndexJsonLd(posts))}
-      </script>
+      <JsonLdScript nonce={nonce} value={buildBlogIndexJsonLd(posts)} />
       <Header />
       <section className="py-18 sm:py-24">
         <Container>

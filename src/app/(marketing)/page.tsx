@@ -1,11 +1,12 @@
 import type { Metadata } from "next";
+import { JsonLdScript } from "@/components/seo/json-ld-script";
 import LandingPage from "@/components/landing/landing-page";
 import {
   buildHomeJsonLd,
   createPublicMetadata,
-  serializeJsonLd,
   siteConfig,
 } from "@/lib/seo/metadata";
+import { getCspNonce } from "@/lib/security/server-nonce";
 
 export const metadata: Metadata = {
   ...createPublicMetadata({
@@ -16,12 +17,12 @@ export const metadata: Metadata = {
   }),
 };
 
-export default function MarketingHomePage() {
+export default async function MarketingHomePage() {
+  const nonce = await getCspNonce();
+
   return (
     <>
-      <script type="application/ld+json">
-        {serializeJsonLd(buildHomeJsonLd())}
-      </script>
+      <JsonLdScript nonce={nonce} value={buildHomeJsonLd()} />
       <LandingPage />
     </>
   );

@@ -4,6 +4,7 @@ import * as React from "react"
 import * as RechartsPrimitive from "recharts"
 import type { TooltipValueType } from "recharts"
 
+import { useCspNonce } from "@/components/security/nonce-provider"
 import { cn } from "@/lib/utils"
 
 // Format: { THEME_NAME: CSS_SELECTOR }
@@ -82,13 +83,18 @@ function ChartContainer({
 }
 
 const ChartStyle = ({ id, config }: { id: string; config: ChartConfig }) => {
+  const nonce = useCspNonce()
   const css = buildChartStyleCss(id, config)
 
   if (!css) {
     return null
   }
 
-  return <style>{css}</style>
+  return (
+    <style nonce={nonce} suppressHydrationWarning>
+      {css}
+    </style>
+  )
 }
 
 export function buildChartStyleCss(id: string, config: ChartConfig): string {
@@ -105,7 +111,7 @@ export function buildChartStyleCss(id: string, config: ChartConfig): string {
 
   return Object.entries(THEMES)
     .map(([theme, prefix]) => {
-      const rules = colorConfig
+      const colorRules = colorConfig
         .map(([key, itemConfig]) => {
           const safeKey = getSafeChartCssIdentifier(key)
           const color = getSafeChartColorValue(
@@ -113,9 +119,14 @@ export function buildChartStyleCss(id: string, config: ChartConfig): string {
               itemConfig.color
           )
 
-          return safeKey && color ? `  --color-${safeKey}: ${color};` : null
+          return safeKey && color ? { color, safeKey } : null
         })
-        .filter((rule): rule is string => Boolean(rule))
+        .filter(
+          (rule): rule is { color: string; safeKey: string } => rule !== null
+        )
+
+      const rules = colorRules
+        .map(({ color, safeKey }) => `  --color-${safeKey}: ${color};`)
         .join("\n")
 
       if (!rules) return ""
@@ -124,6 +135,15 @@ export function buildChartStyleCss(id: string, config: ChartConfig): string {
 ${prefix} [data-chart=${safeId}] {
 ${rules}
 }
+${colorRules
+  .map(
+    ({ safeKey }) => `
+${prefix} [data-chart=${safeId}] .chart-color-${safeKey} {
+  --color-bg: var(--color-${safeKey});
+  --color-border: var(--color-${safeKey});
+}`
+  )
+  .join("\n")}
 `
     })
     .filter(Boolean)
@@ -132,6 +152,12 @@ ${rules}
 
 export function getSafeChartCssIdentifier(value: string): string | null {
   return /^[a-zA-Z0-9_-]+$/.test(value) ? value : null
+}
+
+function getChartColorClassName(value: string): string | null {
+  const safeKey = getSafeChartCssIdentifier(value)
+
+  return safeKey ? `chart-color-${safeKey}` : null
 }
 
 export function getSafeChartColorValue(value: string | undefined): string | null {
@@ -232,7 +258,9 @@ function ChartTooltipContent({
           .map((item, index) => {
             const key = `${nameKey ?? item.name ?? item.dataKey ?? "value"}`
             const itemConfig = getPayloadConfigFromPayload(config, item, key)
-            const indicatorColor = color ?? item.payload?.fill ?? item.color
+            const indicatorColorClass = color
+              ? null
+              : getChartColorClassName(key)
 
             return (
               <div
@@ -253,6 +281,7 @@ function ChartTooltipContent({
                         <div
                           className={cn(
                             "shrink-0 rounded-[2px] border-(--color-border) bg-(--color-bg)",
+                            indicatorColorClass,
                             {
                               "h-2.5 w-2.5": indicator === "dot",
                               "w-1": indicator === "line",
@@ -261,12 +290,6 @@ function ChartTooltipContent({
                               "my-0.5": nestLabel && indicator === "dashed",
                             }
                           )}
-                          style={
-                            {
-                              "--color-bg": indicatorColor,
-                              "--color-border": indicatorColor,
-                            } as React.CSSProperties
-                          }
                         />
                       )
                     )}
@@ -343,10 +366,10 @@ function ChartLegendContent({
                 <itemConfig.icon />
               ) : (
                 <div
-                  className="h-2 w-2 shrink-0 rounded-[2px]"
-                  style={{
-                    backgroundColor: item.color,
-                  }}
+                  className={cn(
+                    "h-2 w-2 shrink-0 rounded-[2px] bg-(--color-bg)",
+                    getChartColorClassName(key)
+                  )}
                 />
               )}
               {itemConfig?.label}

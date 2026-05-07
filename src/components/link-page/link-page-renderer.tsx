@@ -12,6 +12,7 @@ import {
   getReadableTextColor,
   getSafeHexColor,
 } from "@/components/link-page/link-page-utils";
+import { getCspNonce } from "@/lib/security/server-nonce";
 import { cn } from "@/lib/utils";
 
 type LinkPageTheme = "auto" | "dark" | "light";
@@ -111,6 +112,7 @@ export async function LinkPageRenderer({
 }: LinkPageRendererProps) {
   const theme = normalizeTheme(page.theme);
   const themeClasses = THEME_CLASSES[theme];
+  const nonce = await getCspNonce();
   const ctaColor = getSafeHexColor(page.ctaColor);
   const ctaTextColor = getReadableTextColor(ctaColor);
   const countdownTarget =
@@ -181,10 +183,12 @@ export async function LinkPageRenderer({
               ) : null}
             </div>
 
+            <style nonce={nonce} suppressHydrationWarning>
+              {`.link-page-cta{background-color:${ctaColor};color:${ctaTextColor};}`}
+            </style>
             <a
               href={ctaUrl}
-              className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg px-4 text-sm font-medium transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
-              style={{ backgroundColor: ctaColor, color: ctaTextColor }}
+              className="link-page-cta inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg px-4 text-sm font-medium transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
             >
               <span className="min-w-0 truncate">{page.ctaText}</span>
               <ArrowUpRight className="size-4 shrink-0" aria-hidden="true" />

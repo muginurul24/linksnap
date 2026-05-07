@@ -1381,15 +1381,15 @@ rtk bun run db:studio    # Open Drizzle Studio (in another terminal)
 - [x] Tests: unit (rate limit triggers at threshold), integration (rate-limited request gets 429)
 
 ### TASK 17.2 — Replace CSP `unsafe-inline` with Nonce-Based Policy
-- [ ] File: `src/lib/security/headers.ts`
-- [ ] Remove `'unsafe-inline'` from both `script-src` and `style-src`
-- [ ] Generate per-request nonce via `crypto.randomUUID()`
-- [ ] Inject nonce via `next.config.ts` headers function using `request`-scoped nonce
-- [ ] For scripts: migrate any inline `<script>` tags to external files or `next/script` with nonce
-- [ ] For styles: use CSS modules or styled-jsx instead of inline styles
-- [ ] Verify CSP doesn't break production — run full smoke test suite
-- [ ] Reference: [Next.js CSP docs](https://nextjs.org/docs/app/building-your-application/configuring/content-security-policy)
-- [ ] Tests: unit (CSP header contains nonce, no unsafe-inline)
+- [x] File: `src/lib/security/headers.ts`
+- [x] Remove `'unsafe-inline'` from both `script-src` and `style-src`
+- [x] Generate per-request nonce via `crypto.randomUUID()`
+- [x] Inject nonce via `next.config.ts` headers function using `request`-scoped nonce`
+- [x] For scripts: migrate any inline `<script>` tags to external files or `next/script` with nonce
+- [x] For styles: use CSS modules or styled-jsx instead of inline styles
+- [x] Verify CSP doesn't break production — run full smoke test suite
+- [x] Reference: [Next.js CSP docs](https://nextjs.org/docs/app/building-your-application/configuring/content-security-policy)
+- [x] Tests: unit (CSP header contains nonce, no unsafe-inline)
 
 ### TASK 17.3 — Mitigate `after()` Experimental API Risk for Click Logging
 - [ ] Files: `src/app/[slug]/page.tsx` and `src/app/[slug]/go/route.ts`

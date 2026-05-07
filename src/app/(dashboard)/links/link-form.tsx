@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { FormEvent, useEffect, useId, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   AlertCircle,
@@ -14,6 +14,7 @@ import {
 import { toast } from "sonner";
 import { DeleteConfirmationDialog } from "@/components/dashboard/delete-confirmation-dialog";
 import { PlanGate } from "@/components/plan-gate";
+import { NoncedStyle } from "@/components/security/nonced-style";
 import { Button } from "@/components/ui/button";
 import { RuleBuilder } from "@/components/smart-rules/rule-builder";
 import {
@@ -56,6 +57,7 @@ import {
   getSmartRuleQuota,
   type UserPlan,
 } from "@/lib/links/limits";
+import { cn } from "@/lib/utils";
 
 type LinkFormField = Extract<keyof CreateLinkInput, string>;
 type LinkFormValues = {
@@ -281,6 +283,7 @@ export function CreateLinkForm({
 }: LinkFormProps) {
   const router = useRouter();
   const userPlan = usePlan();
+  const ctaPreviewId = useId();
   const isEditMode = initialLink !== undefined;
   const initialLinkPage = initialLink?.linkPage;
   const initialSmartRules = initialLink?.smartRules ?? [];
@@ -325,6 +328,8 @@ export function CreateLinkForm({
   const safeCtaColor = /^#[0-9a-fA-F]{6}$/.test(linkPageCtaColor)
     ? linkPageCtaColor
     : "#111827";
+  const ctaPreviewClassName = `link-form-cta-${ctaPreviewId.replace(/[^a-zA-Z0-9_-]/g, "")}`;
+  const ctaPreviewCss = `.${ctaPreviewClassName}{background-color:${safeCtaColor};}`;
   const customSlugAllowed = canUseCustomSlug(userPlan);
   const linkPageLimit = getLinkPageQuota(userPlan);
   const linkPageCountsExistingSlot = Boolean(initialLink?.hasLinkPage || initialLinkPage);
@@ -974,6 +979,7 @@ export function CreateLinkForm({
 
           {enableLinkPage && (
             <div className="space-y-2 rounded-lg border border-border p-3">
+              <NoncedStyle css={ctaPreviewCss} />
               <div className="flex items-center gap-2 text-sm font-medium">
                 <Globe2 className="size-4 text-muted-foreground" />
                 {linkPageBrandName || "Brand name"}
@@ -983,8 +989,10 @@ export function CreateLinkForm({
                 {linkPageDescription || "Description"}
               </p>
               <div
-                className="inline-flex h-8 items-center rounded-lg px-3 text-sm font-medium text-white"
-                style={{ backgroundColor: safeCtaColor }}
+                className={cn(
+                  "inline-flex h-8 items-center rounded-lg px-3 text-sm font-medium text-white",
+                  ctaPreviewClassName,
+                )}
               >
                 {linkPageCtaText || "Continue"}
               </div>

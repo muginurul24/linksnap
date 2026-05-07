@@ -54,6 +54,9 @@ describe("proxy redirect rate limit", () => {
 
     expect(response?.status).toBe(429);
     expect(response?.headers.get("Retry-After")).toBe("60");
+    expect(response?.headers.get("Content-Security-Policy")).toContain(
+      "'nonce-",
+    );
     expect(body).toMatchObject({
       error: { code: "RATE_LIMITED" },
       success: false,
@@ -71,6 +74,9 @@ describe("proxy redirect rate limit", () => {
     const response = await proxy(createRequest("/login"), {} as never);
 
     expect(response?.status).toBe(200);
+    expect(response?.headers.get("Content-Security-Policy")).toContain(
+      "'nonce-",
+    );
     expect(mockState.calls).toEqual([]);
   });
 
@@ -83,6 +89,9 @@ describe("proxy redirect rate limit", () => {
     );
 
     expect(response?.status).toBe(200);
+    expect(response?.headers.get("Content-Security-Policy")).toContain(
+      "'nonce-",
+    );
     expect(mockState.calls).toEqual([]);
   });
 });

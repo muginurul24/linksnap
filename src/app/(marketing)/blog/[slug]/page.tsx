@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, CalendarDays, Clock, Zap } from "lucide-react";
 import { MarketingFooter } from "@/components/landing/marketing-footer";
+import { JsonLdScript } from "@/components/seo/json-ld-script";
 import {
   getBlogPostBySlug,
   getBlogPostSlugs,
@@ -11,8 +12,8 @@ import {
 import {
   buildBlogPostJsonLd,
   createPublicMetadata,
-  serializeJsonLd,
 } from "@/lib/seo/metadata";
+import { getCspNonce } from "@/lib/security/server-nonce";
 
 type BlogPostPageProps = {
   params: Promise<{
@@ -182,6 +183,7 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
 
   if (!post) notFound();
 
+  const nonce = await getCspNonce();
   const articleBlocks = post.blocks.filter(
     (block, index) =>
       !(index === 0 && block.type === "heading" && block.depth === 1),
@@ -189,9 +191,7 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
 
   return (
     <main className="min-h-screen bg-background text-foreground">
-      <script type="application/ld+json">
-        {serializeJsonLd(buildBlogPostJsonLd(post))}
-      </script>
+      <JsonLdScript nonce={nonce} value={buildBlogPostJsonLd(post)} />
       <Header />
       <article>
         <section className="border-b bg-muted/30 py-12 sm:py-16">

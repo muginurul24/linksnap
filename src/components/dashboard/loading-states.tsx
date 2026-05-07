@@ -10,6 +10,16 @@ import {
 } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
 
+const CHART_BAR_HEIGHT_CLASSES = [
+  "h-[42%]",
+  "h-[64%]",
+  "h-[38%]",
+  "h-[78%]",
+  "h-[58%]",
+  "h-[86%]",
+  "h-[68%]",
+] as const;
+
 function PageHeaderSkeleton({ hasAction = false }: { hasAction?: boolean }) {
   return (
     <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -66,11 +76,10 @@ export function ChartSkeleton({
             ))}
           </div>
           <div className="absolute inset-x-6 bottom-8 flex items-end gap-3">
-            {[42, 64, 38, 78, 58, 86, 68].map((height, index) => (
+            {CHART_BAR_HEIGHT_CLASSES.map((heightClass, index) => (
               <Skeleton
                 key={index}
-                className="flex-1 rounded-t-md"
-                style={{ height: `${height}%` }}
+                className={cn("flex-1 rounded-t-md", heightClass)}
               />
             ))}
           </div>

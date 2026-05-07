@@ -11,6 +11,10 @@ import {
   checkRedirectRateLimit,
   createRedirectRateLimitResponse,
 } from "@/lib/security/redirect-rate-limit";
+import {
+  applyContentSecurityPolicyHeader,
+  createRequestSecurityHeaders,
+} from "@/lib/security/headers";
 
 const LOGIN_PATH = "/login";
 const RESERVED_PUBLIC_REDIRECT_SEGMENTS = new Set([
@@ -39,15 +43,19 @@ const RESERVED_PUBLIC_REDIRECT_SEGMENTS = new Set([
 
 const dashboardAuthProxy = auth((request) => {
   const { pathname, search } = request.nextUrl;
+  const security = createRequestSecurityHeaders(request.headers);
 
   if (!isProtectedPath(pathname) || request.auth) {
-    return NextResponse.next();
+    return createNextResponseWithSecurityHeaders(security);
   }
 
   const loginUrl = new URL(LOGIN_PATH, request.nextUrl.origin);
   loginUrl.searchParams.set("callbackUrl", `${pathname}${search}`);
 
-  return NextResponse.redirect(loginUrl);
+  return applyContentSecurityPolicyHeader(
+    NextResponse.redirect(loginUrl),
+    security.contentSecurityPolicy,
+  );
 });
 
 type MiddlewareHandler = (
@@ -67,11 +75,29 @@ function getPublicRedirectSlug(pathname: string): string | null {
   return isPublicSlug(slug) ? slug : null;
 }
 
+function createNextResponseWithSecurityHeaders(
+  security: ReturnType<typeof createRequestSecurityHeaders>,
+): NextResponse {
+  const response = NextResponse.next({
+    request: {
+      headers: security.requestHeaders,
+    },
+  });
+
+  response.headers.set(
+    "Content-Security-Policy",
+    security.contentSecurityPolicy,
+  );
+
+  return response;
+}
+
 export default async function proxy(
   request: NextRequest,
   event: NextFetchEvent,
 ) {
   const { pathname } = request.nextUrl;
+  const security = createRequestSecurityHeaders(request.headers);
   const apiSecurityError = validateApiMutationRequest({
     authorization: request.headers.get("authorization"),
     method: request.method,
@@ -83,21 +109,24 @@ export default async function proxy(
   if (apiSecurityError) {
     const requestId = crypto.randomUUID();
 
-    return NextResponse.json(
-      {
-        success: false,
-        error: {
-          code: apiSecurityError.code,
-          message: apiSecurityError.message,
-          requestId,
+    return applyContentSecurityPolicyHeader(
+      NextResponse.json(
+        {
+          success: false,
+          error: {
+            code: apiSecurityError.code,
+            message: apiSecurityError.message,
+            requestId,
+          },
         },
-      },
-      {
-        headers: {
-          "x-request-id": requestId,
+        {
+          headers: {
+            "x-request-id": requestId,
+          },
+          status: 403,
         },
-        status: 403,
-      },
+      ),
+      security.contentSecurityPolicy,
     );
   }
 
@@ -106,15 +135,20 @@ export default async function proxy(
       headers: request.headers,
       kind: "slug",
     });
-    if (rateLimit.limited) return createRedirectRateLimitResponse(rateLimit);
+    if (rateLimit.limited) {
+      return applyContentSecurityPolicyHeader(
+        createRedirectRateLimitResponse(rateLimit),
+        security.contentSecurityPolicy,
+      );
+    }
   }
 
   if (pathname.startsWith("/api/v1/")) {
-    return NextResponse.next();
+    return createNextResponseWithSecurityHeaders(security);
   }
 
   if (!isProtectedPath(pathname)) {
-    return NextResponse.next();
+    return createNextResponseWithSecurityHeaders(security);
   }
 
   return runDashboardAuthProxy(request, event);

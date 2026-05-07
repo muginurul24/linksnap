@@ -5724,3 +5724,55 @@ Added Redis-backed sliding-window rate limiting for public short-link redirects 
 - ✅ No secrets, raw SQL, or `dangerouslySetInnerHTML` introduced.
 
 **Next Task:** 17.2 — Replace CSP `unsafe-inline` with Nonce-Based Policy
+
+### 17.2 — Replace CSP `unsafe-inline` with Nonce-Based Policy
+- **Date:** 2026-05-08 05:32 GMT+7
+- **Duration:** 1h 20m
+- **Status:** ✅ Complete
+
+**What I Did:**
+Replaced the static CSP header with a request-scoped nonce policy generated in `proxy.ts`. Removed `unsafe-inline` from production `script-src` and `style-src`, propagated the nonce through request headers, and applied nonce attributes to JSON-LD and app-owned inline style tags. Cleaned browser inline style attributes from the main HTML UI surface while keeping ImageResponse-only styles isolated from browser HTML.
+
+**Files Changed:**
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Checked off Task 17.2.
+- `next.config.ts` — Kept static hardening headers and removed static CSP from config headers.
+- `src/lib/security/headers.ts` — Added CSP nonce generation, dynamic policy builder, static header exports, and response/header helpers.
+- `src/lib/security/server-nonce.ts` — Added server helper to read request nonce safely.
+- `src/proxy.ts` — Added per-request CSP + `x-nonce` propagation for API, public, redirect-limit, and protected routes.
+- `src/app/layout.tsx` — Added nonce provider wiring for client components.
+- `src/components/security/nonce-provider.tsx` — Added client nonce context.
+- `src/components/security/nonced-style.tsx` — Added reusable nonce-aware style tag component.
+- `src/components/seo/json-ld-script.tsx` — Added nonce-aware JSON-LD script rendering.
+- `src/app/(marketing)/*` blog/home/pricing pages — Migrated JSON-LD scripts to nonce-aware component.
+- `src/components/ui/chart.tsx` — Added nonce to chart style tag and removed chart indicator inline style attributes.
+- `src/components/ui/sidebar.tsx`, `src/components/ui/sonner.tsx`, `src/components/dashboard/loading-states.tsx` — Replaced inline style props with class-based styling.
+- `src/components/link-page/link-page-renderer.tsx`, `src/app/(dashboard)/links/link-form.tsx`, `src/app/(dashboard)/links/link-page-preview-dialog.tsx` — Moved dynamic CTA colors to nonce-backed style tags.
+- `tests/unit/security-headers.test.ts` — Added nonce CSP coverage.
+- `tests/unit/proxy-redirect-rate-limit.test.ts` — Asserted proxy 429 and pass-through responses include CSP.
+
+**Decisions Made:**
+- Used `proxy.ts` for request-scoped CSP because `next.config.ts` headers are static and cannot generate a per-request nonce.
+- Kept `style-src-attr 'unsafe-inline'` as a CSP3-scoped compatibility directive because Framer Motion and some runtime UI libraries legitimately set style attributes; production `style-src` itself remains nonce-only.
+- Allowed dev-only `style-src 'unsafe-inline'` because Next dev overlay injects style tags without the app nonce; production policy stays stricter.
+
+**Tests:**
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Targeted Unit/Integration: `rtk bun run test -- tests/unit/security-headers.test.ts tests/unit/proxy-redirect-rate-limit.test.ts tests/unit/legal-pages.test.tsx tests/integration/blog-post-page.test.tsx` — 4 files passed, 15 tests passed.
+- ✅ Unit/Integration: `rtk bun run test` — 118 files passed, 526 tests passed.
+- ✅ Build: `rtk bun run build` — Passed after retry; first attempt failed on transient Google font fetch.
+- ✅ Browser Smoke: local `/` loaded in Playwright with no console errors after CSP adjustments.
+- ✅ Next.js MCP: `get_errors` returned no config or session errors.
+
+**Issues Encountered:**
+- Async JSON-LD nonce lookup caused React server render tests to suspend; fixed by making the JSON-LD component synchronous and resolving nonce in page components.
+- Browser nonce attributes appear empty during hydration by design; added `suppressHydrationWarning` to nonce-bearing script/style tags.
+- Strict `style-src-attr 'none'` broke Framer Motion/runtime UI style attributes; narrowed the allowance to `style-src-attr` instead of loosening `style-src`.
+
+**Security Checks:**
+- ✅ Production `script-src` and `style-src` no longer include `unsafe-inline`.
+- ✅ CSP nonce is generated per request with `crypto.randomUUID()` and propagated as `x-nonce`.
+- ✅ Inline JSON-LD and app-owned style tags carry the request nonce.
+- ✅ No secrets, raw SQL, or `dangerouslySetInnerHTML` introduced.
+
+**Next Task:** 17.3 — Mitigate `after()` Experimental API Risk for Click Logging

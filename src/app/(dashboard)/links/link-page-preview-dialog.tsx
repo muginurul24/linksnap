@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import QRCode from "qrcode";
 import {
   AlertCircle,
@@ -15,6 +15,7 @@ import {
   UsersRound,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { NoncedStyle } from "@/components/security/nonced-style";
 import {
   Dialog,
   DialogContent,
@@ -195,8 +196,11 @@ function PreviewSurface({
   shortUrl: string;
 }) {
   const theme = previewThemeClasses[normalizePreviewTheme(page.theme)];
+  const ctaId = useId();
   const ctaColor = getSafeHexColor(page.ctaColor);
   const ctaTextColor = getReadableTextColor(ctaColor);
+  const ctaClassName = `link-page-preview-cta-${ctaId.replace(/[^a-zA-Z0-9_-]/g, "")}`;
+  const ctaCss = `.${ctaClassName}{background-color:${ctaColor};color:${ctaTextColor};}`;
   const countdownTarget =
     page.showCountdown === true ? page.countdownTarget : null;
   const brandInitial = page.brandName.trim().charAt(0).toUpperCase() || "L";
@@ -246,12 +250,15 @@ function PreviewSurface({
               ) : null}
             </div>
 
+            <NoncedStyle css={ctaCss} />
             <a
               href={destinationUrl}
               target="_blank"
               rel="noreferrer"
-              className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg px-4 text-sm font-medium transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
-              style={{ backgroundColor: ctaColor, color: ctaTextColor }}
+              className={cn(
+                "inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg px-4 text-sm font-medium transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50",
+                ctaClassName,
+              )}
             >
               <span className="min-w-0 truncate">{page.ctaText}</span>
               <ArrowUpRight className="size-4 shrink-0" aria-hidden="true" />
