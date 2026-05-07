@@ -2510,3 +2510,55 @@ Added reusable dashboard loading skeletons, route-level `loading.tsx` fallbacks 
 - ✅ No new API surface, raw SQL, secrets, or logging of sensitive data added.
 
 **Next Task:** 10.3 — SEO & Metadata
+
+### 10.3 — SEO & Metadata
+- **Date:** 2026-05-07 10:12 GMT+7
+- **Duration:** 0h 30m
+- **Status:** ✅ Complete
+
+**What I Did:**
+Centralized public SEO metadata, added sitemap and robots metadata routes, completed noindex metadata for auth and short-link redirect surfaces, and added safe JSON-LD structured data for LinkSnap as both an Organization and WebApplication.
+
+**Files Changed:**
+- `_bmad-output/planning-artifacts/spec-seo-metadata.md` — Added the BMad quick-dev mini-spec and acceptance criteria.
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Checked off Task 10.3 items.
+- `src/lib/seo/metadata.ts` — Added site config, metadata builder, robots policies, sitemap routes, and JSON-LD helpers.
+- `src/app/layout.tsx` — Added root metadata defaults, title template, keywords, robots, and format detection.
+- `src/app/(marketing)/page.tsx` — Switched landing metadata and Organization/WebApplication JSON-LD to shared helpers.
+- `src/app/(marketing)/pricing/page.tsx` — Switched pricing metadata and OfferCatalog JSON-LD to shared helpers.
+- `src/app/(marketing)/blog/page.tsx` — Switched blog metadata and ItemList JSON-LD to shared helpers.
+- `src/app/(marketing)/login/page.tsx` — Added noindex auth metadata.
+- `src/app/(marketing)/register/page.tsx` — Converted the route to a Server Component and added noindex auth metadata.
+- `src/app/(marketing)/register/register-form.tsx` — Moved the interactive registration form into a Client Component.
+- `src/app/(marketing)/verify/page.tsx` — Added noindex verification metadata.
+- `src/app/[slug]/page.tsx` — Added generic noindex metadata for short-link redirect surfaces without querying destination data.
+- `src/app/sitemap.ts` — Added canonical public marketing sitemap generation.
+- `src/app/robots.ts` — Added crawler rules for public, auth, API, and protected app paths.
+- `tests/unit/seo-metadata.test.ts` — Added metadata helper, sitemap, robots, and JSON-LD coverage.
+- `_bmad-output/implementation-artifacts/JOURNAL.md` — Recorded this completion entry.
+
+**Decisions Made:**
+- Used static metadata objects for static public pages because Next.js recommends `metadata` when values do not depend on route or request data.
+- Kept auth and redirect routes as `noindex,nofollow` so crawler traffic focuses on canonical marketing pages and user/private surfaces are not indexed.
+- Did not query redirect destination data from `generateMetadata()` to avoid leaking target information or adding request-time SEO latency.
+
+**Tests:**
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Unit: `rtk bun run test -- tests/unit/seo-metadata.test.ts` — 6 tests passed.
+- ✅ Unit/Integration: `rtk bun run test` — 64 files passed, 288 tests passed.
+- ✅ Build: `rtk bun run build` — Passed.
+- ✅ Runtime: `rtk curl -s http://localhost:3000/sitemap.xml` and `rtk curl -s http://localhost:3000/robots.txt` returned expected metadata routes.
+- ✅ Browser: Playwright verified `/` canonical/robots/JSON-LD and `/register` noindex metadata with no browser console errors.
+
+**Issues Encountered:**
+- Production browser verification emitted existing Auth.js `UntrustedHost` server logs for localhost session checks → route rendering and browser console remained clean; environment trust settings should be reviewed during launch/security audit.
+
+**Security Checks:**
+- ✅ JSON-LD serialization escapes raw `<` characters before rendering script content.
+- ✅ Auth pages and short-link redirect pages are noindex/nofollow.
+- ✅ Sitemap excludes auth, API, dashboard, and user short-link routes.
+- ✅ Redirect metadata stays generic and does not expose destination URLs, user data, or link-page configuration.
+- ✅ No new API surface, raw SQL, secrets, or sensitive logging added.
+
+**Next Task:** 10.4 — Security Audit

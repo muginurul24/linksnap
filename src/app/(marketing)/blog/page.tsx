@@ -2,38 +2,21 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowRight, BookOpen, CalendarDays, Clock, Zap } from "lucide-react";
 import { getBlogPosts, type BlogPostSummary } from "@/lib/blog/posts";
+import {
+  buildBlogIndexJsonLd,
+  createPublicMetadata,
+  serializeJsonLd,
+} from "@/lib/seo/metadata";
 
-const title = "Blog - LinkSnap";
 const description =
   "Practical guides for short links, Link Pages, smart redirects, QR campaigns, and conversion-focused link analytics.";
 
 export const metadata: Metadata = {
-  title,
-  description,
-  alternates: {
-    canonical: "/blog",
-  },
-  openGraph: {
-    type: "website",
-    url: "/blog",
-    title,
+  ...createPublicMetadata({
+    title: "Blog",
     description,
-    siteName: "LinkSnap",
-    images: [
-      {
-        url: "/opengraph-image",
-        width: 1200,
-        height: 630,
-        alt: "LinkSnap campaign dashboard preview",
-      },
-    ],
-  },
-  twitter: {
-    card: "summary_large_image",
-    title,
-    description,
-    images: ["/opengraph-image"],
-  },
+    path: "/blog",
+  }),
 };
 
 const dateFormatter = new Intl.DateTimeFormat("en", {
@@ -42,10 +25,6 @@ const dateFormatter = new Intl.DateTimeFormat("en", {
   timeZone: "UTC",
   year: "numeric",
 });
-
-function serializeJsonLd(value: unknown): string {
-  return JSON.stringify(value).replace(/</g, "\\u003c");
-}
 
 function formatDate(value: string): string {
   return dateFormatter.format(new Date(value));
@@ -129,21 +108,6 @@ function BlogCard({ post, featured }: { post: BlogPostSummary; featured?: boolea
   );
 }
 
-function buildStructuredData(posts: BlogPostSummary[]) {
-  return {
-    "@context": "https://schema.org",
-    "@type": "ItemList",
-    name: "LinkSnap blog",
-    itemListElement: posts.map((post, index) => ({
-      "@type": "ListItem",
-      position: index + 1,
-      url: `https://linksnap.id/blog#${post.slug}`,
-      name: post.title,
-      description: post.excerpt,
-    })),
-  };
-}
-
 export default async function BlogPage() {
   const posts = await getBlogPosts();
   const [featuredPost, ...secondaryPosts] = posts;
@@ -151,7 +115,7 @@ export default async function BlogPage() {
   return (
     <main className="min-h-screen bg-background text-foreground">
       <script type="application/ld+json">
-        {serializeJsonLd(buildStructuredData(posts))}
+        {serializeJsonLd(buildBlogIndexJsonLd(posts))}
       </script>
       <Header />
       <section className="py-18 sm:py-24">

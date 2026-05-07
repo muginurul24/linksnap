@@ -510,10 +510,10 @@ src/
 - [x] Suspense boundaries on all async pages
 
 ### TASK 10.3 — SEO & Metadata
-- `generateMetadata()` on all public pages
-- Sitemap generation (`sitemap.ts`)
-- Robots.txt (`robots.ts`)
-- JSON-LD structured data (Organization, WebApplication)
+- [x] `generateMetadata()` on all public pages
+- [x] Sitemap generation (`sitemap.ts`)
+- [x] Robots.txt (`robots.ts`)
+- [x] JSON-LD structured data (Organization, WebApplication)
 
 ### TASK 10.4 — Security Audit
 - OWASP Top 10 checklist
