@@ -17,6 +17,23 @@ import {
   LayoutDashboard, Link2, Globe, Megaphone, BarChart3, Settings, QrCode, Zap,
   LogOut, User, CreditCard, Sparkles,
 } from "lucide-react";
+import type { UserPlan } from "@/lib/links/limits";
+import { getPlanDefinition } from "@/lib/plans/definitions";
+
+export type AppSidebarUser = {
+  email?: string | null;
+  image?: string | null;
+  name?: string | null;
+  plan: UserPlan;
+};
+
+export type SidebarDisplayUser = {
+  avatarFallback: string;
+  avatarUrl?: string;
+  email: string;
+  name: string;
+  planLabel: string;
+};
 
 const mainNav = [
   { title: "Overview", url: "/dashboard", icon: LayoutDashboard },
@@ -32,8 +49,38 @@ const accountNav = [
   { title: "Billing", url: "/settings/billing", icon: CreditCard },
 ];
 
-export function AppSidebar() {
+function normalizeText(value: string | null | undefined): string | null {
+  const trimmed = value?.trim();
+  return trimmed ? trimmed : null;
+}
+
+function getAvatarFallback(name: string, email: string): string {
+  const words = name === "User" ? [email] : name.split(/\s+/);
+  const initials = words
+    .flatMap((word) => word.match(/[a-z0-9]/i)?.[0] ?? [])
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
+
+  return initials || "U";
+}
+
+export function getSidebarDisplayUser(user: AppSidebarUser): SidebarDisplayUser {
+  const email = normalizeText(user.email) ?? "user@email.com";
+  const name = normalizeText(user.name) ?? "User";
+
+  return {
+    avatarFallback: getAvatarFallback(name, email),
+    avatarUrl: normalizeText(user.image) ?? undefined,
+    email,
+    name,
+    planLabel: `${getPlanDefinition(user.plan).name} Plan`,
+  };
+}
+
+export function AppSidebar({ user }: { user: AppSidebarUser }) {
   const pathname = usePathname();
+  const displayUser = getSidebarDisplayUser(user);
 
   const isActive = (url: string) => {
     if (url === "/dashboard") return pathname === "/dashboard";
@@ -51,7 +98,9 @@ export function AppSidebar() {
               </div>
               <div className="flex flex-col gap-0.5 leading-none group-data-[collapsible=icon]:hidden">
                 <span className="font-semibold">LinkSnap</span>
-                <span className="text-xs text-muted-foreground">Free Plan</span>
+                <span className="text-xs text-muted-foreground">
+                  {displayUser.planLabel}
+                </span>
               </div>
             </Link>
           </SidebarMenuItem>
@@ -126,12 +175,16 @@ export function AppSidebar() {
             <DropdownMenu>
               <DropdownMenuTrigger render={<SidebarMenuButton size="lg" />}>
                 <Avatar className="size-8 rounded-lg">
-                  <AvatarImage src="/avatars/user.png" alt="User" />
-                  <AvatarFallback className="rounded-lg bg-primary/10 text-xs">RF</AvatarFallback>
+                  <AvatarImage src={displayUser.avatarUrl} alt={displayUser.name} />
+                  <AvatarFallback className="rounded-lg bg-primary/10 text-xs">
+                    {displayUser.avatarFallback}
+                  </AvatarFallback>
                 </Avatar>
                 <div className="flex flex-col gap-0.5 leading-none">
-                  <span className="text-sm font-semibold">Rafi</span>
-                  <span className="text-xs text-muted-foreground">rafi@email.com</span>
+                  <span className="text-sm font-semibold">{displayUser.name}</span>
+                  <span className="text-xs text-muted-foreground">
+                    {displayUser.email}
+                  </span>
                 </div>
               </DropdownMenuTrigger>
               <DropdownMenuContent className="w-56" align="end" side="right" sideOffset={4}>

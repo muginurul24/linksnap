@@ -693,12 +693,12 @@ For EVERY interactive component, implement these states:
 - [x] Tests: unit (plan data integrity — no missing fields, prices match limits)
 
 ### TASK 12.5 — Fix Sidebar Dynamic Data
-- [ ] File: `src/components/dashboard/app-sidebar.tsx`
-- [ ] Make sidebar a server component (or accept session as prop)
-- [ ] Replace hardcoded "Free Plan" with actual plan name from user session
-- [ ] Replace hardcoded "Rafi" + "rafi@email.com" with `session.user.name` + `session.user.email`
-- [ ] Fallback: show "User" and "user@email.com" as avatar fallback if no name
-- [ ] Tests: unit (sidebar renders correct plan label per plan type)
+- [x] File: `src/components/dashboard/app-sidebar.tsx`
+- [x] Make sidebar a server component (or accept session as prop)
+- [x] Replace hardcoded "Free Plan" with actual plan name from user session
+- [x] Replace hardcoded "Rafi" + "rafi@email.com" with `session.user.name` + `session.user.email`
+- [x] Fallback: show "User" and "user@email.com" as avatar fallback if no name
+- [x] Tests: unit (sidebar renders correct plan label per plan type)
 
 ### TASK 12.6 — Fix Dashboard App Bar Issues
 - [ ] File: `src/components/dashboard/app-header.tsx`
