@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowRight, BookOpen, CalendarDays, Clock, Zap } from "lucide-react";
+import { MarketingFooter } from "@/components/landing/marketing-footer";
 import { getBlogPosts, type BlogPostSummary } from "@/lib/blog/posts";
 import {
   buildBlogIndexJsonLd,
@@ -181,6 +182,7 @@ export default async function BlogPage() {
           </Link>
         </Container>
       </section>
+      <MarketingFooter />
     </main>
   );
 }

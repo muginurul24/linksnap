@@ -13,10 +13,10 @@ import {
   Sparkles,
   Star,
   Timer,
-  Zap,
   type LucideIcon,
 } from "lucide-react";
 import { DemoGenerator } from "@/components/landing/demo-generator";
+import { MarketingFooter } from "@/components/landing/marketing-footer";
 import {
   PLANS,
   formatUsdPrice,
@@ -374,38 +374,6 @@ function FinalCta() {
   );
 }
 
-function Footer() {
-  return (
-    <footer className="border-t bg-background py-10">
-      <Container className="flex flex-col gap-8 md:flex-row md:items-center md:justify-between">
-        <Link href="/" className="flex items-center gap-2 text-lg font-semibold">
-          <span className="flex size-8 items-center justify-center rounded-md bg-foreground text-background">
-            <Zap className="size-4" />
-          </span>
-          LinkSnap
-        </Link>
-        <nav className="flex flex-wrap gap-x-5 gap-y-3 text-sm text-muted-foreground">
-          <Link href="#features" className="hover:text-foreground">
-            Features
-          </Link>
-          <Link href="/pricing" className="hover:text-foreground">
-            Pricing
-          </Link>
-          <Link href="/blog" className="hover:text-foreground">
-            Blog
-          </Link>
-          <Link href="#demo" className="hover:text-foreground">
-            Demo
-          </Link>
-          <Link href="/login" className="hover:text-foreground">
-            Sign In
-          </Link>
-        </nav>
-      </Container>
-    </footer>
-  );
-}
-
 export default function LandingPage() {
   return (
     <main className="min-h-screen bg-background text-foreground">
@@ -416,7 +384,7 @@ export default function LandingPage() {
       <Pricing />
       <Testimonials />
       <FinalCta />
-      <Footer />
+      <MarketingFooter />
     </main>
   );
 }

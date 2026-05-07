@@ -3681,3 +3681,51 @@ blocks instead of raw HTML.
 - ✅ No secrets introduced.
 
 **Next Task:** 12.20 — Legal Pages
+
+### 12.20 — Legal Pages
+- **Date:** 2026-05-07 17:06 GMT+7
+- **Duration:** 0h 15m
+- **Status:** ✅ Complete
+
+**What I Did:**
+Added Terms of Service and Privacy Policy pages, extracted a reusable marketing
+footer with Terms/Privacy links, wired that footer into landing and blog
+surfaces, and added both legal routes to the sitemap.
+
+**Files Changed:**
+- `_bmad-output/planning-artifacts/spec-legal-pages.md` — Added task spec and legal-copy risk note.
+- `src/app/(marketing)/terms/page.tsx` — Added Terms of Service route.
+- `src/app/(marketing)/privacy/page.tsx` — Added Privacy Policy route.
+- `src/components/landing/legal-page.tsx` — Added shared legal page layout.
+- `src/components/landing/marketing-footer.tsx` — Added reusable marketing footer with legal links.
+- `src/components/landing/landing-page.tsx` — Replaced local footer with reusable footer.
+- `src/app/(marketing)/blog/page.tsx` — Added footer to blog index.
+- `src/app/(marketing)/blog/[slug]/page.tsx` — Added footer to blog articles.
+- `src/lib/seo/metadata.ts` — Added `/terms` and `/privacy` to public sitemap routes.
+- `tests/unit/legal-pages.test.tsx` — Added legal page and footer link coverage.
+- `tests/unit/seo-metadata.test.ts` — Updated sitemap expectations.
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Checked off Task 12.20.
+- `_bmad-output/implementation-artifacts/JOURNAL.md` — Recorded this completion entry.
+
+**Decisions Made:**
+- Legal copy is product-specific and clear about LinkSnap providers, but should still be reviewed by counsel before final production reliance.
+- Terms/Privacy are static marketing pages and indexable, so they are included in the sitemap.
+- The marketing footer uses absolute in-site paths (`/#features`, `/#demo`) so it works from nested blog/legal routes.
+
+**Tests:**
+- ✅ Targeted: `rtk bun run test -- tests/unit/legal-pages.test.tsx tests/unit/seo-metadata.test.ts` — 2 files passed, 9 tests passed.
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Unit/Integration: `rtk bun run test` — 89 files passed, 396 tests passed.
+- ✅ Build: `rtk bun run build` — Passed and prerendered `/terms` and `/privacy`.
+- ✅ Browser: Playwright loaded `/terms` and `/privacy`; headings, footer links, contact text, and privacy content rendered with zero console errors.
+
+**Issues Encountered:**
+- None.
+
+**Security Checks:**
+- ✅ No `dangerouslySetInnerHTML`.
+- ✅ Raw SQL scan returned no matches.
+- ✅ No secrets introduced.
+
+**Next Task:** 12.21 — Midtrans Redirect URL Configuration

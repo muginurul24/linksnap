@@ -843,11 +843,11 @@ rtk bun run db:studio    # Open Drizzle Studio (in another terminal)
 - [x] Tests: unit (MDX rendering), integration (blog post page)
 
 ### TASK 12.20 — Legal Pages
-- [ ] Create `src/app/(marketing)/terms/page.tsx` — Terms of Service
-- [ ] Create `src/app/(marketing)/privacy/page.tsx` — Privacy Policy
-- [ ] Add footer links to Terms and Privacy on landing page and blog
-- [ ] Add to sitemap
-- [ ] Tests: unit (pages render correctly)
+- [x] Create `src/app/(marketing)/terms/page.tsx` — Terms of Service
+- [x] Create `src/app/(marketing)/privacy/page.tsx` — Privacy Policy
+- [x] Add footer links to Terms and Privacy on landing page and blog
+- [x] Add to sitemap
+- [x] Tests: unit (pages render correctly)
 
 ### TASK 12.21 — Midtrans Redirect URL Configuration
 - [ ] File: `src/app/api/v1/payments/create/route.ts`

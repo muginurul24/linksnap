@@ -53,6 +53,16 @@ export const publicSitemapRoutes = [
     changeFrequency: "weekly",
     priority: 0.7,
   },
+  {
+    path: "/terms",
+    changeFrequency: "yearly",
+    priority: 0.4,
+  },
+  {
+    path: "/privacy",
+    changeFrequency: "yearly",
+    priority: 0.4,
+  },
 ] as const;
 
 export const indexRobots: NonNullable<Metadata["robots"]> = {
