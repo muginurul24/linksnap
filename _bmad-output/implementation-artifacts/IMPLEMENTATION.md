@@ -1030,26 +1030,26 @@ Stripe handles credit card globally. Midtrans handles Indonesian local banks (BC
 - [x] Tests: unit (config validation, client initialization)
 
 ### TASK 14.2 — Stripe Checkout Session Creation
-- [ ] Create `src/lib/payments/stripe-checkout.ts`
-- [ ] `createStripeCheckoutSession(input)`:
-  - Create Stripe Checkout Session with mode: `subscription`
-  - Line item: price from Stripe product/price IDs (not dynamic amount)
-  - Or: create dynamic price via `unit_amount` + `currency: usd`
-  - `success_url`: `{APP_URL}/checkout/success?session_id={CHECKOUT_SESSION_ID}`
-  - `cancel_url`: `{APP_URL}/checkout/cancel`
-  - `client_reference_id`: user ID
-  - `metadata`: plan + duration
-- [ ] Create `src/lib/validations/stripe.ts` — `createStripeCheckoutSchema`
-- [ ] Create `src/app/api/v1/payments/stripe/create/route.ts` — POST handler:
-  - Auth required, rate limited
-  - Validate input (plan, duration)
-  - Calculate USD price from existing pricing module
-  - Create pending transaction record in DB (reuse existing transactions table, add `gateway: "midtrans" | "stripe"`)
-  - Create Stripe Checkout Session
-  - Return `{ url: session.url }` — client redirects
-- [ ] Update `transactions` table schema: add `gateway` column (default `"midtrans"`)
-- [ ] Run `rtk bun run db:push`
-- [ ] Tests: unit (session creation params), integration (create checkout API)
+- [x] Create `src/lib/payments/stripe-checkout.ts`
+- [x] `createStripeCheckoutSession(input)`:
+  - [x] Create Stripe Checkout Session with mode: `subscription`
+  - [x] Line item: price from Stripe product/price IDs (not dynamic amount)
+  - [x] Or: create dynamic price via `unit_amount` + `currency: usd`
+  - [x] `success_url`: `{APP_URL}/checkout/success?session_id={CHECKOUT_SESSION_ID}`
+  - [x] `cancel_url`: `{APP_URL}/checkout/cancel`
+  - [x] `client_reference_id`: user ID
+  - [x] `metadata`: plan + duration
+- [x] Create `src/lib/validations/stripe.ts` — `createStripeCheckoutSchema`
+- [x] Create `src/app/api/v1/payments/stripe/create/route.ts` — POST handler:
+  - [x] Auth required, rate limited
+  - [x] Validate input (plan, duration)
+  - [x] Calculate USD price from existing pricing module
+  - [x] Create pending transaction record in DB (reuse existing transactions table, add `gateway: "midtrans" | "stripe"`)
+  - [x] Create Stripe Checkout Session
+  - [x] Return `{ url: session.url }` — client redirects
+- [x] Update `transactions` table schema: add `gateway` column (default `"midtrans"`)
+- [x] Run `rtk bun run db:push`
+- [x] Tests: unit (session creation params), integration (create checkout API)
 
 ### TASK 14.3 — Stripe Webhook Handler
 - [ ] Create `src/lib/payments/stripe-webhook.ts`

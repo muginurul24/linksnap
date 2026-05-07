@@ -23,7 +23,7 @@ export const checkoutSuccessQuerySchema = z
       .string()
       .min(1, "Order ID is required")
       .max(100, "Order ID is too long")
-      .regex(/^LS-\d{13}-[a-f0-9]{12}$/, "Order ID is invalid"),
+      .regex(/^LS(?:-ST)?-\d{13}-[a-f0-9]{12}$/, "Order ID is invalid"),
   })
   .strict();
 
@@ -32,7 +32,7 @@ export const checkoutCancelQuerySchema = z
     order_id: z
       .string()
       .max(100, "Order ID is too long")
-      .regex(/^LS-\d{13}-[a-f0-9]{12}$/, "Order ID is invalid")
+      .regex(/^LS(?:-ST)?-\d{13}-[a-f0-9]{12}$/, "Order ID is invalid")
       .optional(),
     status: z.enum(["error", "unfinish"]).optional(),
   })

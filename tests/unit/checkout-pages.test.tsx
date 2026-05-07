@@ -28,6 +28,7 @@ const mockState = vi.hoisted(() => ({
   transaction: {
     createdAt: new Date("2026-05-07T08:00:00Z"),
     duration: "MONTHLY",
+    gateway: "midtrans",
     grossAmountIdr: 128000,
     grossAmountUsd: 8,
     orderId: "LS-1777777777777-abcdef123456",
@@ -75,6 +76,7 @@ describe("checkout pages", () => {
     mockState.transaction = {
       createdAt: new Date("2026-05-07T08:00:00Z"),
       duration: "MONTHLY",
+      gateway: "midtrans",
       grossAmountIdr: 128000,
       grossAmountUsd: 8,
       orderId: "LS-1777777777777-abcdef123456",

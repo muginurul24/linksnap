@@ -267,6 +267,54 @@ Added the Stripe SDK and configured Stripe environment placeholders for local, e
 
 **Next Task:** 14.2 — Stripe Checkout Session Creation
 
+### 14.2 — Stripe Checkout Session Creation
+- **Date:** 2026-05-07 19:15 GMT+7
+- **Duration:** 0 hours 27 minutes
+- **Status:** ✅ Complete
+
+**What I Did:**
+Added Stripe subscription Checkout session creation using dynamic USD price data from the existing pricing module. Added the Stripe checkout API route, transaction gateway persistence, validation, and tests, then pushed the Drizzle schema change to the database.
+
+**Files Changed:**
+- `src/lib/db/schema.ts` — Added payment gateway enum and `transactions.gateway`.
+- `src/lib/db/queries/payments.ts` — Persisted and selected payment gateway values for transaction queries.
+- `src/lib/payments/stripe.ts` — Made the exported singleton safe to import before real env hydration while keeping explicit assertions before use.
+- `src/lib/payments/stripe-checkout.ts` — Added Stripe Checkout session parameter builder and creation helper.
+- `src/lib/validations/stripe.ts` — Added Stripe checkout input schema.
+- `src/lib/validations/payment.ts` — Allowed Stripe order IDs on existing checkout result pages.
+- `src/app/api/v1/payments/stripe/create/route.ts` — Added authenticated, rate-limited Stripe checkout creation endpoint.
+- `tests/unit/stripe-checkout.test.ts` — Covered Checkout params, recurring intervals, and URL validation.
+- `tests/integration/create-stripe-checkout-api.test.ts` — Covered Stripe checkout API success, validation, auth, rate limit, and provider errors.
+- `tests/unit/checkout-pages.test.tsx` — Updated transaction fixture with gateway field.
+- `tests/unit/subscription.test.ts` — Updated payment transaction fixture with gateway field.
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Marked task 14.2 complete.
+- `_bmad-output/implementation-artifacts/JOURNAL.md` — Logged task completion.
+
+**Decisions Made:**
+- Stored Stripe orders with an `LS-ST-...` internal order ID and included that ID in Checkout metadata so webhooks can map back to a single pending transaction.
+- Used Stripe dynamic `price_data` instead of requiring pre-provisioned Stripe Price IDs, matching the existing pricing module and current product spec.
+
+**Tests:**
+- ✅ Database: `rtk bun run db:push` — Applied `transactions.gateway`.
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Unit/Integration: `rtk bun run test` — Passed, 96 files / 447 tests.
+- ✅ Targeted: `rtk bun run test tests/unit/stripe-client.test.ts tests/unit/stripe-checkout.test.ts tests/integration/create-stripe-checkout-api.test.ts` — Passed.
+
+**Issues Encountered:**
+- `stripe-checkout` unit tests imported the Stripe singleton before test env setup → Made the exported singleton import-safe and kept runtime use gated by `assertStripeConfigured()`.
+- Full-suite run timed out one existing reset-password test under load → The isolated reset-password suite passed, then the full suite passed.
+
+**Security Checks:**
+- ✅ Input validated with Zod.
+- ✅ Auth required before creating checkout sessions.
+- ✅ Rate limiting applied per authenticated user.
+- ✅ Amount calculated server-side from plan and duration.
+- ✅ No card data stored; Stripe handles card collection.
+- ✅ No secrets logged.
+
+**Next Task:** 14.3 — Stripe Webhook Handler
+
 ### 0.4 — CI/CD Pipeline
 - **Date:** 2026-05-06 20:10 GMT+7
 - **Duration:** 0 hours 35 minutes

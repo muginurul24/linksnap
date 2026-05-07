@@ -5,6 +5,7 @@ import type { UserPlan } from "@/lib/links/limits";
 import type { PaidPlan, PaymentDuration } from "@/lib/validations/payment";
 
 export type PaymentStatus = typeof transactions.$inferSelect["status"];
+export type PaymentGateway = typeof transactions.$inferSelect["gateway"];
 export type SubscriptionRecord = typeof subscriptions.$inferSelect;
 
 export type BillingUser = {
@@ -16,6 +17,7 @@ export type BillingUser = {
 export type PendingTransaction = {
   grossAmountIdr: number;
   grossAmountUsd: number;
+  gateway: PaymentGateway;
   orderId: string;
   plan: UserPlan;
   snapToken: string | null;
@@ -25,6 +27,7 @@ export type PaymentTransactionForWebhook = {
   duration: string;
   grossAmountIdr: number;
   grossAmountUsd: number;
+  gateway: PaymentGateway;
   orderId: string;
   paidAt: Date | null;
   paymentMethod: string | null;
@@ -45,6 +48,7 @@ export type BillingTransaction = {
   duration: string;
   grossAmountIdr: number;
   grossAmountUsd: number;
+  gateway: PaymentGateway;
   id: string;
   orderId: string;
   paidAt: Date | null;
@@ -59,6 +63,7 @@ export type CheckoutTransactionSummary = {
   duration: string;
   grossAmountIdr: number;
   grossAmountUsd: number;
+  gateway: PaymentGateway;
   orderId: string;
   paidAt: Date | null;
   paymentMethod: string | null;
@@ -69,6 +74,7 @@ export type CheckoutTransactionSummary = {
 
 type CreatePendingTransactionInput = {
   duration: PaymentDuration;
+  gateway?: PaymentGateway;
   grossAmountIdr: number;
   grossAmountUsd: number;
   orderId: string;
@@ -107,6 +113,7 @@ export async function findBillingUserById(
 
 export async function createPendingTransactionRecord({
   duration,
+  gateway = "midtrans",
   grossAmountIdr,
   grossAmountUsd,
   orderId,
@@ -117,6 +124,7 @@ export async function createPendingTransactionRecord({
     .insert(transactions)
     .values({
       duration,
+      gateway,
       grossAmountIdr,
       grossAmountUsd,
       orderId,
@@ -126,6 +134,7 @@ export async function createPendingTransactionRecord({
     .returning({
       grossAmountIdr: transactions.grossAmountIdr,
       grossAmountUsd: transactions.grossAmountUsd,
+      gateway: transactions.gateway,
       orderId: transactions.orderId,
       plan: transactions.plan,
       snapToken: transactions.snapToken,
@@ -150,6 +159,7 @@ export async function attachTransactionSnapToken({
     .returning({
       grossAmountIdr: transactions.grossAmountIdr,
       grossAmountUsd: transactions.grossAmountUsd,
+      gateway: transactions.gateway,
       orderId: transactions.orderId,
       plan: transactions.plan,
       snapToken: transactions.snapToken,
@@ -166,6 +176,7 @@ export async function findPaymentTransactionByOrderId(
       duration: transactions.duration,
       grossAmountIdr: transactions.grossAmountIdr,
       grossAmountUsd: transactions.grossAmountUsd,
+      gateway: transactions.gateway,
       orderId: transactions.orderId,
       paidAt: transactions.paidAt,
       paymentMethod: transactions.paymentMethod,
@@ -195,6 +206,7 @@ export async function findCheckoutTransactionByOrderId({
       duration: transactions.duration,
       grossAmountIdr: transactions.grossAmountIdr,
       grossAmountUsd: transactions.grossAmountUsd,
+      gateway: transactions.gateway,
       orderId: transactions.orderId,
       paidAt: transactions.paidAt,
       paymentMethod: transactions.paymentMethod,
@@ -229,6 +241,7 @@ export async function updatePaymentTransactionStatus({
       duration: transactions.duration,
       grossAmountIdr: transactions.grossAmountIdr,
       grossAmountUsd: transactions.grossAmountUsd,
+      gateway: transactions.gateway,
       orderId: transactions.orderId,
       paidAt: transactions.paidAt,
       paymentMethod: transactions.paymentMethod,
@@ -426,9 +439,10 @@ export async function listPaymentTransactionsByUserId({
       .select({
         createdAt: transactions.createdAt,
         duration: transactions.duration,
-        grossAmountIdr: transactions.grossAmountIdr,
-        grossAmountUsd: transactions.grossAmountUsd,
-        id: transactions.id,
+      grossAmountIdr: transactions.grossAmountIdr,
+      grossAmountUsd: transactions.grossAmountUsd,
+      gateway: transactions.gateway,
+      id: transactions.id,
         orderId: transactions.orderId,
         paidAt: transactions.paidAt,
         paymentMethod: transactions.paymentMethod,

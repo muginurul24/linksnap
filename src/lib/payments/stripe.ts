@@ -1,5 +1,7 @@
 import Stripe from "stripe";
 
+const UNCONFIGURED_STRIPE_SECRET_KEY = "sk_test_unconfigured";
+
 export type StripeClientConfig = {
   isTestMode?: boolean;
   secretKey?: string;
@@ -50,4 +52,6 @@ export function createStripeClient(config?: StripeClientConfig): Stripe {
   return new Stripe(getStripeSecretKey(config));
 }
 
-export const stripe = createStripeClient();
+export const stripe = new Stripe(
+  process.env.STRIPE_SECRET_KEY?.trim() || UNCONFIGURED_STRIPE_SECRET_KEY,
+);
