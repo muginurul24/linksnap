@@ -3634,3 +3634,50 @@ plan, status, order ID, and next billing state.
 - ✅ No secrets or raw SQL introduced.
 
 **Next Task:** 12.19 — Individual Blog Post Pages
+
+### 12.19 — Individual Blog Post Pages
+- **Date:** 2026-05-07 16:56 GMT+7
+- **Duration:** 0h 25m
+- **Status:** ✅ Complete
+
+**What I Did:**
+Added MDX-backed individual blog article pages at `/blog/[slug]`, linked the
+blog index cards to those routes, and generated article metadata from
+frontmatter. The renderer supports the current safe Markdown subset through JSX
+blocks instead of raw HTML.
+
+**Files Changed:**
+- `_bmad-output/planning-artifacts/spec-individual-blog-post-pages.md` — Added task spec and renderer scope.
+- `src/lib/blog/posts.ts` — Added slug validation, single-post loading, static slug listing, and MDX block parsing.
+- `src/app/(marketing)/blog/page.tsx` — Linked blog card titles and CTAs to article routes.
+- `src/app/(marketing)/blog/[slug]/page.tsx` — Added article page, metadata generation, JSON-LD, back link, and content renderer.
+- `src/app/(marketing)/blog/[slug]/loading.tsx` — Added route loading skeleton.
+- `src/lib/seo/metadata.ts` — Added article JSON-LD and updated blog index URLs.
+- `tests/unit/blog-posts.test.ts` — Added block parser and slug validation coverage.
+- `tests/integration/blog-post-page.test.tsx` — Added article page, metadata, and static params coverage.
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Checked off Task 12.19.
+- `_bmad-output/implementation-artifacts/JOURNAL.md` — Recorded this completion entry.
+
+**Decisions Made:**
+- The blog renderer intentionally supports headings, paragraphs, unordered lists, and fenced code blocks; arbitrary MDX components are not executed.
+- Blog article routes use `generateStaticParams` so current MDX posts are prerendered.
+- Invalid slugs return `notFound()` and are never used directly in filesystem paths.
+
+**Tests:**
+- ✅ Targeted: `rtk bun run test -- tests/unit/blog-posts.test.ts tests/integration/blog-post-page.test.tsx tests/unit/seo-metadata.test.ts` — 3 files passed, 14 tests passed.
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Unit/Integration: `rtk bun run test` — 88 files passed, 393 tests passed.
+- ✅ Build: `rtk bun run build` — Passed and prerendered 3 `/blog/[slug]` routes.
+- ✅ Browser: Playwright loaded `http://127.0.0.1:3100/blog/short-links-costing-conversions`; title, back link, list content, and section text rendered with zero console errors.
+
+**Issues Encountered:**
+- None.
+
+**Security Checks:**
+- ✅ Blog slugs are validated before filesystem access.
+- ✅ MDX content is rendered through JSX text nodes; no `dangerouslySetInnerHTML`.
+- ✅ Raw SQL scan returned no matches.
+- ✅ No secrets introduced.
+
+**Next Task:** 12.20 — Legal Pages

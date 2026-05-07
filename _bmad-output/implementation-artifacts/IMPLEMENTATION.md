@@ -833,14 +833,14 @@ rtk bun run db:studio    # Open Drizzle Studio (in another terminal)
 - [x] Tests: unit (checkout page renders), integration (payment flow end-to-end)
 
 ### TASK 12.19 — Individual Blog Post Pages
-- [ ] Create `src/app/(marketing)/blog/[slug]/page.tsx`
-- [ ] Read MDX file from `src/content/blog/[slug].mdx`
-- [ ] Render MDX content with basic styling (headings, paragraphs, lists, code blocks)
-- [ ] Add metadata: title, description, OpenGraph from frontmatter
-- [ ] Add "Back to Blog" link at top
-- [ ] Add loading state
-- [ ] Wire up blog card links from `/blog` page (currently cards have no links)
-- [ ] Tests: unit (MDX rendering), integration (blog post page)
+- [x] Create `src/app/(marketing)/blog/[slug]/page.tsx`
+- [x] Read MDX file from `src/content/blog/[slug].mdx`
+- [x] Render MDX content with basic styling (headings, paragraphs, lists, code blocks)
+- [x] Add metadata: title, description, OpenGraph from frontmatter
+- [x] Add "Back to Blog" link at top
+- [x] Add loading state
+- [x] Wire up blog card links from `/blog` page (currently cards have no links)
+- [x] Tests: unit (MDX rendering), integration (blog post page)
 
 ### TASK 12.20 — Legal Pages
 - [ ] Create `src/app/(marketing)/terms/page.tsx` — Terms of Service
