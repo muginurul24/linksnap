@@ -124,6 +124,9 @@ test("should update profile and change password from settings page", async ({
         timeout: 10_000,
       })
       .toBe(displayName);
+    await expect(
+      page.locator('[data-sidebar="footer"]').getByText(displayName),
+    ).toBeVisible({ timeout: 10_000 });
 
     await page.getByRole("tab", { name: /Security/ }).click();
     await page.getByLabel("Current Password").fill(password);

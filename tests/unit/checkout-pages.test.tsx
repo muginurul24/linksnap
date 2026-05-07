@@ -99,7 +99,8 @@ describe("checkout pages", () => {
     expect(markup).toContain("Pro Plan");
     expect(markup).toContain("Jun 7, 2026");
     expect(markup).toContain("LS-1777777777777-abcdef123456");
-    expect(markup).toContain('href="/dashboard"');
+    expect(markup).toContain('href="/dashboard?refresh=plan"');
+    expect(markup).toContain('href="/settings/billing?refresh=plan"');
     expect(mockState.syncCalls).toEqual(["user-1"]);
   });
 

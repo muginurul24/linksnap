@@ -1288,11 +1288,11 @@ rtk bun run db:studio    # Open Drizzle Studio (in another terminal)
 - [x] Tests: unit (TOTP verify, backup codes), integration (2FA setup + login)
 
 ### TASK 16.3 — Refresh Profile Across Dashboard After Save
-- [ ] After saving profile name, sidebar still shows old name until page refresh
-- [ ] File: `src/app/(dashboard)/settings/settings-forms.tsx`
-- [ ] After successful profile save → call `router.refresh()` to reload server components
-- [ ] Ensure plan badge also refreshes after billing upgrade
-- [ ] Tests: integration (profile save → sidebar updates)
+- [x] After saving profile name, sidebar still shows old name until page refresh
+- [x] File: `src/app/(dashboard)/settings/settings-forms.tsx`
+- [x] After successful profile save → call `router.refresh()` to reload server components
+- [x] Ensure plan badge also refreshes after billing upgrade
+- [x] Tests: integration (profile save → sidebar updates)
 
 ### TASK 16.4 — Password Change UX
 - [ ] File: `src/app/(dashboard)/settings/settings-forms.tsx`

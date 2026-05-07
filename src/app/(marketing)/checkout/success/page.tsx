@@ -224,11 +224,11 @@ export default async function CheckoutSuccessPage({
             </div>
 
             <div className="flex flex-col gap-2 sm:flex-row">
-              <ButtonLink href="/dashboard" variant="default">
+              <ButtonLink href="/dashboard?refresh=plan" variant="default">
                 <LayoutDashboard className="size-4" />
                 Go to Dashboard
               </ButtonLink>
-              <ButtonLink href="/settings/billing" variant="outline">
+              <ButtonLink href="/settings/billing?refresh=plan" variant="outline">
                 <CreditCard className="size-4" />
                 View Billing
               </ButtonLink>

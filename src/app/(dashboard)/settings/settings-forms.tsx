@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { type FormEvent, useState } from "react";
 import { Loader2, Save } from "lucide-react";
 import { toast } from "sonner";
@@ -69,6 +70,7 @@ export function ProfileSettingsForm({
   email,
   initialName,
 }: ProfileSettingsFormProps) {
+  const router = useRouter();
   const [name, setName] = useState(initialName);
   const [errors, setErrors] = useState<FieldErrors<ProfileField>>({});
   const [isSaving, setIsSaving] = useState(false);
@@ -117,6 +119,7 @@ export function ProfileSettingsForm({
 
       setName(body.data.name ?? "");
       toast.success(settingsSuccessMessages.profile);
+      router.refresh();
     } catch {
       toast.error("Unable to save profile.");
     } finally {

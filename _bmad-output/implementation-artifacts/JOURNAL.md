@@ -5264,3 +5264,41 @@ Implemented TOTP-based two-factor authentication with setup, verification, disab
 - ✅ No secrets, raw SQL, or `dangerouslySetInnerHTML` introduced.
 
 **Next Task:** 16.3 — Refresh Profile Across Dashboard After Save
+
+### 16.3 — Refresh Profile Across Dashboard After Save
+- **Date:** 2026-05-07 23:12 GMT+7
+- **Duration:** 0h 30m
+- **Status:** ✅ Complete
+
+**What I Did:**
+Refreshed the dashboard server component tree after profile saves so the sidebar user display updates without a manual page reload. Added plan-refresh navigation after checkout success and hardened Redis cache reads so 2FA login challenges work with Upstash JSON deserialization.
+
+**Files Changed:**
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Checked off Task 16.3.
+- `src/app/(dashboard)/settings/settings-forms.tsx` — Calls `router.refresh()` after successful profile update.
+- `src/app/(marketing)/checkout/success/page.tsx` — Sends post-checkout dashboard/billing navigation through a plan-refresh URL.
+- `src/lib/redis/index.ts` — Accepts both stringified and already-deserialized cache values.
+- `tests/e2e/settings-flow.spec.ts` — Verifies the sidebar footer shows the saved profile name.
+- `tests/unit/checkout-pages.test.tsx` — Verifies post-checkout refresh navigation links.
+
+**Decisions Made:**
+- Used `router.refresh()` only after successful profile persistence so failed saves do not reload stale state.
+- Added a refresh query on checkout success navigation to force a fresh dashboard/billing transition after subscription sync.
+- Fixed cache deserialization in the shared Redis helper because the 2FA challenge flow exposed that production behavior.
+
+**Tests:**
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Targeted Unit: `rtk bun run test -- tests/unit/checkout-pages.test.tsx tests/unit/form-success-feedback.test.ts` — 2 files passed, 7 tests passed.
+- ✅ Targeted E2E: `rtk bun run test:e2e -- tests/e2e/settings-flow.spec.ts` — 1 test passed.
+- ✅ Unit/Integration: `rtk bun run test` — 111 files passed, 498 tests passed.
+
+**Issues Encountered:**
+- Settings E2E initially failed because the real Upstash client returned cached JSON as an object while `cacheGet` only handled strings → Updated `cacheGet` to support both shapes and reran the E2E successfully.
+
+**Security Checks:**
+- ✅ Profile refresh happens after the authenticated settings API confirms persistence.
+- ✅ No secrets, raw SQL, or `dangerouslySetInnerHTML` introduced.
+- ✅ Existing CSRF header behavior remains unchanged.
+
+**Next Task:** 16.4 — Password Change UX

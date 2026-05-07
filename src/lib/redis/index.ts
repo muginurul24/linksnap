@@ -11,8 +11,9 @@ const CACHE_TTL = 3600; // 1 hour default
 
 export async function cacheGet<T>(key: string): Promise<T | null> {
   try {
-    const data = await redis.get<string>(CACHE_PREFIX + key);
-    return data ? JSON.parse(data) : null;
+    const data = await redis.get<string | T>(CACHE_PREFIX + key);
+    if (!data) return null;
+    return typeof data === "string" ? (JSON.parse(data) as T) : data;
   } catch {
     return null;
   }
