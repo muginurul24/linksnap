@@ -1,22 +1,25 @@
 import { redirect } from "next/navigation";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Switch } from "@/components/ui/switch";
-import { Save, User, Bell, Shield, Key } from "lucide-react";
+import { User, Bell, Shield, Key } from "lucide-react";
 import { auth } from "@/lib/auth";
 import {
   listApiKeysByUserId,
   type ApiKeyListItem,
 } from "@/lib/db/queries/api-keys";
 import { findBillingUserById } from "@/lib/db/queries/payments";
+import { findSettingsUserById } from "@/lib/db/queries/settings";
 import type { UserPlan } from "@/lib/links/limits";
 import {
   ApiKeysPanel,
   type ApiKeyPanelItem,
 } from "@/app/(dashboard)/settings/api-keys-panel";
+import {
+  NotificationsSettingsForm,
+  ProfileSettingsForm,
+  SecuritySettingsForm,
+} from "@/app/(dashboard)/settings/settings-forms";
 
 type SessionWithUserId = {
   user?: {
@@ -67,7 +70,15 @@ export default async function SettingsPage({ searchParams }: SettingsPageProps) 
 
   const params = await searchParams;
   const defaultTab = getDefaultSettingsTab(params.tab);
-  const billingUser = await findBillingUserById(userId);
+  const [billingUser, settingsUser] = await Promise.all([
+    findBillingUserById(userId),
+    findSettingsUserById(userId),
+  ]);
+
+  if (!settingsUser) {
+    redirect("/login?callbackUrl=/settings");
+  }
+
   const plan = billingUser?.plan ?? "FREE";
   const apiKeys = canManageApiKeys(plan)
     ? await listApiKeysByUserId(userId)
@@ -94,22 +105,11 @@ export default async function SettingsPage({ searchParams }: SettingsPageProps) 
               <CardTitle className="text-base">Profile Information</CardTitle>
               <CardDescription>Update your name and email address.</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <div className="space-y-2">
-                  <Label htmlFor="name">Full Name</Label>
-                  <Input id="name" defaultValue={billingUser?.name ?? ""} />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    defaultValue={billingUser?.email ?? ""}
-                  />
-                </div>
-              </div>
-              <Button size="sm"><Save className="mr-2 size-4" /> Save Changes</Button>
+            <CardContent>
+              <ProfileSettingsForm
+                email={settingsUser.email}
+                initialName={settingsUser.name ?? ""}
+              />
             </CardContent>
           </Card>
         </TabsContent>
@@ -120,14 +120,10 @@ export default async function SettingsPage({ searchParams }: SettingsPageProps) 
               <CardTitle className="text-base">Notification Preferences</CardTitle>
               <CardDescription>Choose what notifications you want to receive.</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-              {["Weekly analytics report", "Payment confirmations", "Link performance alerts", "Product updates & tips"].map((item) => (
-                <div key={item} className="flex items-center justify-between">
-                  <Label className="text-sm">{item}</Label>
-                  <Switch defaultChecked />
-                </div>
-              ))}
-              <Button size="sm" className="mt-2"><Save className="mr-2 size-4" /> Save Preferences</Button>
+            <CardContent>
+              <NotificationsSettingsForm
+                initialPreferences={settingsUser.notifications}
+              />
             </CardContent>
           </Card>
         </TabsContent>
@@ -138,16 +134,8 @@ export default async function SettingsPage({ searchParams }: SettingsPageProps) 
               <CardTitle className="text-base">Change Password</CardTitle>
               <CardDescription>Use a strong password with at least 8 characters.</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="current">Current Password</Label>
-                <Input id="current" type="password" />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="new">New Password</Label>
-                <Input id="new" type="password" />
-              </div>
-              <Button size="sm">Update Password</Button>
+            <CardContent>
+              <SecuritySettingsForm />
             </CardContent>
           </Card>
           <Card>

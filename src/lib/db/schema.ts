@@ -34,6 +34,20 @@ export const clickEventTypeEnum = pgEnum("click_event_type", [
   "LINK_PAGE_CTA_CLICK",
 ]);
 
+export type UserNotificationPreferences = {
+  linkPerformanceAlerts: boolean;
+  paymentConfirmations: boolean;
+  productUpdates: boolean;
+  weeklyAnalyticsReport: boolean;
+};
+
+export const DEFAULT_NOTIFICATION_PREFERENCES: UserNotificationPreferences = {
+  linkPerformanceAlerts: true,
+  paymentConfirmations: true,
+  productUpdates: true,
+  weeklyAnalyticsReport: true,
+};
+
 // ─── Users ───
 export const users = pgTable("users", {
   id: uuid("id").defaultRandom().primaryKey(),
@@ -46,6 +60,10 @@ export const users = pgTable("users", {
   otpCode: varchar("otp_code", { length: 6 }),
   otpExpiresAt: timestamp("otp_expires_at"),
   refreshTokenHash: text("refresh_token_hash"),
+  notifications: jsonb("notifications")
+    .$type<UserNotificationPreferences>()
+    .default(DEFAULT_NOTIFICATION_PREFERENCES)
+    .notNull(),
   plan: planEnum("plan").default("FREE").notNull(),
   role: varchar("role", { length: 20 }).default("user").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),

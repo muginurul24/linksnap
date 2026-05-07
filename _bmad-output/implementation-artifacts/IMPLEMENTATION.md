@@ -777,14 +777,14 @@ rtk bun run db:studio    # Open Drizzle Studio (in another terminal)
 - [x] Tests: unit (key hashing, prefix validation), integration (CRUD + auth with key)
 
 ### TASK 12.14 — Connect Settings Tabs to Real APIs
-- [ ] File: `src/app/(dashboard)/settings/page.tsx`
-- [ ] "Profile" tab: load user name/email from session, save via `PATCH /api/v1/settings/profile`
-- [ ] Create `src/app/api/v1/settings/profile/route.ts` — PATCH: update name
-- [ ] "Security" tab: connect "Change Password" to `POST /api/v1/auth/change-password`
-- [ ] Create `src/app/api/v1/auth/change-password/route.ts` — POST: verify current password, update hash
-- [ ] "Notifications" tab: save preferences to user record (add `notifications` JSON column)
-- [ ] Remove all hardcoded values ("Rafi", "rafi@email.com")
-- [ ] Tests: unit (form validation), integration (profile update, password change flow)
+- [x] File: `src/app/(dashboard)/settings/page.tsx`
+- [x] "Profile" tab: load user name/email from session, save via `PATCH /api/v1/settings/profile`
+- [x] Create `src/app/api/v1/settings/profile/route.ts` — PATCH: update name
+- [x] "Security" tab: connect "Change Password" to `POST /api/v1/auth/change-password`
+- [x] Create `src/app/api/v1/auth/change-password/route.ts` — POST: verify current password, update hash
+- [x] "Notifications" tab: save preferences to user record (add `notifications` JSON column)
+- [x] Remove all hardcoded values ("Rafi", "rafi@email.com")
+- [x] Tests: unit (form validation), integration (profile update, password change flow)
 
 ### TASK 12.15 — Connect Link Pages Dashboard to Real Data
 - [ ] File: `src/app/(dashboard)/pages/page.tsx`
