@@ -356,6 +356,43 @@ Added Stripe webhook signature verification using the raw request body and imple
 
 **Next Task:** 14.4 — Country Detection on Billing Page
 
+### 14.4 — Country Detection on Billing Page
+- **Date:** 2026-05-07 19:22 GMT+7
+- **Duration:** 0 hours 12 minutes
+- **Status:** ✅ Complete
+
+**What I Did:**
+Added server-side billing country detection using request headers, the shared client-IP parser, and the existing MaxMind-backed geo lookup wrapper. The billing page now computes available gateways from detected country and exposes that server-rendered gateway data for the dual-gateway UI.
+
+**Files Changed:**
+- `src/lib/payments/gateway-selection.ts` — Added country detection and gateway selection helpers.
+- `src/app/(dashboard)/settings/billing/page.tsx` — Read request headers server-side and attached detected country/gateway data to the billing plans container.
+- `tests/unit/payment-gateway-selection.test.ts` — Covered Indonesia, non-Indonesia, MaxMind preference, and edge-header fallback.
+- `tests/integration/billing-page-gateway-detection.test.tsx` — Covered billing page rendering for Indonesia and non-Indonesia gateway availability.
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Marked task 14.4 complete.
+- `_bmad-output/implementation-artifacts/JOURNAL.md` — Logged task completion.
+
+**Decisions Made:**
+- Reused `lookupGeoLocation()` so MaxMind data wins when available and Vercel/Cloudflare geo headers provide a fallback.
+- Kept the initial page output as data attributes in this task; the visible selector is implemented in the next task.
+
+**Tests:**
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Unit/Integration: `rtk bun run test` — Passed, 100 files / 462 tests.
+- ✅ Targeted: `rtk bun run test tests/unit/payment-gateway-selection.test.ts tests/integration/billing-page-gateway-detection.test.tsx` — Passed.
+
+**Issues Encountered:**
+- None.
+
+**Security Checks:**
+- ✅ No user-controlled URLs added.
+- ✅ IP address is used only for country lookup, not displayed or persisted.
+- ✅ Unknown country falls back to Stripe-only gateway availability.
+- ✅ Existing auth gate for billing page remains unchanged.
+
+**Next Task:** 14.5 — Dual Gateway UI in Billing Page
+
 ### 0.4 — CI/CD Pipeline
 - **Date:** 2026-05-06 20:10 GMT+7
 - **Duration:** 0 hours 35 minutes

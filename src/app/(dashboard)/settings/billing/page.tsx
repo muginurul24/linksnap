@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { headers } from "next/headers";
 import { Building, Check, CreditCard, Sparkles, Zap } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -25,6 +26,10 @@ import {
   type BillingTransaction,
 } from "@/lib/db/queries/payments";
 import { syncSubscriptionStatusForUser } from "@/lib/payments/subscription";
+import {
+  detectBillingClientCountry,
+  getAvailablePaymentGateways,
+} from "@/lib/payments/gateway-selection";
 import type { UserPlan } from "@/lib/links/limits";
 import {
   PLANS,
@@ -168,6 +173,8 @@ export default async function BillingPage({ searchParams }: BillingPageProps) {
   const upgradePrompt = getUpgradePrompt(upgradeReason);
   const isActivePaidSubscription =
     subscription?.status === "ACTIVE" && billingUser.plan !== "FREE";
+  const clientCountry = await detectBillingClientCountry(await headers());
+  const availableGateways = getAvailablePaymentGateways(clientCountry);
 
   return (
     <>
@@ -224,7 +231,11 @@ export default async function BillingPage({ searchParams }: BillingPageProps) {
         </CardContent>
       </Card>
 
-      <div className="grid gap-4 lg:grid-cols-3">
+      <div
+        className="grid gap-4 lg:grid-cols-3"
+        data-client-country={clientCountry ?? "unknown"}
+        data-payment-gateways={availableGateways.join(",")}
+      >
         {plans.map((plan) => {
           const isCurrent = plan.plan === billingUser.plan;
 

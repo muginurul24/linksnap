@@ -1076,17 +1076,17 @@ Stripe handles credit card globally. Midtrans handles Indonesian local banks (BC
 - [x] Tests: unit (signature verification, event handling), integration (webhook endpoint)
 
 ### TASK 14.4 — Country Detection on Billing Page
-- [ ] File: `src/app/(dashboard)/settings/billing/page.tsx`
-- [ ] Server-side: detect client country from IP using existing MaxMind GeoLite2 (`src/lib/geo/geoip.ts`)
-- [ ] Pass `clientCountry: string | null` to billing page component
-- [ ] Logic:
+- [x] File: `src/app/(dashboard)/settings/billing/page.tsx`
+- [x] Server-side: detect client country from IP using existing MaxMind GeoLite2 (`src/lib/geo/geoip.ts`)
+- [x] Pass `clientCountry: string | null` to billing page component
+- [x] Logic:
   ```typescript
   const isIndonesia = clientCountry === "ID"
   const gateways = isIndonesia
     ? ["midtrans", "stripe"]
     : ["stripe"]
   ```
-- [ ] Tests: unit (country detection flow), integration (billing page renders correct gateways)
+- [x] Tests: unit (country detection flow), integration (billing page renders correct gateways)
 
 ### TASK 14.5 — Dual Gateway UI in Billing Page
 - [ ] File: `src/app/(dashboard)/settings/billing/page.tsx`
