@@ -135,8 +135,9 @@ function formatPaymentStatus(status: BillingTransaction["status"]): string {
     .join(" ");
 }
 
-function formatGatewayLabel(gateway: BillingTransaction["gateway"]): string {
-  return gateway === "stripe" ? "Stripe" : "Midtrans";
+function formatGatewayLabel(_gateway: BillingTransaction["gateway"]): string {
+  void _gateway;
+  return "Midtrans";
 }
 
 function formatPaymentMethodName(value: string): string {
@@ -150,10 +151,6 @@ function formatPaymentMethodName(value: string): string {
 function formatPaymentMethod(transaction: BillingTransaction): string {
   const method = transaction.paymentMethod?.trim();
   if (!method) return "Pending";
-
-  if (transaction.gateway === "stripe") {
-    return method.toLowerCase() === "card" ? "Card" : formatPaymentMethodName(method);
-  }
 
   return formatPaymentMethodName(method);
 }
@@ -350,11 +347,7 @@ export default async function BillingPage({ searchParams }: BillingPageProps) {
                       </TableCell>
                       <TableCell>
                         <Badge className="gap-1.5" variant="outline">
-                          {transaction.gateway === "stripe" ? (
-                            <CreditCard className="size-3" />
-                          ) : (
-                            <Landmark className="size-3" />
-                          )}
+                          <Landmark className="size-3" />
                           {formatGatewayLabel(transaction.gateway)}
                         </Badge>
                       </TableCell>

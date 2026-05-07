@@ -24,9 +24,6 @@ env:
   MIDTRANS_SERVER_KEY: ${{ secrets.MIDTRANS_SERVER_KEY || 'SB-Mid-server-ci-placeholder' }}
   MIDTRANS_CLIENT_KEY: ${{ secrets.MIDTRANS_CLIENT_KEY || 'SB-Mid-client-ci-placeholder' }}
   MIDTRANS_MERCHANT_ID: ${{ secrets.MIDTRANS_MERCHANT_ID || 'ci-merchant' }}
-  STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY || 'sk_test_ci_placeholder' }}
-  STRIPE_WEBHOOK_SECRET: ${{ secrets.STRIPE_WEBHOOK_SECRET || 'whsec_ci_placeholder' }}
-  STRIPE_IS_TEST_MODE: ${{ vars.STRIPE_IS_TEST_MODE || 'true' }}
   NEXT_PUBLIC_APP_URL: ${{ vars.NEXT_PUBLIC_APP_URL || 'http://localhost:3000' }}
   NEXT_PUBLIC_API_URL: ${{ vars.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api/v1' }}
   MAXMIND_LICENSE_KEY: ${{ secrets.MAXMIND_LICENSE_KEY || 'ci-maxmind-placeholder' }}

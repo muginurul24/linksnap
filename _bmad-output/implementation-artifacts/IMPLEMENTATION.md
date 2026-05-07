@@ -77,7 +77,7 @@ src/
 - [x] Create Neon.tech database (or local PostgreSQL)
 - [x] Push schema: `rtk bun run db:push`
 - [x] Verify tables exist: direct `information_schema.tables` query
-- [x] Tables to verify: `users`, `links`, `link_pages`, `smart_rules`, `click_events`, `campaigns`, `split_tests`, `split_test_variants`, `subscriptions`, `transactions`, `settings`
+- [x] Tables to verify: `users`, `links`, `link_pages`, `smart_rules`, `click_events`, `campaigns`, `split_tests`, `split_test_prices`, `subscriptions`, `transactions`, `settings`
 
 ### TASK 0.3 — Redis Setup
 - [x] Create Upstash Redis database
@@ -402,7 +402,7 @@ src/
 
 ### TASK 7.1 — Split Test API
 - [x] File: `src/app/api/v1/links/[id]/split-test/route.ts`
-- [x] POST: create/update split test `{ variants: [{ destinationUrl, weight }] }`
+- [x] POST: create/update split test `{ prices: [{ destinationUrl, weight }] }`
 - [x] GET: get split test config + performance data
 - [x] DELETE: remove split test
 - [x] Auth: required, ownership check
@@ -412,12 +412,12 @@ src/
 - [x] If link has active split test:
   1. Calculate total weight
   2. Generate random number 0-totalWeight
-  3. Select variant based on weight range
-  4. Log which variant was selected
-- [x] Increment `clickCount` on variant
+  3. Select price based on weight range
+  4. Log which price was selected
+- [x] Increment `clickCount` on price
 
 ### TASK 7.3 — Split Test Tests
-- [x] Unit: variant selection algorithm
+- [x] Unit: price selection algorithm
 - [x] Integration: create split test → make 100 requests → verify distribution ≈ weights
 - [x] E2E: configure A/B test from dashboard
 
@@ -1000,272 +1000,53 @@ rtk bun run db:studio    # Open Drizzle Studio (in another terminal)
 
 **Priority order:** 13.1 → 13.2 → 13.3 → 13.4 → 13.5
 
-**Estimated total:** 81 + 7 = 88 tasks
+**Estimated total:** 81 tasks
 
----
+> **Note:** Phase 14 (Stripe) and Phase 15 (Paddle) were removed — global payment gateway deferred. Midtrans only for now.
 
-## 🟣 Phase 14: Dual Payment Gateway — Stripe + Midtrans
+## 🟣 Phase 14: Remove Stripe — Revert to Midtrans-Only
 
-> **Source:** Rafi product spec — 2026-05-07. Dynamic gateway selection based on client country. Indonesia → both gateways; non-Indonesia → Stripe only.
+> **Source:** Rafi — 2026-05-07. Global payment gateway deferred. Remove all Stripe integration code from Phase 14, revert gateway selector to Midtrans-only.
 
-### Behavior
+### TASK 14.1 — Remove Stripe Dependencies
+- [x] `rtk bun remove stripe`
+- [x] Delete all Stripe files:
+  - `src/lib/payments/stripe.ts`
+  - `src/lib/payments/stripe-checkout.ts`
+  - `src/lib/payments/stripe-webhook.ts`
+  - `src/app/api/v1/payments/stripe/create/route.ts`
+  - `src/app/api/v1/payments/stripe/webhook/route.ts`
+- [x] Remove Stripe env vars from `.env` and `.env.example`:
+  - `STRIPE_SECRET_KEY`
+  - `STRIPE_WEBHOOK_SECRET`
+  - `STRIPE_IS_TEST_MODE`
+- [x] Remove Stripe from CSRF exemption list in `src/proxy.ts`
+- [x] Tests: verify zero Stripe references in `src/`
 
-| Client Country | Available Gateways |
-|---|---|
-| Indonesia | Midtrans (bank lokal) + Stripe (credit card) |
-| Non-Indonesia | Stripe (credit card) only |
-
-Stripe handles credit card globally. Midtrans handles Indonesian local banks (BCA, Mandiri, BNI, GoPay, etc.).
-
-### TASK 14.1 — Stripe Configuration & Client
-- [x] Add Stripe SDK: `rtk bun add stripe`
-- [x] Add to `.env` and `.env.example`:
-  - `STRIPE_SECRET_KEY` — Stripe secret key
-  - `STRIPE_WEBHOOK_SECRET` — Stripe webhook signing secret
-  - `STRIPE_IS_TEST_MODE` — boolean (default true for sandbox)
-- [x] Create `src/lib/payments/stripe.ts` — Stripe client singleton:
-  - [x] Export `stripe` client instance
-  - [x] `assertStripeConfigured()` — check env vars
-  - [x] `StripeConfigurationError` class
-- [x] Tests: unit (config validation, client initialization)
-
-### TASK 14.2 — Stripe Checkout Session Creation
-- [x] Create `src/lib/payments/stripe-checkout.ts`
-- [x] `createStripeCheckoutSession(input)`:
-  - [x] Create Stripe Checkout Session with mode: `subscription`
-  - [x] Line item: price from Stripe product/price IDs (not dynamic amount)
-  - [x] Or: create dynamic price via `unit_amount` + `currency: usd`
-  - [x] `success_url`: `{APP_URL}/checkout/success?session_id={CHECKOUT_SESSION_ID}`
-  - [x] `cancel_url`: `{APP_URL}/checkout/cancel`
-  - [x] `client_reference_id`: user ID
-  - [x] `metadata`: plan + duration
-- [x] Create `src/lib/validations/stripe.ts` — `createStripeCheckoutSchema`
-- [x] Create `src/app/api/v1/payments/stripe/create/route.ts` — POST handler:
-  - [x] Auth required, rate limited
-  - [x] Validate input (plan, duration)
-  - [x] Calculate USD price from existing pricing module
-  - [x] Create pending transaction record in DB (reuse existing transactions table, add `gateway: "midtrans" | "stripe"`)
-  - [x] Create Stripe Checkout Session
-  - [x] Return `{ url: session.url }` — client redirects
-- [x] Update `transactions` table schema: add `gateway` column (default `"midtrans"`)
-- [x] Run `rtk bun run db:push`
-- [x] Tests: unit (session creation params), integration (create checkout API)
-
-### TASK 14.3 — Stripe Webhook Handler
-- [x] Create `src/lib/payments/stripe-webhook.ts`
-- [x] `verifyStripeWebhookSignature(body, signature, secret)` — verify Stripe signature
-- [x] `handleStripeWebhook(event)`:
-  - [x] `checkout.session.completed`:
-    - [x] Find transaction by `client_reference_id`
-    - [x] Update transaction status to `SETTLEMENT`
-    - [x] Activate subscription via existing `createOrRenewSubscriptionForPayment`
-    - [x] Send invoice email
-  - [x] `customer.subscription.updated`:
-    - [x] Sync subscription status (renewal, plan change)
-  - [x] `customer.subscription.deleted`:
-    - [x] Expire subscription, downgrade to FREE
-  - [x] `invoice.payment_failed`:
-    - [x] Log failure, optionally notify user
-- [x] Create `src/app/api/v1/payments/stripe/webhook/route.ts` — POST handler:
-  - [x] Verify Stripe signature
-  - [x] Parse event type
-  - [x] Delegate to handler
-  - [x] Return 200 quickly (Stripe expects fast response)
-  - [x] Exempt from CSRF guard (like Midtrans webhook)
-- [x] Update proxy CSRF exemption list to include Stripe webhook path
-- [x] Tests: unit (signature verification, event handling), integration (webhook endpoint)
-
-### TASK 14.4 — Country Detection on Billing Page
-- [x] File: `src/app/(dashboard)/settings/billing/page.tsx`
-- [x] Server-side: detect client country from IP using existing MaxMind GeoLite2 (`src/lib/geo/geoip.ts`)
-- [x] Pass `clientCountry: string | null` to billing page component
-- [x] Logic:
-  ```typescript
-  const isIndonesia = clientCountry === "ID"
-  const gateways = isIndonesia
-    ? ["midtrans", "stripe"]
-    : ["stripe"]
-  ```
-- [x] Tests: unit (country detection flow), integration (billing page renders correct gateways)
-
-### TASK 14.5 — Dual Gateway UI in Billing Page
-- [x] File: `src/app/(dashboard)/settings/billing/page.tsx`
-- [x] Refactor plan cards: instead of single "Upgrade" button, show gateway selector
-- [x] UI for Indonesia clients:
-  ```
-  Pro — $8/month
-  ┌──────────────────────────┐
-  │ ○ Stripe (Credit Card)   │
-  │ ○ Midtrans (Bank Lokal)  │
-  │                          │
-  │ [  Upgrade to Pro  ]     │
-  └──────────────────────────┘
-  ```
-- [x] UI for non-Indonesia clients:
-  ```
-  Pro — $8/month
-  ┌──────────────────────────┐
-  │ ● Stripe (Credit Card)   │  ← auto-selected, single option
-  │                          │
-  │ [  Upgrade to Pro  ]     │
-  └──────────────────────────┘
-  ```
-- [x] Gateway selector: radio buttons with icon (Stripe logo, Midtrans logo)
-- [x] Update `UpgradeButton` to accept `gateway` prop
-- [x] On click: call appropriate endpoint
-  - [x] `/api/v1/payments/stripe/create` → redirect to Stripe Checkout
-  - [x] `/api/v1/payments/create` → redirect to Midtrans Snap
-- [x] Tests: unit (gateway selector rendering), integration (billing page with country detection)
-
-### TASK 14.6 — Unify Transaction History
-- [x] File: `src/app/(dashboard)/settings/billing/page.tsx` (billing history table)
-- [x] Add "Gateway" column showing Stripe or Midtrans badge/icon
-- [x] Ensure both gateways' transactions appear in unified history
-- [x] Add payment method display (Midtrans: bank_transfer, gopay; Stripe: card brand)
-- [x] Tests: integration (transaction history shows both gateways)
-
-### TASK 14.7 — End-to-End Payment Flow Tests
-- [x] Update E2E tests to cover Stripe flow
-- [x] Test: Indonesia client sees both gateways
-- [x] Test: non-Indonesia client sees only Stripe
-- [x] Test: Stripe checkout session creation
-- [x] Test: Stripe webhook handling (mock signature)
-- [x] Test: gateway badge in transaction history
-- [x] Ensure all existing Midtrans tests still pass
-
----
-
-## 🚀 Ready to Start?
-
-```bash
-cd ~/projects/linksnap
-rtk bun run dev          # Start development
-rtk bun run db:studio    # Open Drizzle Studio (in another terminal)
-```
-
-**Priority order:** 14.1 → 14.2 → 14.3 → 14.4 → 14.5 → 14.6 → 14.7
-
-**Estimated total:** 88 + 6 = 94 tasks
-
----
-
-## 🟣 Phase 15: Replace Stripe with Lemon Squeezy
-
-> **Source:** Rafi product spec — 2026-05-07. Stripe not available in Indonesia. Lemon Squeezy is Merchant of Record (handles tax/VAT, chargebacks, compliance) and accepts Indonesian creators.
-
-### Why Lemon Squeezy
-- No US LLC required — Indonesian creators accepted
-- Merchant of Record — handles GST/VAT, tax invoices, chargebacks
-- Simple checkout (hosted page like Midtrans Snap)
-- Webhook system for subscription lifecycle
-- Withdraw to Wise or Indonesian bank
-
-### Key Differences from Stripe
-
-| Concept | Stripe | Lemon Squeezy |
-|---|---|---|
-| SDK | `stripe` | `@lemonsqueezy/lemonsqueezy.js` |
-| Checkout | `checkout.sessions.create` | `createCheckout` |
-| Variant ref | Dynamic price | Pre-defined variant ID in LS dashboard |
-| Webhook sig | Stripe signature | HMAC SHA256 |
-| Key setup | Secret key + webhook secret | Single API key (webhook secret = signing secret) |
-| Subscription events | `checkout.session.completed` | `order_created` |
-| Renewal event | `customer.subscription.updated` | `subscription_payment_success` |
-| Cancel event | `customer.subscription.deleted` | `subscription_cancelled` |
-
-### Pre-requisite (Manual — do in Lemon Squeezy dashboard before coding)
-- [ ] Create Lemon Squeezy account at https://app.lemonsqueezy.com
-- [ ] Create 4 product variants (one-time using the test mode):
-  - Pro Monthly ($8/mo)
-  - Pro Yearly ($75/yr)
-  - Business Monthly ($19/mo)
-  - Business Yearly ($180/yr)
-- [ ] Copy variant IDs
-- [ ] Copy API key from Settings → API
-- [ ] Copy webhook signing secret from Settings → Webhooks
-- [ ] Add to `.env`: `LEMONSQUEEZY_API_KEY`, `LEMONSQUEEZY_WEBHOOK_SECRET`, `LEMONSQUEEZY_STORE_ID`, `LEMONSQUEEZY_VARIANT_PRO_MONTHLY`, `LEMONSQUEEZY_VARIANT_PRO_YEARLY`, `LEMONSQUEEZY_VARIANT_BUSINESS_MONTHLY`, `LEMONSQUEEZY_VARIANT_BUSINESS_YEARLY`
-
-### TASK 15.1 — Lemon Squeezy SDK & Config
-- [ ] Remove Stripe: `rtk bun remove stripe`
-- [ ] Add Lemon Squeezy: `rtk bun add @lemonsqueezy/lemonsqueezy.js`
-- [ ] File: `src/lib/payments/lemonsqueezy.ts` — client singleton
-  - Configure with API key
-  - `assertLemonSqueezyConfigured()` — verify env vars
-  - `LemonSqueezyConfigurationError` class
-- [ ] File: `.env.example` — add all LS env var placeholders
-- [ ] Tests: unit (config validation)
-
-### TASK 15.2 — Lemon Squeezy Checkout Session
-- [ ] File: `src/lib/payments/lemonsqueezy-checkout.ts`
-- [ ] `createLemonSqueezyCheckout(input)`:
-  - Map plan + duration → variant ID from env vars
-  - Call `lemonsqueezy.createCheckout({ variantId, checkoutData: { custom: { userId } } })`
-  - Return `{ checkoutUrl }` — client redirects
-- [ ] Create `src/app/api/v1/payments/lemonsqueezy/create/route.ts`:
-  - Auth required, rate limited
-  - Validate plan + duration
-  - Create pending transaction record in DB (gateway: `"lemonsqueezy"`)
-  - Call `createLemonSqueezyCheckout`
-  - Return `{ checkoutUrl }`
-- [ ] Remove old Stripe route: `src/app/api/v1/payments/stripe/create/route.ts`
-- [ ] Update `upgrade-button.tsx` to use Lemon Squeezy endpoint
-- [ ] Tests: unit (variant mapping), integration (create checkout API)
-
-### TASK 15.3 — Lemon Squeezy Webhook Handler
-- [ ] Create `src/lib/payments/lemonsqueezy-webhook.ts`
-- [ ] `verifyLemonSqueezySignature(rawBody, signature)` — HMAC SHA256
-- [ ] `handleLemonSqueezyWebhook(event)`:
-  - `order_created`:
-    - Find transaction by custom data userId or order identifier
-    - Update transaction status to `SETTLEMENT`
-    - Activate subscription via existing `createOrRenewSubscriptionForPayment`
-    - Send invoice email
-  - `subscription_payment_success`:
-    - Sync subscription renewal period
-  - `subscription_cancelled`:
-    - Expire subscription, downgrade to FREE
-  - `subscription_payment_failed`:
-    - Log failure
-- [ ] Create `src/app/api/v1/payments/lemonsqueezy/webhook/route.ts`:
-  - Verify Lemon Squeezy signature
-  - Parse event
-  - Delegate to handler
-  - Return 200 quickly
-  - Exempt from CSRF guard
-- [ ] Remove old Stripe webhook route
-- [ ] Tests: unit (signature verify, event handling), integration (webhook endpoint)
-
-### TASK 15.4 — Update Gateway Selector UI
+### TASK 14.2 — Revert Gateway Selector to Midtrans-Only
 - [ ] File: `src/app/(dashboard)/settings/billing/page.tsx`
-- [ ] Replace Stripe references with Lemon Squeezy
-- [ ] Gateway list:
-  - Indonesia: Midtrans (bank lokal) + Lemon Squeezy (credit card)
-  - Non-Indonesia: Lemon Squeezy (credit card) only
-- [ ] UI labels:
-  ```
-  ○ Lemon Squeezy (Credit/Debit Card)
-  ○ Midtrans (Indonesian Banks, GoPay)
-  ```
-- [ ] Update `UpgradeButton` gateway prop: `"midtrans" | "lemonsqueezy"`
-- [ ] Tests: unit (gateway selector rendering with new labels)
+- [ ] Remove dual gateway selector UI (radio buttons)
+- [ ] Revert to single "Upgrade" button per plan — one gateway only
+- [ ] File: `src/app/(dashboard)/settings/billing/upgrade-button.tsx`
+- [ ] Remove `gateway` prop — always use Midtrans endpoint
+- [ ] Clean up country detection logic added for gateway selection
+- [ ] Tests: unit (billing page renders single gateway)
 
-### TASK 15.5 — Update Transaction Schema & History
-- [ ] Update gateway column values: `"stripe"` → `"lemonsqueezy"`
-- [ ] Update transaction history table to show "Lemon Squeezy" badge
-- [ ] Ensure existing Midtrans transactions still work
-- [ ] Test: integration (history shows both gateways correctly)
+### TASK 14.3 — Cleanup Transaction & DB References
+- [ ] Remove `gateway` column from `transactions` table schema (Drizzle schema)
+- [ ] Remove gateway badge/column from billing history table
+- [ ] Drop `gateway` column from DB: `rtk bun run db:push`
+- [ ] Remove gateway-related types/interfaces
+- [ ] Tests: integration (billing history without gateway column)
 
-### TASK 15.6 — Cleanup & End-to-End Tests
-- [ ] Remove ALL remaining Stripe code references:
-  - Delete `src/lib/payments/stripe*.ts`
-  - Delete Stripe env vars from `.env.example`
-  - Remove Stripe from CSRF exemption list in proxy
-- [ ] Update E2E tests: replace Stripe flows with Lemon Squeezy
-- [ ] Test: Indonesia client sees Midtrans + Lemon Squeezy
-- [ ] Test: non-Indonesia client sees only Lemon Squeezy
-- [ ] Test: Lemon Squeezy webhook subscription lifecycle
-- [ ] Run full test suite, typecheck, lint
-- [ ] Ensure zero Stripe references in `src/`
+### TASK 14.4 — Remove Stripe Tests
+- [ ] Delete Stripe test files:
+  - `tests/unit/stripe-*.test.ts`
+  - `tests/integration/stripe-*.test.ts`
+  - Any E2E tests referencing Stripe
+- [ ] Run full test suite — all remaining tests must pass
+- [ ] Typecheck + lint must be clean
+- [ ] Build must pass
 
 ---
 
@@ -1277,9 +1058,8 @@ rtk bun run dev          # Start development
 rtk bun run db:studio    # Open Drizzle Studio (in another terminal)
 ```
 
-**Priority order:** 15.1 → 15.2 → 15.3 → 15.4 → 15.5 → 15.6
+**Priority order:** 14.1 → 14.2 → 14.3 → 14.4
 
-**Estimated total:** 88 + 6 = 94 tasks
-**Estimated timeline:** 12 weeks (3 months) for 1 full-time developer
+**Estimated total:** 81 + 4 = 85 tasks
 
 Good luck. Ship it. 🚀

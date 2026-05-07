@@ -4291,6 +4291,57 @@ Extended the Smart Rules engine for V2 ordered rule evaluation. V2 rules now sup
 
 **Next Task:** 13.4 — Smart Rules API Update
 
+### 14.1 — Remove Stripe Dependencies
+- **Date:** 2026-05-07 20:17 GMT+7
+- **Duration:** 0 hours 40 minutes
+- **Status:** ✅ Complete
+
+**What I Did:**
+Removed the Stripe package, deleted Stripe payment modules and API routes, and removed Stripe environment placeholders from tracked config and the local ignored `.env`. Also removed the deleted Stripe webhook from the custom API CSRF exemption list and cleaned dependent Stripe-specific tests so the repository remains typecheckable after the SDK removal.
+
+**Files Changed:**
+- `package.json` — Removed the Stripe dependency.
+- `bun.lock` — Updated lockfile after dependency removal.
+- `.env` — Removed local Stripe variables from the ignored environment file.
+- `.env.example` — Removed documented Stripe variables.
+- `.github/workflows/ci.yml` — Removed CI Stripe placeholders.
+- `src/lib/payments/stripe.ts` — Deleted Stripe client module.
+- `src/lib/payments/stripe-checkout.ts` — Deleted Stripe checkout module.
+- `src/lib/payments/stripe-webhook.ts` — Deleted Stripe webhook module.
+- `src/lib/validations/stripe.ts` — Deleted Stripe validation alias.
+- `src/app/api/v1/payments/stripe/create/route.ts` — Deleted Stripe checkout route.
+- `src/app/api/v1/payments/stripe/webhook/route.ts` — Deleted Stripe webhook route.
+- `src/lib/security/api-request.ts` — Removed deleted Stripe webhook from custom header exemptions.
+- `src/lib/payments/gateway-selection.ts` — Removed Stripe gateway availability.
+- `src/app/(dashboard)/settings/billing/upgrade-button.tsx` — Removed Stripe endpoint and redirect handling.
+- `src/app/(dashboard)/settings/billing/page.tsx` — Removed Stripe display branches from billing history.
+- `src/lib/db/schema.ts` — Removed Stripe from the gateway enum values pending full gateway-column cleanup.
+- `tests/**` — Removed or updated Stripe-specific coverage that depended on deleted modules.
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Checked off Task 14.1.
+- `_bmad-output/implementation-artifacts/JOURNAL.md` — Recorded this completion entry.
+
+**Decisions Made:**
+- Deleted Stripe-specific tests in the same task as the SDK/source removal because TypeScript checks include `tests/**`; leaving them would create a broken intermediate commit.
+- Kept the generic `gateway` column and selector structure for the dedicated 14.2 and 14.3 cleanup tasks, but removed all Stripe values and branches from source.
+
+**Tests:**
+- ✅ Stripe reference check: `rtk proxy rg -n "Stripe|stripe|STRIPE" src tests --glob '*.{ts,tsx}'` — No matches.
+- ✅ Typecheck: `rtk bun run typecheck` — Passed after clearing stale `.next/dev/types`.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Unit/Integration: `rtk bun run test` — 96 files passed, 443 tests passed.
+
+**Issues Encountered:**
+- `tsc` initially read stale generated Next.js validator files for deleted Stripe routes under `.next/dev/types` → Removed the generated cache and reran typecheck successfully.
+- The cleanup task overlapped with later UI/test cleanup because the checklist requires zero Stripe references in `src/` while the previous implementation had Stripe branches in billing UI and schema code.
+
+**Security Checks:**
+- ✅ Removed deleted Stripe webhook from CSRF exemption scope.
+- ✅ No secrets were printed while removing local Stripe environment variables.
+- ✅ No card handling or Stripe credentials remain in tracked source.
+- ✅ No raw SQL, user input handling changes, or ownership checks were introduced.
+
+**Next Task:** 14.2 — Revert Gateway Selector to Midtrans-Only
+
 ### 13.4 — Smart Rules API Update
 - **Date:** 2026-05-07 18:47 GMT+7
 - **Duration:** 0h 30m

@@ -27,13 +27,13 @@ describe("payment gateway country selection", () => {
     mockState.lookupCalls = [];
   });
 
-  it("should offer Midtrans and Stripe for Indonesia clients", () => {
-    expect(getAvailablePaymentGateways("ID")).toEqual(["midtrans", "stripe"]);
+  it("should offer Midtrans for Indonesia clients", () => {
+    expect(getAvailablePaymentGateways("ID")).toEqual(["midtrans"]);
   });
 
-  it("should offer Stripe only for non-Indonesia and unknown clients", () => {
-    expect(getAvailablePaymentGateways("US")).toEqual(["stripe"]);
-    expect(getAvailablePaymentGateways(null)).toEqual(["stripe"]);
+  it("should offer Midtrans for non-Indonesia and unknown clients", () => {
+    expect(getAvailablePaymentGateways("US")).toEqual(["midtrans"]);
+    expect(getAvailablePaymentGateways(null)).toEqual(["midtrans"]);
   });
 
   it("should prefer MaxMind country detection over edge country headers", async () => {

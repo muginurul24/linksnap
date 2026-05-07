@@ -22,10 +22,7 @@ export const paymentStatusEnum = pgEnum("payment_status", [
   "DENY",
   "EXPIRE",
 ]);
-export const paymentGatewayEnum = pgEnum("payment_gateway", [
-  "midtrans",
-  "stripe",
-]);
+export const paymentGatewayEnum = pgEnum("payment_gateway", ["midtrans"]);
 export const ruleTypeEnum = pgEnum("rule_type", [
   "GEO",
   "DEVICE",

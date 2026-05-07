@@ -16,7 +16,7 @@ type MockBillingUser = {
 type MockBillingTransaction = {
   createdAt: Date;
   duration: string;
-  gateway: "midtrans" | "stripe";
+  gateway: "midtrans";
   grossAmountIdr: number;
   grossAmountUsd: number;
   id: string;
@@ -106,12 +106,11 @@ describe("billing page gateway country detection", () => {
     const markup = renderToStaticMarkup(element);
 
     expect(markup).toContain('data-client-country="ID"');
-    expect(markup).toContain('data-payment-gateways="midtrans,stripe"');
+    expect(markup).toContain('data-payment-gateways="midtrans"');
     expect(markup).toContain("Midtrans");
-    expect(markup).toContain("Stripe");
   });
 
-  it("should render Stripe-only gateway availability data for non-Indonesia", async () => {
+  it("should render Midtrans gateway availability data for non-Indonesia", async () => {
     mockHeaders.value = new Headers({
       "x-vercel-ip-country": "US",
     });
@@ -122,31 +121,16 @@ describe("billing page gateway country detection", () => {
     const markup = renderToStaticMarkup(element);
 
     expect(markup).toContain('data-client-country="US"');
-    expect(markup).toContain('data-payment-gateways="stripe"');
-    expect(markup).toContain("Stripe");
-    expect(markup).not.toContain("Midtrans");
+    expect(markup).toContain('data-payment-gateways="midtrans"');
+    expect(markup).toContain("Midtrans");
   });
 
-  it("should render unified transaction history for Stripe and Midtrans", async () => {
+  it("should render transaction history for Midtrans payments", async () => {
     mockHeaders.value = new Headers({
       "x-vercel-ip-country": "ID",
     });
     mockState.history = {
       items: [
-        {
-          createdAt: new Date("2026-05-07T08:00:00.000Z"),
-          duration: "MONTHLY",
-          gateway: "stripe",
-          grossAmountIdr: 128000,
-          grossAmountUsd: 8,
-          id: "transaction-stripe",
-          orderId: "LS-ST-1777777777777-abcdef123456",
-          paidAt: new Date("2026-05-07T08:05:00.000Z"),
-          paymentMethod: "visa",
-          plan: "PRO",
-          status: "SETTLEMENT",
-          updatedAt: new Date("2026-05-07T08:05:00.000Z"),
-        },
         {
           createdAt: new Date("2026-05-07T07:00:00.000Z"),
           duration: "MONTHLY",
@@ -171,8 +155,6 @@ describe("billing page gateway country detection", () => {
     const markup = renderToStaticMarkup(element);
 
     expect(markup).toContain("Gateway");
-    expect(markup).toContain("Stripe");
-    expect(markup).toContain("Visa");
     expect(markup).toContain("Midtrans");
     expect(markup).toContain("Bank Transfer");
   });

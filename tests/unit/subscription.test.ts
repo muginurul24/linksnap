@@ -17,7 +17,7 @@ type MockSubscription = {
 
 type MockPaymentTransaction = {
   duration: string;
-  gateway: "midtrans" | "stripe";
+  gateway: "midtrans";
   grossAmountIdr: number;
   grossAmountUsd: number;
   orderId: string;

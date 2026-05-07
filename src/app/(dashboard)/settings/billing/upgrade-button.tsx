@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Building2, CreditCard, Landmark, Loader2 } from "lucide-react";
+import { Building2, Landmark, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -12,8 +12,6 @@ type PaymentResponseData = {
   orderId: string;
   redirectUrl?: string;
   snapToken?: string;
-  sessionId?: string;
-  url?: string;
 };
 
 type CreatePaymentResponse =
@@ -41,7 +39,7 @@ const GATEWAY_OPTIONS: Record<
   PaymentGatewayOption,
   {
     description: string;
-    icon: typeof CreditCard;
+    icon: typeof Landmark;
     label: string;
   }
 > = {
@@ -50,37 +48,31 @@ const GATEWAY_OPTIONS: Record<
     icon: Landmark,
     label: "Midtrans",
   },
-  stripe: {
-    description: "Credit Card",
-    icon: CreditCard,
-    label: "Stripe",
-  },
 };
 
-export function getPaymentCreateEndpoint(gateway: PaymentGatewayOption): string {
-  return gateway === "stripe"
-    ? "/api/v1/payments/stripe/create"
-    : "/api/v1/payments/create";
+export function getPaymentCreateEndpoint(_gateway: PaymentGatewayOption): string {
+  void _gateway;
+  return "/api/v1/payments/create";
 }
 
 export function getPaymentRedirectUrl(
-  gateway: PaymentGatewayOption,
+  _gateway: PaymentGatewayOption,
   data: PaymentResponseData,
 ): string | null {
-  return gateway === "stripe" ? data.url ?? null : data.redirectUrl ?? null;
+  return data.redirectUrl ?? null;
 }
 
 export function UpgradeButton({
-  availableGateways = ["stripe"],
+  availableGateways = ["midtrans"],
   current,
   duration = "MONTHLY",
   gateway,
   plan,
 }: UpgradeButtonProps) {
   const gatewayOptions: PaymentGatewayOption[] =
-    availableGateways.length > 0 ? availableGateways : ["stripe"];
+    availableGateways.length > 0 ? availableGateways : ["midtrans"];
   const initialGateway: PaymentGatewayOption =
-    gateway && gatewayOptions.includes(gateway) ? gateway : gatewayOptions[0] ?? "stripe";
+    gateway && gatewayOptions.includes(gateway) ? gateway : gatewayOptions[0] ?? "midtrans";
   const [isLoading, setIsLoading] = useState(false);
   const [selectedGateway, setSelectedGateway] = useState<PaymentGatewayOption>(
     initialGateway,
@@ -169,10 +161,8 @@ export function UpgradeButton({
       >
         {isLoading ? (
           <Loader2 className="size-4 animate-spin" />
-        ) : selectedGateway === "midtrans" ? (
-          <Building2 className="size-4" />
         ) : (
-          <CreditCard className="size-4" />
+          <Building2 className="size-4" />
         )}
         {current
           ? "Current Plan"

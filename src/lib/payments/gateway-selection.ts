@@ -1,12 +1,13 @@
 import { getClientIpFromHeaders } from "@/lib/analytics/ip";
 import { lookupGeoLocation, readEdgeGeoHeaders } from "@/lib/geo/ip-lookup";
 
-export type PaymentGatewayOption = "midtrans" | "stripe";
+export type PaymentGatewayOption = "midtrans";
 
 export function getAvailablePaymentGateways(
-  clientCountry: string | null,
+  _clientCountry: string | null,
 ): PaymentGatewayOption[] {
-  return clientCountry === "ID" ? ["midtrans", "stripe"] : ["stripe"];
+  void _clientCountry;
+  return ["midtrans"];
 }
 
 export async function detectBillingClientCountry(

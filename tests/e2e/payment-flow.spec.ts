@@ -6,7 +6,6 @@ import { subscriptions, transactions, users } from "../../src/lib/db/schema";
 import { hashPassword } from "../../src/lib/auth/password";
 import { redis } from "../../src/lib/redis";
 import { calculateMidtransSignature } from "../../src/lib/payments/webhook";
-import Stripe from "stripe";
 
 loadEnvConfig(process.cwd());
 
@@ -91,25 +90,6 @@ async function findTransactionByOrderId(orderId: string) {
   return transaction ?? null;
 }
 
-async function createPendingStripeTransaction({
-  orderId,
-  userId,
-}: {
-  orderId: string;
-  userId: string;
-}): Promise<void> {
-  await db.insert(transactions).values({
-    duration: "MONTHLY",
-    gateway: "stripe",
-    grossAmountIdr: 128000,
-    grossAmountUsd: 8,
-    orderId,
-    plan: "PRO",
-    status: "PENDING",
-    userId,
-  });
-}
-
 async function findBillingState(userId: string) {
   const [user] = await db
     .select({ plan: users.plan })
@@ -143,41 +123,6 @@ async function findBillingStateSafely(userId: string) {
 function hasUsableMidtransConfig(): boolean {
   const key = process.env.MIDTRANS_SERVER_KEY?.trim();
   return Boolean(key && !key.includes("placeholder") && !key.startsWith("__"));
-}
-
-function hasUsableStripeCheckoutConfig(): boolean {
-  const key = process.env.STRIPE_SECRET_KEY?.trim();
-  return Boolean(key?.startsWith("sk_") && !key.includes("placeholder"));
-}
-
-function signStripePayload(payload: string): string {
-  return new Stripe("sk_test_unit").webhooks.generateTestHeaderString({
-    payload,
-    secret: process.env.STRIPE_WEBHOOK_SECRET ?? "whsec_placeholder",
-  });
-}
-
-function createStripeCheckoutCompletedPayload(orderId: string): string {
-  return JSON.stringify({
-    data: {
-      object: {
-        id: "cs_test_e2e",
-        object: "checkout.session",
-        client_reference_id: "user-1",
-        created: 1777777777,
-        metadata: {
-          duration: "MONTHLY",
-          orderId,
-          plan: "PRO",
-          userId: "user-1",
-        },
-        payment_method_types: ["card"],
-      },
-    },
-    id: `evt_${orderId}`,
-    object: "event",
-    type: "checkout.session.completed",
-  });
 }
 
 test.use({
@@ -308,151 +253,6 @@ test("should create sandbox payment and activate billing through webhook", async
       page.getByText("Pro Plan", { exact: true }).last(),
     ).toBeVisible();
     await expect(page.getByText("Active", { exact: true }).first()).toBeVisible();
-  } finally {
-    await cleanupPaymentFlowState(email, userId);
-  }
-});
-
-test("should show both gateways for Indonesia billing clients", async ({ page }) => {
-  const email = `e2e-gateway-id-${Date.now()}@example.com`;
-  const password = "Password1";
-  let userId: string | undefined;
-
-  try {
-    await page.setExtraHTTPHeaders({
-      "x-forwarded-for": testIp,
-      "x-vercel-ip-country": "ID",
-    });
-    userId = await createVerifiedUser(email, password);
-    await signIn(page, { email, password });
-
-    await page.goto("/settings/billing");
-    await expect(page.getByText("Midtrans").first()).toBeVisible();
-    await expect(page.getByText("Stripe").first()).toBeVisible();
-    await expect(page.getByText("Bank Lokal").first()).toBeVisible();
-  } finally {
-    await cleanupPaymentFlowState(email, userId);
-  }
-});
-
-test("should show Stripe only for non-Indonesia billing clients", async ({ page }) => {
-  const email = `e2e-gateway-us-${Date.now()}@example.com`;
-  const password = "Password1";
-  let userId: string | undefined;
-
-  try {
-    await page.setExtraHTTPHeaders({
-      "x-forwarded-for": testIp,
-      "x-vercel-ip-country": "US",
-    });
-    userId = await createVerifiedUser(email, password);
-    await signIn(page, { email, password });
-
-    await page.goto("/settings/billing");
-    await expect(page.getByText("Stripe").first()).toBeVisible();
-    await expect(page.getByText("Midtrans")).toHaveCount(0);
-  } finally {
-    await cleanupPaymentFlowState(email, userId);
-  }
-});
-
-test("should create a Stripe checkout session when Stripe test credentials are configured", async ({
-  baseURL,
-  page,
-}) => {
-  test.skip(
-    !hasUsableStripeCheckoutConfig(),
-    "A non-placeholder STRIPE_SECRET_KEY is required for Stripe checkout E2E.",
-  );
-
-  if (!baseURL) throw new Error("Playwright baseURL is not configured.");
-
-  const email = `e2e-stripe-checkout-${Date.now()}@example.com`;
-  const password = "Password1";
-  let userId: string | undefined;
-
-  try {
-    userId = await createVerifiedUser(email, password);
-    await signIn(page, { email, password });
-
-    const response = await page.request.post(
-      `${baseURL}/api/v1/payments/stripe/create`,
-      {
-        data: {
-          duration: "MONTHLY",
-          plan: "PRO",
-        },
-        headers: {
-          "X-Requested-With": "XMLHttpRequest",
-        },
-      },
-    );
-    expect(response.ok()).toBe(true);
-
-    const body = (await response.json()) as {
-      data?: {
-        orderId?: string;
-        sessionId?: string;
-        url?: string;
-      };
-      success?: boolean;
-    };
-    expect(body.success).toBe(true);
-    expect(body.data?.orderId).toMatch(/^LS-ST-/);
-    expect(body.data?.sessionId).toMatch(/^cs_/);
-    expect(body.data?.url).toContain("checkout.stripe.com");
-  } finally {
-    await cleanupPaymentFlowState(email, userId);
-  }
-});
-
-test("should handle Stripe webhook and show gateway badge in billing history", async ({
-  baseURL,
-  page,
-}) => {
-  if (!baseURL) throw new Error("Playwright baseURL is not configured.");
-
-  const email = `e2e-stripe-webhook-${Date.now()}@example.com`;
-  const password = "Password1";
-  const orderId = `LS-ST-${Date.now()}-abcdef123456`;
-  let userId: string | undefined;
-
-  try {
-    userId = await createVerifiedUser(email, password);
-    await createPendingStripeTransaction({ orderId, userId });
-    await signIn(page, { email, password });
-
-    const payload = createStripeCheckoutCompletedPayload(orderId).replaceAll(
-      "user-1",
-      userId,
-    );
-    const webhookResponse = await page.request.post(
-      `${baseURL}/api/v1/payments/stripe/webhook`,
-      {
-        data: payload,
-        headers: {
-          "content-type": "application/json",
-          "stripe-signature": signStripePayload(payload),
-        },
-      },
-    );
-    expect(webhookResponse.ok()).toBe(true);
-
-    await expect
-      .poll(() => findBillingStateSafely(userId ?? ""), {
-        message: "Stripe webhook should activate paid billing",
-        timeout: 10_000,
-      })
-      .toEqual({
-        subscriptionPlan: "PRO",
-        subscriptionStatus: "ACTIVE",
-        userPlan: "PRO",
-      });
-
-    await page.goto("/settings/billing");
-    await expect(page.getByText("Stripe").last()).toBeVisible();
-    await expect(page.getByText("Card").last()).toBeVisible();
-    await expect(page.getByText(orderId)).toBeVisible();
   } finally {
     await cleanupPaymentFlowState(email, userId);
   }
