@@ -2714,3 +2714,49 @@ ran, and smoke tested the production domain after deployment.
 - ✅ Production security headers remain active on `https://www.justqiu.cloud`.
 
 **Next Task:** Remaining launch operations — production env verification, monitoring, backups, cache warming, load test, and penetration test
+
+### 10.5b — Baseline Production Monitoring
+- **Date:** 2026-05-07 12:11 GMT+7
+- **Duration:** 0h 25m
+- **Status:** ✅ Complete
+
+**What I Did:**
+Added a reusable production smoke script and a scheduled GitHub Actions workflow
+that runs every 30 minutes. The workflow checks the production domain redirect,
+public routes, sitemap/robots canonical output, security headers, and API guard
+behavior.
+
+**Files Changed:**
+- `scripts/smoke-production.sh` — Added production smoke checks for `justqiu.cloud`.
+- `.github/workflows/production-smoke.yml` — Added scheduled/manual smoke workflow.
+- `package.json` — Added `smoke:production` script.
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Marked baseline monitoring complete.
+- `_bmad-output/planning-artifacts/launch-readiness-2026-05-07.md` — Documented baseline monitoring and remaining external alerting needs.
+- `_bmad-output/implementation-artifacts/JOURNAL.md` — Recorded this completion entry.
+
+**Decisions Made:**
+- Used GitHub Actions as the baseline monitor because it requires no new vendor
+  dependency or secrets and will fail visibly if production breaks.
+- Kept external APM/business-event alerts as a remaining launch requirement
+  because GitHub smoke checks do not measure error rates, webhook failures, or
+  traffic anomalies inside the app.
+
+**Tests:**
+- ✅ Production smoke: `rtk bun run smoke:production` — Passed.
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Unit/Integration: `rtk bun run test` — 66 files passed, 296 tests passed.
+- ✅ Build: `rtk bun run build` — Passed.
+
+**Issues Encountered:**
+- Production env variables still cannot be verified without Vercel dashboard or
+  Vercel CLI token access.
+- External alert destinations for business events still need production platform
+  setup.
+
+**Security Checks:**
+- ✅ No secrets required for the smoke workflow.
+- ✅ API guard checks do not hit application business logic or create data.
+- ✅ `.env` remains untracked and unchanged.
+
+**Next Task:** Backup strategy verification or Redis cache warming, depending on production platform access
