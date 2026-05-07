@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { signOut } from "next-auth/react";
 import { usePathname } from "next/navigation";
+import { useState } from "react";
 import {
   Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent,
   SidebarGroupLabel, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarRail,
@@ -15,7 +16,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import {
   LayoutDashboard, Link2, Globe, Megaphone, BarChart3, Settings, QrCode, Zap,
-  LogOut, User, CreditCard, Sparkles, BookOpen,
+  LogOut, User, CreditCard, Sparkles, BookOpen, Loader2,
 } from "lucide-react";
 import { usePlan } from "@/lib/auth/plan-context";
 import type { UserPlan } from "@/lib/links/limits";
@@ -98,11 +99,22 @@ export function shouldShowSidebarUpgradeCard(plan: UserPlan): boolean {
   return plan === "FREE";
 }
 
+export function getSignOutMenuLabel(isSigningOut: boolean): string {
+  return isSigningOut ? "Signing out..." : "Sign Out";
+}
+
 export function AppSidebar({ user }: { user: AppSidebarUser }) {
   const pathname = usePathname();
   const userPlan = usePlan();
   const displayUser = getSidebarDisplayUser(user, userPlan);
   const mainNavItems = getSidebarMainNavItems(userPlan);
+  const [isSigningOut, setIsSigningOut] = useState(false);
+
+  async function handleSignOut() {
+    if (isSigningOut) return;
+    setIsSigningOut(true);
+    await Promise.resolve(signOutToLanding(signOut));
+  }
 
   return (
     <Sidebar collapsible="icon" variant="sidebar">
@@ -222,9 +234,15 @@ export function AppSidebar({ user }: { user: AppSidebarUser }) {
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
                   className="text-destructive"
-                  onClick={() => void signOutToLanding(signOut)}
+                  disabled={isSigningOut}
+                  onClick={() => void handleSignOut()}
                 >
-                  <LogOut className="mr-2 size-4" /> Sign Out
+                  {isSigningOut ? (
+                    <Loader2 className="mr-2 size-4 animate-spin" />
+                  ) : (
+                    <LogOut className="mr-2 size-4" />
+                  )}
+                  {getSignOutMenuLabel(isSigningOut)}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

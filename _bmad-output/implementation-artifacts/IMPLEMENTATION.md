@@ -1320,9 +1320,9 @@ rtk bun run db:studio    # Open Drizzle Studio (in another terminal)
 - [x] Tests: integration (delete account → login rejected)
 
 ### TASK 16.8 — Logout Loading State
-- [ ] File: `src/components/dashboard/app-sidebar.tsx`
-- [ ] Show spinner in dropdown during sign out, disable menu
-- [ ] Tests: unit (loading state during sign out)
+- [x] File: `src/components/dashboard/app-sidebar.tsx`
+- [x] Show spinner in dropdown during sign out, disable menu
+- [x] Tests: unit (loading state during sign out)
 
 ### TASK 16.9 — Fix Upgrade Card Copy
 - [ ] Current: "Unlock Link Pages, Smart Rules, and unlimited links" — inaccurate (FREE has these already)

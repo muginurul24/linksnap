@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   getSidebarMainNavItems,
   getSidebarDisplayUser,
+  getSignOutMenuLabel,
   isSidebarItemActive,
   shouldShowSidebarUpgradeCard,
 } from "../../src/components/dashboard/app-sidebar";
@@ -68,5 +69,10 @@ describe("app sidebar user display", () => {
     expect(shouldShowSidebarUpgradeCard("FREE")).toBe(true);
     expect(shouldShowSidebarUpgradeCard("PRO")).toBe(false);
     expect(shouldShowSidebarUpgradeCard("BUSINESS")).toBe(false);
+  });
+
+  it("should label sign out loading state", () => {
+    expect(getSignOutMenuLabel(false)).toBe("Sign Out");
+    expect(getSignOutMenuLabel(true)).toBe("Signing out...");
   });
 });

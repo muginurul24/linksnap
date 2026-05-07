@@ -5448,3 +5448,34 @@ Added password-confirmed account deletion with a soft-deleted user row, anonymiz
 - ✅ No secrets or `dangerouslySetInnerHTML` introduced.
 
 **Next Task:** 16.8 — Logout Loading State
+
+### 16.8 — Logout Loading State
+- **Date:** 2026-05-07 23:28 GMT+7
+- **Duration:** 0h 15m
+- **Status:** ✅ Complete
+
+**What I Did:**
+Added a loading state to the sidebar sign-out menu item. The menu item now disables while sign-out is in progress and swaps the logout icon for a spinner with "Signing out..." copy.
+
+**Files Changed:**
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Checked off Task 16.8.
+- `src/components/dashboard/app-sidebar.tsx` — Added sign-out loading state and disabled dropdown item behavior.
+- `tests/unit/app-sidebar.test.ts` — Added sign-out loading label coverage.
+
+**Decisions Made:**
+- Kept the existing `signOutToLanding` helper and wrapped it in local UI state, so auth behavior remains unchanged.
+
+**Tests:**
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Targeted Unit: `rtk bun run test -- tests/unit/app-sidebar.test.ts` — 1 file passed, 8 tests passed.
+- ✅ Unit/Integration: `rtk bun run test` — 113 files passed, 505 tests passed.
+
+**Issues Encountered:**
+- None.
+
+**Security Checks:**
+- ✅ Sign-out target and callback URL remain unchanged.
+- ✅ No secrets, raw SQL, or `dangerouslySetInnerHTML` introduced.
+
+**Next Task:** 16.9 — Fix Upgrade Card Copy
