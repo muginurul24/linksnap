@@ -435,6 +435,10 @@ function getFallbackDestinationFromRules(rules: SmartRuleRecord[]): string | nul
   return null;
 }
 
+function hasV2RulePayload(rules: SmartRuleRecord[]): boolean {
+  return rules.some((rule) => getV2Payload(rule) !== null);
+}
+
 export async function evaluateSmartRulesForLink({
   context,
   defaultDestinationUrl,
@@ -462,7 +466,11 @@ export async function evaluateSmartRulesForLink({
   const fallback = fallbackDestinationUrl ?? getFallbackDestinationFromRules(rules);
   if (fallback) return { destinationUrl: fallback, ruleId: null };
 
-  if (smartRulesEnabled === true && defaultDestinationUrl) {
+  if (
+    defaultDestinationUrl &&
+    (smartRulesEnabled === true ||
+      (smartRulesEnabled !== false && hasV2RulePayload(rules)))
+  ) {
     return { destinationUrl: defaultDestinationUrl, ruleId: null };
   }
 

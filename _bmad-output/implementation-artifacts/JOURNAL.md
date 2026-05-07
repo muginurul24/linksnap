@@ -4059,6 +4059,51 @@ Extended the Smart Rules API to accept V2 ordered rule payloads while preserving
 
 **Next Task:** 13.5 — Integrate into Link Form & Redirect Handler
 
+### 13.5 — Integrate into Link Form & Redirect Handler
+- **Date:** 2026-05-07 18:54 GMT+7
+- **Duration:** 0h 35m
+- **Status:** ✅ Complete
+
+**What I Did:**
+Integrated the visual `RuleBuilder` into the link create/edit form and wired saves through the V2 Smart Rules API. Public redirect handlers now pass the link default destination into ordered rule evaluation so V2 no-match flows use fallback/default behavior while preserving split-test behavior for links without V2 rules.
+
+**Files Changed:**
+- `_bmad-output/planning-artifacts/spec-smart-rules-form-redirect-integration.md` — Added task spec, scope, acceptance criteria, and risks.
+- `src/app/(dashboard)/links/link-form.tsx` — Replaced manual Smart Rule fields with `RuleBuilder`, added V2 serialization, validation, save/clear behavior, and preview summaries.
+- `src/lib/rules/rule-builder-api.ts` — Added stored-rule-to-builder deserialization and builder-to-V2 payload serialization helpers.
+- `src/lib/rules/rule-engine.ts` — Added default-destination no-match behavior for stored V2 rules without requiring a separate link-level toggle.
+- `src/app/[slug]/page.tsx` — Passed link destination into Smart Rule evaluation.
+- `src/app/[slug]/go/route.ts` — Passed link destination into Smart Rule evaluation for Link Page CTA clicks.
+- `tests/unit/rule-builder-api.test.ts` — Added builder API mapping coverage.
+- `tests/unit/rule-engine.test.ts` — Updated V2 default-destination fallback coverage.
+- `tests/integration/smart-rule-redirect-flow.test.ts` — Added V2 full flow coverage from API rule creation to public redirect behavior.
+- `_bmad-output/implementation-artifacts/JOURNAL.md` — Recorded this completion entry.
+
+**Decisions Made:**
+- Kept Smart Rules persistence behind `/api/v1/links/{id}/rules`; the form does not write directly to the database.
+- Clearing Smart Rules on edit uses the same V2 rules endpoint with an empty rules payload.
+- Legacy stored rules are mapped into the builder as best-effort single-condition rules so editing does not start from an empty state.
+- V2 default destination fallback is triggered only when stored V2 rule payloads exist, so links without Smart Rules can still use split tests.
+
+**Tests:**
+- ✅ Targeted: `rtk bun run test -- tests/unit/rule-builder-api.test.ts tests/unit/rule-engine.test.ts tests/integration/smart-rule-redirect-flow.test.ts tests/integration/smart-rules-api.test.ts` — 4 files passed, 30 tests passed.
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Unit/Integration: `rtk bun run test` — 93 files passed, 433 tests passed.
+- ✅ Build: `rtk bun run build` — Passed.
+
+**Issues Encountered:**
+- V2 redirect test initially expected a normalized trailing slash on path URLs; `URL.toString()` preserves path URLs without adding a trailing slash, so the test expectation was corrected.
+
+**Security Checks:**
+- ✅ Form-submitted Smart Rules are validated locally and by the V2 API before persistence.
+- ✅ API calls include `X-Requested-With: XMLHttpRequest` for the CSRF proxy guard.
+- ✅ Redirect handlers preserve click logging and only log `ruleId` when a real rule matched.
+- ✅ No raw SQL, secrets, or `dangerouslySetInnerHTML` introduced.
+- ✅ User-data writes still go through authenticated, owner-checked API routes.
+
+**Next Task:** 14.1 — Stripe Configuration & Client
+
 ### 13.4 — Smart Rules API Update
 - **Date:** 2026-05-07 18:46 GMT+7
 - **Duration:** 0h 35m

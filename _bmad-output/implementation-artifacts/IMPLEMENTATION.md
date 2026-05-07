@@ -978,15 +978,15 @@ rtk bun run db:studio    # Open Drizzle Studio (in another terminal)
 - [x] Tests: integration (CRUD v2 rules, ordering, validation)
 
 ### TASK 13.5 — Integrate into Link Form & Redirect Handler
-- [ ] File: `src/app/(dashboard)/links/link-form.tsx`
-- [ ] Replace current smart rules section with `RuleBuilder` component
-- [ ] "Enable Smart Rules" toggle → expands RuleBuilder
-- [ ] Preview summary: shows readable rule list before save
-- [ ] File: `src/app/[slug]/page.tsx` (redirect handler)
-- [ ] Integrate ordered rule evaluation from rule-engine.ts
-- [ ] Fallback logic: default destination → 404
-- [ ] Keep existing click logging + analytics intact
-- [ ] Tests: integration (full flow: create rules → visit link → verify redirect)
+- [x] File: `src/app/(dashboard)/links/link-form.tsx`
+- [x] Replace current smart rules section with `RuleBuilder` component
+- [x] "Enable Smart Rules" toggle → expands RuleBuilder
+- [x] Preview summary: shows readable rule list before save
+- [x] File: `src/app/[slug]/page.tsx` (redirect handler)
+- [x] Integrate ordered rule evaluation from rule-engine.ts
+- [x] Fallback logic: default destination → 404
+- [x] Keep existing click logging + analytics intact
+- [x] Tests: integration (full flow: create rules → visit link → verify redirect)
 
 ---
 

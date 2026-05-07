@@ -111,6 +111,7 @@ export default async function RedirectPage({ params }: RedirectPageProps) {
 
   const ruleResult = await evaluateSmartRulesForLink({
     context: buildRuleEvaluationContext(headersList),
+    defaultDestinationUrl: link.destinationUrl,
     linkId: link.id,
     slug: link.slug,
   });

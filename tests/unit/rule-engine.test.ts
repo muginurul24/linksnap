@@ -417,7 +417,6 @@ describe("rule engine", () => {
         defaultDestinationUrl: "https://example.com/default",
         linkId: "link-1",
         slug: "promo",
-        smartRulesEnabled: true,
       }),
     ).resolves.toEqual({
       destinationUrl: "https://example.com/default",

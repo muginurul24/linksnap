@@ -73,6 +73,7 @@ export async function GET(_request: Request, context: LinkPageCtaRouteContext) {
   const headersList = await headers();
   const ruleResult = await evaluateSmartRulesForLink({
     context: buildRuleEvaluationContext(headersList),
+    defaultDestinationUrl: link.destinationUrl,
     linkId: link.id,
     slug: link.slug,
   });
