@@ -1156,11 +1156,11 @@ rtk bun run db:studio    # Open Drizzle Studio (in another terminal)
 - [x] Tests: unit (toast messages, redirect behavior)
 
 ### TASK 15.7 — Dashboard Analytics Empty State UX
-- [ ] File: `src/app/(dashboard)/analytics/page.tsx`
-- [ ] When user has 0 clicks: show useful empty state, not empty charts
-- [ ] Empty state message: "No click data yet. Share your links to start seeing analytics."
-- [ ] Add "Copy a link" button that goes to `/links`
-- [ ] Tests: unit (empty state rendering)
+- [x] File: `src/app/(dashboard)/analytics/page.tsx`
+- [x] When user has 0 clicks: show useful empty state, not empty charts
+- [x] Empty state message: "No click data yet. Share your links to start seeing analytics."
+- [x] Add "Copy a link" button that goes to `/links`
+- [x] Tests: unit (empty state rendering)
 
 ### TASK 15.8 — Confirm Before Delete (All Delete Actions)
 - [ ] File: `src/app/(dashboard)/links/page.tsx` — delete link action

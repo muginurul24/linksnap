@@ -10,6 +10,7 @@ import {
   type DashboardAnalyticsRange,
   type DashboardAnalyticsRangeKey,
 } from "@/lib/analytics/dashboard";
+import { analyticsEmptyState } from "@/lib/analytics/empty-state";
 import { auth } from "@/lib/auth";
 import { listClickEventsForUser } from "@/lib/db/queries/click-events";
 import { dashboardAnalyticsQuerySchema } from "@/lib/validations/analytics";
@@ -165,11 +166,11 @@ export default async function AnalyticsPage({ searchParams }: AnalyticsPageProps
 
       {!hasClicks ? (
         <EmptyState
-          actionHref="/links"
-          actionLabel="Share link"
-          description="Analytics will appear after someone opens one of your short links."
+          actionHref={analyticsEmptyState.actionHref}
+          actionLabel={analyticsEmptyState.actionLabel}
+          description={analyticsEmptyState.description}
           icon={<MousePointerClick className="size-5" />}
-          title="Waiting for clicks..."
+          title={analyticsEmptyState.title}
         />
       ) : (
         <AnalyticsDashboardClient summary={analytics.summary} />

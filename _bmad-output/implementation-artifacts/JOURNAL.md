@@ -4469,6 +4469,41 @@ Standardized success feedback for link, campaign, and settings forms. Link creat
 
 **Next Task:** 15.7 — Dashboard Analytics Empty State UX
 
+### 15.7 — Dashboard Analytics Empty State UX
+- **Date:** 2026-05-07 20:59 GMT+7
+- **Duration:** 0 hours 12 minutes
+- **Status:** ✅ Complete
+
+**What I Did:**
+Updated the dashboard analytics zero-click empty state to use the requested copy and "Copy a link" CTA linking to `/links`. Moved the empty-state content into a small lib constant so it can be tested without importing the server page.
+
+**Files Changed:**
+- `_bmad-output/planning-artifacts/spec-phase-15-analytics-empty-state.md` — Added the analytics empty-state mini-spec.
+- `src/app/(dashboard)/analytics/page.tsx` — Updated empty-state rendering to use the new content.
+- `src/lib/analytics/empty-state.ts` — Added testable analytics empty-state content.
+- `tests/unit/analytics-empty-state.test.tsx` — Added empty-state copy and CTA coverage.
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Checked off Task 15.7.
+- `_bmad-output/implementation-artifacts/JOURNAL.md` — Recorded this completion entry.
+
+**Decisions Made:**
+- Kept the existing `summary.totalClicks > 0` condition so only true zero-click states avoid chart rendering.
+- Moved static content out of the server page because importing the page in Vitest also imports auth/server dependencies.
+
+**Tests:**
+- ✅ Unit: `rtk bun run test -- tests/unit/analytics-empty-state.test.tsx` — 1 file passed, 1 test passed.
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Unit/Integration: `rtk bun run test` — 101 files passed, 461 tests passed.
+
+**Issues Encountered:**
+- Initial test imported `analytics/page.tsx`, which loaded NextAuth server modules in Vitest → Moved the content constant to `src/lib/analytics/empty-state.ts`.
+
+**Security Checks:**
+- ✅ Display-only change; no auth, query, ownership, or API behavior changed.
+- ✅ No user input, secrets, raw SQL, or unsafe rendering introduced.
+
+**Next Task:** 15.8 — Confirm Before Delete (All Delete Actions)
+
 ### 13.3 — Rule Engine Logic (Ordered Priority)
 - **Date:** 2026-05-07 18:41 GMT+7
 - **Duration:** 0h 30m
