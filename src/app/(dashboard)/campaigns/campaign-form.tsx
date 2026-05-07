@@ -15,14 +15,19 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
+  clearFieldError as clearFieldErrorValue,
+  fieldErrorFromParseResult,
+  firstFieldErrors,
+  type FieldErrors,
+} from "@/lib/forms/field-errors";
+import {
   createCampaignSchema,
   updateCampaignSchema,
   type CreateCampaignInput,
   type UpdateCampaignInput,
 } from "@/lib/validations/campaign";
 
-type CampaignFormField = keyof CreateCampaignInput;
-type FieldErrors = Partial<Record<CampaignFormField, string>>;
+type CampaignFormField = Extract<keyof CreateCampaignInput, string>;
 
 type ApiEnvelope<T> =
   | { data: T; success: true }
@@ -57,16 +62,15 @@ type CampaignFormProps = {
   initialCampaign?: EditableCampaignInitialData;
 };
 
-function firstFieldErrors(
-  errors: Partial<Record<CampaignFormField, string[] | undefined>>,
-): FieldErrors {
-  return Object.fromEntries(
-    Object.entries(errors).map(([field, messages]) => [field, messages?.[0]]),
-  ) as FieldErrors;
-}
-
 function valueOrEmpty(value: string | null | undefined): string {
   return value ?? "";
+}
+
+export function getCampaignFieldError(
+  field: CampaignFormField,
+  values: CreateCampaignInput,
+): string | undefined {
+  return fieldErrorFromParseResult(createCampaignSchema.safeParse(values), field);
 }
 
 function getRetryAfter(details: unknown): number | null {
@@ -118,7 +122,7 @@ export function CampaignForm({ initialCampaign }: CampaignFormProps) {
   const [description, setDescription] = useState(
     valueOrEmpty(initialCampaign?.description),
   );
-  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors<CampaignFormField>>({});
   const [formError, setFormError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [name, setName] = useState(initialCampaign?.name ?? "");
@@ -138,8 +142,24 @@ export function CampaignForm({ initialCampaign }: CampaignFormProps) {
   const [utmTerm, setUtmTerm] = useState(valueOrEmpty(initialCampaign?.utmTerm));
 
   const clearFieldError = (field: CampaignFormField) => {
-    setFieldErrors((current) => ({ ...current, [field]: undefined }));
+    setFieldErrors((current) => clearFieldErrorValue(current, field));
     setFormError(null);
+  };
+
+  const currentInput = (): CreateCampaignInput => ({
+    description,
+    name,
+    slug,
+    utmCampaign,
+    utmContent,
+    utmMedium,
+    utmSource,
+    utmTerm,
+  });
+
+  const validateField = (field: CampaignFormField) => {
+    const message = getCampaignFieldError(field, currentInput());
+    setFieldErrors((current) => ({ ...current, [field]: message }));
   };
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
@@ -218,6 +238,7 @@ export function CampaignForm({ initialCampaign }: CampaignFormProps) {
   return (
     <form
       className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_320px]"
+      noValidate
       onSubmit={handleSubmit}
     >
       <Card>
@@ -237,6 +258,7 @@ export function CampaignForm({ initialCampaign }: CampaignFormProps) {
                 aria-invalid={Boolean(fieldErrors.name)}
                 disabled={isSubmitting}
                 id="campaignName"
+                onBlur={() => validateField("name")}
                 onChange={(event) => {
                   setName(event.target.value);
                   clearFieldError("name");
@@ -255,6 +277,7 @@ export function CampaignForm({ initialCampaign }: CampaignFormProps) {
                 disabled={isSubmitting}
                 id="campaignSlug"
                 inputMode="url"
+                onBlur={() => validateField("slug")}
                 onChange={(event) => {
                   setSlug(event.target.value);
                   clearFieldError("slug");
@@ -271,9 +294,11 @@ export function CampaignForm({ initialCampaign }: CampaignFormProps) {
           <div className="space-y-1.5">
             <Label htmlFor="campaignDescription">Description</Label>
             <textarea
-              className="min-h-24 w-full resize-y rounded-lg border border-input bg-transparent px-2.5 py-2 text-sm outline-none transition-colors placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:pointer-events-none disabled:cursor-not-allowed disabled:bg-input/50 disabled:opacity-50 dark:bg-input/30"
+              aria-invalid={Boolean(fieldErrors.description)}
+              className="min-h-24 w-full resize-y rounded-lg border border-input bg-transparent px-2.5 py-2 text-sm outline-none transition-colors placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:pointer-events-none disabled:cursor-not-allowed disabled:bg-input/50 disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 dark:bg-input/30 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40"
               disabled={isSubmitting}
               id="campaignDescription"
+              onBlur={() => validateField("description")}
               onChange={(event) => {
                 setDescription(event.target.value);
                 clearFieldError("description");
@@ -290,8 +315,10 @@ export function CampaignForm({ initialCampaign }: CampaignFormProps) {
             <div className="space-y-1.5">
               <Label htmlFor="utmSource">UTM source</Label>
               <Input
+                aria-invalid={Boolean(fieldErrors.utmSource)}
                 disabled={isSubmitting}
                 id="utmSource"
+                onBlur={() => validateField("utmSource")}
                 onChange={(event) => {
                   setUtmSource(event.target.value);
                   clearFieldError("utmSource");
@@ -306,8 +333,10 @@ export function CampaignForm({ initialCampaign }: CampaignFormProps) {
             <div className="space-y-1.5">
               <Label htmlFor="utmMedium">UTM medium</Label>
               <Input
+                aria-invalid={Boolean(fieldErrors.utmMedium)}
                 disabled={isSubmitting}
                 id="utmMedium"
+                onBlur={() => validateField("utmMedium")}
                 onChange={(event) => {
                   setUtmMedium(event.target.value);
                   clearFieldError("utmMedium");
@@ -322,8 +351,10 @@ export function CampaignForm({ initialCampaign }: CampaignFormProps) {
             <div className="space-y-1.5">
               <Label htmlFor="utmCampaign">UTM campaign</Label>
               <Input
+                aria-invalid={Boolean(fieldErrors.utmCampaign)}
                 disabled={isSubmitting}
                 id="utmCampaign"
+                onBlur={() => validateField("utmCampaign")}
                 onChange={(event) => {
                   setUtmCampaign(event.target.value);
                   clearFieldError("utmCampaign");
@@ -340,8 +371,10 @@ export function CampaignForm({ initialCampaign }: CampaignFormProps) {
             <div className="space-y-1.5">
               <Label htmlFor="utmTerm">UTM term</Label>
               <Input
+                aria-invalid={Boolean(fieldErrors.utmTerm)}
                 disabled={isSubmitting}
                 id="utmTerm"
+                onBlur={() => validateField("utmTerm")}
                 onChange={(event) => {
                   setUtmTerm(event.target.value);
                   clearFieldError("utmTerm");
@@ -356,8 +389,10 @@ export function CampaignForm({ initialCampaign }: CampaignFormProps) {
             <div className="space-y-1.5 sm:col-span-2">
               <Label htmlFor="utmContent">UTM content</Label>
               <Input
+                aria-invalid={Boolean(fieldErrors.utmContent)}
                 disabled={isSubmitting}
                 id="utmContent"
+                onBlur={() => validateField("utmContent")}
                 onChange={(event) => {
                   setUtmContent(event.target.value);
                   clearFieldError("utmContent");

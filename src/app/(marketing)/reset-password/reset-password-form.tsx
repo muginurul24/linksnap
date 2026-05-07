@@ -4,6 +4,7 @@ import Link from "next/link";
 import { FormEvent, useState } from "react";
 import { KeyRound, Loader2 } from "lucide-react";
 import { Button, buttonVariants } from "@/components/ui/button";
+import { PasswordStrengthIndicator } from "@/components/auth/password-strength-indicator";
 import {
   Card,
   CardContent,
@@ -14,20 +15,17 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
+  clearFieldError,
+  fieldErrorFromParseResult,
+  firstFieldErrors,
+  type FieldErrors,
+} from "@/lib/forms/field-errors";
+import {
   resetPasswordSchema,
   type ResetPasswordInput,
 } from "@/lib/validations/auth";
 
-type ResetPasswordField = keyof ResetPasswordInput;
-type ResetPasswordErrors = Partial<Record<ResetPasswordField, string>>;
-
-function firstErrors(
-  errors: Partial<Record<ResetPasswordField, string[] | undefined>>,
-): ResetPasswordErrors {
-  return Object.fromEntries(
-    Object.entries(errors).map(([field, messages]) => [field, messages?.[0]]),
-  ) as ResetPasswordErrors;
-}
+type ResetPasswordField = Extract<keyof ResetPasswordInput, string>;
 
 async function readApiError(response: Response): Promise<string> {
   try {
@@ -48,15 +46,23 @@ export function ResetPasswordForm({ initialToken }: { initialToken: string }) {
     password: "",
     confirmPassword: "",
   });
-  const [errors, setErrors] = useState<ResetPasswordErrors>({});
+  const [errors, setErrors] = useState<FieldErrors<ResetPasswordField>>({});
   const [formError, setFormError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isComplete, setIsComplete] = useState(false);
 
   const updateField = (field: ResetPasswordField, value: string) => {
     setForm((current) => ({ ...current, [field]: value }));
-    setErrors((current) => ({ ...current, [field]: undefined }));
+    setErrors((current) => clearFieldError(current, field));
     setFormError(null);
+  };
+
+  const validateField = (field: ResetPasswordField) => {
+    const message = fieldErrorFromParseResult(
+      resetPasswordSchema.safeParse(form),
+      field,
+    );
+    setErrors((current) => ({ ...current, [field]: message }));
   };
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
@@ -64,7 +70,7 @@ export function ResetPasswordForm({ initialToken }: { initialToken: string }) {
 
     const parsed = resetPasswordSchema.safeParse(form);
     if (!parsed.success) {
-      setErrors(firstErrors(parsed.error.flatten().fieldErrors));
+      setErrors(firstFieldErrors(parsed.error.flatten().fieldErrors));
       return;
     }
 
@@ -137,9 +143,11 @@ export function ResetPasswordForm({ initialToken }: { initialToken: string }) {
                   autoComplete="new-password"
                   value={form.password}
                   onChange={(event) => updateField("password", event.target.value)}
+                  onBlur={() => validateField("password")}
                   aria-invalid={Boolean(errors.password)}
                   disabled={isSubmitting}
                 />
+                <PasswordStrengthIndicator password={form.password} />
                 {errors.password && (
                   <p className="text-xs text-destructive">{errors.password}</p>
                 )}
@@ -155,6 +163,7 @@ export function ResetPasswordForm({ initialToken }: { initialToken: string }) {
                   onChange={(event) =>
                     updateField("confirmPassword", event.target.value)
                   }
+                  onBlur={() => validateField("confirmPassword")}
                   aria-invalid={Boolean(errors.confirmPassword)}
                   disabled={isSubmitting}
                 />

@@ -17,11 +17,17 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Toaster } from "@/components/ui/sonner";
 import {
+  clearFieldError,
+  fieldErrorFromParseResult,
+  firstFieldErrors,
+  type FieldErrors,
+} from "@/lib/forms/field-errors";
+import {
   verifyEmailSchema,
   type VerifyEmailInput,
 } from "@/lib/validations/auth";
 
-type VerifyErrors = Partial<Record<keyof VerifyEmailInput, string>>;
+type VerifyField = Extract<keyof VerifyEmailInput, string>;
 
 async function readApiError(response: Response): Promise<string> {
   const fallbackByStatus: Record<number, string> = {
@@ -41,20 +47,12 @@ async function readApiError(response: Response): Promise<string> {
   return fallbackByStatus[response.status] ?? "Unable to verify email.";
 }
 
-function firstErrors(
-  errors: Partial<Record<keyof VerifyEmailInput, string[] | undefined>>,
-): VerifyErrors {
-  return Object.fromEntries(
-    Object.entries(errors).map(([field, messages]) => [field, messages?.[0]]),
-  ) as VerifyErrors;
-}
-
 export function VerifyEmailForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [email, setEmail] = useState(searchParams.get("email") ?? "");
   const [otp, setOtp] = useState("");
-  const [errors, setErrors] = useState<VerifyErrors>({});
+  const [errors, setErrors] = useState<FieldErrors<VerifyField>>({});
   const [formError, setFormError] = useState<string | null>(null);
   const [isVerifying, setIsVerifying] = useState(false);
   const [isResending, setIsResending] = useState(false);
@@ -103,7 +101,7 @@ export function VerifyEmailForm() {
   const submitVerification = async (nextOtp = otp) => {
     const parsed = verifyEmailSchema.safeParse({ email, otp: nextOtp });
     if (!parsed.success) {
-      setErrors(firstErrors(parsed.error.flatten().fieldErrors));
+      setErrors(firstFieldErrors(parsed.error.flatten().fieldErrors));
       return;
     }
 
@@ -119,12 +117,20 @@ export function VerifyEmailForm() {
   const handleOtpChange = (value: string) => {
     const nextOtp = value.replace(/\D/g, "").slice(0, 6);
     setOtp(nextOtp);
-    setErrors((current) => ({ ...current, otp: undefined }));
+    setErrors((current) => clearFieldError(current, "otp"));
     setFormError(null);
 
     if (nextOtp.length === 6) {
       void submitVerification(nextOtp);
     }
+  };
+
+  const validateField = (field: VerifyField) => {
+    const message = fieldErrorFromParseResult(
+      verifyEmailSchema.safeParse({ email, otp }),
+      field,
+    );
+    setErrors((current) => ({ ...current, [field]: message }));
   };
 
   const resendOtp = async () => {
@@ -179,8 +185,10 @@ export function VerifyEmailForm() {
                 value={email}
                 onChange={(event) => {
                   setEmail(event.target.value);
-                  setErrors((current) => ({ ...current, email: undefined }));
+                  setErrors((current) => clearFieldError(current, "email"));
+                  setFormError(null);
                 }}
+                onBlur={() => validateField("email")}
                 aria-invalid={Boolean(errors.email)}
                 disabled={isVerifying}
               />
@@ -198,6 +206,7 @@ export function VerifyEmailForm() {
                 autoComplete="one-time-code"
                 value={otp}
                 onChange={(event) => handleOtpChange(event.target.value)}
+                onBlur={() => validateField("otp")}
                 aria-invalid={Boolean(errors.otp)}
                 className="text-center font-mono text-lg tracking-[0.35em]"
                 disabled={isVerifying}

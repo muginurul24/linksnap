@@ -27,6 +27,12 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { buildShortUrlPreview } from "@/lib/links/preview";
 import {
+  clearFieldError as clearFieldErrorValue,
+  fieldErrorFromParseResult,
+  firstFieldErrors,
+  type FieldErrors,
+} from "@/lib/forms/field-errors";
+import {
   getReadableRuleSummary,
   validateRuleBuilderValue,
   type RuleBuilderValue,
@@ -44,8 +50,12 @@ import {
 import { upsertLinkPageSchema } from "@/lib/validations/link-page";
 import type { UserPlan } from "@/lib/links/limits";
 
-type LinkFormField = keyof CreateLinkInput;
-type FieldErrors = Partial<Record<LinkFormField, string>>;
+type LinkFormField = Extract<keyof CreateLinkInput, string>;
+type LinkFormValues = {
+  destinationUrl: string;
+  slug: string;
+  title: string;
+};
 type GatedToggleFeature = "LINK_PAGE" | "SMART_RULES";
 type SmartRuleType = "GEO" | "DEVICE" | "TIME" | "LANGUAGE";
 type SlugStatus =
@@ -124,14 +134,6 @@ type LinkFormProps = {
 
 const initialSlugState: SlugState = { status: "idle" };
 
-function firstFieldErrors(
-  errors: Partial<Record<LinkFormField, string[] | undefined>>,
-): FieldErrors {
-  return Object.fromEntries(
-    Object.entries(errors).map(([field, messages]) => [field, messages?.[0]]),
-  ) as FieldErrors;
-}
-
 function getClientPreviewBaseUrl(): string {
   const configured = process.env.NEXT_PUBLIC_APP_URL?.trim();
   if (configured) return configured;
@@ -179,6 +181,18 @@ function nullableText(value: string): string | null {
 
 function isAbortError(error: unknown): boolean {
   return error instanceof DOMException && error.name === "AbortError";
+}
+
+export function getLinkFormFieldError(
+  field: LinkFormField,
+  values: LinkFormValues,
+  options: { requireSlug?: boolean } = {},
+): string | undefined {
+  if (field === "slug" && options.requireSlug && !values.slug.trim()) {
+    return "Slug is required.";
+  }
+
+  return fieldErrorFromParseResult(createLinkSchema.safeParse(values), field);
 }
 
 function getSlugStatusClass(status: SlugStatus): string {
@@ -295,7 +309,7 @@ export function CreateLinkForm({ initialLink, userPlan }: LinkFormProps) {
   const [smartRulesValue, setSmartRulesValue] = useState<RuleBuilderValue>(() =>
     storedRulesToRuleBuilderValue(initialSmartRules),
   );
-  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors<LinkFormField>>({});
   const [formError, setFormError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -319,6 +333,19 @@ export function CreateLinkForm({ initialLink, userPlan }: LinkFormProps) {
     isSubmitting,
     userPlan,
   });
+
+  const currentFieldValues = (): LinkFormValues => ({
+    destinationUrl,
+    slug,
+    title,
+  });
+
+  const validateField = (field: LinkFormField) => {
+    const message = getLinkFormFieldError(field, currentFieldValues(), {
+      requireSlug: isEditMode,
+    });
+    setFieldErrors((current) => ({ ...current, [field]: message }));
+  };
 
   useEffect(() => {
     const trimmedSlug = slug.trim();
@@ -383,7 +410,7 @@ export function CreateLinkForm({ initialLink, userPlan }: LinkFormProps) {
 
   const updateSlug = (value: string) => {
     setSlug(value);
-    setFieldErrors((current) => ({ ...current, slug: undefined }));
+    setFieldErrors((current) => clearFieldErrorValue(current, "slug"));
     setFormError(null);
 
     const trimmedSlug = value.trim();
@@ -642,12 +669,12 @@ export function CreateLinkForm({ initialLink, userPlan }: LinkFormProps) {
               value={destinationUrl}
               onChange={(event) => {
                 setDestinationUrl(event.target.value);
-                setFieldErrors((current) => ({
-                  ...current,
-                  destinationUrl: undefined,
-                }));
+                setFieldErrors((current) =>
+                  clearFieldErrorValue(current, "destinationUrl"),
+                );
                 setFormError(null);
               }}
+              onBlur={() => validateField("destinationUrl")}
               aria-invalid={Boolean(fieldErrors.destinationUrl)}
               disabled={isSubmitting}
             />
@@ -665,6 +692,7 @@ export function CreateLinkForm({ initialLink, userPlan }: LinkFormProps) {
                 placeholder="promo-2026"
                 value={slug}
                 onChange={(event) => updateSlug(event.target.value)}
+                onBlur={() => validateField("slug")}
                 aria-invalid={Boolean(fieldErrors.slug)}
                 disabled={isSubmitting}
               />
@@ -682,9 +710,12 @@ export function CreateLinkForm({ initialLink, userPlan }: LinkFormProps) {
                 value={title}
                 onChange={(event) => {
                   setTitle(event.target.value);
-                  setFieldErrors((current) => ({ ...current, title: undefined }));
+                  setFieldErrors((current) =>
+                    clearFieldErrorValue(current, "title"),
+                  );
                   setFormError(null);
                 }}
+                onBlur={() => validateField("title")}
                 aria-invalid={Boolean(fieldErrors.title)}
                 disabled={isSubmitting}
               />

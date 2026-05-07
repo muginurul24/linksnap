@@ -15,22 +15,20 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  clearFieldError,
+  fieldErrorFromParseResult,
+  firstFieldErrors,
+  type FieldErrors,
+} from "@/lib/forms/field-errors";
 import { loginSchema, type LoginInput } from "@/lib/validations/auth";
 
-type LoginErrors = Partial<Record<keyof LoginInput, string>>;
+type LoginField = Extract<keyof LoginInput, string>;
 
 const initialForm: LoginInput = {
   email: "",
   password: "",
 };
-
-function firstErrors(
-  errors: Partial<Record<keyof LoginInput, string[] | undefined>>,
-): LoginErrors {
-  return Object.fromEntries(
-    Object.entries(errors).map(([field, messages]) => [field, messages?.[0]]),
-  ) as LoginErrors;
-}
 
 function signInErrorMessage(error: string): string {
   const messages: Record<string, string> = {
@@ -51,17 +49,22 @@ export function LoginForm() {
   const initialError = searchParams.get("error");
   const initialCode = searchParams.get("code");
   const [form, setForm] = useState<LoginInput>(initialForm);
-  const [errors, setErrors] = useState<LoginErrors>({});
+  const [errors, setErrors] = useState<FieldErrors<LoginField>>({});
   const [formError, setFormError] = useState<string | null>(
     initialError ? signInErrorMessage(initialCode ?? initialError) : null,
   );
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
 
-  const updateField = (field: keyof LoginInput, value: string) => {
+  const updateField = (field: LoginField, value: string) => {
     setForm((current) => ({ ...current, [field]: value }));
-    setErrors((current) => ({ ...current, [field]: undefined }));
+    setErrors((current) => clearFieldError(current, field));
     setFormError(null);
+  };
+
+  const validateField = (field: LoginField) => {
+    const message = fieldErrorFromParseResult(loginSchema.safeParse(form), field);
+    setErrors((current) => ({ ...current, [field]: message }));
   };
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
@@ -69,7 +72,7 @@ export function LoginForm() {
 
     const parsed = loginSchema.safeParse(form);
     if (!parsed.success) {
-      setErrors(firstErrors(parsed.error.flatten().fieldErrors));
+      setErrors(firstFieldErrors(parsed.error.flatten().fieldErrors));
       return;
     }
 
@@ -126,6 +129,7 @@ export function LoginForm() {
                 autoComplete="email"
                 value={form.email}
                 onChange={(event) => updateField("email", event.target.value)}
+                onBlur={() => validateField("email")}
                 aria-invalid={Boolean(errors.email)}
                 disabled={isSubmitting || isGoogleLoading}
               />
@@ -150,6 +154,7 @@ export function LoginForm() {
                 autoComplete="current-password"
                 value={form.password}
                 onChange={(event) => updateField("password", event.target.value)}
+                onBlur={() => validateField("password")}
                 aria-invalid={Boolean(errors.password)}
                 disabled={isSubmitting || isGoogleLoading}
               />

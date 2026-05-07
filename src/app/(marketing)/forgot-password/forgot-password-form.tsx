@@ -14,23 +14,21 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
+  clearFieldError,
+  fieldErrorFromParseResult,
+  firstFieldErrors,
+  type FieldErrors,
+} from "@/lib/forms/field-errors";
+import {
   forgotPasswordSchema,
   type ForgotPasswordInput,
 } from "@/lib/validations/auth";
 
-type ForgotPasswordErrors = Partial<Record<keyof ForgotPasswordInput, string>>;
+type ForgotPasswordField = Extract<keyof ForgotPasswordInput, string>;
 
 const initialForm: ForgotPasswordInput = {
   email: "",
 };
-
-function firstErrors(
-  errors: Partial<Record<keyof ForgotPasswordInput, string[] | undefined>>,
-): ForgotPasswordErrors {
-  return Object.fromEntries(
-    Object.entries(errors).map(([field, messages]) => [field, messages?.[0]]),
-  ) as ForgotPasswordErrors;
-}
 
 async function readApiError(response: Response): Promise<string> {
   try {
@@ -49,16 +47,24 @@ async function readApiError(response: Response): Promise<string> {
 
 export function ForgotPasswordForm() {
   const [form, setForm] = useState<ForgotPasswordInput>(initialForm);
-  const [errors, setErrors] = useState<ForgotPasswordErrors>({});
+  const [errors, setErrors] = useState<FieldErrors<ForgotPasswordField>>({});
   const [formError, setFormError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
 
   const updateEmail = (email: string) => {
     setForm({ email });
-    setErrors({});
+    setErrors((current) => clearFieldError(current, "email"));
     setFormError(null);
     setIsSubmitted(false);
+  };
+
+  const validateEmail = () => {
+    const message = fieldErrorFromParseResult(
+      forgotPasswordSchema.safeParse(form),
+      "email",
+    );
+    setErrors((current) => ({ ...current, email: message }));
   };
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
@@ -66,7 +72,7 @@ export function ForgotPasswordForm() {
 
     const parsed = forgotPasswordSchema.safeParse(form);
     if (!parsed.success) {
-      setErrors(firstErrors(parsed.error.flatten().fieldErrors));
+      setErrors(firstFieldErrors(parsed.error.flatten().fieldErrors));
       return;
     }
 
@@ -115,6 +121,7 @@ export function ForgotPasswordForm() {
                 autoComplete="email"
                 value={form.email}
                 onChange={(event) => updateEmail(event.target.value)}
+                onBlur={validateEmail}
                 aria-invalid={Boolean(errors.email)}
                 disabled={isSubmitting}
               />

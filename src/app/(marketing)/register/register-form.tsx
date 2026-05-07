@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { PasswordStrengthIndicator } from "@/components/auth/password-strength-indicator";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -16,24 +17,21 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Toaster } from "@/components/ui/sonner";
+import {
+  clearFieldError,
+  fieldErrorFromParseResult,
+  firstFieldErrors,
+  type FieldErrors,
+} from "@/lib/forms/field-errors";
 import { registerSchema, type RegisterInput } from "@/lib/validations/auth";
 
-type RegisterField = keyof RegisterInput;
-type FieldErrors = Partial<Record<RegisterField, string>>;
+type RegisterField = Extract<keyof RegisterInput, string>;
 
 const initialForm: RegisterInput = {
   email: "",
   password: "",
   confirmPassword: "",
 };
-
-function firstFieldErrors(
-  errors: Partial<Record<RegisterField, string[] | undefined>>,
-): FieldErrors {
-  return Object.fromEntries(
-    Object.entries(errors).map(([field, messages]) => [field, messages?.[0]]),
-  ) as FieldErrors;
-}
 
 async function readErrorMessage(response: Response): Promise<string> {
   const fallbackByStatus: Record<number, string> = {
@@ -57,14 +55,19 @@ async function readErrorMessage(response: Response): Promise<string> {
 export function RegisterForm() {
   const router = useRouter();
   const [form, setForm] = useState<RegisterInput>(initialForm);
-  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors<RegisterField>>({});
   const [formError, setFormError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const updateField = (field: RegisterField, value: string) => {
     setForm((current) => ({ ...current, [field]: value }));
-    setFieldErrors((current) => ({ ...current, [field]: undefined }));
+    setFieldErrors((current) => clearFieldError(current, field));
     setFormError(null);
+  };
+
+  const validateField = (field: RegisterField) => {
+    const message = fieldErrorFromParseResult(registerSchema.safeParse(form), field);
+    setFieldErrors((current) => ({ ...current, [field]: message }));
   };
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
@@ -123,6 +126,7 @@ export function RegisterForm() {
                 autoComplete="email"
                 value={form.email}
                 onChange={(event) => updateField("email", event.target.value)}
+                onBlur={() => validateField("email")}
                 aria-invalid={Boolean(fieldErrors.email)}
                 disabled={isSubmitting}
               />
@@ -139,9 +143,11 @@ export function RegisterForm() {
                 autoComplete="new-password"
                 value={form.password}
                 onChange={(event) => updateField("password", event.target.value)}
+                onBlur={() => validateField("password")}
                 aria-invalid={Boolean(fieldErrors.password)}
                 disabled={isSubmitting}
               />
+              <PasswordStrengthIndicator password={form.password} />
               {fieldErrors.password && (
                 <p className="text-xs text-destructive">{fieldErrors.password}</p>
               )}
@@ -157,6 +163,7 @@ export function RegisterForm() {
                 onChange={(event) =>
                   updateField("confirmPassword", event.target.value)
                 }
+                onBlur={() => validateField("confirmPassword")}
                 aria-invalid={Boolean(fieldErrors.confirmPassword)}
                 disabled={isSubmitting}
               />

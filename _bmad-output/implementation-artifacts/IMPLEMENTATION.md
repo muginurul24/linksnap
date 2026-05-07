@@ -1193,14 +1193,14 @@ rtk bun run db:studio    # Open Drizzle Studio (in another terminal)
 - [x] Tests: unit (responsive behavior verification where testable)
 
 ### TASK 15.11 — Form Validation UX Improvements
-- [ ] All forms: show inline field errors immediately on blur (not just on submit)
-- [ ] All forms: clear field error when user starts typing in that field
-- [ ] Highlight invalid fields with red border (`aria-invalid` attribute)
-- [ ] File specific checks:
+- [x] All forms: show inline field errors immediately on blur (not just on submit)
+- [x] All forms: clear field error when user starts typing in that field
+- [x] Highlight invalid fields with red border (`aria-invalid` attribute)
+- [x] File specific checks:
   - Link form: validate URL format with helpful message
   - Campaign form: validate slug format
   - Auth forms: password strength indicator ("Weak / Fair / Strong")
-- [ ] Tests: unit (validation error display, field-level clearing)
+- [x] Tests: unit (validation error display, field-level clearing)
 
 ### TASK 15.12 — End-to-End Tests for Critical Flows
 - [ ] E2E: auth flow (register → verify → login → dashboard → logout)

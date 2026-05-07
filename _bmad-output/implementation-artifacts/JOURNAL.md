@@ -4990,3 +4990,49 @@ Polished the dashboard mobile navigation by showing only the current breadcrumb 
 - ✅ Ownership and rate-limited paths are unaffected by these UI-only changes.
 
 **Next Task:** 15.11 — Form Validation UX Improvements
+
+### 15.11 — Form Validation UX Improvements
+- **Date:** 2026-05-07 21:21 GMT+7
+- **Duration:** 0h 40m
+- **Status:** ✅ Complete
+
+**What I Did:**
+Added blur-time field validation and clear-on-type behavior across auth, link, campaign, and settings forms. Added a reusable password strength indicator for new-password flows and field-error helpers so the behavior is consistently testable.
+
+**Files Changed:**
+- `_bmad-output/planning-artifacts/spec-phase-15-form-validation-ux.md` — Added quick-dev spec, affected files, acceptance criteria, and risks.
+- `src/lib/forms/field-errors.ts` — Added shared field-error normalization, extraction, and clearing helpers.
+- `src/lib/auth/password-strength.ts` — Added Weak/Fair/Strong password strength scoring and tone mapping.
+- `src/components/auth/password-strength-indicator.tsx` — Added reusable password strength UI.
+- `src/app/(marketing)/register/register-form.tsx` — Added blur validation, clear-on-type behavior, and password strength feedback.
+- `src/app/(marketing)/login/login-form.tsx` — Added blur validation and shared field-error clearing.
+- `src/app/(marketing)/forgot-password/forgot-password-form.tsx` — Added email blur validation and clear-on-type behavior.
+- `src/app/(marketing)/verify/verify-email-form.tsx` — Added email/code blur validation and form-error clearing on edits.
+- `src/app/(marketing)/reset-password/reset-password-form.tsx` — Added blur validation, clear-on-type behavior, and password strength feedback.
+- `src/app/(dashboard)/links/link-form.tsx` — Added field-level validation for destination URL, slug, and title.
+- `src/app/(dashboard)/campaigns/campaign-form.tsx` — Added blur validation and `aria-invalid` coverage for campaign fields.
+- `src/app/(dashboard)/settings/settings-forms.tsx` — Added profile/security field validation and password strength feedback.
+- `tests/unit/form-validation-ux.test.tsx` — Added focused unit coverage for field errors, clearing, URL/slug messages, and password strength.
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Checked off Task 15.11.
+
+**Decisions Made:**
+- Reused existing Zod schemas for blur validation so client feedback matches API validation copy.
+- Kept password strength informational and separate from submit validation; the existing password schema still controls acceptance.
+- Preserved optional custom slugs for new links while requiring the current slug on edit.
+
+**Tests:**
+- ✅ Targeted: `rtk bun run test -- tests/unit/form-validation-ux.test.tsx` — 1 file passed, 6 tests passed.
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Unit/Integration: `rtk bun run test` — 105 files passed, 477 tests passed.
+
+**Issues Encountered:**
+- The generic field-error helper initially inferred a single field from `Object.entries` and from the test call site → Reworked the helper with typed keys and made the test field union explicit.
+
+**Security Checks:**
+- ✅ User input validation remains backed by Zod schemas.
+- ✅ API ownership and rate limiting paths are unchanged.
+- ✅ Form submissions continue to include `X-Requested-With: XMLHttpRequest`.
+- ✅ No raw SQL, secrets, or `dangerouslySetInnerHTML` introduced.
+
+**Next Task:** 15.12 — End-to-End Tests for Critical Flows
