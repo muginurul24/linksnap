@@ -1669,3 +1669,37 @@ Added QR download controls for PNG and SVG formats in both the dashboard links t
 - ✅ No client-side secret handling or sensitive logging added.
 
 **Next Task:** 5.3 — QR Tests
+
+### 5.3 — QR Tests
+- **Date:** 2026-05-07 06:59 GMT+7
+- **Duration:** 0h 25m
+- **Status:** ✅ Complete
+
+**What I Did:**
+Completed QR test coverage by adding E2E download verification from the QR dashboard. The test creates a real link for an authenticated user, opens `/qr`, downloads both PNG and SVG QR files, verifies suggested filenames, and checks the downloaded file contents.
+
+**Files Changed:**
+- `tests/e2e/link-flow.spec.ts` — Added QR dashboard download E2E coverage and cleanup for QR cache/rate-limit keys.
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Checked off Task 5.3.
+- `_bmad-output/implementation-artifacts/JOURNAL.md` — Recorded this completion entry.
+
+**Decisions Made:**
+- Verified PNG content via the PNG file signature and SVG content via `<svg` markup so the E2E test validates actual generated files instead of only clicking links.
+- Reused the existing QR API integration coverage from Task 5.1 for QR generation validity, and the public redirect E2E coverage for the scan-to-short-link path.
+
+**Tests:**
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Unit/Integration: `rtk bun run test` — 40 files passed, 189 tests passed.
+- ✅ Build: `rtk bun run build` — Passed.
+- ✅ E2E: `rtk bun run test:e2e` — 6 specs passed.
+
+**Issues Encountered:**
+- None.
+
+**Security Checks:**
+- ✅ Download E2E uses an authenticated dashboard user and cleans up created data.
+- ✅ QR downloads continue to go through the validated, rate-limited public QR endpoint.
+- ✅ No secrets, plaintext IP storage, or sensitive logging added.
+
+**Next Task:** 6.1 — Campaign API

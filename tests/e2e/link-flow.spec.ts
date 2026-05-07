@@ -1,5 +1,6 @@
 import { expect, test, type Browser, type Page } from "@playwright/test";
 import { loadEnvConfig } from "@next/env";
+import { readFile } from "node:fs/promises";
 import { count, eq } from "drizzle-orm";
 import { db } from "../../src/lib/db";
 import { clickEvents, linkPages, links, users } from "../../src/lib/db/schema";
@@ -42,6 +43,7 @@ async function cleanupLinkFlowState(
   await redis.del(
     `rate-limit:auth:login:${testIp}`,
     "rate-limit:auth:login:unknown",
+    `rate-limit:api:qr:${testIp}`,
     ...(userId
       ? [
           `rate-limit:api:links:list:${userId}`,
@@ -54,6 +56,8 @@ async function cleanupLinkFlowState(
       : []),
     ...slugs.flatMap((slug) => [
       `linksnap:redirect:${slug}`,
+      `linksnap:qr:${slug}:png:300`,
+      `linksnap:qr:${slug}:svg:300`,
       `linksnap:smart-rules:${slug}`,
     ]),
   );
@@ -374,6 +378,65 @@ test("should configure Smart Rules then redirect by browser user agent", async (
         timeout: 10_000,
       })
       .toBeGreaterThanOrEqual(2);
+  } finally {
+    await cleanupLinkFlowState(email, userId, [slug]);
+  }
+});
+
+test("should download QR codes from the QR dashboard", async ({ page }) => {
+  const email = `e2e-qr-${Date.now()}@example.com`;
+  const password = "Password1";
+  const slug = `qr-${Date.now()}`;
+  let userId: string | undefined;
+
+  try {
+    userId = await createVerifiedUser(email, password);
+
+    await db.insert(links).values({
+      destinationUrl: "https://example.com/qr-download",
+      slug,
+      title: "QR Download",
+      userId,
+    });
+
+    await signIn(page, { email, password });
+    await expect(page).toHaveURL(/\/links$/, { timeout: 15_000 });
+
+    await page.goto("/qr");
+    await expect(page.getByText("QR Download")).toBeVisible();
+
+    const pngDownloadPromise = page.waitForEvent("download");
+    await page
+      .getByRole("link", { name: `Download PNG QR for ${slug}` })
+      .click();
+    const pngDownload = await pngDownloadPromise;
+    const pngPath = await pngDownload.path();
+    if (!pngPath) throw new Error("PNG download path was not available.");
+    const pngBytes = await readFile(pngPath);
+
+    expect(pngDownload.suggestedFilename()).toBe(`${slug}.png`);
+    expect([...pngBytes.subarray(0, 8)]).toEqual([
+      137,
+      80,
+      78,
+      71,
+      13,
+      10,
+      26,
+      10,
+    ]);
+
+    const svgDownloadPromise = page.waitForEvent("download");
+    await page
+      .getByRole("link", { name: `Download SVG QR for ${slug}` })
+      .click();
+    const svgDownload = await svgDownloadPromise;
+    const svgPath = await svgDownload.path();
+    if (!svgPath) throw new Error("SVG download path was not available.");
+    const svgContent = await readFile(svgPath, "utf8");
+
+    expect(svgDownload.suggestedFilename()).toBe(`${slug}.svg`);
+    expect(svgContent).toContain("<svg");
   } finally {
     await cleanupLinkFlowState(email, userId, [slug]);
   }

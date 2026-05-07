@@ -356,8 +356,8 @@ src/
 - [x] SVG download: `<a download="slug.svg" href="/api/v1/qr/slug?format=svg">`
 
 ### TASK 5.3 — QR Tests
-- Integration: generate QR → verify it's valid → scan with phone → verify redirect
-- E2E: click download button → verify file downloads
+- [x] Integration: generate QR → verify it's valid → scan with phone → verify redirect
+- [x] E2E: click download button → verify file downloads
 
 ---
 
