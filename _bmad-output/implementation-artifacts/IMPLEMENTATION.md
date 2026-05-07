@@ -216,7 +216,7 @@ src/
 ### TASK 2.7 — Create Link Form (Dashboard)
 - [x] File: `src/app/(dashboard)/links/new/page.tsx`
 - [x] Form fields: Destination URL, Custom slug (optional), Title (optional)
-- [x] Live slug preview: `linksnap.id/your-slug`
+- [x] Live slug preview: `www.justqiu.cloud/your-slug`
 - [x] Enable Link Page toggle → expands Link Page config
 - [x] Enable Smart Rules toggle → expands rules config
 - [x] Validation: URL format, slug availability check (debounced)
@@ -525,8 +525,8 @@ src/
 
 ### TASK 10.5 — Launch Checklist
 - [ ] Production environment variables set
-- [ ] Custom domain configured (linksnap.id or similar)
-- [ ] SSL certificate active
+- [x] Custom domain configured (`justqiu.cloud` redirects to `www.justqiu.cloud`)
+- [x] SSL certificate active
 - [x] Database indexes verified
 - [ ] Redis cache warming
 - [ ] Monitoring/alerting configured
@@ -576,7 +576,7 @@ export async function POST(req: NextRequest) {
       title: parsed.data.title,
     }).returning();
 
-    return NextResponse.json({ success: true, data: { ...link, shortUrl: `https://linksnap.id/${slug}` } }, { status: 201 });
+    return NextResponse.json({ success: true, data: { ...link, shortUrl: `https://www.justqiu.cloud/${slug}` } }, { status: 201 });
   } catch (error) {
     console.error("[POST /api/v1/links]", error);
     return NextResponse.json(

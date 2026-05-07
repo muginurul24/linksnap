@@ -32,7 +32,7 @@ function getSessionUserId(session: SessionWithUserId): string | null {
 
 function getShortUrl(slug: string): string {
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL?.trim().replace(/\/+$/, "");
-  return `${baseUrl || "https://linksnap.id"}/${slug}`;
+  return `${baseUrl || "https://www.justqiu.cloud"}/${slug}`;
 }
 
 function DownloadButton({

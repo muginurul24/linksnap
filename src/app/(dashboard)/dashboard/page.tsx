@@ -117,7 +117,7 @@ export default function DashboardOverview() {
                   <TableCell>
                     <div className="flex items-center gap-2">
                       <div className="size-8 rounded-lg bg-primary/10 flex items-center justify-center"><Link2 className="size-4 text-primary" /></div>
-                      <div><p className="font-mono text-sm font-medium">/{link.slug}</p><p className="text-xs text-muted-foreground">linksnap.id/{link.slug}</p></div>
+                      <div><p className="font-mono text-sm font-medium">/{link.slug}</p><p className="text-xs text-muted-foreground">www.justqiu.cloud/{link.slug}</p></div>
                     </div>
                   </TableCell>
                   <TableCell className="hidden md:table-cell"><p className="max-w-[200px] truncate text-sm text-muted-foreground">{link.destination}</p></TableCell>

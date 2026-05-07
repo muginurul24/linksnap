@@ -1,10 +1,12 @@
 # Launch Readiness — 2026-05-07
 
 ## Summary
-Launch is not ready yet. Local build/test/security prerequisites are in good
-shape, local `.env` has required app values, and database indexes are present in
-the connected database. Public domain, SSL, monitoring, backups, load testing,
-and go-live still require production infrastructure access.
+Launch is closer but not ready yet. Local build/test/security prerequisites are
+in good shape, local `.env` has required app values, database indexes are present
+in the connected database, and the public domain now resolves through Vercel with
+managed TLS. Production environment verification, monitoring, backups, load
+testing, penetration testing, and go-live still require production platform
+access.
 
 ## Verified
 - Local environment values are present for database, auth, Redis, Resend,
@@ -24,11 +26,12 @@ and go-live still require production infrastructure access.
   - `rules_link_id_idx`
 - CI workflow exists for lint, typecheck, test, build, and optional Vercel deploy
   hook.
+- `https://justqiu.cloud` resolves and redirects to `https://www.justqiu.cloud/`.
+- `https://www.justqiu.cloud` returns `200` from Vercel with managed TLS.
+- Production security headers are present on `https://www.justqiu.cloud`.
+- Canonical app domain in source now points to `https://www.justqiu.cloud`.
 
 ## Blocked
-- `https://linksnap.id` DNS does not resolve from this environment.
-- `https://www.linksnap.id` DNS does not resolve from this environment.
-- SSL certificate status cannot be verified until DNS/domain is configured.
 - Production environment variables in Vercel cannot be verified from local files.
 - Redis cache warming cannot be run safely without production/staging URL and
   known hot slugs.
@@ -39,10 +42,13 @@ and go-live still require production infrastructure access.
 - Go-live is blocked until the above items are complete.
 
 ## Required Before Go-Live
-- Configure `linksnap.id` and `www.linksnap.id` DNS.
-- Attach the custom domain to the deployment platform and confirm managed SSL.
-- Set all production secrets/vars in Vercel, including `AUTH_URL`,
-  `AUTH_TRUST_HOST`, `CRON_SECRET`, `IP_HASH_SALT`, and provider credentials.
+- Set all production secrets/vars in Vercel, including `NEXT_PUBLIC_APP_URL`,
+  `AUTH_URL`, `AUTH_TRUST_HOST`, `CRON_SECRET`, `IP_HASH_SALT`, and provider
+  credentials.
+- Confirm production `NEXT_PUBLIC_APP_URL` and `AUTH_URL` are
+  `https://www.justqiu.cloud`.
+- Confirm Google OAuth callback allows
+  `https://www.justqiu.cloud/api/auth/callback/google`.
 - Configure Cloudflare WAF/rate rules for `/:slug` and `/:slug/go`.
 - Confirm Neon backup/PITR policy and database role permissions.
 - Add monitoring/alerting for API errors, payment webhook failures, rate-limit

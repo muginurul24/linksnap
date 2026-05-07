@@ -142,7 +142,7 @@ function getClientPreviewBaseUrl(): string {
 
   if (typeof window !== "undefined") return window.location.origin;
 
-  return "https://linksnap.id";
+  return "https://www.justqiu.cloud";
 }
 
 function getRetryAfter(details: unknown): number | null {
