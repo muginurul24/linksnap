@@ -2330,3 +2330,46 @@ Added the public pricing page with monthly/yearly billing toggle, Free/Pro/Busin
 - ✅ No raw SQL, user-controlled fetch URLs, or sensitive logging added.
 
 **Next Task:** 9.3 — Blog
+
+### 9.3 — Blog
+- **Date:** 2026-05-07 09:17 GMT+7
+- **Duration:** 0h 25m
+- **Status:** ✅ Complete
+
+**What I Did:**
+Added the public blog index and three launch MDX articles. The blog page reads MDX frontmatter at build time, sorts posts by publish date, renders article summaries, and includes SEO metadata plus JSON-LD item list data.
+
+**Files Changed:**
+- `src/app/(marketing)/blog/page.tsx` — Added public blog route, metadata, JSON-LD, and article listing UI.
+- `src/lib/blog/posts.ts` — Added server-side MDX frontmatter parser and sorted post loader.
+- `src/content/blog/short-links-costing-conversions.mdx` — Added launch article 1.
+- `src/content/blog/smart-redirect-rules-marketing-hack.mdx` — Added launch article 2.
+- `src/content/blog/link-pages-click-through-rate.mdx` — Added launch article 3.
+- `tests/unit/blog-posts.test.ts` — Added parser coverage for valid and invalid frontmatter.
+- `src/components/landing/landing-page.tsx` — Added Blog navigation link.
+- `src/components/landing/pricing-page.tsx` — Added Blog navigation link.
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Checked off Task 9.3.
+- `_bmad-output/implementation-artifacts/JOURNAL.md` — Recorded this completion entry.
+
+**Decisions Made:**
+- Used server-side `fs` metadata extraction from `.mdx` files because Task 9.3 only requires a blog index, not rendered article detail pages.
+- Kept MDX compiler setup out of scope to avoid adding dependencies and changing `next.config.ts` before article detail rendering is required.
+- Frontmatter parser is strict and throws on missing required metadata so broken content fails during build/test.
+
+**Tests:**
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Unit/Integration: `rtk bun run test` — 61 files passed, 276 tests passed.
+- ✅ Build: `rtk bun run build` — Passed; `/blog` is registered as a static route.
+- ✅ Browser: Playwright loaded `/blog`, verified all three launch article titles from MDX, and confirmed zero console/Next DevTools errors.
+
+**Issues Encountered:**
+- TypeScript target rejected named capture groups in the frontmatter regex → switched to indexed capture groups.
+
+**Security Checks:**
+- ✅ Blog route performs read-only local file access at build/server time.
+- ✅ MDX content is not converted to HTML or injected with `dangerouslySetInnerHTML`.
+- ✅ JSON-LD is rendered without `dangerouslySetInnerHTML`.
+- ✅ No raw SQL, public write endpoint, secrets, or user-controlled fetch URLs added.
+
+**Next Task:** 9.4 — Public Site Tests

@@ -222,6 +222,9 @@ function Header() {
           <Link href="/pricing" className="font-medium text-foreground">
             Pricing
           </Link>
+          <Link href="/blog" className="hover:text-foreground">
+            Blog
+          </Link>
           <Link href="/login" className="hover:text-foreground">
             Sign In
           </Link>

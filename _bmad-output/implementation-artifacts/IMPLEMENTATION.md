@@ -479,10 +479,10 @@ src/
 - [x] FAQ section
 
 ### TASK 9.3 — Blog
-- File: `src/app/(marketing)/blog/page.tsx`
-- List articles from MDX content
-- Each article: `src/content/blog/{slug}.mdx`
-- Minimum 3 articles for launch:
+- [x] File: `src/app/(marketing)/blog/page.tsx`
+- [x] List articles from MDX content
+- [x] Each article: `src/content/blog/{slug}.mdx`
+- [x] Minimum 3 articles for launch:
   1. "Why Your Short Links Are Costing You Conversions"
   2. "Smart Redirect Rules: The Marketing Hack Nobody Uses"
   3. "How Link Pages 5x'd Our Click-Through Rate"
