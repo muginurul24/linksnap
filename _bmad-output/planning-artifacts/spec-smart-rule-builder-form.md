@@ -14,12 +14,12 @@ Add a reusable `RuleBuilder` client component backed by pure state helpers in `s
 - `_bmad-output/implementation-artifacts/JOURNAL.md`
 
 ## Acceptance Criteria
-- [ ] Users can add, remove, activate/deactivate, and reorder rules.
-- [ ] Users can add/remove conditions per rule.
-- [ ] Condition controls change by type: country combobox, device dropdown, bot checkboxes/custom input, and time range inputs.
-- [ ] Each rule has a destination URL and readable summary.
-- [ ] Builder includes a fallback/default destination field.
-- [ ] Unit tests cover validation, add/remove/reorder operations, and condition control selection.
+- [x] Users can add, remove, activate/deactivate, and reorder rules.
+- [x] Users can add/remove conditions per rule.
+- [x] Condition controls change by type: country combobox, device dropdown, bot checkboxes/custom input, and time range inputs.
+- [x] Each rule has a destination URL and readable summary.
+- [x] Builder includes a fallback/default destination field.
+- [x] Unit tests cover validation, add/remove/reorder operations, and condition control selection.
 
 ## Risks
 - The component is not wired into the link form until Task 13.5, so this task keeps the builder standalone and testable.

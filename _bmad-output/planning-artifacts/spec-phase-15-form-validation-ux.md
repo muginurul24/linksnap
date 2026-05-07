@@ -17,11 +17,11 @@ Add small shared helpers for field-error normalization and password strength. Wi
 - `tests/unit/form-validation-ux.test.tsx`
 
 ## Acceptance Criteria
-- [ ] Field errors appear after blur for invalid values.
-- [ ] Field errors clear when users type in that field.
-- [ ] Invalid fields expose `aria-invalid`.
-- [ ] Link destination URL and campaign slug show helpful field errors.
-- [ ] New-password auth flows show Weak, Fair, or Strong strength feedback.
+- [x] Field errors appear after blur for invalid values.
+- [x] Field errors clear when users type in that field.
+- [x] Invalid fields expose `aria-invalid`.
+- [x] Link destination URL and campaign slug show helpful field errors.
+- [x] New-password auth flows show Weak, Fair, or Strong strength feedback.
 
 ## Risks
 - Cross-field password confirmation can show stale errors if only one field is revalidated.

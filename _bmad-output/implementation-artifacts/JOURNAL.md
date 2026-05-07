@@ -5612,3 +5612,38 @@ Verified production schema state after Phase 16 database changes and added a Dri
 - ✅ No secrets, raw SQL, or `dangerouslySetInnerHTML` introduced.
 
 **Next Task:** Phase 16 complete.
+
+### 16.A — `_bmad-output` Checklist Audit
+- **Date:** 2026-05-07 23:43 GMT+7
+- **Duration:** 0h 20m
+- **Status:** ⚠️ Partial
+
+**What I Did:**
+Audited all unchecked checklist markers in `_bmad-output`. Reconciled completed legacy spec acceptance criteria to checked and documented the remaining unchecked items that cannot be truthfully checked without mobile implementation, external infrastructure evidence, load testing, or go-live approval.
+
+**Files Changed:**
+- `_bmad-output/planning-artifacts/spec-*.md` — Checked completed acceptance criteria for implemented legacy specs.
+- `_bmad-output/implementation-artifacts/CHECKLIST-AUDIT-2026-05-07.md` — Added remaining unchecked-item classification and recommended next task.
+- `_bmad-output/implementation-artifacts/JOURNAL.md` — Logged this audit.
+
+**Decisions Made:**
+- Did not check mobile-native, Cloudflare/Vercel/Neon/Upstash, backup, load-test, OAuth live-flow, or go-live items without direct evidence.
+- Kept `SEC-ALL` open because the full security program spans code, infrastructure, dependency operations, monitoring, and external testing.
+
+**Tests:**
+- ✅ Checklist scan: `rtk proxy rg -c "\\[ \\]" _bmad-output` — Remaining unchecked markers reduced to implementation launch/security, mobile plan, and SECURITY.md.
+- ✅ Local security scan: raw SQL, `dangerouslySetInnerHTML`, eval/exec/spawn, user-controlled fetch, request validation, and N+1 pattern checks were reviewed.
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Production Security Smoke: `rtk bun run security:smoke` — Passed against `https://www.justqiu.cloud`.
+- ✅ Unit/Integration: `rtk bun run test` — 116 files passed, 513 tests passed.
+
+**Issues Encountered:**
+- Some checklist items require external provider console access or production evidence, so they remain intentionally unchecked.
+
+**Security Checks:**
+- ✅ No runtime code changed.
+- ✅ No secrets added.
+- ✅ Remaining security gaps are documented instead of being falsely marked complete.
+
+**Next Task:** Dedicated security hardening and external launch-readiness evidence collection.

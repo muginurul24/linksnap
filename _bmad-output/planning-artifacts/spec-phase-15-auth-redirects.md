@@ -16,10 +16,10 @@ Add server-side guards to the marketing auth pages. Pages that are not useful fo
 - `tests/unit/auth-page-redirects.test.tsx`
 
 ## Acceptance Criteria
-- [ ] Logged-in users are redirected from login, register, forgot-password, and reset-password to `/dashboard`.
-- [ ] Verified logged-in users are redirected from verify to `/dashboard`.
-- [ ] Unverified logged-in users can still access verify.
-- [ ] Anonymous users can still access all auth pages.
+- [x] Logged-in users are redirected from login, register, forgot-password, and reset-password to `/dashboard`.
+- [x] Verified logged-in users are redirected from verify to `/dashboard`.
+- [x] Unverified logged-in users can still access verify.
+- [x] Anonymous users can still access all auth pages.
 
 ## Risks
 - Redirects must stay server-side so client auth forms do not briefly flash.

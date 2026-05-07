@@ -15,9 +15,9 @@ Create a small dashboard `BackNavigationLink` component and use it on link and c
 - `tests/unit/back-navigation-link.test.tsx`
 
 ## Acceptance Criteria
-- [ ] Links create/edit pages render "Back to Links" linking to `/links`.
-- [ ] Campaigns create/edit pages render "Back to Campaigns" linking to `/campaigns`.
-- [ ] Back navigation is a small text link above the page title.
+- [x] Links create/edit pages render "Back to Links" linking to `/links`.
+- [x] Campaigns create/edit pages render "Back to Campaigns" linking to `/campaigns`.
+- [x] Back navigation is a small text link above the page title.
 
 ## Risks
 - Back navigation should not change existing auth, ownership, or form behavior.

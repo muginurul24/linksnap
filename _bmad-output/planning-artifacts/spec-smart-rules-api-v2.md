@@ -15,12 +15,12 @@ Extend validation with V2 schemas and normalize V2 requests into the current `sm
 - `_bmad-output/implementation-artifacts/JOURNAL.md`
 
 ## Acceptance Criteria
-- [ ] V2 request schema accepts ordered rules with `isActive`, `conditions`, and `destinationUrl`.
-- [ ] V2 request schema accepts optional `fallbackDestinationUrl`.
-- [ ] Legacy request schema still works.
-- [ ] GET returns V2 rules in display order when V2 data is stored.
-- [ ] POST and PUT replace rules in request order.
-- [ ] Quota enforcement counts visible V2 rules, not the internal fallback sentinel.
+- [x] V2 request schema accepts ordered rules with `isActive`, `conditions`, and `destinationUrl`.
+- [x] V2 request schema accepts optional `fallbackDestinationUrl`.
+- [x] Legacy request schema still works.
+- [x] GET returns V2 rules in display order when V2 data is stored.
+- [x] POST and PUT replace rules in request order.
+- [x] Quota enforcement counts visible V2 rules, not the internal fallback sentinel.
 
 ## Risks
 - Fallback-only configuration requires an internal sentinel row because no dedicated link config column exists yet. The route must hide that sentinel from V2 GET responses.

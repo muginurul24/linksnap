@@ -19,10 +19,10 @@ shared debounce constant.
 - `_bmad-output/implementation-artifacts/JOURNAL.md`
 
 ## Acceptance Criteria
-- [ ] Header search navigates to `/links?search=query` after 300ms of input idle time.
-- [ ] Clearing search while already on `/links` navigates back to `/links`.
-- [ ] Search URLs are built through the existing sanitized helper.
-- [ ] Unit coverage verifies search query building and navigation comparison.
+- [x] Header search navigates to `/links?search=query` after 300ms of input idle time.
+- [x] Clearing search while already on `/links` navigates back to `/links`.
+- [x] Search URLs are built through the existing sanitized helper.
+- [x] Unit coverage verifies search query building and navigation comparison.
 
 ## Risks
 - Debounced navigation could create noisy browser history entries if every input

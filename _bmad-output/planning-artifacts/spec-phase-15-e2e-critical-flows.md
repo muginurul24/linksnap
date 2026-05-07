@@ -14,11 +14,11 @@ Extend the current Playwright suite instead of adding a new runner. Reuse direct
 - `src/app/(dashboard)/campaigns/campaign-actions.tsx`
 
 ## Acceptance Criteria
-- [ ] Auth E2E covers register, verify, login, dashboard access, and logout.
-- [ ] Link E2E still covers link creation, public redirect, and analytics logging.
-- [ ] Campaign E2E covers campaign creation, link assignment, analytics, and deletion.
-- [ ] Billing E2E clicks the Upgrade to Pro button and verifies the checkout redirect path.
-- [ ] Settings E2E updates profile and changes password successfully.
+- [x] Auth E2E covers register, verify, login, dashboard access, and logout.
+- [x] Link E2E still covers link creation, public redirect, and analytics logging.
+- [x] Campaign E2E covers campaign creation, link assignment, analytics, and deletion.
+- [x] Billing E2E clicks the Upgrade to Pro button and verifies the checkout redirect path.
+- [x] Settings E2E updates profile and changes password successfully.
 
 ## Risks
 - Provider-backed checkout can be flaky locally; use request interception for the button redirect test and leave sandbox payment test conditional.

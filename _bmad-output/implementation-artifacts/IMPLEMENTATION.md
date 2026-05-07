@@ -640,12 +640,12 @@ For EVERY interactive component, implement these states:
 > **Reference:** `_bmad-output/planning-artifacts/SECURITY.md` for full checklist
 
 ### SEC-ALL — Security Implementation
-- [ ] Read `_bmad-output/planning-artifacts/SECURITY.md` completely
+- [x] Read `_bmad-output/planning-artifacts/SECURITY.md` completely
 - [ ] Implement all 16 security categories (Access Control, Cryptography, Injection, XSS, CSRF, Misconfiguration, DDoS, N+1, Input Validation, SSRF, Auth Security, Payment Security, Data Protection, Dependencies, Logging, Infrastructure)
-- [ ] Run security code audit commands (see SECURITY.md § Code-Level Verification)
+- [x] Run security code audit commands (see SECURITY.md § Code-Level Verification)
 - [ ] Fix all findings before marking complete
 - [ ] Verify zero HIGH severity issues
-- [ ] Document any accepted risks in JOURNAL.md
+- [x] Document any accepted risks in JOURNAL.md
 
 ---
 

@@ -21,12 +21,12 @@ mark auth and short-link redirect surfaces as noindex, and generate static
 - `tests/unit/seo-metadata.test.ts`
 
 ## Acceptance Criteria
-- [ ] Every public page exports static metadata or `generateMetadata()`.
-- [ ] Auth and short-link redirect pages are not indexed.
-- [ ] Sitemap includes only canonical marketing URLs.
-- [ ] Robots disallows API, dashboard, auth, and app-private paths.
-- [ ] JSON-LD safely escapes `<` and includes Organization + WebApplication.
-- [ ] Typecheck, lint, tests, and build pass.
+- [x] Every public page exports static metadata or `generateMetadata()`.
+- [x] Auth and short-link redirect pages are not indexed.
+- [x] Sitemap includes only canonical marketing URLs.
+- [x] Robots disallows API, dashboard, auth, and app-private paths.
+- [x] JSON-LD safely escapes `<` and includes Organization + WebApplication.
+- [x] Typecheck, lint, tests, and build pass.
 
 ## Risks
 - Accidentally indexing auth or short-link redirect pages.

@@ -13,10 +13,10 @@ Add `aria-busy` to dashboard submit/save buttons and disable settings fields/swi
 - `tests/unit/form-loading-states.test.ts`
 
 ## Acceptance Criteria
-- [ ] Link and campaign submit buttons expose busy state while submitting.
-- [ ] Settings profile, notifications, and password saves expose busy state.
-- [ ] Settings controls are disabled while their save request is running.
-- [ ] Existing auth, billing, and create/edit forms keep spinner + disabled behavior.
+- [x] Link and campaign submit buttons expose busy state while submitting.
+- [x] Settings profile, notifications, and password saves expose busy state.
+- [x] Settings controls are disabled while their save request is running.
+- [x] Existing auth, billing, and create/edit forms keep spinner + disabled behavior.
 
 ## Risks
 - Source-level regression tests are brittle, but they are scoped to the required loading-state snippets and avoid adding a new DOM test dependency.

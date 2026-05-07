@@ -13,10 +13,10 @@ Pass the current user plan from the create/edit link pages into `CreateLinkForm`
 - `tests/unit/link-form-plan-gates.test.tsx`
 
 ## Acceptance Criteria
-- [ ] Free users see disabled Link Page and Smart Rules toggles.
-- [ ] Free-user toggles expose the required upgrade reason.
-- [ ] Pro and Business users can use both toggles normally.
-- [ ] Create and edit pages pass `userPlan` into `CreateLinkForm`.
+- [x] Free users see disabled Link Page and Smart Rules toggles.
+- [x] Free-user toggles expose the required upgrade reason.
+- [x] Pro and Business users can use both toggles normally.
+- [x] Create and edit pages pass `userPlan` into `CreateLinkForm`.
 
 ## Risks
 - Existing Free users with previously enabled gated data may still need to view saved data without being able to toggle it.

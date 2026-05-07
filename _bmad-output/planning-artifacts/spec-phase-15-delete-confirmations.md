@@ -16,11 +16,11 @@ Create a shared delete confirmation dialog and use it for link list deletion, ca
 - `tests/unit/delete-confirmation-dialog.test.tsx`
 
 ## Acceptance Criteria
-- [ ] Link list delete opens a confirmation dialog before calling DELETE.
-- [ ] Campaign delete opens a confirmation dialog with the campaign name.
-- [ ] API key revoke opens a confirmation dialog with the key name.
-- [ ] Dialog copy includes "This action cannot be undone."
-- [ ] Confirm invokes the supplied destructive callback; Cancel closes the dialog.
+- [x] Link list delete opens a confirmation dialog before calling DELETE.
+- [x] Campaign delete opens a confirmation dialog with the campaign name.
+- [x] API key revoke opens a confirmation dialog with the key name.
+- [x] Dialog copy includes "This action cannot be undone."
+- [x] Confirm invokes the supplied destructive callback; Cancel closes the dialog.
 
 ## Risks
 - Client-side confirmation must not replace API ownership checks.

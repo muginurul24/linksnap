@@ -11,10 +11,10 @@ Create a reusable `PlanGate` wrapper that renders children normally when allowed
 - `tests/unit/plan-gate.test.tsx`
 
 ## Acceptance Criteria
-- [ ] Allowed controls render without gate copy or disabled state.
-- [ ] Blocked controls render disabled with lock icon, upgrade copy, and upgrade link.
-- [ ] Quota gates block when `used >= limit` and display the current quota usage.
-- [ ] Component works in server-rendered unit tests.
+- [x] Allowed controls render without gate copy or disabled state.
+- [x] Blocked controls render disabled with lock icon, upgrade copy, and upgrade link.
+- [x] Quota gates block when `used >= limit` and display the current quota usage.
+- [x] Component works in server-rendered unit tests.
 
 ## Risks
 - Passing `disabled` to arbitrary custom components can leak unsupported props, so the helper should only target likely interactive controls.

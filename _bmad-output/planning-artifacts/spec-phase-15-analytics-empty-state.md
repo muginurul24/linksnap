@@ -11,10 +11,10 @@ Centralize the analytics empty-state content in a small exported constant and re
 - `tests/unit/analytics-empty-state.test.tsx`
 
 ## Acceptance Criteria
-- [ ] Users with zero clicks see "No click data yet. Share your links to start seeing analytics."
-- [ ] The empty-state CTA is "Copy a link".
-- [ ] The CTA links to `/links`.
-- [ ] Users with clicks still see analytics charts.
+- [x] Users with zero clicks see "No click data yet. Share your links to start seeing analytics."
+- [x] The empty-state CTA is "Copy a link".
+- [x] The CTA links to `/links`.
+- [x] Users with clicks still see analytics charts.
 
 ## Risks
 - The empty state should only depend on `summary.totalClicks === 0`, not on missing breakdown arrays.

@@ -16,10 +16,10 @@ Hide parent breadcrumbs below `md`, make the mobile sidebar default explicit, hi
 - `tests/unit/mobile-navigation-polish.test.ts`
 
 ## Acceptance Criteria
-- [ ] Mobile breadcrumbs show only the current page.
-- [ ] Sidebar mobile open state defaults to closed explicitly.
-- [ ] Links table hides nonessential columns on mobile.
-- [ ] Billing plan cards stack vertically on mobile.
+- [x] Mobile breadcrumbs show only the current page.
+- [x] Sidebar mobile open state defaults to closed explicitly.
+- [x] Links table hides nonessential columns on mobile.
+- [x] Billing plan cards stack vertically on mobile.
 
 ## Risks
 - Desktop breadcrumb and sidebar behavior should remain unchanged.

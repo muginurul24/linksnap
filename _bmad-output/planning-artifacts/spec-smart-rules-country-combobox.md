@@ -17,11 +17,11 @@ Add a reusable country data/helper module and a client `CountryCombobox` built f
 - `_bmad-output/implementation-artifacts/JOURNAL.md`
 
 ## Acceptance Criteria
-- [ ] Country list exposes ISO 3166-1 alpha-2 codes with display names.
-- [ ] Combobox uses shadcn `Command` and supports type-to-filter behavior.
-- [ ] Selected country code is returned to parent state.
-- [ ] Empty searches show "No country found".
-- [ ] Unit tests cover filtering, selection lookup, and keyboard navigation helper behavior.
+- [x] Country list exposes ISO 3166-1 alpha-2 codes with display names.
+- [x] Combobox uses shadcn `Command` and supports type-to-filter behavior.
+- [x] Selected country code is returned to parent state.
+- [x] Empty searches show "No country found".
+- [x] Unit tests cover filtering, selection lookup, and keyboard navigation helper behavior.
 
 ## Risks
 - `Intl.DisplayNames` output can vary subtly by runtime, so tests should assert stable codes and core search behavior rather than full list ordering.

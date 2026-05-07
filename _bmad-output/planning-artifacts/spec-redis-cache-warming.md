@@ -21,10 +21,10 @@ Keep the script bounded by a safe default limit and make it configurable through
 - `_bmad-output/implementation-artifacts/JOURNAL.md`
 
 ## Acceptance Criteria
-- [ ] `rtk bun run cache:warm` warms active redirect link cache entries.
-- [ ] Warmed cache keys and payloads match the redirect handler.
-- [ ] Expired, inactive, and future-scheduled links are skipped.
-- [ ] Script has a bounded default limit and accepts an explicit limit.
+- [x] `rtk bun run cache:warm` warms active redirect link cache entries.
+- [x] Warmed cache keys and payloads match the redirect handler.
+- [x] Expired, inactive, and future-scheduled links are skipped.
+- [x] Script has a bounded default limit and accepts an explicit limit.
 
 ## Risks
 - Running against the wrong env could warm non-production Redis. The script

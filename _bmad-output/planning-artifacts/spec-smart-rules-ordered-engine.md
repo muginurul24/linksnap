@@ -13,14 +13,14 @@ Extend `src/lib/rules/rule-engine.ts` without breaking legacy rules. V2 rules ar
 - `_bmad-output/implementation-artifacts/JOURNAL.md`
 
 ## Acceptance Criteria
-- [ ] Rules evaluate in display order.
-- [ ] Inactive V2 rules are skipped.
-- [ ] V2 rule conditions use AND logic.
-- [ ] First matching rule wins.
-- [ ] Disabled Smart Rules can return the link default destination directly.
-- [ ] No-match V2 flows support configured fallback and default destination behavior.
-- [ ] Bot detection uses case-insensitive substring matching for predefined and custom bot patterns.
-- [ ] Legacy GEO/DEVICE/TIME/LANGUAGE rules still evaluate.
+- [x] Rules evaluate in display order.
+- [x] Inactive V2 rules are skipped.
+- [x] V2 rule conditions use AND logic.
+- [x] First matching rule wins.
+- [x] Disabled Smart Rules can return the link default destination directly.
+- [x] No-match V2 flows support configured fallback and default destination behavior.
+- [x] Bot detection uses case-insensitive substring matching for predefined and custom bot patterns.
+- [x] Legacy GEO/DEVICE/TIME/LANGUAGE rules still evaluate.
 
 ## Risks
 - Existing tests expected descending priority. The implementation intentionally changes that behavior to Phase 13 display-order semantics.

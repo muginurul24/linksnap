@@ -13,10 +13,10 @@ Centralize form success feedback decisions in small exported helpers/constants. 
 - `tests/unit/form-success-feedback.test.ts`
 
 ## Acceptance Criteria
-- [ ] Link create shows "Link created" and redirects to `/links`.
-- [ ] Link edit shows "Link updated" and stays on the current edit page.
-- [ ] Campaign create/edit show success toasts and redirect to `/campaigns`.
-- [ ] Settings profile, password, and notification saves use the requested success copy.
+- [x] Link create shows "Link created" and redirects to `/links`.
+- [x] Link edit shows "Link updated" and stays on the current edit page.
+- [x] Campaign create/edit show success toasts and redirect to `/campaigns`.
+- [x] Settings profile, password, and notification saves use the requested success copy.
 
 ## Risks
 - Edit-link refresh should not become an accidental navigation away from the current page.

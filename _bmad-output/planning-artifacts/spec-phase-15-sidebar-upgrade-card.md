@@ -11,10 +11,10 @@ Expose a small sidebar visibility helper and render the upgrade card only for Fr
 - `tests/unit/app-sidebar.test.ts`
 
 ## Acceptance Criteria
-- [ ] Free users see the sidebar upgrade card.
-- [ ] Pro users do not see the sidebar upgrade card.
-- [ ] Business users do not see the sidebar upgrade card.
-- [ ] Existing sidebar plan labels and navigation behavior remain unchanged.
+- [x] Free users see the sidebar upgrade card.
+- [x] Pro users do not see the sidebar upgrade card.
+- [x] Business users do not see the sidebar upgrade card.
+- [x] Existing sidebar plan labels and navigation behavior remain unchanged.
 
 ## Risks
 - Removing only the card content but not its wrapper would leave empty sidebar spacing for paid users.

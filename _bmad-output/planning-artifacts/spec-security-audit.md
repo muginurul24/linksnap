@@ -22,12 +22,12 @@ guard for mutating `/api/v1/*` browser requests, and remove avoidable
 - `_bmad-output/planning-artifacts/SECURITY.md`
 
 ## Acceptance Criteria
-- [ ] Security headers are applied to all routes.
-- [ ] Mutating API routes reject untrusted origins and missing custom headers.
-- [ ] Midtrans webhook remains compatible with server-to-server callbacks.
-- [ ] `dangerouslySetInnerHTML` no longer appears in `src/`.
-- [ ] Raw SQL, exec/spawn, unsafe fetch, and N+1 scans are documented.
-- [ ] Typecheck, lint, tests, and build pass.
+- [x] Security headers are applied to all routes.
+- [x] Mutating API routes reject untrusted origins and missing custom headers.
+- [x] Midtrans webhook remains compatible with server-to-server callbacks.
+- [x] `dangerouslySetInnerHTML` no longer appears in `src/`.
+- [x] Raw SQL, exec/spawn, unsafe fetch, and N+1 scans are documented.
+- [x] Typecheck, lint, tests, and build pass.
 
 ## Risks
 - CSP can block required Next.js runtime scripts or payment redirects if too

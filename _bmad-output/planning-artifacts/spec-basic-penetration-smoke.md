@@ -19,11 +19,11 @@ clicks for valid links.
 - `_bmad-output/implementation-artifacts/JOURNAL.md`
 
 ## Acceptance Criteria
-- [ ] XSS-like slug requests render the not-found state and do not reflect script payloads.
-- [ ] Overlong slugs render the not-found state instead of server errors.
-- [ ] `/.env` is not publicly exposed.
-- [ ] Malformed JSON on an API endpoint returns a generic validation error.
-- [ ] Midtrans webhook requests with invalid signatures are rejected.
+- [x] XSS-like slug requests render the not-found state and do not reflect script payloads.
+- [x] Overlong slugs render the not-found state instead of server errors.
+- [x] `/.env` is not publicly exposed.
+- [x] Malformed JSON on an API endpoint returns a generic validation error.
+- [x] Midtrans webhook requests with invalid signatures are rejected.
 
 ## Risks
 - Production security behavior can vary if provider env is not configured. The

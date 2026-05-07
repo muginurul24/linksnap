@@ -25,12 +25,12 @@ bearer API key calls are not forced to send the browser CSRF header.
 - API docs and focused tests
 
 ## Acceptance Criteria
-- [ ] Free users see an upgrade gate for API keys.
-- [ ] Pro and Business users can list, create, and revoke API keys.
-- [ ] Created keys are returned once; persisted data stores only a hash and prefix.
-- [ ] Bearer API key auth validates active paid users and updates `lastUsedAt`.
-- [ ] Mutating bearer API key requests pass proxy validation without the browser-only custom header.
-- [ ] Unit and integration tests cover hashing, prefix parsing, CRUD, and auth.
+- [x] Free users see an upgrade gate for API keys.
+- [x] Pro and Business users can list, create, and revoke API keys.
+- [x] Created keys are returned once; persisted data stores only a hash and prefix.
+- [x] Bearer API key auth validates active paid users and updates `lastUsedAt`.
+- [x] Mutating bearer API key requests pass proxy validation without the browser-only custom header.
+- [x] Unit and integration tests cover hashing, prefix parsing, CRUD, and auth.
 
 ## Risks
 - Existing API routes use session auth directly, so initial bearer integration

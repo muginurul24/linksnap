@@ -26,12 +26,12 @@ header.
 - Focused unit and integration tests
 
 ## Acceptance Criteria
-- [ ] Profile tab loads real session user data and saves name changes.
-- [ ] Security tab verifies current password and stores a new password hash.
-- [ ] Notifications tab persists typed user preferences.
-- [ ] All new inputs are validated with Zod and unknown fields are rejected.
-- [ ] Routes require a session, rate limit mutations, and use standard envelopes.
-- [ ] Existing hardcoded `Rafi` / `rafi@email.com` settings values are gone.
+- [x] Profile tab loads real session user data and saves name changes.
+- [x] Security tab verifies current password and stores a new password hash.
+- [x] Notifications tab persists typed user preferences.
+- [x] All new inputs are validated with Zod and unknown fields are rejected.
+- [x] Routes require a session, rate limit mutations, and use standard envelopes.
+- [x] Existing hardcoded `Rafi` / `rafi@email.com` settings values are gone.
 
 ## Risks
 - Users created through OAuth may not have a password hash; change-password must
