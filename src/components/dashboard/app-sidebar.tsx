@@ -17,7 +17,7 @@ import {
 } from "lucide-react";
 
 const mainNav = [
-  { title: "Overview", url: "/", icon: LayoutDashboard },
+  { title: "Overview", url: "/dashboard", icon: LayoutDashboard },
   { title: "My Links", url: "/links", icon: Link2 },
   { title: "Link Pages", url: "/pages", icon: Globe },
   { title: "QR Codes", url: "/qr", icon: QrCode },
@@ -34,7 +34,7 @@ export function AppSidebar() {
   const pathname = usePathname();
 
   const isActive = (url: string) => {
-    if (url === "/") return pathname === "/";
+    if (url === "/dashboard") return pathname === "/dashboard";
     return pathname.startsWith(url);
   };
 
@@ -43,7 +43,7 @@ export function AppSidebar() {
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
-            <Link href="/" className="flex items-center gap-2 px-2 py-1.5">
+            <Link href="/dashboard" className="flex items-center gap-2 px-2 py-1.5">
               <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
                 <Zap className="size-4" />
               </div>

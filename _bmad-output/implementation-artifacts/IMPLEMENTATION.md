@@ -465,11 +465,11 @@ src/
 ## 🟢 Phase 9: Public Site (4 tasks)
 
 ### TASK 9.1 — Landing Page
-- File: `src/app/(marketing)/page.tsx`
-- Sections: Hero, Features (6 cards), Pricing, Demo Generator, Testimonials
-- Demo Generator: input URL → generate short link live (no auth)
-- CTA: "Get Started Free" → `/register`, "Try Demo" → scroll to demo
-- SEO: meta tags, OG image, structured data
+- [x] File: `src/app/(marketing)/page.tsx`
+- [x] Sections: Hero, Features (6 cards), Pricing, Demo Generator, Testimonials
+- [x] Demo Generator: input URL → generate short link live (no auth)
+- [x] CTA: "Get Started Free" → `/register`, "Try Demo" → scroll to demo
+- [x] SEO: meta tags, OG image, structured data
 
 ### TASK 9.2 — Pricing Page
 - File: `src/app/(marketing)/pricing/page.tsx`

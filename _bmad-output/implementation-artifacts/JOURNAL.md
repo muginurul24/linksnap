@@ -2247,3 +2247,48 @@ Completed payment test coverage across unit, integration, and E2E. Added an inte
 - ✅ E2E cleans up payment test user data through cascading deletes.
 
 **Next Task:** 9.1 — Landing Page
+
+### 9.1 — Landing Page
+- **Date:** 2026-05-07 09:05 GMT+7
+- **Duration:** 0h 45m
+- **Status:** ✅ Complete
+
+**What I Did:**
+Built the public landing page in the marketing route group with hero, six feature cards, pricing, browser-side demo generator, testimonials, SEO metadata, JSON-LD structured data, and generated PNG social/hero imagery.
+
+**Files Changed:**
+- `src/app/(marketing)/page.tsx` — Added marketing home page metadata, canonical/OG/Twitter metadata, and JSON-LD.
+- `src/app/(marketing)/landing-preview-image.tsx` — Added shared generated PNG preview image renderer.
+- `src/app/(marketing)/opengraph-image.tsx` — Added generated Open Graph image.
+- `src/app/(marketing)/landing-preview/route.tsx` — Added stable preview image route for hero visuals.
+- `src/components/landing/landing-page.tsx` — Rebuilt landing page sections and added client-side demo link generation.
+- `src/app/(dashboard)/dashboard/page.tsx` — Moved dashboard overview from `/` to `/dashboard` to avoid route group conflict.
+- `src/components/dashboard/app-sidebar.tsx` — Updated overview navigation and brand link to `/dashboard`.
+- `src/app/layout.tsx` — Added root `metadataBase` for social image URL resolution.
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Checked off Task 9.1.
+- `_bmad-output/implementation-artifacts/JOURNAL.md` — Recorded this completion entry.
+
+**Decisions Made:**
+- Demo generator is non-persistent and runs in the browser so unauthenticated visitors can try slug generation without opening a public link-creation abuse path.
+- Dashboard overview now lives at `/dashboard`; `/` is reserved for the public landing page.
+- Generated PNG imagery is shared by the hero preview and Open Graph metadata to avoid external assets.
+
+**Tests:**
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Unit/Integration: `rtk bun run test` — 60 files passed, 274 tests passed.
+- ✅ Build: `rtk bun run build` — Passed; `/`, `/dashboard`, `/landing-preview`, and generated OG image routes are registered.
+- ✅ Browser: Playwright loaded `/`, generated a demo short link, verified `/dashboard` redirects unauthenticated users to login, and confirmed zero console errors.
+
+**Issues Encountered:**
+- Moving the home route into `(marketing)` exposed a route conflict with `(dashboard)/page.tsx` resolving to `/` → moved dashboard overview to `/dashboard`.
+- The special Open Graph image route is fingerprinted by Next.js and cannot be used as a stable hero image URL → added `/landing-preview`.
+
+**Security Checks:**
+- ✅ Demo input validates URL format, protocol, and internal hostnames.
+- ✅ Demo generator does not persist data or create public redirects.
+- ✅ `/dashboard` remains protected by `src/proxy.ts`.
+- ✅ JSON-LD is rendered without `dangerouslySetInnerHTML`.
+- ✅ No secrets, raw SQL, or user-controlled fetch URLs added.
+
+**Next Task:** 9.2 — Pricing Page

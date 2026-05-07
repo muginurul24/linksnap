@@ -18,6 +18,7 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://linksnap.id"),
   title: "LinkSnap — Smart Short Links & Micro Landing Pages",
   description: "Transform every link into a conversion engine.",
 };
