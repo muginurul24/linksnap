@@ -12,6 +12,7 @@ import {
 } from "../../src/lib/db/schema";
 import { hashPassword } from "../../src/lib/auth/password";
 import { redis } from "../../src/lib/redis";
+import { retryTransientDb } from "./db-retry";
 
 loadEnvConfig(process.cwd());
 
@@ -22,17 +23,20 @@ const desktopUserAgent =
   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120.0.0.0 Safari/537.36";
 
 async function createVerifiedUser(email: string, password: string): Promise<string> {
-  await db.delete(users).where(eq(users.email, email));
+  await retryTransientDb(() => db.delete(users).where(eq(users.email, email)));
 
-  const [user] = await db
-    .insert(users)
-    .values({
-      email,
-      emailVerified: new Date(),
-      passwordHash: await hashPassword(password),
-      plan: "PRO",
-    })
-    .returning({ id: users.id });
+  const passwordHash = await hashPassword(password);
+  const [user] = await retryTransientDb(() =>
+    db
+      .insert(users)
+      .values({
+        email,
+        emailVerified: new Date(),
+        passwordHash,
+        plan: "PRO",
+      })
+      .returning({ id: users.id }),
+  );
 
   if (!user) throw new Error("Unable to create E2E user.");
 
@@ -44,7 +48,7 @@ async function cleanupLinkFlowState(
   userId?: string,
   slugs: string[] = [],
 ): Promise<void> {
-  await db.delete(users).where(eq(users.email, email));
+  await retryTransientDb(() => db.delete(users).where(eq(users.email, email)));
 
   await redis.del(
     `rate-limit:auth:login:${testIp}`,
@@ -75,11 +79,13 @@ async function cleanupLinkFlowState(
 }
 
 async function getLinkIdBySlug(slug: string): Promise<string> {
-  const [link] = await db
-    .select({ id: links.id })
-    .from(links)
-    .where(eq(links.slug, slug))
-    .limit(1);
+  const [link] = await retryTransientDb(() =>
+    db
+      .select({ id: links.id })
+      .from(links)
+      .where(eq(links.slug, slug))
+      .limit(1),
+  );
 
   if (!link) throw new Error("Created link was not found.");
 
@@ -87,11 +93,13 @@ async function getLinkIdBySlug(slug: string): Promise<string> {
 }
 
 async function getLinkDestinationUrlBySlug(slug: string): Promise<string> {
-  const [link] = await db
-    .select({ destinationUrl: links.destinationUrl })
-    .from(links)
-    .where(eq(links.slug, slug))
-    .limit(1);
+  const [link] = await retryTransientDb(() =>
+    db
+      .select({ destinationUrl: links.destinationUrl })
+      .from(links)
+      .where(eq(links.slug, slug))
+      .limit(1),
+  );
 
   if (!link) throw new Error("Created link was not found.");
 
@@ -99,10 +107,12 @@ async function getLinkDestinationUrlBySlug(slug: string): Promise<string> {
 }
 
 async function countClicksForLink(linkId: string): Promise<number> {
-  const [row] = await db
-    .select({ value: count() })
-    .from(clickEvents)
-    .where(eq(clickEvents.linkId, linkId));
+  const [row] = await retryTransientDb(() =>
+    db
+      .select({ value: count() })
+      .from(clickEvents)
+      .where(eq(clickEvents.linkId, linkId)),
+  );
 
   return row?.value ?? 0;
 }
@@ -114,33 +124,37 @@ async function createLinkPageFixture({
   slug: string;
   userId: string;
 }): Promise<void> {
-  const [link] = await db
-    .insert(links)
-    .values({
-      clickCount: 42,
-      destinationUrl: "https://example.com/preview",
-      hasLinkPage: true,
-      slug,
-      title: "Preview promo",
-      userId,
-    })
-    .returning({ id: links.id });
+  const [link] = await retryTransientDb(() =>
+    db
+      .insert(links)
+      .values({
+        clickCount: 42,
+        destinationUrl: "https://example.com/preview",
+        hasLinkPage: true,
+        slug,
+        title: "Preview promo",
+        userId,
+      })
+      .returning({ id: links.id }),
+  );
 
   if (!link) throw new Error("Unable to create preview link.");
 
-  await db.insert(linkPages).values({
-    brandName: "Acme Preview",
-    countdownTarget: new Date(Date.now() + 86_400_000),
-    ctaColor: "#0f766e",
-    ctaText: "Open offer",
-    description: "Dashboard preview copy.",
-    linkId: link.id,
-    showCountdown: true,
-    showQrCode: false,
-    showSocialProof: true,
-    theme: "light",
-    title: "Preview Launch",
-  });
+  await retryTransientDb(() =>
+    db.insert(linkPages).values({
+      brandName: "Acme Preview",
+      countdownTarget: new Date(Date.now() + 86_400_000),
+      ctaColor: "#0f766e",
+      ctaText: "Open offer",
+      description: "Dashboard preview copy.",
+      linkId: link.id,
+      showCountdown: true,
+      showQrCode: false,
+      showSocialProof: true,
+      theme: "light",
+      title: "Preview Launch",
+    }),
+  );
 }
 
 async function signIn(page: Page, {
@@ -150,30 +164,42 @@ async function signIn(page: Page, {
   email: string;
   password: string;
 }): Promise<void> {
-  await page.goto("/login");
-  await page.getByLabel("Email").fill(email);
-  await page.getByLabel("Password", { exact: true }).fill(password);
+  let lastStatus = 0;
 
-  const credentialsResponsePromise = page.waitForResponse(
-    (response) =>
-      response.url().includes("/api/auth/callback/credentials") &&
-      response.request().method() === "POST",
-    { timeout: 20_000 },
-  );
+  for (let attempt = 1; attempt <= 3; attempt += 1) {
+    await page.goto("/login");
+    await page.getByLabel("Email").fill(email);
+    await page.getByLabel("Password", { exact: true }).fill(password);
 
-  await page.getByRole("button", { name: /^Sign in$/ }).click();
-  const credentialsResponse = await credentialsResponsePromise;
-  expect(credentialsResponse.ok()).toBe(true);
+    const credentialsResponsePromise = page.waitForResponse(
+      (response) =>
+        response.url().includes("/api/auth/callback/credentials") &&
+        response.request().method() === "POST",
+      { timeout: 20_000 },
+    );
+
+    await page.getByRole("button", { name: /^Sign in$/ }).click();
+    const credentialsResponse = await credentialsResponsePromise;
+    lastStatus = credentialsResponse.status();
+    if (credentialsResponse.ok()) return;
+
+    await page.waitForTimeout(attempt * 500);
+  }
+
+  expect(lastStatus).toBeGreaterThanOrEqual(200);
+  expect(lastStatus).toBeLessThan(300);
 }
 
 async function visitSlugWithUserAgent({
   baseURL,
   browser,
+  expectedUrl,
   slug,
   userAgent,
 }: {
   baseURL: string;
   browser: Browser;
+  expectedUrl: string;
   slug: string;
   userAgent: string;
 }): Promise<string> {
@@ -190,6 +216,13 @@ async function visitSlugWithUserAgent({
       timeout: 10_000,
       waitUntil: "commit",
     });
+    await page
+      .waitForURL(expectedUrl, { timeout: 10_000 })
+      .catch((error: unknown) => {
+        if (error instanceof Error && error.message.includes("ERR_ABORTED")) return;
+
+        throw error;
+      });
 
     return page.url();
   } finally {
@@ -376,6 +409,9 @@ test("should configure Smart Rules then redirect by browser user agent", async (
           },
         ],
       },
+      headers: {
+        "X-Requested-With": "XMLHttpRequest",
+      },
     });
     expect(rulesResponse.ok()).toBe(true);
 
@@ -385,6 +421,7 @@ test("should configure Smart Rules then redirect by browser user agent", async (
           visitSlugWithUserAgent({
             baseURL: appBaseUrl,
             browser,
+            expectedUrl: "https://example.com/mobile-rule",
             slug,
             userAgent: mobileUserAgent,
           }),
@@ -398,6 +435,7 @@ test("should configure Smart Rules then redirect by browser user agent", async (
           visitSlugWithUserAgent({
             baseURL: appBaseUrl,
             browser,
+            expectedUrl: "https://example.com/default",
             slug,
             userAgent: desktopUserAgent,
           }),
@@ -432,18 +470,23 @@ test("should run campaign workflow from an authenticated dashboard session", asy
 
   try {
     userId = await createVerifiedUser(email, password);
+    const createdUserId = userId;
 
-    await db.insert(links).values({
-      destinationUrl: "https://example.com/campaign-offer",
-      slug,
-      title: "Campaign E2E",
-      userId,
-    });
+    await retryTransientDb(() =>
+      db.insert(links).values({
+        destinationUrl: "https://example.com/campaign-offer",
+        slug,
+        title: "Campaign E2E",
+        userId: createdUserId,
+      }),
+    );
 
     await signIn(page, { email, password });
     await expect(page).toHaveURL(/\/links$/, { timeout: 15_000 });
     await page.goto("/campaigns");
-    await expect(page.getByRole("heading", { name: "Campaigns" })).toBeVisible();
+    await expect(
+      page.getByRole("heading", { exact: true, name: "Campaigns" }),
+    ).toBeVisible();
 
     const campaignResponse = await page.request.post("/api/v1/campaigns", {
       data: {
@@ -452,6 +495,9 @@ test("should run campaign workflow from an authenticated dashboard session", asy
         utmCampaign: "ramadhan-2026",
         utmMedium: "social",
         utmSource: "instagram",
+      },
+      headers: {
+        "X-Requested-With": "XMLHttpRequest",
       },
     });
     expect(campaignResponse.ok()).toBe(true);
@@ -465,6 +511,9 @@ test("should run campaign workflow from an authenticated dashboard session", asy
       `/api/v1/campaigns/${campaignBody.data.id}/links`,
       {
         data: { linkIds: [linkId] },
+        headers: {
+          "X-Requested-With": "XMLHttpRequest",
+        },
       },
     );
     expect(addLinksResponse.ok()).toBe(true);
@@ -502,9 +551,37 @@ test("should run campaign workflow from an authenticated dashboard session", asy
     expect(analyticsBody.success).toBe(true);
     expect(analyticsBody.data.totalClicks).toBeGreaterThan(0);
     expect(analyticsBody.data.topLinks[0]).toMatchObject({ id: linkId, slug });
+
+    await page.goto("/campaigns");
+    await expect(page.getByText("Ramadhan E2E")).toBeVisible();
+    await page
+      .getByRole("button", { name: "Open actions for Ramadhan E2E" })
+      .click();
+    await page.getByRole("menuitem", { name: "Delete" }).click();
+    await expect(
+      page.getByText("Are you sure you want to delete Ramadhan E2E?"),
+    ).toBeVisible();
+    await page.getByRole("button", { name: "Delete" }).click();
+
+    await expect
+      .poll(
+        async () =>
+          retryTransientDb(() =>
+            db
+              .select({ value: count() })
+              .from(campaigns)
+              .where(eq(campaigns.id, campaignBody.data.id))
+              .then((rows) => rows[0]?.value ?? 0),
+          ),
+        { message: "campaign should be deleted", timeout: 10_000 },
+      )
+      .toBe(0);
   } finally {
     if (userId) {
-      await db.delete(campaigns).where(eq(campaigns.userId, userId));
+      const createdUserId = userId;
+      await retryTransientDb(() =>
+        db.delete(campaigns).where(eq(campaigns.userId, createdUserId)),
+      );
     }
     await cleanupLinkFlowState(email, userId, [slug]);
   }
@@ -520,13 +597,16 @@ test("should configure an A/B split test from an authenticated dashboard session
 
   try {
     userId = await createVerifiedUser(email, password);
+    const createdUserId = userId;
 
-    await db.insert(links).values({
-      destinationUrl: "https://example.com/default-split",
-      slug,
-      title: "Split E2E",
-      userId,
-    });
+    await retryTransientDb(() =>
+      db.insert(links).values({
+        destinationUrl: "https://example.com/default-split",
+        slug,
+        title: "Split E2E",
+        userId: createdUserId,
+      }),
+    );
 
     await signIn(page, { email, password });
     await expect(page).toHaveURL(/\/links$/, { timeout: 15_000 });
@@ -543,6 +623,9 @@ test("should configure an A/B split test from an authenticated dashboard session
             { destinationUrl: "https://example.com/split-a", weight: 50 },
             { destinationUrl: "https://example.com/split-b", weight: 50 },
           ],
+        },
+        headers: {
+          "X-Requested-With": "XMLHttpRequest",
         },
       },
     );
@@ -609,13 +692,16 @@ test("should download QR codes from the QR dashboard", async ({ page }) => {
 
   try {
     userId = await createVerifiedUser(email, password);
+    const createdUserId = userId;
 
-    await db.insert(links).values({
-      destinationUrl: "https://example.com/qr-download",
-      slug,
-      title: "QR Download",
-      userId,
-    });
+    await retryTransientDb(() =>
+      db.insert(links).values({
+        destinationUrl: "https://example.com/qr-download",
+        slug,
+        title: "QR Download",
+        userId: createdUserId,
+      }),
+    );
 
     await signIn(page, { email, password });
     await expect(page).toHaveURL(/\/links$/, { timeout: 15_000 });

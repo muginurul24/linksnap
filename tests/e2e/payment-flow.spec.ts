@@ -6,6 +6,7 @@ import { subscriptions, transactions, users } from "../../src/lib/db/schema";
 import { hashPassword } from "../../src/lib/auth/password";
 import { redis } from "../../src/lib/redis";
 import { calculateMidtransSignature } from "../../src/lib/payments/webhook";
+import { retryTransientDb } from "./db-retry";
 
 loadEnvConfig(process.cwd());
 
@@ -14,17 +15,20 @@ const testIp = "127.0.0.1";
 test.setTimeout(90_000);
 
 async function createVerifiedUser(email: string, password: string): Promise<string> {
-  await db.delete(users).where(eq(users.email, email));
+  await retryTransientDb(() => db.delete(users).where(eq(users.email, email)));
+  const passwordHash = await hashPassword(password);
 
-  const [user] = await db
-    .insert(users)
-    .values({
-      email,
-      emailVerified: new Date(),
-      passwordHash: await hashPassword(password),
-      plan: "FREE",
-    })
-    .returning({ id: users.id });
+  const [user] = await retryTransientDb(() =>
+    db
+      .insert(users)
+      .values({
+        email,
+        emailVerified: new Date(),
+        passwordHash,
+        plan: "FREE",
+      })
+      .returning({ id: users.id }),
+  );
 
   if (!user) throw new Error("Unable to create E2E user.");
 
@@ -61,7 +65,7 @@ async function cleanupPaymentFlowState(
   email: string,
   userId?: string,
 ): Promise<void> {
-  await db.delete(users).where(eq(users.email, email));
+  await retryTransientDb(() => db.delete(users).where(eq(users.email, email)));
 
   await redis.del(
     `rate-limit:auth:login:${testIp}`,
@@ -76,34 +80,36 @@ async function cleanupPaymentFlowState(
 }
 
 async function findTransactionByOrderId(orderId: string) {
-  const [transaction] = await db
-    .select({
-      grossAmountIdr: transactions.grossAmountIdr,
-      orderId: transactions.orderId,
-      status: transactions.status,
-      userId: transactions.userId,
-    })
-    .from(transactions)
-    .where(eq(transactions.orderId, orderId))
-    .limit(1);
+  const [transaction] = await retryTransientDb(() =>
+    db
+      .select({
+        grossAmountIdr: transactions.grossAmountIdr,
+        orderId: transactions.orderId,
+        status: transactions.status,
+        userId: transactions.userId,
+      })
+      .from(transactions)
+      .where(eq(transactions.orderId, orderId))
+      .limit(1),
+  );
 
   return transaction ?? null;
 }
 
 async function findBillingState(userId: string) {
-  const [user] = await db
-    .select({ plan: users.plan })
-    .from(users)
-    .where(eq(users.id, userId))
-    .limit(1);
-  const [subscription] = await db
-    .select({
-      plan: subscriptions.plan,
-      status: subscriptions.status,
-    })
-    .from(subscriptions)
-    .where(eq(subscriptions.userId, userId))
-    .limit(1);
+  const [user] = await retryTransientDb(() =>
+    db.select({ plan: users.plan }).from(users).where(eq(users.id, userId)).limit(1),
+  );
+  const [subscription] = await retryTransientDb(() =>
+    db
+      .select({
+        plan: subscriptions.plan,
+        status: subscriptions.status,
+      })
+      .from(subscriptions)
+      .where(eq(subscriptions.userId, userId))
+      .limit(1),
+  );
 
   return {
     subscriptionPlan: subscription?.plan ?? null,
@@ -129,6 +135,60 @@ test.use({
   extraHTTPHeaders: {
     "x-forwarded-for": testIp,
   },
+});
+
+test("should start billing upgrade from the Pro button and redirect to checkout", async ({
+  baseURL,
+  page,
+}) => {
+  if (!baseURL) throw new Error("Playwright baseURL is not configured.");
+
+  const email = `e2e-billing-click-${Date.now()}@example.com`;
+  const password = "Password1";
+  const orderId = "LS-E2E-UPGRADE";
+  let userId: string | undefined;
+
+  try {
+    userId = await createVerifiedUser(email, password);
+    await signIn(page, { email, password });
+
+    await page.route("**/api/v1/payments/create", async (route) => {
+      const request = route.request();
+      const payload = request.postDataJSON() as {
+        duration?: string;
+        plan?: string;
+      };
+
+      expect(request.headers()["x-requested-with"]).toBe("XMLHttpRequest");
+      expect(payload).toMatchObject({ duration: "MONTHLY", plan: "PRO" });
+
+      await route.fulfill({
+        body: JSON.stringify({
+          data: {
+            orderId,
+            redirectUrl: `${baseURL}/checkout/cancel?order_id=${orderId}`,
+          },
+          success: true,
+        }),
+        contentType: "application/json",
+        status: 200,
+      });
+    });
+
+    await page.goto("/settings/billing");
+    await expect(page.getByRole("heading", { name: "Billing" })).toBeVisible();
+    await page.getByRole("button", { name: "Upgrade to Pro" }).click();
+
+    await expect(page).toHaveURL(
+      new RegExp(`/checkout/cancel\\?order_id=${orderId}$`),
+      { timeout: 15_000 },
+    );
+    await expect(
+      page.getByText("Payment was cancelled", { exact: true }),
+    ).toBeVisible();
+  } finally {
+    await cleanupPaymentFlowState(email, userId);
+  }
 });
 
 test("should create sandbox payment and activate billing through webhook", async ({

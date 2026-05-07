@@ -5036,3 +5036,47 @@ Added blur-time field validation and clear-on-type behavior across auth, link, c
 - ✅ No raw SQL, secrets, or `dangerouslySetInnerHTML` introduced.
 
 **Next Task:** 15.12 — End-to-End Tests for Critical Flows
+
+### 15.12 — End-to-End Tests for Critical Flows
+- **Date:** 2026-05-07 21:56 GMT+7
+- **Duration:** 1h 15m
+- **Status:** ✅ Complete
+
+**What I Did:**
+Added and hardened E2E coverage for the core user paths: auth registration through logout, dashboard link redirects and analytics, Link Pages, Smart Rules, campaigns, split tests, QR downloads, billing upgrade redirects, payment webhook activation, public marketing navigation, accessibility checks, and settings profile/password updates.
+
+**Files Changed:**
+- `_bmad-output/planning-artifacts/spec-phase-15-e2e-critical-flows.md` — Added quick-dev spec, acceptance criteria, and risk notes.
+- `src/app/(dashboard)/campaigns/campaign-actions.tsx` — Added a stable accessible action label for campaign deletion tests.
+- `tests/e2e/auth.spec.ts` — Extended auth E2E through logout and added transient registration retry.
+- `tests/e2e/db-retry.ts` — Added shared transient Neon/Drizzle retry helper for E2E database setup and assertions.
+- `tests/e2e/link-flow.spec.ts` — Added critical dashboard link, Link Page, Smart Rules, campaign, split-test, and QR workflows with resilient DB setup.
+- `tests/e2e/payment-flow.spec.ts` — Added billing upgrade button redirect coverage and transient DB retry.
+- `tests/e2e/public-site.spec.ts` — Updated demo generator expectation to the active `www.justqiu.cloud` domain.
+- `tests/e2e/settings-flow.spec.ts` — Added settings profile update and password-change E2E coverage.
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Checked off Task 15.12.
+
+**Decisions Made:**
+- Kept the billing upgrade test network-mocked at the browser boundary so it verifies the real button payload and redirect handling without opening an external checkout window.
+- Used direct database fixtures for dashboard E2E setup where the UI flow under test starts after account creation.
+- Added retry around Neon HTTP test fixture queries because transient `fetch failed` errors should not invalidate unrelated UX assertions.
+
+**Tests:**
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Unit/Integration: `rtk bun run test` — 105 files passed, 477 tests passed.
+- ✅ Targeted E2E: `rtk bun run test:e2e -- tests/e2e/link-flow.spec.ts --grep "Smart Rules"` — 1 test passed.
+- ✅ Targeted E2E: `rtk bun run test:e2e -- tests/e2e/public-site.spec.ts --grep "navigate landing"` — 1 test passed.
+- ✅ Full E2E: `rtk bun run test:e2e` — 16 tests passed.
+
+**Issues Encountered:**
+- Full E2E initially failed on a transient Neon `fetch failed` wrapped by Drizzle's outer query error → Added cause-chain detection and retry for E2E DB fixture reads/writes.
+- Public demo generator test still expected the old `linksnap.id` domain → Updated the assertion to the active `www.justqiu.cloud` short-link preview.
+
+**Security Checks:**
+- ✅ E2E API calls include the required `X-Requested-With: XMLHttpRequest` header where CSRF protection applies.
+- ✅ Auth logout uses a real CSRF token rather than bypassing the application flow.
+- ✅ Test fixtures clean up users, campaigns, Redis rate-limit keys, and cached redirect artifacts.
+- ✅ No secrets, raw SQL, or `dangerouslySetInnerHTML` introduced.
+
+**Next Task:** 15.13 — Apply PlanGate to ALL Gated Features

@@ -100,7 +100,14 @@ export function CampaignActions({ id, name }: CampaignActionsProps) {
     <>
       <DropdownMenu>
         <DropdownMenuTrigger
-          render={<Button variant="ghost" size="icon" className="size-8" />}
+          render={
+            <Button
+              aria-label={`Open actions for ${name}`}
+              variant="ghost"
+              size="icon"
+              className="size-8"
+            />
+          }
         >
           <MoreHorizontal className="size-4" />
         </DropdownMenuTrigger>

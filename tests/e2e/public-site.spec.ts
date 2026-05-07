@@ -24,7 +24,9 @@ test("should navigate landing pricing demo generator and register", async ({
     .getByLabel("Destination URL")
     .fill("https://example.com/sale?utm_source=e2e");
   await page.getByRole("button", { name: "Generate" }).click();
-  await expect(page.getByText(/https:\/\/linksnap\.id\/example-/)).toBeVisible();
+  await expect(
+    page.getByText(/^https:\/\/www\.justqiu\.cloud\/example-[a-z0-9]+$/),
+  ).toBeVisible();
 
   await page.getByRole("link", { name: "Get Started Free" }).first().click();
   await expect(page).toHaveURL(/\/register$/);

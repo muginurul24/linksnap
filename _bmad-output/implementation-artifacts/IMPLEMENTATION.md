@@ -1203,13 +1203,13 @@ rtk bun run db:studio    # Open Drizzle Studio (in another terminal)
 - [x] Tests: unit (validation error display, field-level clearing)
 
 ### TASK 15.12 — End-to-End Tests for Critical Flows
-- [ ] E2E: auth flow (register → verify → login → dashboard → logout)
-- [ ] E2E: link flow (create link → visit short URL → check analytics)
-- [ ] E2E: campaign flow (create campaign → add link → delete campaign)
-- [ ] E2E: billing flow (visit billing → upgrade button → verify redirect)
-- [ ] E2E: settings flow (change profile → change password)
-- [ ] All E2E tests pass; update any that broke from Phase 15 changes
-- [ ] Run full test suite, typecheck, lint — all must pass
+- [x] E2E: auth flow (register → verify → login → dashboard → logout)
+- [x] E2E: link flow (create link → visit short URL → check analytics)
+- [x] E2E: campaign flow (create campaign → add link → delete campaign)
+- [x] E2E: billing flow (visit billing → upgrade button → verify redirect)
+- [x] E2E: settings flow (change profile → change password)
+- [x] All E2E tests pass; update any that broke from Phase 15 changes
+- [x] Run full test suite, typecheck, lint — all must pass
 
 ### TASK 15.13 — Apply PlanGate to ALL Gated Features
 > **Principle:** Never show an error after the fact. Disable the control upfront with a clear reason and upgrade path.
