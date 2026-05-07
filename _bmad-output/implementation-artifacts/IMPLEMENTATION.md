@@ -417,9 +417,9 @@ src/
 - [x] Increment `clickCount` on variant
 
 ### TASK 7.3 — Split Test Tests
-- Unit: variant selection algorithm
-- Integration: create split test → make 100 requests → verify distribution ≈ weights
-- E2E: configure A/B test from dashboard
+- [x] Unit: variant selection algorithm
+- [x] Integration: create split test → make 100 requests → verify distribution ≈ weights
+- [x] E2E: configure A/B test from dashboard
 
 ---
 

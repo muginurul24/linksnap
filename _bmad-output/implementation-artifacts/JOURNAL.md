@@ -1991,3 +1991,40 @@ Integrated split-test routing into public redirects. Direct redirects and Link P
 - ✅ No secrets, plaintext IP storage, raw SQL, or sensitive logging added.
 
 **Next Task:** 7.3 — Split Test Tests
+
+### 7.3 — Split Test Tests
+- **Date:** 2026-05-07 07:49 GMT+7
+- **Duration:** 0h 30m
+- **Status:** ✅ Complete
+
+**What I Did:**
+Completed split test coverage. Unit coverage verifies deterministic weighted variant selection, integration coverage runs 100 redirect selections and verifies a 70/30 distribution, and E2E coverage configures an A/B split test from an authenticated dashboard session and verifies redirect performance counters.
+
+**Files Changed:**
+- `tests/integration/split-test-redirect-distribution.test.ts` — Added 100-request split-test distribution integration coverage.
+- `tests/e2e/link-flow.spec.ts` — Added authenticated dashboard-session A/B split-test configuration and redirect E2E coverage.
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Checked off Task 7.3.
+- `_bmad-output/implementation-artifacts/JOURNAL.md` — Recorded this completion entry.
+
+**Decisions Made:**
+- Used deterministic `Math.random()` values in integration to make the 70/30 distribution test exact and non-flaky.
+- E2E configures split tests through authenticated dashboard API requests because the dashboard UI does not yet expose A/B split-test controls.
+- E2E validates both saved variant config and that a public redirect increments split-test performance counters.
+
+**Tests:**
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Unit/Integration: `rtk bun run test` — 51 files passed, 234 tests passed.
+- ✅ Build: `rtk bun run build` — Passed.
+- ✅ E2E: `rtk bun run test:e2e` — 8 specs passed.
+
+**Issues Encountered:**
+- Initial E2E locator for the split-test slug matched both short slug and full URL text → Switched to exact text matching for the short slug.
+
+**Security Checks:**
+- ✅ E2E uses authenticated users and user-owned links.
+- ✅ Split-test API validation and ownership checks are exercised by prior Task 7.1 tests.
+- ✅ E2E cleanup removes test users and link data.
+- ✅ No secrets, plaintext IP storage, raw SQL, or sensitive logging added.
+
+**Next Task:** 8.1 — Midtrans Integration
