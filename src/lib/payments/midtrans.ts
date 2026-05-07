@@ -94,6 +94,10 @@ export function assertMidtransConfigured(config?: MidtransClientConfig): void {
   getServerKey(config);
 }
 
+export function getMidtransServerKey(config?: MidtransClientConfig): string {
+  return getServerKey(config);
+}
+
 function isProductionEnvironment(config?: MidtransClientConfig): boolean {
   if (config?.isProduction !== undefined) return config.isProduction;
 

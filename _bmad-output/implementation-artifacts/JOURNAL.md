@@ -2072,3 +2072,49 @@ Implemented Midtrans Snap transaction creation for paid plan upgrades. The new A
 - ✅ No raw SQL added.
 
 **Next Task:** 8.2 — Payment Webhook
+
+### 8.2 — Payment Webhook
+- **Date:** 2026-05-07 08:03 GMT+7
+- **Duration:** 0h 35m
+- **Status:** ✅ Complete
+
+**What I Did:**
+Implemented the Midtrans payment webhook. Notifications are validated, signature-checked with SHA512, mapped to local payment statuses, matched against existing order IDs, and processed idempotently. Settlement notifications activate or upgrade subscriptions, update the user plan, and send an invoice email.
+
+**Files Changed:**
+- `src/app/api/v1/payments/webhook/route.ts` — Added signed Midtrans webhook route with standard API responses.
+- `src/lib/payments/webhook.ts` — Added signature generation/verification, status mapping, timestamp parsing, and gross amount parsing.
+- `src/lib/payments/webhook-handler.ts` — Added idempotent webhook processing, amount verification, subscription activation, user plan updates, and invoice email dispatch.
+- `src/lib/db/queries/payments.ts` — Added webhook transaction lookup, optimistic status update, subscription upsert, and user plan update helpers.
+- `src/lib/email/payment-emails.ts` — Added Resend invoice email sending with file delivery support for non-production tests.
+- `src/lib/payments/midtrans.ts` — Exported configured server key access for webhook verification.
+- `src/lib/validations/payment.ts` — Added Midtrans webhook payload validation.
+- `tests/unit/midtrans-webhook.test.ts` — Added signature, status mapping, fraud status, timestamp, and amount parsing coverage.
+- `tests/integration/payment-webhook-api.test.ts` — Added route coverage for settlement, pending, duplicate settlement, invalid signature, amount mismatch, and unknown orders.
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Checked off Task 8.2.
+- `_bmad-output/implementation-artifacts/JOURNAL.md` — Recorded this completion entry.
+
+**Decisions Made:**
+- Webhook authentication uses Midtrans signature verification instead of session auth because the caller is Midtrans.
+- Duplicate or terminal-state notifications are acknowledged without replaying subscription activation or invoice sending.
+- Invoice email failures are logged but do not fail an already-processed payment webhook.
+- Signed amount is compared to the local transaction amount before any subscription mutation.
+
+**Tests:**
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Unit/Integration: `rtk bun run test` — 56 files passed, 261 tests passed.
+- ✅ Build: `rtk bun run build` — Passed; `/api/v1/payments/webhook` is registered.
+
+**Issues Encountered:**
+- None.
+
+**Security Checks:**
+- ✅ Webhook input validated with Zod.
+- ✅ Midtrans signature verified with SHA512 and timing-safe comparison.
+- ✅ Order ID must exist locally before processing.
+- ✅ Gross amount must match the local transaction before activation.
+- ✅ Processing is idempotent for duplicate and terminal notifications.
+- ✅ No secrets, raw SQL, or sensitive payload logging added.
+
+**Next Task:** 8.3 — Subscription Management

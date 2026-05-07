@@ -435,12 +435,12 @@ src/
   - [x] Return: `{ snapToken, orderId }`
 
 ### TASK 8.2 — Payment Webhook
-- File: `src/app/api/v1/payments/webhook/route.ts`
-- Verify Midtrans signature (SHA512)
-- Handle notification types: `settlement`, `cancel`, `deny`, `expire`, `pending`
-- On settlement: create/upgrade subscription, update user plan
-- Idempotent: check `orderId` before processing
-- Send invoice email via Resend
+- [x] File: `src/app/api/v1/payments/webhook/route.ts`
+- [x] Verify Midtrans signature (SHA512)
+- [x] Handle notification types: `settlement`, `cancel`, `deny`, `expire`, `pending`
+- [x] On settlement: create/upgrade subscription, update user plan
+- [x] Idempotent: check `orderId` before processing
+- [x] Send invoice email via Resend
 
 ### TASK 8.3 — Subscription Management
 - File: `src/lib/payments/subscription.ts`
