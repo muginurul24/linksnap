@@ -11,9 +11,9 @@
     "assetBundlePatterns": [
       "**/*"
     ],
-    "icon": "./assets/icon.svg",
+    "icon": "./assets/icon.png",
     "splash": {
-      "image": "./assets/splash.svg",
+      "image": "./assets/splash.png",
       "backgroundColor": "#0A0A0B",
       "resizeMode": "contain"
     },
