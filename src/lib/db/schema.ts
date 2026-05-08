@@ -12,6 +12,7 @@ import {
   index,
   jsonb,
 } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
 
 // ─── Enums ───
 export const planEnum = pgEnum("plan", ["FREE", "PRO", "BUSINESS"]);
@@ -142,6 +143,10 @@ export const links = pgTable(
     slugIdx: uniqueIndex("slug_idx").on(table.slug),
     userIdIdx: index("links_user_id_idx").on(table.userId),
     campaignIdx: index("links_campaign_idx").on(table.campaignId),
+    userIdCreatedAtIdx: index("links_user_created_idx").on(
+      table.userId,
+      table.createdAt,
+    ),
   }),
 );
 
@@ -213,6 +218,10 @@ export const clickEvents = pgTable(
   (table) => ({
     linkIdIdx: index("ce_link_id_idx").on(table.linkId),
     tsIdx: index("ce_ts_idx").on(table.timestamp),
+    linkIdTimestampIdx: index("ce_link_ts_idx").on(
+      table.linkId,
+      table.timestamp,
+    ),
   }),
 );
 
@@ -294,7 +303,12 @@ export const transactions = pgTable("transactions", {
   paidAt: timestamp("paid_at"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
-});
+}, (table) => ({
+  userIdIdx: index("tx_user_idx").on(table.userId),
+  settledUserIdIdx: index("tx_settled_user_idx")
+    .on(table.userId)
+    .where(sql`${table.status} = 'SETTLEMENT'`),
+}));
 
 // ─── Admin Audit Log ───
 export const SUPERADMIN_ROLE = "superadmin";

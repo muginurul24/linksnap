@@ -246,27 +246,31 @@ export async function unsuspendUser(
 
 export async function getSystemStats(): Promise<AdminSystemStats> {
   const db = getDb();
+  const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+  const thirtyDaysAgoISO = thirtyDaysAgo.toISOString();
 
-  const [userStats] = await db
-    .select({ total: count(users.id) })
+  // Single CTE-based query combining 5 scalar stats into one round trip.
+  // Plan distribution still needs a separate GROUP BY query.
+  const [stats] = await db
+    .select({
+      totalUsers: count(users.id),
+      totalLinks: sql<number>`(SELECT count(*) FROM ${links})`.mapWith(Number),
+      totalClicks: sql<number>`(SELECT count(*) FROM ${clickEvents})`.mapWith(Number),
+      totalRevenueIdr:
+        sql<number>`COALESCE((SELECT sum(gross_amount_idr) FROM ${transactions} WHERE status = 'SETTLEMENT'), 0)`.mapWith(
+          Number,
+        ),
+      usersLast30Days:
+        sql<number>`(SELECT count(*) FROM ${users} WHERE created_at >= ${thirtyDaysAgoISO})`.mapWith(
+          Number,
+        ),
+      linksLast30Days:
+        sql<number>`(SELECT count(*) FROM ${links} WHERE created_at >= ${thirtyDaysAgoISO})`.mapWith(
+          Number,
+        ),
+    })
     .from(users);
 
-  const [linkStats] = await db
-    .select({ total: count(links.id) })
-    .from(links);
-
-  const [clickStats] = await db
-    .select({ total: count(clickEvents.id) })
-    .from(clickEvents);
-
-  const [revenueStats] = await db
-    .select({ total: sum(transactions.grossAmountIdr) })
-    .from(transactions)
-    .where(eq(transactions.status, "SETTLEMENT"));
-
-  const revenueIdr = typeof revenueStats?.total === "number" ? revenueStats.total : 0;
-
-  // Plan distribution
   const planRows = await db
     .select({
       plan: users.plan,
@@ -275,37 +279,20 @@ export async function getSystemStats(): Promise<AdminSystemStats> {
     .from(users)
     .groupBy(users.plan);
 
-  const planDistribution: Record<string, number> = {
-    FREE: 0,
-    PRO: 0,
-    BUSINESS: 0,
-  };
+  const planDistribution: Record<string, number> = { FREE: 0, PRO: 0, BUSINESS: 0 };
   for (const row of planRows) {
     if (row.plan) {
       planDistribution[row.plan as UserPlan] = row.count;
     }
   }
 
-  // Last 30 days new users
-  const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
-  const [users30d] = await db
-    .select({ total: count(users.id) })
-    .from(users)
-    .where(sql`${users.createdAt} >= ${thirtyDaysAgo.toISOString()}`);
-
-  // Last 30 days new links
-  const [links30d] = await db
-    .select({ total: count(links.id) })
-    .from(links)
-    .where(sql`${links.createdAt} >= ${thirtyDaysAgo.toISOString()}`);
-
   return {
-    totalUsers: userStats?.total ?? 0,
-    totalLinks: linkStats?.total ?? 0,
-    totalClicks: clickStats?.total ?? 0,
-    totalRevenueIdr: revenueIdr,
+    totalUsers: stats?.totalUsers ?? 0,
+    totalLinks: stats?.totalLinks ?? 0,
+    totalClicks: stats?.totalClicks ?? 0,
+    totalRevenueIdr: stats?.totalRevenueIdr ?? 0,
     planDistribution: planDistribution as Record<UserPlan, number>,
-    usersLast30Days: users30d?.total ?? 0,
-    linksLast30Days: links30d?.total ?? 0,
+    usersLast30Days: stats?.usersLast30Days ?? 0,
+    linksLast30Days: stats?.linksLast30Days ?? 0,
   };
 }
