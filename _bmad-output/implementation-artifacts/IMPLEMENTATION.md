@@ -2948,7 +2948,7 @@ Premium Flutter experience. 🟢
 
 ### TASK 22.4 — `/analytics` UX Overhaul
 
-- [ ] Build a decision-ready analytics page matching PRD value:
+- [x] Build a decision-ready analytics page matching PRD value:
   - KPI summary cards above charts
   - click trend area chart
   - device distribution chart
@@ -2956,13 +2956,13 @@ Premium Flutter experience. 🟢
   - top countries/cities ranked list
   - link-page funnel section: views → CTA clicks → CTR
   - top links table with slug, destination, clicks, and quick navigation
-- [ ] Keep controls compact and mobile-friendly:
+- [x] Keep controls compact and mobile-friendly:
   - 7D / 30D / 90D segmented controls
   - custom date range validation with friendly inline errors
   - export CSV action disabled with tooltip when there is no data
-- [ ] Add loading skeleton and route-level error boundary for `/analytics`.
-- [ ] Ensure every chart has a no-data fallback, not a blank canvas.
-- [ ] Add Playwright smoke coverage for empty analytics, data analytics, invalid range recovery, and mobile viewport.
+- [x] Add loading skeleton and route-level error boundary for `/analytics`.
+- [x] Ensure every chart has a no-data fallback, not a blank canvas.
+- [x] Add Playwright smoke coverage for empty analytics, data analytics, invalid range recovery, and mobile viewport.
 
 ### TASK 22.5 — Admin Analytics Control Center
 

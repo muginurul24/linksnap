@@ -164,12 +164,43 @@ export function AnalyticsPageSkeleton() {
   return (
     <>
       <PageHeaderSkeleton hasAction />
-      <div className="flex gap-2">
-        <Skeleton className="h-8 w-24" />
-        <Skeleton className="h-8 w-24" />
-        <Skeleton className="h-8 w-24" />
+      <div className="flex flex-col gap-2 lg:items-end">
+        <div className="grid w-full grid-cols-3 gap-1 rounded-lg border p-1 sm:w-64">
+          <Skeleton className="h-7" />
+          <Skeleton className="h-7" />
+          <Skeleton className="h-7" />
+        </div>
+        <div className="grid w-full grid-cols-2 gap-2 sm:w-auto sm:grid-cols-[9rem_9rem_auto]">
+          <Skeleton className="h-8" />
+          <Skeleton className="h-8" />
+          <Skeleton className="h-8" />
+        </div>
       </div>
-      <ChartSkeleton className="h-[350px]" />
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+        {Array.from({ length: 5 }).map((_, index) => (
+          <Card key={index} size="sm">
+            <CardHeader className="flex flex-row items-center justify-between pb-0">
+              <Skeleton className="h-4 w-24" />
+              <Skeleton className="size-8 rounded-md" />
+            </CardHeader>
+            <CardContent className="space-y-2">
+              <Skeleton className="h-7 w-20" />
+              <Skeleton className="h-3 w-32" />
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+      <div className="grid gap-4 xl:grid-cols-3">
+        <div className="xl:col-span-2">
+          <ChartSkeleton className="h-[320px]" />
+        </div>
+        <ChartSkeleton className="h-[320px]" titleWidth="w-32" />
+      </div>
+      <div className="grid gap-4 xl:grid-cols-2">
+        <ChartSkeleton className="h-[300px]" titleWidth="w-36" />
+        <ChartSkeleton className="h-[300px]" titleWidth="w-32" />
+      </div>
+      <TableSkeleton columns={4} rows={5} />
     </>
   );
 }

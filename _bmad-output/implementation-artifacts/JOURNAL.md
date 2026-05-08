@@ -8337,3 +8337,44 @@ Reworked dashboard analytics to use typed aggregate queries instead of loading r
 - ✅ No secrets added.
 
 **Next Task:** 22.4 — `/analytics` UX Overhaul.
+
+### 22.4 — `/analytics` UX Overhaul
+- **Date:** 2026-05-09 01:26 GMT+7
+- **Duration:** 0h 45m
+- **Status:** ✅ Complete
+
+**What I Did:**
+Rebuilt `/analytics` into a decision-ready dashboard with KPI cards, click trend chart, Link Page funnel, device/referrer/geography panels, browser breakdown, top links table, compact mobile-friendly range controls, disabled CSV export for empty ranges, no-data chart fallbacks, loading skeleton, route-level error boundary, and Playwright smoke coverage.
+
+**Files Changed:**
+- `src/app/(dashboard)/analytics/page.tsx` — Added friendly range recovery, segmented controls, plan-aware disabled ranges, disabled empty CSV export, and always-rendered analytics panels.
+- `src/app/(dashboard)/analytics/analytics-dashboard-client.tsx` — Replaced tabbed charts with KPI cards, funnel, charts, ranked lists, browser panel, and top links table.
+- `src/app/(dashboard)/analytics/error.tsx` — Added friendly route error boundary with retry and navigation fallback.
+- `src/components/dashboard/loading-states.tsx` — Expanded analytics skeleton to match the new dashboard layout.
+- `tests/e2e/analytics-page.spec.ts` — Added empty, populated, invalid range, and mobile viewport Playwright coverage.
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Checked off 22.4.
+- `_bmad-output/implementation-artifacts/JOURNAL.md` — Logged 22.4.
+
+**Decisions Made:**
+- Kept `/analytics` session-scoped and uncached at the page layer; it reads the aggregate contract added in 22.3.
+- Used native title tooltip behavior for disabled CSV export to avoid adding more Base UI positioned overlays under the strict CSP.
+- Kept charts visible only when each chart has data, with explicit fallback panels instead of blank canvases.
+
+**Tests:**
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Full unit/integration: `rtk bun run test` — 147 passed, 1 skipped; 659 passed, 2 skipped.
+- ✅ E2E targeted: `rtk bun run test:e2e -- tests/e2e/analytics-page.spec.ts` — 4 passed.
+- ✅ Production build: `rtk bun run build` — Passed.
+
+**Issues Encountered:**
+- Initial Playwright empty-state assertions matched both the title and description; scoped them to the empty-state heading and reran successfully.
+
+**Security Checks:**
+- ✅ Analytics access remains authenticated through the server page.
+- ✅ Analytics query remains scoped by authenticated `userId`.
+- ✅ Range inputs are still Zod-validated and plan retention is enforced before querying.
+- ✅ No raw stack traces or technical errors are shown in the route error boundary.
+- ✅ No secrets added.
+
+**Next Task:** 22.5 — Admin Analytics Control Center.
