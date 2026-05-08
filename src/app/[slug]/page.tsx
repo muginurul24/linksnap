@@ -29,6 +29,13 @@ async function recordClickLog(input: RedirectClickInput): Promise<void> {
   await recordRedirectClick(input);
 }
 
+async function recordCountedClickLog(
+  input: RedirectClickInput,
+  currentClickCount: number,
+): Promise<void> {
+  await recordRedirectClick(input, { currentClickCount });
+}
+
 export async function generateMetadata({
   params,
 }: RedirectPageProps): Promise<Metadata> {
@@ -92,11 +99,12 @@ export default async function RedirectPage({ params }: RedirectPageProps) {
         linkId: link.id,
       });
 
-  await recordClickLog(
+  await recordCountedClickLog(
     buildRedirectClickInput(link.id, headersList, {
       eventType: "DIRECT_REDIRECT",
       ruleId: ruleResult?.ruleId ?? null,
     }),
+    link.clickCount,
   );
 
   permanentRedirect(

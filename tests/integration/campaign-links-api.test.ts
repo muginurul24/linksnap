@@ -68,6 +68,7 @@ const secondLinkId = "94f36524-a36b-4ad8-86fa-8f6b975f130d";
 const mockState = vi.hoisted(() => ({
   campaigns: [] as MockCampaign[],
   capturedListInput: null as ListLinksInput | null,
+  freshClickCounts: new Map<string, number>(),
   links: [] as MockListedLink[],
   rateLimitOptions: [] as RateLimitOptions[],
   rateLimitResult: { limited: false as const, remaining: 99 } as RateLimitResult,
@@ -160,6 +161,16 @@ vi.mock("@/lib/db/queries/links", () => ({
   },
 }));
 
+vi.mock("@/lib/links/click-count-cache", () => ({
+  hydrateRedirectClickCounts: async <T extends { clickCount: number; id: string }>(
+    links: T[],
+  ) =>
+    links.map((link) => ({
+      ...link,
+      clickCount: mockState.freshClickCounts.get(link.id) ?? link.clickCount,
+    })),
+}));
+
 import {
   DELETE,
   GET,
@@ -218,6 +229,7 @@ describe("campaign links API", () => {
     process.env.NEXT_PUBLIC_APP_URL = "https://linksnap.test/";
     mockState.campaigns = [createCampaign()];
     mockState.capturedListInput = null;
+    mockState.freshClickCounts = new Map();
     mockState.links = [createLink(), createLink({ id: secondLinkId, slug: "two" })];
     mockState.rateLimitOptions = [];
     mockState.rateLimitResult = { limited: false, remaining: 99 };
@@ -227,17 +239,20 @@ describe("campaign links API", () => {
   });
 
   it("should list links assigned to an owned campaign", async () => {
+    mockState.freshClickCounts.set(linkId, 34);
+
     const response = await GET(
       createRequest(`/api/v1/campaigns/${campaignId}/links?page=2&limit=5`),
       createContext(),
     );
-    const body = await readJson<Array<{ id: string; shortUrl: string }>>(response);
+    const body = await readJson<Array<{ clickCount: number; id: string; shortUrl: string }>>(response);
 
     expect(response.status).toBe(200);
     expect(body.success).toBe(true);
     if (!body.success) return;
     expect(body.meta).toEqual({ page: 2, limit: 5, total: 2 });
     expect(body.data[0]).toMatchObject({
+      clickCount: 34,
       id: linkId,
       shortUrl: "https://linksnap.test/promo",
     });

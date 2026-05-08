@@ -3,6 +3,7 @@ import { Download, QrCode } from "lucide-react";
 import { auth } from "@/lib/auth";
 import { listLinksByUserId, type ListedLink } from "@/lib/db/queries/links";
 import { findBillingUserById } from "@/lib/db/queries/payments";
+import { hydrateRedirectClickCounts } from "@/lib/links/click-count-cache";
 import {
   getQrDownloadFilename,
   getQrDownloadHref,
@@ -142,7 +143,7 @@ export default async function QrCodesPage() {
     }),
     findBillingUserById(userId),
   ]);
-  const { items: links } = linkResult;
+  const links = await hydrateRedirectClickCounts(linkResult.items);
   const userPlan = billingUser?.plan ?? "FREE";
 
   return (

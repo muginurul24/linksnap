@@ -21,6 +21,7 @@ import {
   getApiEndpointRateLimit,
   type UserPlan,
 } from "@/lib/links/limits";
+import { hydrateRedirectClickCounts } from "@/lib/links/click-count-cache";
 import { getRedirectCacheKey } from "@/lib/links/redirect";
 import { cacheDelete } from "@/lib/redis";
 import { slidingWindowRateLimit } from "@/lib/redis/rate-limit";
@@ -88,6 +89,12 @@ function formatLinkDetail(request: NextRequest, link: LinkDetail) {
     title: link.title,
     updatedAt: link.updatedAt,
   };
+}
+
+async function withFreshClickCount(link: LinkDetail): Promise<LinkDetail> {
+  const [hydrated] = await hydrateRedirectClickCounts([link]);
+
+  return hydrated ?? link;
 }
 
 async function parseParams(
@@ -237,7 +244,7 @@ export async function GET(request: NextRequest, context: LinkRouteContext) {
 
     const link = await getAuthorizedLink(parsedParams.params.id, authResult.userId);
 
-    return successResponse(formatLinkDetail(request, link));
+    return successResponse(formatLinkDetail(request, await withFreshClickCount(link)));
   } catch (error) {
     const knownError = handleKnownError(error, requestId);
     if (knownError) return knownError;
@@ -282,7 +289,7 @@ export async function PATCH(request: NextRequest, context: LinkRouteContext) {
 
     await invalidateRedirectCaches(existingSlug, updated.slug);
 
-    return successResponse(formatLinkDetail(request, updated));
+    return successResponse(formatLinkDetail(request, await withFreshClickCount(updated)));
   } catch (error) {
     if (isUniqueConstraintViolation(error)) {
       return errorResponse(

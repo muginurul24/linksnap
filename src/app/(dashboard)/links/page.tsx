@@ -15,6 +15,7 @@ import {
   type ListedLink,
 } from "@/lib/db/queries/links";
 import { findBillingUserById } from "@/lib/db/queries/payments";
+import { hydrateRedirectClickCounts } from "@/lib/links/click-count-cache";
 import type { UserPlan } from "@/lib/links/limits";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -189,7 +190,7 @@ export default async function LinksPage({ searchParams }: LinksPageProps) {
     countLinksByUserId(userId),
     findBillingUserById(userId),
   ]);
-  const { items: links } = linkResult;
+  const links = await hydrateRedirectClickCounts(linkResult.items);
   const userPlan = billingUser?.plan ?? "FREE";
   const createLinkQuota = getLinkCreateQuotaState({ linkCount, userPlan });
   const canCreateLink = createLinkQuota.used < createLinkQuota.limit;

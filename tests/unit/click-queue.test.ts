@@ -17,6 +17,7 @@ const sampleInput: RedirectClickInput = {
 
 const mockState = vi.hoisted(() => ({
   deadLetters: [] as string[],
+  increments: [] as Array<{ currentClickCount?: number; linkId: string }>,
   ltrimCalls: [] as Array<{ end: number; key: string; start: number }>,
   queue: [] as string[],
   rpushThrows: false,
@@ -48,6 +49,18 @@ vi.mock("@/lib/analytics/click-logger", () => ({
   },
 }));
 
+vi.mock("@/lib/links/click-count-cache", () => ({
+  incrementRedirectClickCount: async (input: {
+    currentClickCount?: number;
+    linkId: string;
+  }) => {
+    mockState.increments.push(input);
+    return (input.currentClickCount ?? 0) + 1;
+  },
+  isRedirectClickCountedEvent: (eventType: string) =>
+    eventType === "DIRECT_REDIRECT" || eventType === "LINK_PAGE_CTA_CLICK",
+}));
+
 import {
   enqueueRedirectClick,
   processRedirectClickQueue,
@@ -58,6 +71,7 @@ import {
 describe("click queue", () => {
   beforeEach(() => {
     mockState.deadLetters = [];
+    mockState.increments = [];
     mockState.ltrimCalls = [];
     mockState.queue = [];
     mockState.rpushThrows = false;
@@ -90,6 +104,30 @@ describe("click queue", () => {
     });
 
     expect(mockState.persisted).toEqual([sampleInput]);
+    expect(mockState.increments).toEqual([{ linkId: "link-1" }]);
+  });
+
+  it("should increment counted click events after enqueue succeeds", async () => {
+    await expect(
+      recordRedirectClick(sampleInput, { currentClickCount: 12 }),
+    ).resolves.toEqual({
+      status: "queued",
+    });
+
+    expect(mockState.increments).toEqual([
+      { currentClickCount: 12, linkId: "link-1" },
+    ]);
+  });
+
+  it("should not increment Link Page view events", async () => {
+    await expect(
+      recordRedirectClick({
+        ...sampleInput,
+        eventType: "LINK_PAGE_VIEW",
+      }),
+    ).resolves.toEqual({ status: "queued" });
+
+    expect(mockState.increments).toEqual([]);
   });
 
   it("should process queued click events into persistence", async () => {

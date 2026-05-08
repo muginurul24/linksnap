@@ -39,6 +39,14 @@ vi.mock("@/lib/redis", () => ({
   },
 }));
 
+vi.mock("@/lib/links/click-count-cache", () => ({
+  getRedirectClickCountWithFallback: async ({
+    fallbackClickCount,
+  }: {
+    fallbackClickCount?: number;
+  }) => mockState.link?.clickCount ?? fallbackClickCount ?? 0,
+}));
+
 vi.mock("@/lib/db/queries/links", () => ({
   findPublicLinkPageByLinkId: async () => null,
   findRedirectLinkBySlug: async (slug: string) =>

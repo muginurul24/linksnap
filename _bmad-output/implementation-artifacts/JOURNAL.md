@@ -5898,3 +5898,43 @@ Extracted the duplicated redirect-link cache lookup into a shared module and mov
 - ✅ No secrets, raw SQL, or `dangerouslySetInnerHTML` introduced.
 
 **Next Task:** 17.6 — Decouple Click Count from Redirect Cache
+
+### 17.6 — Decouple Click Count from Redirect Cache
+- **Date:** 2026-05-08 07:17 GMT+7
+- **Duration:** 0h 45m
+- **Status:** ✅ Complete
+
+**What I Did:**
+Removed `clickCount` from the long-lived redirect metadata cache and introduced a separate Redis-backed click count cache with a 60-second TTL. Direct redirect and Link Page CTA events now increment the separate count key after successful queue/persist acceptance, while Link Page views remain excluded from click totals. Dashboard-facing link lists and detail responses hydrate counts from Redis first and fall back to DB click-event aggregation while preserving existing stored link counts as a minimum baseline.
+
+**Files Changed:**
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Checked off Task 17.6.
+- `src/lib/links/redirect.ts` — Split redirect metadata cache payload from full redirect link data.
+- `src/lib/links/redirect-cache.ts` — Recombined cached redirect metadata with fresh click count lookup.
+- `src/lib/links/click-count-cache.ts` — Added separate Redis click count keys, 60s TTL, hydration, fallback, and increment helpers.
+- `src/lib/analytics/click-queue.ts` — Incremented counted click events after queue/persist success.
+- `src/lib/db/queries/click-events.ts` — Added batched DB click count fallback queries.
+- Redirect page/CTA route and link dashboard/API routes — Passed current counts into click recording and hydrated fresh counts for dashboard-facing responses.
+- Unit/integration tests — Added and updated coverage for separate cache keys, count freshness, and redirect click increment behavior.
+
+**Decisions Made:**
+- Used Redis atomic `INCR` for real-time-ish count freshness instead of adding a new DB flush job in this task.
+- Kept redirect metadata TTL at 300 seconds and isolated click count TTL at 60 seconds to avoid stale social proof/dashboard counts.
+- Used DB click-event aggregation as the refresh source and preserved `links.clickCount` as a minimum fallback for existing data.
+
+**Tests:**
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Targeted Unit/Integration: `rtk bun run test -- tests/unit/redirect.test.ts tests/unit/redirect-cache.test.ts tests/unit/redirect-cache-warming.test.ts tests/unit/click-count-cache.test.ts tests/unit/click-queue.test.ts tests/integration/create-redirect-click-flow.test.ts tests/integration/smart-rule-redirect-flow.test.ts tests/integration/split-test-redirect-distribution.test.ts tests/integration/list-links-api.test.ts tests/integration/link-item-api.test.ts tests/integration/campaign-links-api.test.ts` — 11 files passed, 58 tests passed.
+- ✅ Unit/Integration: `rtk bun run test` — 124 files passed, 548 tests passed.
+- ✅ Build: `rtk bun run build` — Passed.
+
+**Issues Encountered:**
+- `Number(null)` initially parsed a Redis miss as `0`; fixed the parser so nullish values are true cache misses.
+
+**Security Checks:**
+- ✅ No authorization or ownership behavior changed for dashboard/API reads.
+- ✅ Click count cache keys contain only internal link IDs and no secrets.
+- ✅ No raw SQL, new public inputs, or `dangerouslySetInnerHTML` introduced.
+
+**Next Task:** 17.7 — Add Cursor-Based Pagination for List Endpoints

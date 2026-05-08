@@ -65,6 +65,7 @@ type ListLinkResponse = {
 
 const mockState = vi.hoisted(() => ({
   capturedListInput: null as ListLinksInput | null,
+  freshClickCounts: new Map<string, number>(),
   links: [] as MockListedLink[],
   rateLimitOptions: [] as RateLimitOptions[],
   rateLimitResult: { limited: false as const, remaining: 99 } as RateLimitResult,
@@ -96,6 +97,16 @@ vi.mock("@/lib/db/queries/links", () => ({
     mockState.capturedListInput = input;
     return { items: mockState.links, total: mockState.total };
   },
+}));
+
+vi.mock("@/lib/links/click-count-cache", () => ({
+  hydrateRedirectClickCounts: async <T extends { clickCount: number; id: string }>(
+    links: T[],
+  ) =>
+    links.map((link) => ({
+      ...link,
+      clickCount: mockState.freshClickCounts.get(link.id) ?? link.clickCount,
+    })),
 }));
 
 import { GET } from "../../src/app/api/v1/links/route";
@@ -130,6 +141,7 @@ describe("list links API", () => {
   beforeEach(() => {
     process.env.NEXT_PUBLIC_APP_URL = "https://linksnap.test/";
     mockState.capturedListInput = null;
+    mockState.freshClickCounts = new Map();
     mockState.links = [createMockLink()];
     mockState.rateLimitOptions.length = 0;
     mockState.rateLimitResult = { limited: false, remaining: 99 };
@@ -195,6 +207,18 @@ describe("list links API", () => {
       page: 1,
       userId: "user-1",
     });
+  });
+
+  it("should return fresh click counts from the click count cache", async () => {
+    mockState.freshClickCounts.set("link-1", 57);
+
+    const response = await GET(createGetRequest("/api/v1/links"));
+    const body = await readJson<ListLinkResponse[]>(response);
+
+    expect(response.status).toBe(200);
+    expect(body.success).toBe(true);
+    if (!body.success) return;
+    expect(body.data[0]?.clickCount).toBe(57);
   });
 
   it("should reject unauthenticated requests", async () => {

@@ -28,6 +28,11 @@ export type TopCampaignLink = {
   totalClicks: number;
 };
 
+const REDIRECT_CLICK_COUNT_EVENT_TYPES = [
+  "DIRECT_REDIRECT",
+  "LINK_PAGE_CTA_CLICK",
+] as const;
+
 type ListClickEventsForLinkInput = {
   from: Date;
   linkId: string;
@@ -57,6 +62,33 @@ export async function insertClickEvents(events: NewClickEvent[]): Promise<void> 
   if (events.length === 0) return;
 
   await db.insert(clickEvents).values(events);
+}
+
+export async function countRedirectClicksByLinkId(linkId: string): Promise<number> {
+  const counts = await countRedirectClicksByLinkIds([linkId]);
+
+  return counts.get(linkId) ?? 0;
+}
+
+export async function countRedirectClicksByLinkIds(
+  linkIds: string[],
+): Promise<Map<string, number>> {
+  const uniqueLinkIds = [...new Set(linkIds)];
+  if (uniqueLinkIds.length === 0) return new Map();
+
+  const rows = await db
+    .select({
+      linkId: clickEvents.linkId,
+      value: count(),
+    })
+    .from(clickEvents)
+    .where(and(
+      inArray(clickEvents.linkId, uniqueLinkIds),
+      inArray(clickEvents.eventType, REDIRECT_CLICK_COUNT_EVENT_TYPES),
+    ))
+    .groupBy(clickEvents.linkId);
+
+  return new Map(rows.map((row) => [row.linkId, Number(row.value)]));
 }
 
 export async function listClickEventsForLink({

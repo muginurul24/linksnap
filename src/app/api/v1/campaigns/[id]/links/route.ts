@@ -20,6 +20,7 @@ import {
   setLinksCampaignForUser,
   type ListedLink,
 } from "@/lib/db/queries/links";
+import { hydrateRedirectClickCounts } from "@/lib/links/click-count-cache";
 import { getApiEndpointRateLimit, type UserPlan } from "@/lib/links/limits";
 import { slidingWindowRateLimit } from "@/lib/redis/rate-limit";
 import {
@@ -252,8 +253,10 @@ export async function GET(
       userId: authResult.userId,
     });
 
+    const freshItems = await hydrateRedirectClickCounts(items);
+
     return successResponse(
-      items.map((link) => formatLink(request, link)),
+      freshItems.map((link) => formatLink(request, link)),
       200,
       {
         limit: parsedQuery.query.limit,

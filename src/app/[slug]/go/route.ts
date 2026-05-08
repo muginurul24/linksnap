@@ -25,8 +25,11 @@ type LinkPageCtaRouteContext = {
   params: Promise<{ slug: string }>;
 };
 
-async function recordClickLog(input: RedirectClickInput): Promise<void> {
-  await recordRedirectClick(input);
+async function recordCountedClickLog(
+  input: RedirectClickInput,
+  currentClickCount: number,
+): Promise<void> {
+  await recordRedirectClick(input, { currentClickCount });
 }
 
 function notFoundResponse(): Response {
@@ -65,13 +68,14 @@ export async function GET(request: Request, context: LinkPageCtaRouteContext) {
         linkId: link.id,
       });
 
-  await recordClickLog(
+  await recordCountedClickLog(
     buildRedirectClickInput(link.id, headersList, {
       eventType: "LINK_PAGE_CTA_CLICK",
       linkPageHasCountdown:
         page.showCountdown === true && page.countdownTarget !== null,
       ruleId: ruleResult?.ruleId ?? null,
     }),
+    link.clickCount,
   );
 
   return NextResponse.redirect(

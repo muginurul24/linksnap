@@ -78,6 +78,7 @@ type DeleteLinkResponse = {
 
 const mockState = vi.hoisted(() => ({
   cacheDeleteKeys: [] as string[],
+  freshClickCounts: new Map<string, number>(),
   links: [] as MockLink[],
   rateLimitOptions: [] as RateLimitOptions[],
   rateLimitResult: { limited: false as const, remaining: 99 } as RateLimitResult,
@@ -143,6 +144,16 @@ vi.mock("@/lib/db/queries/links", () => ({
   },
 }));
 
+vi.mock("@/lib/links/click-count-cache", () => ({
+  hydrateRedirectClickCounts: async <T extends { clickCount: number; id: string }>(
+    links: T[],
+  ) =>
+    links.map((link) => ({
+      ...link,
+      clickCount: mockState.freshClickCounts.get(link.id) ?? link.clickCount,
+    })),
+}));
+
 import {
   DELETE,
   GET,
@@ -191,6 +202,7 @@ async function readJson<T>(response: Response): Promise<ApiEnvelope<T>> {
 describe("link item API", () => {
   beforeEach(() => {
     process.env.NEXT_PUBLIC_APP_URL = "https://linksnap.test/";
+    mockState.freshClickCounts = new Map();
     mockState.links = [createMockLink()];
     mockState.cacheDeleteKeys = [];
     mockState.rateLimitOptions.length = 0;
@@ -224,6 +236,19 @@ describe("link item API", () => {
     expect(mockState.rateLimitOptions).toEqual([
       { key: "api:links:item:get:user-1", limit: 60, windowSeconds: 60 },
     ]);
+  });
+
+  it("should return fresh click count details from the click count cache", async () => {
+    mockState.freshClickCounts.set(linkId, 73);
+
+    const response = await GET(createRequest("GET"), createContext());
+    const body = await readJson<LinkDetailResponse>(response);
+
+    expect(response.status).toBe(200);
+    expect(body.success).toBe(true);
+    if (!body.success) return;
+    expect(body.data.clickCount).toBe(73);
+    expect(body.data.clickSummary.totalClicks).toBe(73);
   });
 
   it("should reject direct object reference access for another user's link", async () => {

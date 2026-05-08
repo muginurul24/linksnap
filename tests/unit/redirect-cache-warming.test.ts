@@ -68,7 +68,6 @@ describe("redirect cache warming", () => {
         key: getRedirectCacheKey("promo"),
         ttl: 60,
         value: {
-          clickCount: 12,
           destinationUrl: "https://example.com/promo",
           expiresAt: "2026-05-08T10:00:00.000Z",
           hasLinkPage: false,

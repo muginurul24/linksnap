@@ -25,6 +25,7 @@ import {
   hasReachedLinkQuota,
   type UserPlan,
 } from "@/lib/links/limits";
+import { hydrateRedirectClickCounts } from "@/lib/links/click-count-cache";
 import { generateRandomSlug } from "@/lib/links/slug";
 import { slidingWindowRateLimit } from "@/lib/redis/rate-limit";
 import {
@@ -324,15 +325,20 @@ async function createLink(
   });
 }
 
-function listLinks(
+async function listLinks(
   input: ListLinksQuery,
   userId: string,
 ): Promise<{ items: ListedLink[]; total: number }> {
-  return listLinksByUserId({
+  const result = await listLinksByUserId({
     campaignId: input.campaignId,
     limit: input.limit,
     page: input.page,
     search: input.search,
     userId,
   });
+
+  return {
+    ...result,
+    items: await hydrateRedirectClickCounts(result.items),
+  };
 }

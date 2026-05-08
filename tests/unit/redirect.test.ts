@@ -74,6 +74,7 @@ describe("redirect helpers", () => {
 
   it("should preserve redirect dates when converting to and from cache payloads", () => {
     const link = createRedirectLink({
+      clickCount: 99,
       expiresAt: new Date("2026-05-06T12:00:00.000Z"),
       scheduledAt: new Date("2026-05-06T08:00:00.000Z"),
     });
@@ -85,6 +86,15 @@ describe("redirect helpers", () => {
       expiresAt: "2026-05-06T12:00:00.000Z",
       scheduledAt: "2026-05-06T08:00:00.000Z",
     });
-    expect(restored).toEqual(link);
+    expect(payload).not.toHaveProperty("clickCount");
+    expect(restored).toEqual({
+      destinationUrl: link.destinationUrl,
+      expiresAt: link.expiresAt,
+      hasLinkPage: link.hasLinkPage,
+      id: link.id,
+      isActive: link.isActive,
+      scheduledAt: link.scheduledAt,
+      slug: link.slug,
+    });
   });
 });

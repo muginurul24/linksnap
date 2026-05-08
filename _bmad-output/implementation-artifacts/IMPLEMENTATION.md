@@ -1421,12 +1421,12 @@ rtk bun run db:studio    # Open Drizzle Studio (in another terminal)
 - [x] Tests: update imports, run full suite
 
 ### TASK 17.6 — Decouple Click Count from Redirect Cache
-- [ ] Current: `redirect:${slug}` cache includes `clickCount` — stale for up to 300s
-- [ ] File: `src/lib/links/redirect.ts` — remove `clickCount` from `RedirectLink` cache entry
-- [ ] Store `clickCount` separately — either Redis atomic `INCR` or periodic DB flush
-- [ ] Dashboard queries pull real-time-ish click count (Redis first, DB fallback)
-- [ ] Cache TTL for redirect metadata stays 300s; click count refreshes every 60s
-- [ ] Tests: unit (separate cache keys), integration (click count freshness)
+- [x] Current: `redirect:${slug}` cache includes `clickCount` — stale for up to 300s
+- [x] File: `src/lib/links/redirect.ts` — remove `clickCount` from `RedirectLink` cache entry
+- [x] Store `clickCount` separately — either Redis atomic `INCR` or periodic DB flush
+- [x] Dashboard queries pull real-time-ish click count (Redis first, DB fallback)
+- [x] Cache TTL for redirect metadata stays 300s; click count refreshes every 60s
+- [x] Tests: unit (separate cache keys), integration (click count freshness)
 
 ### TASK 17.7 — Add Cursor-Based Pagination for List Endpoints
 - [ ] Files: `GET /api/v1/links`, `GET /api/v1/campaigns`, `GET /api/v1/pages`

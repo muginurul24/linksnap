@@ -1,5 +1,4 @@
-export type RedirectLink = {
-  clickCount: number;
+export type RedirectLinkMetadata = {
   destinationUrl: string;
   expiresAt: Date | null;
   hasLinkPage: boolean;
@@ -9,8 +8,11 @@ export type RedirectLink = {
   slug: string;
 };
 
-export type RedirectLinkCachePayload = {
+export type RedirectLink = RedirectLinkMetadata & {
   clickCount: number;
+};
+
+export type RedirectLinkCachePayload = {
   destinationUrl: string;
   expiresAt: string | null;
   hasLinkPage: boolean;
@@ -32,7 +34,7 @@ export function isPublicSlug(value: string): boolean {
 }
 
 export function isRedirectLinkAvailable(
-  link: Pick<RedirectLink, "expiresAt" | "isActive" | "scheduledAt">,
+  link: Pick<RedirectLinkMetadata, "expiresAt" | "isActive" | "scheduledAt">,
   now = new Date(),
 ): boolean {
   if (!link.isActive) return false;
@@ -43,10 +45,9 @@ export function isRedirectLinkAvailable(
 }
 
 export function toRedirectLinkCachePayload(
-  link: RedirectLink,
+  link: RedirectLinkMetadata,
 ): RedirectLinkCachePayload {
   return {
-    clickCount: link.clickCount,
     destinationUrl: link.destinationUrl,
     expiresAt: link.expiresAt?.toISOString() ?? null,
     hasLinkPage: link.hasLinkPage,
@@ -59,9 +60,8 @@ export function toRedirectLinkCachePayload(
 
 export function fromRedirectLinkCachePayload(
   payload: RedirectLinkCachePayload,
-): RedirectLink {
+): RedirectLinkMetadata {
   return {
-    clickCount: payload.clickCount,
     destinationUrl: payload.destinationUrl,
     expiresAt: payload.expiresAt ? new Date(payload.expiresAt) : null,
     hasLinkPage: payload.hasLinkPage,

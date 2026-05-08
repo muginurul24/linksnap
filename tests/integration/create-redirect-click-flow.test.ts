@@ -64,6 +64,10 @@ type RedirectClickInput = {
   userAgent: string | null;
 };
 
+type RedirectClickOptions = {
+  currentClickCount?: number;
+};
+
 type ApiEnvelope<T> =
   | { data: T; success: true }
   | {
@@ -86,9 +90,11 @@ type CreateLinkResponse = {
 
 const mockState = vi.hoisted(() => ({
   cache: new Map<string, unknown>(),
+  clickCounts: new Map<string, number>(),
   linkPages: new Map<string, MockLinkPage>(),
   links: [] as MockLink[],
   loggedClicks: [] as RedirectClickInput[],
+  loggedClickOptions: [] as RedirectClickOptions[],
   rateLimitResult: { limited: false, remaining: 99 } as MockRateLimitResult,
   ruleResult: null as { destinationUrl: string; ruleId: string } | null,
   session: { user: { id: "user-1" } } as MockSession,
@@ -109,6 +115,21 @@ vi.mock("@/lib/redis", () => ({
   cacheSet: async (key: string, value: unknown) => {
     mockState.cache.set(key, value);
   },
+}));
+
+vi.mock("@/lib/links/click-count-cache", () => ({
+  getRedirectClickCountWithFallback: async ({
+    fallbackClickCount,
+    linkId,
+  }: {
+    fallbackClickCount?: number;
+    linkId: string;
+  }) =>
+    mockState.clickCounts.get(linkId) ??
+    mockState.links.find((link) => link.id === linkId)?.clickCount ??
+    fallbackClickCount ??
+    0,
+  hydrateRedirectClickCounts: async <T>(links: T[]) => links,
 }));
 
 vi.mock("@/lib/db/queries/links", () => ({
@@ -167,8 +188,12 @@ vi.mock("@/lib/analytics/click-logger", () => ({
 }));
 
 vi.mock("@/lib/analytics/click-queue", () => ({
-  recordRedirectClick: async (input: RedirectClickInput) => {
+  recordRedirectClick: async (
+    input: RedirectClickInput,
+    options: RedirectClickOptions = {},
+  ) => {
     mockState.loggedClicks.push(input);
+    mockState.loggedClickOptions.push(options);
     return { status: "queued" };
   },
 }));
@@ -241,9 +266,11 @@ describe("create redirect click flow", () => {
   beforeEach(() => {
     process.env.NEXT_PUBLIC_APP_URL = "https://linksnap.test";
     mockState.cache = new Map();
+    mockState.clickCounts = new Map();
     mockState.linkPages = new Map();
     mockState.links = [];
     mockState.loggedClicks = [];
+    mockState.loggedClickOptions = [];
     mockState.rateLimitResult = { limited: false, remaining: 99 };
     mockState.ruleResult = null;
     mockState.session = { user: { id: "user-1" } };
@@ -291,6 +318,7 @@ describe("create redirect click flow", () => {
         userAgent: "Vitest",
       },
     ]);
+    expect(mockState.loggedClickOptions).toEqual([{ currentClickCount: 0 }]);
   });
 
   it("should apply a matching Smart Rule destination during direct redirect", async () => {
@@ -328,6 +356,7 @@ describe("create redirect click flow", () => {
         userAgent: "Vitest",
       },
     ]);
+    expect(mockState.loggedClickOptions).toEqual([{ currentClickCount: 0 }]);
   });
 
   it("should select split test variant destination during direct redirect", async () => {
@@ -389,6 +418,7 @@ describe("create redirect click flow", () => {
         userAgent: "Vitest",
       },
     ]);
+    expect(mockState.loggedClickOptions).toEqual([{ currentClickCount: 0 }]);
   });
 
   it("should render a Link Page view then log CTA click-through redirects", async () => {
@@ -449,6 +479,10 @@ describe("create redirect click flow", () => {
         ruleId: null,
         userAgent: "Vitest",
       },
+    ]);
+    expect(mockState.loggedClickOptions).toEqual([
+      {},
+      { currentClickCount: 7 },
     ]);
   });
 

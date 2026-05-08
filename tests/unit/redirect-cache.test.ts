@@ -15,6 +15,7 @@ const link: RedirectLink = {
 const mockState = vi.hoisted(() => ({
   cache: new Map<string, unknown>(),
   cacheSetCalls: [] as Array<{ key: string; ttl: number; value: unknown }>,
+  clickCounts: new Map<string, number>(),
   dbCalls: 0,
   dbLink: null as RedirectLink | null,
 }));
@@ -35,6 +36,16 @@ vi.mock("@/lib/redis", () => ({
   },
 }));
 
+vi.mock("@/lib/links/click-count-cache", () => ({
+  getRedirectClickCountWithFallback: async ({
+    fallbackClickCount,
+    linkId,
+  }: {
+    fallbackClickCount?: number;
+    linkId: string;
+  }) => mockState.clickCounts.get(linkId) ?? fallbackClickCount ?? 0,
+}));
+
 import { getRedirectLink } from "@/lib/links/redirect-cache";
 import {
   getRedirectCacheKey,
@@ -46,6 +57,7 @@ describe("redirect cache", () => {
   beforeEach(() => {
     mockState.cache = new Map();
     mockState.cacheSetCalls = [];
+    mockState.clickCounts = new Map([["link-1", 21]]);
     mockState.dbCalls = 0;
     mockState.dbLink = null;
   });
@@ -54,6 +66,7 @@ describe("redirect cache", () => {
     mockState.cache.set(getRedirectCacheKey("promo"), toRedirectLinkCachePayload(link));
 
     await expect(getRedirectLink("promo")).resolves.toMatchObject({
+      clickCount: 21,
       id: "link-1",
       slug: "promo",
     });
@@ -64,6 +77,7 @@ describe("redirect cache", () => {
     mockState.dbLink = link;
 
     await expect(getRedirectLink("promo")).resolves.toMatchObject({
+      clickCount: 21,
       id: "link-1",
       slug: "promo",
     });

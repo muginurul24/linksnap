@@ -1,4 +1,8 @@
 import { persistRedirectClick, type RedirectClickInput } from "@/lib/analytics/click-logger";
+import {
+  incrementRedirectClickCount,
+  isRedirectClickCountedEvent,
+} from "@/lib/links/click-count-cache";
 import { logger } from "@/lib/observability/logger";
 import { redis } from "@/lib/redis";
 
@@ -55,9 +59,13 @@ export async function enqueueRedirectClick(
 
 export async function recordRedirectClick(
   input: RedirectClickInput,
+  options: {
+    currentClickCount?: number;
+  } = {},
 ): Promise<RedirectClickRecordResult> {
   try {
     await enqueueRedirectClick(input);
+    await incrementCountWhenNeeded(input, options.currentClickCount);
     return { status: "queued" };
   } catch (queueError) {
     logger.error("redirect_click_enqueue_failed", { error: queueError });
@@ -65,11 +73,24 @@ export async function recordRedirectClick(
 
   try {
     await persistRedirectClick(input);
+    await incrementCountWhenNeeded(input, options.currentClickCount);
     return { status: "persisted" };
   } catch (persistError) {
     logger.error("redirect_click_persist_failed", { error: persistError });
     return { status: "failed" };
   }
+}
+
+async function incrementCountWhenNeeded(
+  input: RedirectClickInput,
+  currentClickCount?: number,
+): Promise<void> {
+  if (!isRedirectClickCountedEvent(input.eventType)) return;
+
+  await incrementRedirectClickCount({
+    currentClickCount,
+    linkId: input.linkId,
+  });
 }
 
 async function moveToDeadLetter(payload: string): Promise<void> {
