@@ -1,4 +1,4 @@
-import { eq, ilike, or, and, count, desc, inArray, sql, sum } from "drizzle-orm";
+import { eq, ilike, or, and, count, desc, inArray, sql } from "drizzle-orm";
 import { getDb } from "@/lib/db";
 import { users, links, clickEvents, transactions, subscriptions } from "@/lib/db/schema";
 import type { UserPlan } from "@/lib/links/limits";
@@ -88,19 +88,20 @@ export async function listAllUsers({
 
   // Get link counts for each user
   const userIds = rawUsers.map((u) => u.id);
-  let linkCounts: Record<string, number> = {};
-  if (userIds.length > 0) {
-    const counts = await db
-      .select({
-        userId: links.userId,
-        count: count(links.id),
-      })
-      .from(links)
-      .where(inArray(links.userId, userIds))
-      .groupBy(links.userId);
-    for (const row of counts) {
-      linkCounts[row.userId] = row.count;
-    }
+  const counts =
+    userIds.length > 0
+      ? await db
+          .select({
+            userId: links.userId,
+            count: count(links.id),
+          })
+          .from(links)
+          .where(inArray(links.userId, userIds))
+          .groupBy(links.userId)
+      : [];
+  const linkCounts: Record<string, number> = {};
+  for (const row of counts) {
+    linkCounts[row.userId] = row.count;
   }
 
   const usersList: AdminUser[] = rawUsers.map((u) => ({

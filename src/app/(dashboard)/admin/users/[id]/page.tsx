@@ -41,7 +41,6 @@ export default function AdminUserDetailPage({
   const [planDialogOpen, setPlanDialogOpen] = useState(false);
 
   const fetchUser = () => {
-    setLoading(true);
     fetch(`/api/v1/admin/users/${id}`)
       .then(async (res) => {
         if (!res.ok) throw new Error((await res.json()).error?.message || "User not found");
@@ -54,6 +53,7 @@ export default function AdminUserDetailPage({
 
   useEffect(() => {
     fetchUser();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
   async function handleChangePlan(plan: UserPlan) {
@@ -64,6 +64,8 @@ export default function AdminUserDetailPage({
     });
     if (!res.ok) throw new Error("Failed to update plan");
     toast.success(`Plan changed to ${plan}`);
+    setLoading(true);
+    setError(null);
     fetchUser();
   }
 
@@ -75,6 +77,8 @@ export default function AdminUserDetailPage({
     });
     if (!res.ok) throw new Error(`Failed to ${action} user`);
     toast.success(`User ${action === "suspend" ? "suspended" : "unsuspended"}`);
+    setLoading(true);
+    setError(null);
     fetchUser();
   }
 

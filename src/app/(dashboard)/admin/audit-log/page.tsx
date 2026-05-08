@@ -41,9 +41,7 @@ export default function AdminAuditLogPage() {
   );
 
   useEffect(() => {
-    setLoading(true);
-    setError(null);
-
+    let cancelled = false;
     const queryParams = new URLSearchParams();
     queryParams.set("page", String(page));
     queryParams.set("limit", "20");
@@ -55,13 +53,19 @@ export default function AdminAuditLogPage() {
         return res.json();
       })
       .then((data) => {
+        if (cancelled) return;
         setEntries(data.data || []);
         setTotal(data.meta?.total || 0);
       })
       .catch((err) => {
+        if (cancelled) return;
         setError(err.message);
       })
-      .finally(() => setLoading(false));
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+
+    return () => { cancelled = true; };
   }, [page, actionFilter]);
 
   return (
