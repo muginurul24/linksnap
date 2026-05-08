@@ -48,6 +48,10 @@ vi.mock("@/lib/auth", () => ({
   auth: async () => ({ user: { id: mockState.user.id } }),
 }));
 
+vi.mock("@/lib/db/queries/links", () => ({
+  getUserPlanById: async () => mockState.user.plan,
+}));
+
 vi.mock("@/lib/redis/rate-limit", () => ({
   slidingWindowRateLimit: async ({ key }: { key: string }) => {
     mockState.rateLimitKeys.push(key);

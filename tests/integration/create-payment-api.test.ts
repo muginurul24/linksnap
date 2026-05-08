@@ -95,6 +95,10 @@ vi.mock("@/lib/auth", () => ({
   auth: async () => mockState.session,
 }));
 
+vi.mock("@/lib/db/queries/links", () => ({
+  getUserPlanById: async () => mockState.billingUser?.plan ?? null,
+}));
+
 vi.mock("@/lib/redis/rate-limit", () => ({
   slidingWindowRateLimit: async (options: RateLimitOptions) => {
     mockState.rateLimitOptions.push(options);

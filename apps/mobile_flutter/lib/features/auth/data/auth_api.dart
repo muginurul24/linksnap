@@ -33,12 +33,11 @@ class AuthApi {
     );
   }
 
-  Future<AuthSession> verifyEmail(String email, String otp) async {
-    final response = await _dio.post<Map<String, dynamic>>(
+  Future<void> verifyEmail(String email, String otp) async {
+    await _dio.post<Map<String, dynamic>>(
       ApiEndpoints.authVerify,
       data: <String, dynamic>{'email': email.trim(), 'otp': otp.trim()},
     );
-    return AuthSession.fromJson(_data(response));
   }
 
   Future<void> forgotPassword(String email) async {
@@ -59,6 +58,15 @@ class AuthApi {
     await _dio.post<Map<String, dynamic>>(
       ApiEndpoints.authResendOtp,
       data: <String, dynamic>{'email': email.trim()},
+    );
+  }
+
+  Future<void> logout(String? refreshToken) async {
+    await _dio.post<Map<String, dynamic>>(
+      ApiEndpoints.authLogout,
+      data: <String, dynamic>{
+        if (refreshToken != null && refreshToken.isNotEmpty) 'refreshToken': refreshToken,
+      },
     );
   }
 

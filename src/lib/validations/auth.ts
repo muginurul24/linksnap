@@ -67,6 +67,22 @@ export const loginSchema = z
 
 export type LoginInput = z.infer<typeof loginSchema>;
 
+export const mobileRefreshSchema = z
+  .object({
+    refreshToken: z.string().trim().min(64, "Refresh token is required").max(512),
+  })
+  .strict();
+
+export type MobileRefreshInput = z.infer<typeof mobileRefreshSchema>;
+
+export const mobileLogoutSchema = z
+  .object({
+    refreshToken: z.string().trim().min(64).max(512).optional(),
+  })
+  .strict();
+
+export type MobileLogoutInput = z.infer<typeof mobileLogoutSchema>;
+
 export const twoFactorChallengeSchema = loginSchema;
 
 export type TwoFactorChallengeInput = z.infer<typeof twoFactorChallengeSchema>;

@@ -74,6 +74,11 @@ vi.mock("@/lib/db/queries/payments", () => ({
       : null,
 }));
 
+vi.mock("@/lib/db/queries/links", () => ({
+  getUserPlanById: async () =>
+    mockState.plan && mockState.user ? mockState.plan : null,
+}));
+
 vi.mock("@/lib/redis/rate-limit", () => ({
   slidingWindowRateLimit: async (options: RateLimitOptions) => {
     mockState.rateLimitOptions.push(options);

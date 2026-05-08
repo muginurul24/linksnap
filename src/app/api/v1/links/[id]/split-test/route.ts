@@ -1,13 +1,12 @@
 import { NextRequest } from "next/server";
-import { auth } from "@/lib/auth";
-import { getSessionUserId } from "@/lib/auth/session-helpers";
+import { getAuthenticatedRequestUser } from "@/lib/auth/request-user";
 import {
   createRequestId,
   errorResponse,
   logApiErrorResponse,
   successResponse,
 } from "@/lib/api/response";
-import { findLinkById, getUserPlanById, type LinkDetail } from "@/lib/db/queries/links";
+import { findLinkById, type LinkDetail } from "@/lib/db/queries/links";
 import {
   deleteSplitTestForLink,
   findSplitTestByLinkId,
@@ -83,13 +82,12 @@ async function parseParams(
 }
 
 async function getAuthenticatedUser(
+  request: NextRequest,
   method: string,
   requestId: string,
 ): Promise<{ userId: string; userPlan: UserPlan } | { response: Response }> {
-  const session = await auth();
-  const userId = getSessionUserId(session);
-
-  if (!userId) {
+  const requestUser = await getAuthenticatedRequestUser(request);
+  if (!requestUser) {
     return {
       response: errorResponse(
         "AUTHENTICATION_REQUIRED",
@@ -100,21 +98,9 @@ async function getAuthenticatedUser(
     };
   }
 
-  const userPlan = await getUserPlanById(userId);
-  if (!userPlan) {
-    return {
-      response: errorResponse(
-        "AUTHENTICATION_REQUIRED",
-        "Authenticated user no longer exists.",
-        401,
-        requestId,
-      ),
-    };
-  }
-
   const rateLimit = await slidingWindowRateLimit({
-    key: `api:links:split-test:${method.toLowerCase()}:${userId}`,
-    limit: getApiEndpointRateLimit(userPlan),
+    key: `api:links:split-test:${method.toLowerCase()}:${requestUser.userId}`,
+    limit: getApiEndpointRateLimit(requestUser.userPlan, requestUser.role),
     windowSeconds: 60,
   });
 
@@ -130,7 +116,7 @@ async function getAuthenticatedUser(
     };
   }
 
-  return { userId, userPlan };
+  return { userId: requestUser.userId, userPlan: requestUser.userPlan };
 }
 
 async function getAuthorizedLink(id: string, userId: string): Promise<LinkDetail> {
@@ -159,13 +145,13 @@ async function invalidateRedirectCache(slug: string): Promise<void> {
 }
 
 export async function GET(
-  _request: NextRequest,
+  request: NextRequest,
   context: SplitTestRouteContext,
 ): Promise<Response> {
   const requestId = createRequestId();
 
   try {
-    const authResult = await getAuthenticatedUser("GET", requestId);
+    const authResult = await getAuthenticatedUser(request, "GET", requestId);
     if ("response" in authResult) return authResult.response;
 
     const parsedParams = await parseParams(context, requestId);
@@ -199,7 +185,7 @@ export async function POST(
   const requestId = createRequestId();
 
   try {
-    const authResult = await getAuthenticatedUser("POST", requestId);
+    const authResult = await getAuthenticatedUser(request, "POST", requestId);
     if ("response" in authResult) return authResult.response;
 
     const parsedParams = await parseParams(context, requestId);
@@ -241,13 +227,13 @@ export async function POST(
 }
 
 export async function DELETE(
-  _request: NextRequest,
+  request: NextRequest,
   context: SplitTestRouteContext,
 ): Promise<Response> {
   const requestId = createRequestId();
 
   try {
-    const authResult = await getAuthenticatedUser("DELETE", requestId);
+    const authResult = await getAuthenticatedUser(request, "DELETE", requestId);
     if ("response" in authResult) return authResult.response;
 
     const parsedParams = await parseParams(context, requestId);

@@ -1,6 +1,5 @@
 import { NextRequest } from "next/server";
-import { auth } from "@/lib/auth";
-import { getSessionUserId } from "@/lib/auth/session-helpers";
+import { getAuthenticatedRequestUser } from "@/lib/auth/request-user";
 import {
   createRequestId,
   errorResponse,
@@ -14,7 +13,6 @@ import {
   updateCampaignRecordForUser,
   type CampaignWithLinkCount,
 } from "@/lib/db/queries/campaigns";
-import { getUserPlanById } from "@/lib/db/queries/links";
 import { getApiEndpointRateLimit, type UserPlan } from "@/lib/links/limits";
 import { slidingWindowRateLimit } from "@/lib/redis/rate-limit";
 import {
@@ -80,13 +78,12 @@ async function parseParams(
 }
 
 async function getAuthenticatedUser(
+  request: NextRequest,
   method: string,
   requestId: string,
 ): Promise<{ userId: string; userPlan: UserPlan } | { response: Response }> {
-  const session = await auth();
-  const userId = getSessionUserId(session);
-
-  if (!userId) {
+  const requestUser = await getAuthenticatedRequestUser(request);
+  if (!requestUser) {
     return {
       response: errorResponse(
         "AUTHENTICATION_REQUIRED",
@@ -97,21 +94,9 @@ async function getAuthenticatedUser(
     };
   }
 
-  const userPlan = await getUserPlanById(userId);
-  if (!userPlan) {
-    return {
-      response: errorResponse(
-        "AUTHENTICATION_REQUIRED",
-        "Authenticated user no longer exists.",
-        401,
-        requestId,
-      ),
-    };
-  }
-
   const rateLimit = await slidingWindowRateLimit({
-    key: `api:campaigns:item:${method.toLowerCase()}:${userId}`,
-    limit: getApiEndpointRateLimit(userPlan),
+    key: `api:campaigns:item:${method.toLowerCase()}:${requestUser.userId}`,
+    limit: getApiEndpointRateLimit(requestUser.userPlan, requestUser.role),
     windowSeconds: 60,
   });
 
@@ -127,7 +112,7 @@ async function getAuthenticatedUser(
     };
   }
 
-  return { userId, userPlan };
+  return { userId: requestUser.userId, userPlan: requestUser.userPlan };
 }
 
 async function getAuthorizedCampaign(
@@ -160,13 +145,13 @@ function handleKnownError(error: unknown, requestId: string): Response | null {
 }
 
 export async function GET(
-  _request: NextRequest,
+  request: NextRequest,
   context: CampaignRouteContext,
 ) {
   const requestId = createRequestId();
 
   try {
-    const authResult = await getAuthenticatedUser("GET", requestId);
+    const authResult = await getAuthenticatedUser(request, "GET", requestId);
     if ("response" in authResult) return authResult.response;
 
     const parsedParams = await parseParams(context, requestId);
@@ -199,7 +184,7 @@ export async function PATCH(
   const requestId = createRequestId();
 
   try {
-    const authResult = await getAuthenticatedUser("PATCH", requestId);
+    const authResult = await getAuthenticatedUser(request, "PATCH", requestId);
     if ("response" in authResult) return authResult.response;
 
     const parsedParams = await parseParams(context, requestId);
@@ -251,13 +236,13 @@ export async function PATCH(
 }
 
 export async function DELETE(
-  _request: NextRequest,
+  request: NextRequest,
   context: CampaignRouteContext,
 ) {
   const requestId = createRequestId();
 
   try {
-    const authResult = await getAuthenticatedUser("DELETE", requestId);
+    const authResult = await getAuthenticatedUser(request, "DELETE", requestId);
     if ("response" in authResult) return authResult.response;
 
     const parsedParams = await parseParams(context, requestId);

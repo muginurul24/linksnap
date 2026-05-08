@@ -1,6 +1,5 @@
 import { NextRequest } from "next/server";
-import { auth } from "@/lib/auth";
-import { getSessionUserId } from "@/lib/auth/session-helpers";
+import { getAuthenticatedRequestUser } from "@/lib/auth/request-user";
 import {
   canUseApiKeys,
   generateApiKey,
@@ -18,7 +17,6 @@ import {
   createApiKeyRecord,
   listApiKeysByUserId,
 } from "@/lib/db/queries/api-keys";
-import { findBillingUserById } from "@/lib/db/queries/payments";
 import { getApiEndpointRateLimit, type UserPlan } from "@/lib/links/limits";
 import { slidingWindowRateLimit } from "@/lib/redis/rate-limit";
 import { createApiKeySchema } from "@/lib/validations/api-key";
@@ -27,17 +25,17 @@ export const runtime = "nodejs";
 
 type ApiKeySettingsUser = {
   plan: Extract<UserPlan, "PRO" | "BUSINESS">;
+  role: string;
   userId: string;
 };
 
 async function getAuthenticatedApiKeySettingsUser(
+  request: NextRequest,
   method: string,
   requestId: string,
 ): Promise<ApiKeySettingsUser | { response: Response }> {
-  const session = await auth();
-  const userId = getSessionUserId(session);
-
-  if (!userId) {
+  const requestUser = await getAuthenticatedRequestUser(request);
+  if (!requestUser) {
     return {
       response: errorResponse(
         "AUTHENTICATION_REQUIRED",
@@ -48,19 +46,7 @@ async function getAuthenticatedApiKeySettingsUser(
     };
   }
 
-  const user = await findBillingUserById(userId);
-  if (!user) {
-    return {
-      response: errorResponse(
-        "AUTHENTICATION_REQUIRED",
-        "Authenticated user no longer exists.",
-        401,
-        requestId,
-      ),
-    };
-  }
-
-  if (!canUseApiKeys(user.plan)) {
+  if (!canUseApiKeys(requestUser.userPlan)) {
     return {
       response: errorResponse(
         "PLAN_UPGRADE_REQUIRED",
@@ -72,8 +58,8 @@ async function getAuthenticatedApiKeySettingsUser(
   }
 
   const rateLimit = await slidingWindowRateLimit({
-    key: `api:settings:api-keys:${method.toLowerCase()}:${userId}`,
-    limit: getApiEndpointRateLimit(user.plan),
+    key: `api:settings:api-keys:${method.toLowerCase()}:${requestUser.userId}`,
+    limit: getApiEndpointRateLimit(requestUser.userPlan, requestUser.role),
     windowSeconds: 60,
   });
 
@@ -89,14 +75,22 @@ async function getAuthenticatedApiKeySettingsUser(
     };
   }
 
-  return { plan: user.plan, userId };
+  return {
+    plan: requestUser.userPlan,
+    role: requestUser.role,
+    userId: requestUser.userId,
+  };
 }
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   const requestId = createRequestId();
 
   try {
-    const authResult = await getAuthenticatedApiKeySettingsUser("GET", requestId);
+    const authResult = await getAuthenticatedApiKeySettingsUser(
+      request,
+      "GET",
+      requestId,
+    );
     if ("response" in authResult) return authResult.response;
 
     const keys = await listApiKeysByUserId(authResult.userId);
@@ -117,7 +111,11 @@ export async function POST(request: NextRequest) {
   const requestId = createRequestId();
 
   try {
-    const authResult = await getAuthenticatedApiKeySettingsUser("POST", requestId);
+    const authResult = await getAuthenticatedApiKeySettingsUser(
+      request,
+      "POST",
+      requestId,
+    );
     if ("response" in authResult) return authResult.response;
 
     const body = await request.json().catch(() => null);

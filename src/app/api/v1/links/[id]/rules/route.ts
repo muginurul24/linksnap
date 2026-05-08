@@ -1,13 +1,12 @@
 import { NextRequest } from "next/server";
-import { auth } from "@/lib/auth";
-import { getSessionUserId } from "@/lib/auth/session-helpers";
+import { getAuthenticatedRequestUser } from "@/lib/auth/request-user";
 import {
   createRequestId,
   errorResponse,
   logApiErrorResponse,
   successResponse,
 } from "@/lib/api/response";
-import { findLinkById, getUserPlanById, type LinkDetail } from "@/lib/db/queries/links";
+import { findLinkById, type LinkDetail } from "@/lib/db/queries/links";
 import {
   deleteSmartRuleForLink,
   listSmartRulesByLinkId,
@@ -128,13 +127,14 @@ function parseDeleteQuery(
 }
 
 async function getAuthenticatedUser(
+  request: NextRequest,
   method: string,
   requestId: string,
-): Promise<{ userId: string; userPlan: UserPlan } | { response: Response }> {
-  const session = await auth();
-  const userId = getSessionUserId(session);
-
-  if (!userId) {
+): Promise<
+  { role: string; userId: string; userPlan: UserPlan } | { response: Response }
+> {
+  const requestUser = await getAuthenticatedRequestUser(request);
+  if (!requestUser) {
     return {
       response: errorResponse(
         "AUTHENTICATION_REQUIRED",
@@ -145,21 +145,9 @@ async function getAuthenticatedUser(
     };
   }
 
-  const userPlan = await getUserPlanById(userId);
-  if (!userPlan) {
-    return {
-      response: errorResponse(
-        "AUTHENTICATION_REQUIRED",
-        "Authenticated user no longer exists.",
-        401,
-        requestId,
-      ),
-    };
-  }
-
   const rateLimit = await slidingWindowRateLimit({
-    key: `api:links:rules:${method.toLowerCase()}:${userId}`,
-    limit: getApiEndpointRateLimit(userPlan),
+    key: `api:links:rules:${method.toLowerCase()}:${requestUser.userId}`,
+    limit: getApiEndpointRateLimit(requestUser.userPlan, requestUser.role),
     windowSeconds: 60,
   });
 
@@ -175,7 +163,11 @@ async function getAuthenticatedUser(
     };
   }
 
-  return { userId, userPlan };
+  return {
+    role: requestUser.role,
+    userId: requestUser.userId,
+    userPlan: requestUser.userPlan,
+  };
 }
 
 async function getAuthorizedLink(id: string, userId: string): Promise<LinkDetail> {
@@ -187,8 +179,12 @@ async function getAuthorizedLink(id: string, userId: string): Promise<LinkDetail
   return link;
 }
 
-function assertSmartRuleQuota(ruleCount: number, userPlan: UserPlan): void {
-  if (!exceedsSmartRuleQuota(userPlan, ruleCount)) return;
+function assertSmartRuleQuota(
+  ruleCount: number,
+  userPlan: UserPlan,
+  role?: string,
+): void {
+  if (!exceedsSmartRuleQuota(userPlan, ruleCount, role)) return;
 
   throw new SmartRuleQuotaExceededError(getSmartRuleQuota(userPlan));
 }
@@ -335,11 +331,11 @@ async function invalidateSmartRuleCaches(slug: string): Promise<void> {
   ]);
 }
 
-export async function GET(_request: NextRequest, context: SmartRulesRouteContext) {
+export async function GET(request: NextRequest, context: SmartRulesRouteContext) {
   const requestId = createRequestId();
 
   try {
-    const authResult = await getAuthenticatedUser("GET", requestId);
+    const authResult = await getAuthenticatedUser(request, "GET", requestId);
     if ("response" in authResult) return authResult.response;
 
     const parsedParams = await parseParams(context, requestId);
@@ -366,7 +362,7 @@ async function upsertRules(
   const requestId = createRequestId();
 
   try {
-    const authResult = await getAuthenticatedUser(method, requestId);
+    const authResult = await getAuthenticatedUser(request, method, requestId);
     if ("response" in authResult) return authResult.response;
 
     const parsedParams = await parseParams(context, requestId);
@@ -384,7 +380,11 @@ async function upsertRules(
       );
     }
 
-    assertSmartRuleQuota(parsedBody.data.quotaCount, authResult.userPlan);
+    assertSmartRuleQuota(
+      parsedBody.data.quotaCount,
+      authResult.userPlan,
+      authResult.role,
+    );
 
     const link = await getAuthorizedLink(parsedParams.params.id, authResult.userId);
     const rules = await replaceSmartRulesForLink({
@@ -420,7 +420,7 @@ export async function DELETE(request: NextRequest, context: SmartRulesRouteConte
   const requestId = createRequestId();
 
   try {
-    const authResult = await getAuthenticatedUser("DELETE", requestId);
+    const authResult = await getAuthenticatedUser(request, "DELETE", requestId);
     if ("response" in authResult) return authResult.response;
 
     const parsedParams = await parseParams(context, requestId);

@@ -1,6 +1,5 @@
-import {
-  auth } from "@/lib/auth";
-import { getSessionUserId } from "@/lib/auth/session-helpers";
+import { NextRequest } from "next/server";
+import { getAuthenticatedRequestUser } from "@/lib/auth/request-user";
 import {
   createRequestId,
   errorResponse,
@@ -8,18 +7,15 @@ import {
   successResponse,
 } from "@/lib/api/response";
 import { getDashboardOverviewByUserId } from "@/lib/db/queries/dashboard";
-import { getUserPlanById } from "@/lib/db/queries/links";
 import { getApiEndpointRateLimit } from "@/lib/links/limits";
 import { slidingWindowRateLimit } from "@/lib/redis/rate-limit";
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   const requestId = createRequestId();
 
   try {
-    const session = await auth();
-    const userId = getSessionUserId(session);
-
-    if (!userId) {
+    const authUser = await getAuthenticatedRequestUser(request);
+    if (!authUser) {
       return errorResponse(
         "AUTHENTICATION_REQUIRED",
         "Authentication is required.",
@@ -28,19 +24,9 @@ export async function GET() {
       );
     }
 
-    const userPlan = await getUserPlanById(userId);
-    if (!userPlan) {
-      return errorResponse(
-        "AUTHENTICATION_REQUIRED",
-        "Authenticated user no longer exists.",
-        401,
-        requestId,
-      );
-    }
-
     const rateLimit = await slidingWindowRateLimit({
-      key: `api:dashboard:overview:${userId}`,
-      limit: getApiEndpointRateLimit(userPlan),
+      key: `api:dashboard:overview:${authUser.userId}`,
+      limit: getApiEndpointRateLimit(authUser.userPlan, authUser.role),
       windowSeconds: 60,
     });
 
@@ -54,7 +40,7 @@ export async function GET() {
       );
     }
 
-    const overview = await getDashboardOverviewByUserId({ userId });
+    const overview = await getDashboardOverviewByUserId({ userId: authUser.userId });
 
     return successResponse(overview);
   } catch (error) {

@@ -1,6 +1,5 @@
 import { NextRequest } from "next/server";
-import { auth } from "@/lib/auth";
-import { getSessionUserId } from "@/lib/auth/session-helpers";
+import { getAuthenticatedRequestUser } from "@/lib/auth/request-user";
 import {
   createRequestId,
   errorResponse,
@@ -8,7 +7,6 @@ import {
   successResponse,
 } from "@/lib/api/response";
 import { deleteApiKeyForUser } from "@/lib/db/queries/api-keys";
-import { findBillingUserById } from "@/lib/db/queries/payments";
 import { getApiEndpointRateLimit } from "@/lib/links/limits";
 import { slidingWindowRateLimit } from "@/lib/redis/rate-limit";
 import { apiKeyIdParamsSchema, type ApiKeyIdParams } from "@/lib/validations/api-key";
@@ -41,16 +39,14 @@ async function parseParams(
 }
 
 export async function DELETE(
-  _request: NextRequest,
+  request: NextRequest,
   context: ApiKeyRouteContext,
 ) {
   const requestId = createRequestId();
 
   try {
-    const session = await auth();
-    const userId = getSessionUserId(session);
-
-    if (!userId) {
+    const requestUser = await getAuthenticatedRequestUser(request);
+    if (!requestUser) {
       return errorResponse(
         "AUTHENTICATION_REQUIRED",
         "Authentication is required.",
@@ -59,19 +55,9 @@ export async function DELETE(
       );
     }
 
-    const user = await findBillingUserById(userId);
-    if (!user) {
-      return errorResponse(
-        "AUTHENTICATION_REQUIRED",
-        "Authenticated user no longer exists.",
-        401,
-        requestId,
-      );
-    }
-
     const rateLimit = await slidingWindowRateLimit({
-      key: `api:settings:api-keys:delete:${userId}`,
-      limit: getApiEndpointRateLimit(user.plan),
+      key: `api:settings:api-keys:delete:${requestUser.userId}`,
+      limit: getApiEndpointRateLimit(requestUser.userPlan, requestUser.role),
       windowSeconds: 60,
     });
 
@@ -90,7 +76,7 @@ export async function DELETE(
 
     const deleted = await deleteApiKeyForUser({
       id: parsedParams.params.id,
-      userId,
+      userId: requestUser.userId,
     });
 
     if (!deleted) {

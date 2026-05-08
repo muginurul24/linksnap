@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/services.dart';
 
@@ -91,14 +92,16 @@ class AuthNotifier extends StateNotifier<AuthState> {
     }
   }
 
-  Future<void> verifyEmail(String email, String otp) async {
+  Future<bool> verifyEmail(String email, String otp) async {
     state = state.copyWith(isLoading: true, clearError: true);
     try {
-      final session = await _repository.verifyEmail(email, otp);
+      await _repository.verifyEmail(email, otp);
       HapticFeedback.lightImpact();
-      state = AuthState(user: session.user, token: session.token);
+      state = state.copyWith(isLoading: false, clearError: true);
+      return true;
     } catch (error) {
       state = state.copyWith(isLoading: false, error: _message(error));
+      return false;
     }
   }
 
@@ -129,9 +132,24 @@ class AuthNotifier extends StateNotifier<AuthState> {
   }
 
   String _message(Object error) {
-    final raw = error.toString();
-    if (raw.contains('401')) return 'Invalid email or password';
-    if (raw.contains('429')) return 'Too many attempts. Please try again soon.';
+    if (error is DioException) {
+      final data = error.response?.data;
+      final apiError = data is Map ? data['error'] : null;
+      final code = apiError is Map ? apiError['code']?.toString() : null;
+      return switch (code) {
+        'EMAIL_NOT_VERIFIED' => 'Verify your email before signing in.',
+        'TWO_FACTOR_REQUIRED' => 'Two-factor accounts are not supported in the mobile app yet.',
+        'RATE_LIMITED' => 'Too many attempts. Please try again soon.',
+        'INVALID_CREDENTIALS' => 'Invalid email or password',
+        _ => _statusMessage(error.response?.statusCode),
+      };
+    }
+    return 'Something went wrong. Please try again.';
+  }
+
+  String _statusMessage(int? statusCode) {
+    if (statusCode == 401) return 'Invalid email or password';
+    if (statusCode == 429) return 'Too many attempts. Please try again soon.';
     return 'Something went wrong. Please try again.';
   }
 }

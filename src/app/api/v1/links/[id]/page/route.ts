@@ -1,6 +1,5 @@
 import { NextRequest } from "next/server";
-import { auth } from "@/lib/auth";
-import { getSessionUserId } from "@/lib/auth/session-helpers";
+import { getAuthenticatedRequestUser } from "@/lib/auth/request-user";
 import {
   createRequestId,
   errorResponse,
@@ -11,7 +10,6 @@ import {
   countLinkPagesByUserId,
   findLinkById,
   findLinkPageByLinkId,
-  getUserPlanById,
   setLinkPageEnabledForUser,
   upsertLinkPageForLink,
   type LinkDetail,
@@ -96,13 +94,14 @@ async function parseParams(
 }
 
 async function getAuthenticatedUser(
+  request: NextRequest,
   method: string,
   requestId: string,
-): Promise<{ userId: string; userPlan: UserPlan } | { response: Response }> {
-  const session = await auth();
-  const userId = getSessionUserId(session);
-
-  if (!userId) {
+): Promise<
+  { role: string; userId: string; userPlan: UserPlan } | { response: Response }
+> {
+  const requestUser = await getAuthenticatedRequestUser(request);
+  if (!requestUser) {
     return {
       response: errorResponse(
         "AUTHENTICATION_REQUIRED",
@@ -113,21 +112,9 @@ async function getAuthenticatedUser(
     };
   }
 
-  const userPlan = await getUserPlanById(userId);
-  if (!userPlan) {
-    return {
-      response: errorResponse(
-        "AUTHENTICATION_REQUIRED",
-        "Authenticated user no longer exists.",
-        401,
-        requestId,
-      ),
-    };
-  }
-
   const rateLimit = await slidingWindowRateLimit({
-    key: `api:links:page:${method.toLowerCase()}:${userId}`,
-    limit: getApiEndpointRateLimit(userPlan),
+    key: `api:links:page:${method.toLowerCase()}:${requestUser.userId}`,
+    limit: getApiEndpointRateLimit(requestUser.userPlan, requestUser.role),
     windowSeconds: 60,
   });
 
@@ -143,7 +130,11 @@ async function getAuthenticatedUser(
     };
   }
 
-  return { userId, userPlan };
+  return {
+    role: requestUser.role,
+    userId: requestUser.userId,
+    userPlan: requestUser.userPlan,
+  };
 }
 
 async function getAuthorizedLink(id: string, userId: string): Promise<LinkDetail> {
@@ -157,10 +148,12 @@ async function getAuthorizedLink(id: string, userId: string): Promise<LinkDetail
 
 async function ensureLinkPageQuota({
   linkId,
+  role,
   userId,
   userPlan,
 }: {
   linkId: string;
+  role?: string;
   userId: string;
   userPlan: UserPlan;
 }): Promise<void> {
@@ -168,7 +161,7 @@ async function ensureLinkPageQuota({
   if (existingPage) return;
 
   const linkPageCount = await countLinkPagesByUserId(userId);
-  if (hasReachedLinkPageQuota(userPlan, linkPageCount)) {
+  if (hasReachedLinkPageQuota(userPlan, linkPageCount, role)) {
     throw new LinkPageQuotaExceededError();
   }
 }
@@ -214,11 +207,11 @@ async function upsertLinkPage(
   });
 }
 
-export async function GET(_request: NextRequest, context: LinkPageRouteContext) {
+export async function GET(request: NextRequest, context: LinkPageRouteContext) {
   const requestId = createRequestId();
 
   try {
-    const authResult = await getAuthenticatedUser("GET", requestId);
+    const authResult = await getAuthenticatedUser(request, "GET", requestId);
     if ("response" in authResult) return authResult.response;
 
     const parsedParams = await parseParams(context, requestId);
@@ -244,7 +237,7 @@ export async function POST(request: NextRequest, context: LinkPageRouteContext) 
   const requestId = createRequestId();
 
   try {
-    const authResult = await getAuthenticatedUser("POST", requestId);
+    const authResult = await getAuthenticatedUser(request, "POST", requestId);
     if ("response" in authResult) return authResult.response;
 
     const parsedParams = await parseParams(context, requestId);
@@ -265,6 +258,7 @@ export async function POST(request: NextRequest, context: LinkPageRouteContext) 
     const link = await getAuthorizedLink(parsedParams.params.id, authResult.userId);
     await ensureLinkPageQuota({
       linkId: link.id,
+      role: authResult.role,
       userId: authResult.userId,
       userPlan: authResult.userPlan,
     });

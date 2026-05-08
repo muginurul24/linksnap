@@ -2586,6 +2586,7 @@ apps/mobile_flutter/
   - `verifyEmail(email, otp)` → `POST /api/v1/auth/verify`
   - `forgotPassword(email)` → `POST /api/v1/auth/forgot-password`
   - `resetPassword(token, password)` → `POST /api/v1/auth/reset-password`
+- [x] Backend mobile Bearer contract implemented: `/api/v1/auth/login`, `/refresh`, `/logout`, `/me`
 - [x] `lib/features/auth/data/auth_repository.dart` — wraps API + SecureStorage
 - [x] `lib/features/auth/domain/user_model.dart` — User model with `fromJson`/`toJson`
 - [x] `lib/features/auth/presentation/providers/auth_provider.dart` — Riverpod StateNotifier:

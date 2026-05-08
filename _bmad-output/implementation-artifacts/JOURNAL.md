@@ -7896,3 +7896,47 @@ Audited `apps/mobile_flutter` for production readiness and implemented the recom
 - ✅ Sample data is disabled by default.
 
 **Next Task:** Implement mobile-compatible auth API contract or complete Flutter SDK/native host generation.
+
+### 21F.1 — Mobile Bearer Auth Contract
+- **Date:** 2026-05-08 20:03 GMT+7
+- **Duration:** 1h 20m
+- **Status:** ✅ Complete
+
+**What I Did:**
+Implemented the backend auth contract expected by `apps/mobile_flutter`: password login issues short-lived Bearer access tokens plus rotating refresh tokens, refresh/logout/me endpoints are available, and core user-data APIs now accept Bearer tokens as a fallback without breaking NextAuth cookie sessions.
+
+**Files Changed:**
+- `_bmad-output/planning-artifacts/spec-mobile-bearer-auth.md` — Added and completed focused tech spec.
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Marked the backend mobile Bearer contract complete.
+- `src/lib/auth/mobile-token.ts`, `src/lib/auth/mobile-session.ts`, `src/lib/auth/request-user.ts` — Added mobile token/session helpers and shared session-or-Bearer request auth.
+- `src/lib/db/queries/mobile-auth.ts` — Added mobile auth user lookup and refresh-token hash updates.
+- `src/app/api/v1/auth/login/route.ts`, `refresh/route.ts`, `logout/route.ts`, `me/route.ts` — Added mobile auth endpoints.
+- `src/app/api/v1/{dashboard,links,campaigns,payments,settings}/**/route.ts` — Enabled Bearer fallback on core protected APIs.
+- `apps/mobile_flutter/lib/features/auth/**` — Added server logout call, clearer login error messages, and a verify-email flow that matches the backend success-only verify response.
+- `tests/unit/mobile-token.test.ts`, `tests/integration/mobile-auth-api.test.ts`, related API tests — Added and updated auth coverage.
+
+**Decisions Made:**
+- Access tokens use `AUTH_SECRET` HMAC and a 15-minute TTL to avoid adding a new auth library.
+- Refresh tokens are stored only as SHA-256 hashes in the existing `users.refreshTokenHash` column and rotated on every refresh.
+- Kept web sessions as the first auth source so existing dashboard behavior and browser CSRF protections remain intact.
+
+**Tests:**
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Targeted regression: `rtk bun run test -- tests/integration/create-payment-api.test.ts tests/integration/payment-create-webhook-flow.test.ts tests/integration/payment-history-api.test.ts tests/integration/settings-api.test.ts tests/integration/api-keys-api.test.ts tests/integration/dashboard-overview-api.test.ts tests/integration/mobile-auth-api.test.ts tests/unit/mobile-token.test.ts` — 34 passed.
+- ✅ Full unit/integration: `rtk bun run test` — 139 files passed, 1 skipped; 635 tests passed, 2 skipped.
+- ✅ Build: `rtk bun run build` — Passed.
+
+**Issues Encountered:**
+- Several existing integration tests mocked billing users but not `getUserPlanById`; updated mocks so session auth does not attempt a real Neon connection.
+- Mobile 2FA challenge UI is still not implemented, so 2FA-enabled users receive `TWO_FACTOR_REQUIRED` for now.
+- Flutter/Dart formatting could not run because the local Flutter tool reports `Flutter not initialized, please run the flutter command once`.
+
+**Security Checks:**
+- ✅ Password login validates input with Zod and verifies bcrypt hashes.
+- ✅ Refresh tokens are never stored plaintext.
+- ✅ Bearer tokens are rejected on expiry, tamper, deleted-user mismatch, or email mismatch.
+- ✅ Protected APIs still enforce ownership checks after auth.
+- ✅ No secrets committed.
+
+**Next Task:** Complete Flutter SDK/native host generation and run Flutter analyze/test/release build when the SDK is initialized.

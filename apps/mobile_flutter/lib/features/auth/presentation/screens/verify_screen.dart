@@ -132,11 +132,14 @@ class _VerifyScreenState extends ConsumerState<VerifyScreen> {
   Future<void> _submit() async {
     final otp = _controllers.map((controller) => controller.text).join();
     if (otp.length != 6 || widget.email == null) return;
-    await ref.read(authProvider.notifier).verifyEmail(widget.email!, otp);
-    if (mounted && ref.read(authProvider).isAuthenticated) {
-      HapticFeedback.lightImpact();
-      await Future<void>.delayed(const Duration(milliseconds: 500));
-      if (mounted) context.go('/dashboard');
+    final verified = await ref
+        .read(authProvider.notifier)
+        .verifyEmail(widget.email!, otp);
+    if (mounted && verified) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Email verified. Sign in to continue.')),
+      );
+      context.go('/login');
     }
   }
 }

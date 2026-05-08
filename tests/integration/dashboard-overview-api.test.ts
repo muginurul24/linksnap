@@ -1,3 +1,4 @@
+import type { NextRequest } from "next/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { DashboardOverview } from "../../src/lib/dashboard/overview";
 
@@ -79,6 +80,26 @@ vi.mock("@/lib/db/queries/links", () => ({
   getUserPlanById: async () => mockState.userPlan,
 }));
 
+vi.mock("@/lib/db/queries/mobile-auth", () => ({
+  findMobileSessionUserById: async (userId: string) => {
+    if (!mockState.userPlan) return null;
+    return {
+      avatarUrl: null,
+      deletedAt: null,
+      email: "user@example.com",
+      emailVerified: new Date("2026-05-01T00:00:00.000Z"),
+      id: userId,
+      name: "User",
+      passwordHash: "hash",
+      plan: mockState.userPlan,
+      refreshTokenHash: null,
+      role: "user",
+      twoFactorEnabled: false,
+      twoFactorSecret: null,
+    };
+  },
+}));
+
 vi.mock("@/lib/redis/rate-limit", () => ({
   slidingWindowRateLimit: async (options: RateLimitOptions) => {
     mockState.rateLimitOptions.push(options);
@@ -87,6 +108,15 @@ vi.mock("@/lib/redis/rate-limit", () => ({
 }));
 
 import { GET } from "../../src/app/api/v1/dashboard/overview/route";
+import { createMobileAccessToken } from "../../src/lib/auth/mobile-token";
+
+function createRequest(token?: string): NextRequest {
+  return new Request("http://localhost/api/v1/dashboard/overview", {
+    headers: {
+      ...(token ? { authorization: `Bearer ${token}` } : {}),
+    },
+  }) as NextRequest;
+}
 
 async function readJson<T>(response: Response): Promise<ApiEnvelope<T>> {
   return response.json() as Promise<ApiEnvelope<T>>;
@@ -100,10 +130,11 @@ describe("dashboard overview API", () => {
     mockState.rateLimitResult = { limited: false, remaining: 99 };
     mockState.session = { user: { id: "user-1" } };
     mockState.userPlan = "PRO";
+    process.env.AUTH_SECRET = "test-auth-secret-with-at-least-thirty-two-chars";
   });
 
   it("should return overview data for the authenticated user", async () => {
-    const response = await GET();
+    const response = await GET(createRequest());
     const body = await readJson<DashboardOverview>(response);
 
     expect(response.status).toBe(200);
@@ -117,10 +148,27 @@ describe("dashboard overview API", () => {
     ]);
   });
 
+  it("should accept mobile bearer tokens when no cookie session exists", async () => {
+    mockState.session = null;
+    const token = createMobileAccessToken({
+      email: "user@example.com",
+      id: "user-1",
+      plan: "PRO",
+      role: "user",
+    });
+
+    const response = await GET(createRequest(token));
+    const body = await readJson<DashboardOverview>(response);
+
+    expect(response.status).toBe(200);
+    expect(body.success).toBe(true);
+    expect(mockState.capturedUserId).toBe("user-1");
+  });
+
   it("should reject unauthenticated requests", async () => {
     mockState.session = null;
 
-    const response = await GET();
+    const response = await GET(createRequest());
     const body = await readJson<DashboardOverview>(response);
 
     expect(response.status).toBe(401);
@@ -133,7 +181,7 @@ describe("dashboard overview API", () => {
   it("should rate limit dashboard overview requests", async () => {
     mockState.rateLimitResult = { limited: true, retryAfter: 30 };
 
-    const response = await GET();
+    const response = await GET(createRequest());
     const body = await readJson<DashboardOverview>(response);
 
     expect(response.status).toBe(429);

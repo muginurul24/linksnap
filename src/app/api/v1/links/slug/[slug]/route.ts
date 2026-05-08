@@ -1,13 +1,12 @@
 import { NextRequest } from "next/server";
-import { auth } from "@/lib/auth";
-import { getSessionUserId } from "@/lib/auth/session-helpers";
+import { getAuthenticatedRequestUser } from "@/lib/auth/request-user";
 import {
   createRequestId,
   errorResponse,
   logApiErrorResponse,
   successResponse,
 } from "@/lib/api/response";
-import { findLinkBySlug, getUserPlanById } from "@/lib/db/queries/links";
+import { findLinkBySlug } from "@/lib/db/queries/links";
 import {
   canUseCustomSlug,
   getApiEndpointRateLimit,
@@ -45,12 +44,13 @@ async function parseParams(
 }
 
 async function getAuthenticatedUser(
+  request: NextRequest,
   requestId: string,
-): Promise<{ userId: string; userPlan: UserPlan } | { response: Response }> {
-  const session = await auth();
-  const userId = getSessionUserId(session);
-
-  if (!userId) {
+): Promise<
+  { role: string; userId: string; userPlan: UserPlan } | { response: Response }
+> {
+  const requestUser = await getAuthenticatedRequestUser(request);
+  if (!requestUser) {
     return {
       response: errorResponse(
         "AUTHENTICATION_REQUIRED",
@@ -61,21 +61,9 @@ async function getAuthenticatedUser(
     };
   }
 
-  const userPlan = await getUserPlanById(userId);
-  if (!userPlan) {
-    return {
-      response: errorResponse(
-        "AUTHENTICATION_REQUIRED",
-        "Authenticated user no longer exists.",
-        401,
-        requestId,
-      ),
-    };
-  }
-
   const rateLimit = await slidingWindowRateLimit({
-    key: `api:links:slug:get:${userId}`,
-    limit: getApiEndpointRateLimit(userPlan),
+    key: `api:links:slug:get:${requestUser.userId}`,
+    limit: getApiEndpointRateLimit(requestUser.userPlan, requestUser.role),
     windowSeconds: 60,
   });
 
@@ -91,17 +79,21 @@ async function getAuthenticatedUser(
     };
   }
 
-  return { userId, userPlan };
+  return {
+    role: requestUser.role,
+    userId: requestUser.userId,
+    userPlan: requestUser.userPlan,
+  };
 }
 
 export async function GET(
-  _request: NextRequest,
+  request: NextRequest,
   context: LinkSlugRouteContext,
 ) {
   const requestId = createRequestId();
 
   try {
-    const authResult = await getAuthenticatedUser(requestId);
+    const authResult = await getAuthenticatedUser(request, requestId);
     if ("response" in authResult) return authResult.response;
 
     const parsedParams = await parseParams(context, requestId);
@@ -111,7 +103,7 @@ export async function GET(
 
     return successResponse({
       available: existingLink === null,
-      customSlugAllowed: canUseCustomSlug(authResult.userPlan),
+      customSlugAllowed: canUseCustomSlug(authResult.userPlan, authResult.role),
       slug: parsedParams.params.slug,
     });
   } catch (error) {

@@ -1,6 +1,5 @@
 import { NextRequest } from "next/server";
-import { auth } from "@/lib/auth";
-import { getSessionUserId } from "@/lib/auth/session-helpers";
+import { getAuthenticatedRequestUser } from "@/lib/auth/request-user";
 import {
   createRequestId,
   errorResponse,
@@ -19,7 +18,6 @@ import {
   type CampaignRecord,
   type CampaignWithLinkCount,
 } from "@/lib/db/queries/campaigns";
-import { getUserPlanById } from "@/lib/db/queries/links";
 import {
   getApiEndpointRateLimit,
   hasReachedCampaignQuota,
@@ -56,13 +54,12 @@ function formatCampaign(
 }
 
 async function getAuthenticatedUser(
+  request: NextRequest,
   method: string,
   requestId: string,
 ): Promise<{ userId: string; userPlan: UserPlan } | { response: Response }> {
-  const session = await auth();
-  const userId = getSessionUserId(session);
-
-  if (!userId) {
+  const requestUser = await getAuthenticatedRequestUser(request);
+  if (!requestUser) {
     return {
       response: errorResponse(
         "AUTHENTICATION_REQUIRED",
@@ -73,21 +70,9 @@ async function getAuthenticatedUser(
     };
   }
 
-  const userPlan = await getUserPlanById(userId);
-  if (!userPlan) {
-    return {
-      response: errorResponse(
-        "AUTHENTICATION_REQUIRED",
-        "Authenticated user no longer exists.",
-        401,
-        requestId,
-      ),
-    };
-  }
-
   const rateLimit = await slidingWindowRateLimit({
-    key: `api:campaigns:${method.toLowerCase()}:${userId}`,
-    limit: getApiEndpointRateLimit(userPlan),
+    key: `api:campaigns:${method.toLowerCase()}:${requestUser.userId}`,
+    limit: getApiEndpointRateLimit(requestUser.userPlan, requestUser.role),
     windowSeconds: 60,
   });
 
@@ -103,7 +88,7 @@ async function getAuthenticatedUser(
     };
   }
 
-  return { userId, userPlan };
+  return { userId: requestUser.userId, userPlan: requestUser.userPlan };
 }
 
 function parseListQuery(
@@ -131,7 +116,7 @@ export async function GET(request: NextRequest) {
   const requestId = createRequestId();
 
   try {
-    const authResult = await getAuthenticatedUser("GET", requestId);
+    const authResult = await getAuthenticatedUser(request, "GET", requestId);
     if ("response" in authResult) return authResult.response;
 
     const parsedQuery = parseListQuery(request, requestId);
@@ -175,7 +160,7 @@ export async function POST(request: NextRequest) {
   const requestId = createRequestId();
 
   try {
-    const authResult = await getAuthenticatedUser("POST", requestId);
+    const authResult = await getAuthenticatedUser(request, "POST", requestId);
     if ("response" in authResult) return authResult.response;
 
     const body = await request.json().catch(() => null);

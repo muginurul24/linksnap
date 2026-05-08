@@ -31,15 +31,15 @@ class AuthRepository {
     return _api.register(name, email, password);
   }
 
-  Future<AuthSession> verifyEmail(String email, String otp) async {
-    final session = await _api.verifyEmail(email, otp);
-    await saveSession(session);
-    return session;
+  Future<void> verifyEmail(String email, String otp) {
+    return _api.verifyEmail(email, otp);
   }
 
   Future<void> forgotPassword(String email) => _api.forgotPassword(email);
 
-  Future<void> resetPassword(String token, String password) => _api.resetPassword(token, password);
+  Future<void> resetPassword(String token, String password) {
+    return _api.resetPassword(token, password);
+  }
 
   Future<void> resendOtp(String email) => _api.resendOtp(email);
 
@@ -64,5 +64,12 @@ class AuthRepository {
     }
   }
 
-  Future<void> logout() => _storage.clearSession();
+  Future<void> logout() async {
+    final refreshToken = await _storage.getRefreshToken();
+    try {
+      await _api.logout(refreshToken);
+    } finally {
+      await _storage.clearSession();
+    }
+  }
 }

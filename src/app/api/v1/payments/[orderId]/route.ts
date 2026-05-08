@@ -1,16 +1,12 @@
 import { NextRequest } from "next/server";
-import { auth } from "@/lib/auth";
-import { getSessionUserId } from "@/lib/auth/session-helpers";
+import { getAuthenticatedRequestUser } from "@/lib/auth/request-user";
 import {
   createRequestId,
   errorResponse,
   logApiErrorResponse,
   successResponse,
 } from "@/lib/api/response";
-import {
-  findBillingUserById,
-  findCheckoutTransactionByOrderId,
-} from "@/lib/db/queries/payments";
+import { findCheckoutTransactionByOrderId } from "@/lib/db/queries/payments";
 import { getApiEndpointRateLimit } from "@/lib/links/limits";
 import {
   getPayGateTransaction,
@@ -27,12 +23,11 @@ type PaymentDetailRouteContext = {
 };
 
 async function getAuthenticatedBillingUser(
+  request: NextRequest,
   requestId: string,
 ): Promise<{ userId: string } | { response: Response }> {
-  const session = await auth();
-  const userId = getSessionUserId(session);
-
-  if (!userId) {
+  const authUser = await getAuthenticatedRequestUser(request);
+  if (!authUser) {
     return {
       response: errorResponse(
         "AUTHENTICATION_REQUIRED",
@@ -43,21 +38,9 @@ async function getAuthenticatedBillingUser(
     };
   }
 
-  const user = await findBillingUserById(userId);
-  if (!user) {
-    return {
-      response: errorResponse(
-        "AUTHENTICATION_REQUIRED",
-        "Authenticated user no longer exists.",
-        401,
-        requestId,
-      ),
-    };
-  }
-
   const rateLimit = await slidingWindowRateLimit({
-    key: `api:payments:detail:${userId}`,
-    limit: getApiEndpointRateLimit(user.plan),
+    key: `api:payments:detail:${authUser.userId}`,
+    limit: getApiEndpointRateLimit(authUser.userPlan, authUser.role),
     windowSeconds: 60,
   });
 
@@ -73,7 +56,7 @@ async function getAuthenticatedBillingUser(
     };
   }
 
-  return { userId };
+  return { userId: authUser.userId };
 }
 
 async function parsePaymentDetailParams(
@@ -101,13 +84,13 @@ async function parsePaymentDetailParams(
 }
 
 export async function GET(
-  _request: NextRequest,
+  request: NextRequest,
   context: PaymentDetailRouteContext,
 ) {
   const requestId = createRequestId();
 
   try {
-    const authResult = await getAuthenticatedBillingUser(requestId);
+    const authResult = await getAuthenticatedBillingUser(request, requestId);
     if ("response" in authResult) return authResult.response;
 
     const parsedParams = await parsePaymentDetailParams(context, requestId);

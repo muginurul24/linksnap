@@ -1,25 +1,24 @@
 import { NextRequest } from "next/server";
-import { auth } from "@/lib/auth";
-import { getSessionUserId } from "@/lib/auth/session-helpers";
+import { getAuthenticatedRequestUser } from "@/lib/auth/request-user";
 import {
   createRequestId,
   errorResponse,
   logApiErrorResponse,
   successResponse,
 } from "@/lib/api/response";
-import { findBillingUserById } from "@/lib/db/queries/payments";
 import { updateSettingsUserNotifications } from "@/lib/db/queries/settings";
 import { getApiEndpointRateLimit, type UserPlan } from "@/lib/links/limits";
 import { slidingWindowRateLimit } from "@/lib/redis/rate-limit";
 import { notificationPreferencesSchema } from "@/lib/validations/settings";
 
 async function getAuthenticatedSettingsUser(
+  request: NextRequest,
   requestId: string,
-): Promise<{ plan: UserPlan; userId: string } | { response: Response }> {
-  const session = await auth();
-  const userId = getSessionUserId(session);
-
-  if (!userId) {
+): Promise<
+  { plan: UserPlan; role: string; userId: string } | { response: Response }
+> {
+  const requestUser = await getAuthenticatedRequestUser(request);
+  if (!requestUser) {
     return {
       response: errorResponse(
         "AUTHENTICATION_REQUIRED",
@@ -30,26 +29,18 @@ async function getAuthenticatedSettingsUser(
     };
   }
 
-  const user = await findBillingUserById(userId);
-  if (!user) {
-    return {
-      response: errorResponse(
-        "AUTHENTICATION_REQUIRED",
-        "Authenticated user no longer exists.",
-        401,
-        requestId,
-      ),
-    };
-  }
-
-  return { plan: user.plan, userId };
+  return {
+    plan: requestUser.userPlan,
+    role: requestUser.role,
+    userId: requestUser.userId,
+  };
 }
 
 export async function PATCH(request: NextRequest) {
   const requestId = createRequestId();
 
   try {
-    const authResult = await getAuthenticatedSettingsUser(requestId);
+    const authResult = await getAuthenticatedSettingsUser(request, requestId);
     if ("response" in authResult) return authResult.response;
 
     const body = await request.json().catch(() => null);
@@ -66,7 +57,7 @@ export async function PATCH(request: NextRequest) {
 
     const rateLimit = await slidingWindowRateLimit({
       key: `api:settings:notifications:patch:${authResult.userId}`,
-      limit: getApiEndpointRateLimit(authResult.plan),
+      limit: getApiEndpointRateLimit(authResult.plan, authResult.role),
       windowSeconds: 60,
     });
 

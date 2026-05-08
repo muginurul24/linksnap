@@ -1,16 +1,12 @@
 import { NextRequest } from "next/server";
-import { auth } from "@/lib/auth";
-import { getSessionUserId } from "@/lib/auth/session-helpers";
+import { getAuthenticatedRequestUser } from "@/lib/auth/request-user";
 import {
   createRequestId,
   errorResponse,
   logApiErrorResponse,
   successResponse,
 } from "@/lib/api/response";
-import {
-  findBillingUserById,
-  listPaymentTransactionsByUserId,
-} from "@/lib/db/queries/payments";
+import { listPaymentTransactionsByUserId } from "@/lib/db/queries/payments";
 import { getApiEndpointRateLimit } from "@/lib/links/limits";
 import { slidingWindowRateLimit } from "@/lib/redis/rate-limit";
 import {
@@ -23,12 +19,11 @@ function getQueryParams(request: NextRequest): Record<string, string> {
 }
 
 async function getAuthenticatedBillingUser(
+  request: NextRequest,
   requestId: string,
 ): Promise<{ userId: string } | { response: Response }> {
-  const session = await auth();
-  const userId = getSessionUserId(session);
-
-  if (!userId) {
+  const authUser = await getAuthenticatedRequestUser(request);
+  if (!authUser) {
     return {
       response: errorResponse(
         "AUTHENTICATION_REQUIRED",
@@ -39,21 +34,9 @@ async function getAuthenticatedBillingUser(
     };
   }
 
-  const user = await findBillingUserById(userId);
-  if (!user) {
-    return {
-      response: errorResponse(
-        "AUTHENTICATION_REQUIRED",
-        "Authenticated user no longer exists.",
-        401,
-        requestId,
-      ),
-    };
-  }
-
   const rateLimit = await slidingWindowRateLimit({
-    key: `api:payments:history:${userId}`,
-    limit: getApiEndpointRateLimit(user.plan),
+    key: `api:payments:history:${authUser.userId}`,
+    limit: getApiEndpointRateLimit(authUser.userPlan, authUser.role),
     windowSeconds: 60,
   });
 
@@ -69,7 +52,7 @@ async function getAuthenticatedBillingUser(
     };
   }
 
-  return { userId };
+  return { userId: authUser.userId };
 }
 
 function parseHistoryQuery(
@@ -97,7 +80,7 @@ export async function GET(request: NextRequest) {
   const requestId = createRequestId();
 
   try {
-    const authResult = await getAuthenticatedBillingUser(requestId);
+    const authResult = await getAuthenticatedBillingUser(request, requestId);
     if ("response" in authResult) return authResult.response;
 
     const parsedQuery = parseHistoryQuery(request, requestId);

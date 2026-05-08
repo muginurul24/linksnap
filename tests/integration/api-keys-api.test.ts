@@ -74,6 +74,10 @@ vi.mock("@/lib/db/queries/payments", () => ({
       : null,
 }));
 
+vi.mock("@/lib/db/queries/links", () => ({
+  getUserPlanById: async () => mockState.plan,
+}));
+
 vi.mock("@/lib/redis/rate-limit", () => ({
   slidingWindowRateLimit: async (options: RateLimitOptions) => {
     mockState.rateLimitOptions.push(options);
@@ -150,6 +154,12 @@ function createJsonRequest(body: unknown): NextRequest {
   }) as NextRequest;
 }
 
+function createGetRequest(): NextRequest {
+  return new Request("http://localhost:3000/api/v1/settings/api-keys", {
+    method: "GET",
+  }) as NextRequest;
+}
+
 function createDeleteContext(id: string) {
   return {
     params: Promise.resolve({ id }),
@@ -180,7 +190,7 @@ describe("API keys settings API", () => {
       userId: USER_ID,
     });
 
-    const response = await GET();
+    const response = await GET(createGetRequest());
     const body = await readJson<ApiKeyListItem[]>(response);
 
     expect(response.status).toBe(200);
@@ -262,7 +272,7 @@ describe("API keys settings API", () => {
   it("should reject unauthenticated requests", async () => {
     mockState.session = null;
 
-    const response = await GET();
+    const response = await GET(createGetRequest());
     const body = await readJson<ApiKeyListItem[]>(response);
 
     expect(response.status).toBe(401);
