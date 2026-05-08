@@ -1,6 +1,8 @@
 import type { Config } from "tailwindcss";
+import nativewindPreset from "nativewind/preset";
 
 const config: Config = {
+  presets: [nativewindPreset],
   content: ["./app/**/*.{ts,tsx}", "./src/**/*.{ts,tsx}"],
   theme: {
     extend: {

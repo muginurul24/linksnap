@@ -8,7 +8,9 @@
     "userInterfaceStyle": "dark",
     "jsEngine": "hermes",
     "newArchEnabled": true,
-    "assetBundlePatterns": ["**/*"],
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "icon": "./assets/icon.svg",
     "splash": {
       "image": "./assets/splash.svg",
@@ -18,7 +20,9 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "id.linksnap.mobile",
-      "associatedDomains": ["applinks:linksnap.id"],
+      "associatedDomains": [
+        "applinks:linksnap.id"
+      ],
       "infoPlist": {
         "NSCameraUsageDescription": "LinkSnap uses the camera to scan QR codes and create short links.",
         "NSPhotoLibraryUsageDescription": "LinkSnap can use your library when changing profile photos.",
@@ -30,7 +34,10 @@
     },
     "android": {
       "package": "id.linksnap.mobile",
-      "permissions": ["CAMERA", "POST_NOTIFICATIONS"],
+      "permissions": [
+        "CAMERA",
+        "POST_NOTIFICATIONS"
+      ],
       "intentFilters": [
         {
           "action": "VIEW",
@@ -44,7 +51,10 @@
               "scheme": "linksnap"
             }
           ],
-          "category": ["BROWSABLE", "DEFAULT"]
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ]
         },
         {
           "action": "SEND",
@@ -53,7 +63,9 @@
               "mimeType": "text/plain"
             }
           ],
-          "category": ["DEFAULT"]
+          "category": [
+            "DEFAULT"
+          ]
         }
       ]
     },
@@ -65,11 +77,13 @@
     ],
     "extra": {
       "eas": {
-        "projectId": "linksnap-mobile"
-      }
+        "projectId": "6ef63dd5-df7a-4e1d-96f8-330e79df0556"
+      },
+      "router": {}
     },
     "experiments": {
       "typedRoutes": true
-    }
+    },
+    "owner": "mugiew"
   }
 }
