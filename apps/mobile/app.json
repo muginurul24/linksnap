@@ -1,0 +1,75 @@
+{
+  "expo": {
+    "name": "LinkSnap",
+    "slug": "linksnap-mobile",
+    "scheme": "linksnap",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "dark",
+    "jsEngine": "hermes",
+    "newArchEnabled": true,
+    "assetBundlePatterns": ["**/*"],
+    "icon": "./assets/icon.svg",
+    "splash": {
+      "image": "./assets/splash.svg",
+      "backgroundColor": "#0A0A0B",
+      "resizeMode": "contain"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "id.linksnap.mobile",
+      "associatedDomains": ["applinks:linksnap.id"],
+      "infoPlist": {
+        "NSCameraUsageDescription": "LinkSnap uses the camera to scan QR codes and create short links.",
+        "NSPhotoLibraryUsageDescription": "LinkSnap can use your library when changing profile photos.",
+        "NSFaceIDUsageDescription": "LinkSnap uses Face ID to unlock your account securely.",
+        "NSAppTransportSecurity": {
+          "NSAllowsArbitraryLoads": false
+        }
+      }
+    },
+    "android": {
+      "package": "id.linksnap.mobile",
+      "permissions": ["CAMERA", "POST_NOTIFICATIONS"],
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "data": [
+            {
+              "scheme": "https",
+              "host": "linksnap.id"
+            },
+            {
+              "scheme": "linksnap"
+            }
+          ],
+          "category": ["BROWSABLE", "DEFAULT"]
+        },
+        {
+          "action": "SEND",
+          "data": [
+            {
+              "mimeType": "text/plain"
+            }
+          ],
+          "category": ["DEFAULT"]
+        }
+      ]
+    },
+    "plugins": [
+      "expo-router",
+      "expo-secure-store",
+      "expo-notifications",
+      "./plugins/with-certificate-pinning"
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "linksnap-mobile"
+      }
+    },
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}
