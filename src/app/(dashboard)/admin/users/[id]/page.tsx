@@ -1,13 +1,23 @@
 "use client";
 
-import { useEffect, useState, use } from "react";
+import { useCallback, useEffect, useState, use } from "react";
 import { useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { PlanOverrideDialog } from "@/components/admin/plan-override-dialog";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowLeft, ShieldAlert } from "lucide-react";
+import { ApiErrorNotice } from "@/components/dashboard/api-error-notice";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { apiFetch, getFriendlyApiErrorMessage } from "@/lib/api/client";
+import { ArrowLeft, Loader2, ShieldAlert } from "lucide-react";
 import { toast } from "sonner";
 import type { UserPlan } from "@/lib/links/limits";
 
@@ -37,49 +47,104 @@ export default function AdminUserDetailPage({
   const router = useRouter();
   const [user, setUser] = useState<UserDetail | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<unknown | null>(null);
+  const [actionError, setActionError] = useState<unknown | null>(null);
   const [planDialogOpen, setPlanDialogOpen] = useState(false);
+  const [suspendDialogOpen, setSuspendDialogOpen] = useState(false);
+  const [pendingSuspendAction, setPendingSuspendAction] = useState<
+    "suspend" | "unsuspend" | null
+  >(null);
 
-  const fetchUser = () => {
-    fetch(`/api/v1/admin/users/${id}`)
-      .then(async (res) => {
-        if (!res.ok) throw new Error((await res.json()).error?.message || "User not found");
-        return res.json();
-      })
-      .then((data) => setUser(data.data))
-      .catch((err) => setError(err.message))
-      .finally(() => setLoading(false));
-  };
+  const fetchUser = useCallback(
+    async ({
+      preserveCurrent = false,
+      showSkeleton = false,
+    }: {
+      preserveCurrent?: boolean;
+      showSkeleton?: boolean;
+    } = {}) => {
+      if (showSkeleton) setLoading(true);
+
+      try {
+        const data = await apiFetch<UserDetail>(`/api/v1/admin/users/${id}`);
+        setUser(data);
+        setError(null);
+      } catch (err) {
+        if (preserveCurrent) {
+          setActionError(err);
+        } else {
+          setUser(null);
+          setError(err);
+        }
+      } finally {
+        setLoading(false);
+      }
+    },
+    [id],
+  );
 
   useEffect(() => {
-    fetchUser();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    let cancelled = false;
+
+    async function loadUser() {
+      try {
+        const data = await apiFetch<UserDetail>(`/api/v1/admin/users/${id}`);
+        if (cancelled) return;
+        setUser(data);
+        setError(null);
+      } catch (err) {
+        if (cancelled) return;
+        setUser(null);
+        setError(err);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+
+    void loadUser();
+
+    return () => {
+      cancelled = true;
+    };
   }, [id]);
 
   async function handleChangePlan(plan: UserPlan) {
-    const res = await fetch(`/api/v1/admin/users/${id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ plan }),
-    });
-    if (!res.ok) throw new Error("Failed to update plan");
-    toast.success(`Plan changed to ${plan}`);
-    setLoading(true);
-    setError(null);
-    fetchUser();
+    setActionError(null);
+
+    try {
+      await apiFetch(`/api/v1/admin/users/${id}`, {
+        body: JSON.stringify({ plan }),
+        headers: { "Content-Type": "application/json" },
+        method: "PATCH",
+      });
+      toast.success(`Plan changed to ${plan}`);
+      await fetchUser({ preserveCurrent: true });
+    } catch (err) {
+      setActionError(err);
+      toast.error(getFriendlyApiErrorMessage(err));
+      throw err;
+    }
   }
 
   async function handleSuspend(action: "suspend" | "unsuspend") {
-    const res = await fetch(`/api/v1/admin/users/${id}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action }),
-    });
-    if (!res.ok) throw new Error(`Failed to ${action} user`);
-    toast.success(`User ${action === "suspend" ? "suspended" : "unsuspended"}`);
-    setLoading(true);
-    setError(null);
-    fetchUser();
+    setActionError(null);
+    setPendingSuspendAction(action);
+
+    try {
+      await apiFetch(`/api/v1/admin/users/${id}`, {
+        body: JSON.stringify({ action }),
+        headers: { "Content-Type": "application/json" },
+        method: "POST",
+      });
+      toast.success(`User ${action === "suspend" ? "suspended" : "unsuspended"}`);
+      setSuspendDialogOpen(false);
+      await fetchUser({ preserveCurrent: true });
+    } catch (err) {
+      setActionError(err);
+      toast.error(getFriendlyApiErrorMessage(err));
+    } finally {
+      setPendingSuspendAction(null);
+    }
   }
 
   if (loading) {
@@ -97,9 +162,11 @@ export default function AdminUserDetailPage({
         <Button variant="ghost" onClick={() => router.back()}>
           <ArrowLeft className="mr-2 size-4" /> Back
         </Button>
-        <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-4 text-sm text-destructive">
-          {error || "User not found"}
-        </div>
+        <ApiErrorNotice
+          error={error ?? new Error("User not found")}
+          onRetry={() => void fetchUser({ showSkeleton: true })}
+          title="User could not be loaded"
+        />
       </div>
     );
   }
@@ -109,6 +176,10 @@ export default function AdminUserDetailPage({
       <Button variant="ghost" onClick={() => router.push("/admin/users")}>
         <ArrowLeft className="mr-2 size-4" /> Back to Users
       </Button>
+
+      {actionError && !planDialogOpen && !suspendDialogOpen ? (
+        <ApiErrorNotice error={actionError} title="Admin action failed" />
+      ) : null}
 
       <Card>
         <CardHeader>
@@ -236,18 +307,22 @@ export default function AdminUserDetailPage({
           <CardContent>
             {user.deletedAt ? (
               <Button
+                disabled={pendingSuspendAction === "unsuspend"}
                 variant="outline"
-                onClick={() => void handleSuspend("unsuspend").catch(() => toast.error("Failed to unsuspend"))}
+                onClick={() => void handleSuspend("unsuspend")}
               >
+                {pendingSuspendAction === "unsuspend" ? (
+                  <Loader2 className="mr-2 size-4 animate-spin" />
+                ) : null}
                 Unsuspend User
               </Button>
             ) : (
               <Button
+                disabled={pendingSuspendAction === "suspend"}
                 variant="destructive"
                 onClick={() => {
-                  if (confirm("Are you sure you want to suspend this user? They will be unable to log in.")) {
-                    void handleSuspend("suspend").catch(() => toast.error("Failed to suspend"));
-                  }
+                  setActionError(null);
+                  setSuspendDialogOpen(true);
                 }}
               >
                 <ShieldAlert className="mr-2 size-4" />
@@ -265,6 +340,49 @@ export default function AdminUserDetailPage({
         userEmail={user.email}
         onConfirm={handleChangePlan}
       />
+
+      <Dialog
+        open={suspendDialogOpen}
+        onOpenChange={(open) => {
+          if (!pendingSuspendAction) setSuspendDialogOpen(open);
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Suspend this user?</DialogTitle>
+            <DialogDescription>
+              {user.email} will be unable to sign in while suspended. Their
+              data stays available for audit and recovery.
+            </DialogDescription>
+          </DialogHeader>
+          {actionError ? (
+            <ApiErrorNotice error={actionError} title="Suspension failed" />
+          ) : null}
+          <DialogFooter>
+            <Button
+              disabled={pendingSuspendAction === "suspend"}
+              onClick={() => setSuspendDialogOpen(false)}
+              type="button"
+              variant="outline"
+            >
+              Cancel
+            </Button>
+            <Button
+              disabled={pendingSuspendAction === "suspend"}
+              onClick={() => void handleSuspend("suspend")}
+              type="button"
+              variant="destructive"
+            >
+              {pendingSuspendAction === "suspend" ? (
+                <Loader2 className="size-4 animate-spin" />
+              ) : (
+                <ShieldAlert className="size-4" />
+              )}
+              Suspend User
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

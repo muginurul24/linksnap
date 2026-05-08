@@ -2897,35 +2897,35 @@ Premium Flutter experience. 🟢
 
 ### [x] TASK 22.1 — Shared Browser API Client & Friendly Error Contract
 
-- [ ] Add a small dashboard-safe API helper for browser components:
+- [x] Add a small dashboard-safe API helper for browser components:
   - auto-add `X-Requested-With: XMLHttpRequest` for `POST`, `PATCH`, `PUT`, `DELETE`
   - preserve caller-provided headers and JSON bodies
   - parse standard `{ success, data/error }` responses
   - expose `code`, `message`, `requestId`, `retryAfter`, and HTTP status
-- [ ] Replace repeated local `readApiError()` patterns where touched by this phase.
-- [ ] Add a reusable `ApiErrorNotice` / `ActionError` UI pattern with:
+- [x] Replace repeated local `readApiError()` patterns where touched by this phase.
+- [x] Add a reusable `ApiErrorNotice` / `ActionError` UI pattern with:
   - human-friendly title
   - actionable next step
   - copyable `requestId`
   - retry button when the action is retryable
-- [ ] Add tests covering CSRF header injection, JSON parsing, non-JSON fallback, and request ID display.
+- [x] Add tests covering CSRF header injection, JSON parsing, non-JSON fallback, and request ID display.
 
-### TASK 22.2 — Admin User Actions Reliability
+### [x] TASK 22.2 — Admin User Actions Reliability
 
-- [ ] Fix admin user detail `PATCH` and `POST` calls to use the shared API client/header contract.
-- [ ] Parse API error codes instead of throwing generic errors:
+- [x] Fix admin user detail `PATCH` and `POST` calls to use the shared API client/header contract.
+- [x] Parse API error codes instead of throwing generic errors:
   - `CSRF_HEADER_REQUIRED` → "Security header missing. Refresh and try again."
   - `SUPERADMIN_REQUIRED` → "Your admin session is no longer authorized. Sign in again."
   - `RATE_LIMITED` → show retry-after guidance
   - `VALIDATION_ERROR` → show field/action-specific message
-- [ ] Add per-action pending state:
+- [x] Add per-action pending state:
   - disable plan buttons while saving
   - disable suspend/unsuspend while processing
   - keep existing data visible during refresh
-- [ ] Replace native `confirm()` with shadcn confirmation dialog for suspend/unsuspend.
-- [ ] Refresh user details after mutation without flashing the whole page skeleton.
-- [ ] Verify audit log still records plan and suspend changes.
-- [ ] Add unit and Playwright coverage for successful plan change, 403 handling, and suspend confirmation.
+- [x] Replace native `confirm()` with shadcn confirmation dialog for suspend/unsuspend.
+- [x] Refresh user details after mutation without flashing the whole page skeleton.
+- [x] Verify audit log still records plan and suspend changes.
+- [x] Add unit and Playwright coverage for successful plan change, 403 handling, and suspend confirmation.
 
 ### TASK 22.3 — Dashboard Analytics Data Contract & Query Optimization
 

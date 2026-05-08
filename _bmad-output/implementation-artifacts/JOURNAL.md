@@ -8250,3 +8250,43 @@ Created a shared browser API client for dashboard/admin components that automati
 - ✅ Request IDs can be surfaced to users without exposing stack traces.
 
 **Next Task:** 22.2 — Admin User Actions Reliability.
+
+### 22.2 — Admin User Actions Reliability
+- **Date:** 2026-05-09 00:43 GMT+7
+- **Duration:** 0h 35m
+- **Status:** ✅ Complete
+
+**What I Did:**
+Reworked the admin user detail actions so plan changes and suspend/unsuspend requests use the shared browser API client, include the required mutation security header, and surface API failures as friendly UI instead of uncaught promise errors. Replaced the native suspend confirmation with an in-app confirmation dialog and added E2E coverage for the exact 403 plan-update failure mode.
+
+**Files Changed:**
+- `src/app/(dashboard)/admin/users/[id]/page.tsx` — Switched admin GET/PATCH/POST calls to `apiFetch`, added action error notices, loading states, and an accessible suspend confirmation dialog.
+- `src/components/admin/plan-override-dialog.tsx` — Catches submit failures locally and renders friendly request-ID aware errors inside the dialog.
+- `tests/unit/admin-user-actions.test.ts` — Added source-level guardrails for shared API client usage and dialog error handling.
+- `tests/e2e/admin-flow.spec.ts` — Added Playwright coverage that verifies the admin plan mutation header, friendly 403 handling, request ID display, and no browser page errors.
+- `_bmad-output/implementation-artifacts/JOURNAL.md` — Logged 22.2.
+
+**Decisions Made:**
+- Kept admin API security strict by fixing the client header path instead of weakening the proxy or CSP policy.
+- Kept failed plan updates inside the open dialog so the admin can understand and retry without losing context.
+- Preserved the standard `{ success, data/error }` API contract through `apiFetch`.
+
+**Tests:**
+- ✅ Targeted unit: `rtk bun run test -- tests/unit/api-client.test.ts tests/unit/api-error-notice.test.tsx tests/unit/admin-user-actions.test.ts` — 9 passed.
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Full unit/integration: `rtk bun run test` — 146 passed, 1 skipped; 654 passed, 2 skipped.
+- ✅ E2E targeted: `rtk bun run test:e2e -- tests/e2e/admin-flow.spec.ts -g "admin plan"` — 2 passed.
+- ✅ Production build: `rtk bun run build` — Passed.
+
+**Issues Encountered:**
+- Initial E2E assertion found the same friendly copy in the dialog, toast, and page-level notice; scoped the assertion to the dialog and hid page-level action notices while dialogs are open.
+- React hook lint disallowed synchronous state updates through effects; moved initial user loading into an async effect body and reset dialog state through open/close handlers.
+
+**Security Checks:**
+- ✅ Mutating admin browser requests include `X-Requested-With: XMLHttpRequest`.
+- ✅ Superadmin authorization remains server-side.
+- ✅ No secrets added.
+- ✅ Request IDs are displayed without stack traces or raw internals.
+
+**Next Task:** 22.3 — Dashboard Analytics Data Contract & Query Optimization.

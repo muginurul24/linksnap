@@ -242,6 +242,205 @@ test.describe("Admin Flow — Superadmin", () => {
     await expect(planFilter).toBeVisible({ timeout: 30_000 });
   });
 
+  test("admin plan update sends required mutation header and shows friendly errors", async ({
+    page,
+  }) => {
+    const targetUserId = "227b968f-ef1b-4432-a601-6fb63b02d7ed";
+    const pageErrors: string[] = [];
+    let mutationHeader: string | undefined;
+
+    page.on("pageerror", (error) => {
+      pageErrors.push(error.message);
+    });
+
+    await authenticateAsSuperadmin(page);
+    await page.route(`**/api/v1/admin/users/${targetUserId}`, async (route) => {
+      const request = route.request();
+
+      if (request.method() === "PATCH") {
+        mutationHeader = request.headers()["x-requested-with"];
+        await route.fulfill({
+          body: JSON.stringify({
+            error: {
+              code: "SUPERADMIN_REQUIRED",
+              message: "Superadmin access required.",
+              requestId: "req_admin_plan_403",
+            },
+            success: false,
+          }),
+          contentType: "application/json",
+          status: 403,
+        });
+        return;
+      }
+
+      await route.fulfill({
+        body: JSON.stringify({
+          data: {
+            avatarUrl: null,
+            createdAt: new Date("2026-01-01T00:00:00.000Z").toISOString(),
+            deletedAt: null,
+            email: "customer@example.com",
+            emailVerified: new Date("2026-01-01T00:00:00.000Z").toISOString(),
+            id: targetUserId,
+            linkCount: 2,
+            name: "Customer Example",
+            plan: "FREE",
+            role: "user",
+            subscriptionPlan: null,
+            subscriptionStatus: null,
+            totalClicks: 42,
+            twoFactorEnabled: false,
+          },
+          success: true,
+        }),
+        contentType: "application/json",
+        status: 200,
+      });
+    });
+
+    await page.goto(`/admin/users/${targetUserId}`);
+    await expect(page.getByText("customer@example.com")).toBeVisible({
+      timeout: 10_000,
+    });
+
+    await page.getByRole("button", { name: "Change Plan" }).first().click();
+    await page.locator('[data-slot="dialog-content"] [data-slot="select-trigger"]').click();
+    await page.getByRole("option", { name: "Pro" }).click();
+    await page
+      .locator('[data-slot="dialog-content"]')
+      .getByRole("button", { name: "Change Plan" })
+      .click();
+
+    const dialog = page.locator('[data-slot="dialog-content"]');
+    await expect(
+      dialog.getByText("Your admin session is no longer authorized. Sign in again."),
+    ).toBeVisible({ timeout: 10_000 });
+    await expect(dialog.getByText("Request ID: req_admin_plan_403")).toBeVisible();
+
+    expect(mutationHeader).toBe("XMLHttpRequest");
+    expect(pageErrors).toEqual([]);
+  });
+
+  test("admin plan update succeeds and suspend confirmation protects the action", async ({
+    page,
+  }) => {
+    const targetUserId = "e2e-admin-success-user";
+    const pageErrors: string[] = [];
+    let currentPlan = "FREE";
+    let deletedAt: string | null = null;
+    let planMutationHeader: string | undefined;
+    let suspendMutationHeader: string | undefined;
+    let suspendCalls = 0;
+
+    page.on("pageerror", (error) => {
+      pageErrors.push(error.message);
+    });
+
+    await authenticateAsSuperadmin(page);
+    await page.route(`**/api/v1/admin/users/${targetUserId}`, async (route) => {
+      const request = route.request();
+
+      if (request.method() === "PATCH") {
+        const payload = request.postDataJSON() as { plan: string };
+        planMutationHeader = request.headers()["x-requested-with"];
+        currentPlan = payload.plan;
+        await route.fulfill({
+          body: JSON.stringify({
+            data: { plan: currentPlan, previousPlan: "FREE" },
+            success: true,
+          }),
+          contentType: "application/json",
+          status: 200,
+        });
+        return;
+      }
+
+      if (request.method() === "POST") {
+        const payload = request.postDataJSON() as { action: string };
+        suspendMutationHeader = request.headers()["x-requested-with"];
+        suspendCalls += 1;
+        deletedAt =
+          payload.action === "suspend"
+            ? new Date("2026-01-02T00:00:00.000Z").toISOString()
+            : null;
+        await route.fulfill({
+          body: JSON.stringify({
+            data: { action: payload.action },
+            success: true,
+          }),
+          contentType: "application/json",
+          status: 200,
+        });
+        return;
+      }
+
+      await route.fulfill({
+        body: JSON.stringify({
+          data: {
+            avatarUrl: null,
+            createdAt: new Date("2026-01-01T00:00:00.000Z").toISOString(),
+            deletedAt,
+            email: "success-customer@example.com",
+            emailVerified: new Date("2026-01-01T00:00:00.000Z").toISOString(),
+            id: targetUserId,
+            linkCount: 8,
+            name: "Success Customer",
+            plan: currentPlan,
+            role: "user",
+            subscriptionPlan: null,
+            subscriptionStatus: null,
+            totalClicks: 180,
+            twoFactorEnabled: false,
+          },
+          success: true,
+        }),
+        contentType: "application/json",
+        status: 200,
+      });
+    });
+
+    await page.goto(`/admin/users/${targetUserId}`);
+    await expect(page.getByText("success-customer@example.com")).toBeVisible({
+      timeout: 10_000,
+    });
+
+    await page.getByRole("button", { name: "Change Plan" }).first().click();
+    await page.locator('[data-slot="dialog-content"] [data-slot="select-trigger"]').click();
+    await page.getByRole("option", { name: "Pro" }).click();
+    await page
+      .locator('[data-slot="dialog-content"]')
+      .getByRole("button", { name: "Change Plan" })
+      .click();
+
+    await expect(page.locator('[data-slot="dialog-content"]')).toBeHidden({
+      timeout: 10_000,
+    });
+    await expect(page.getByText("PRO", { exact: true }).first()).toBeVisible();
+
+    await page.getByRole("button", { name: "Suspend User" }).click();
+    await expect(page.getByRole("heading", { name: "Suspend this user?" })).toBeVisible();
+    await page.getByRole("button", { name: "Cancel" }).click();
+    await expect(page.getByRole("heading", { name: "Suspend this user?" })).toBeHidden();
+    expect(suspendCalls).toBe(0);
+
+    await page.getByRole("button", { name: "Suspend User" }).click();
+    await page
+      .locator('[data-slot="dialog-content"]')
+      .getByRole("button", { name: "Suspend User" })
+      .click();
+
+    await expect(page.getByRole("button", { name: "Unsuspend User" })).toBeVisible({
+      timeout: 10_000,
+    });
+    await expect(page.getByText("Suspended", { exact: true })).toBeVisible();
+
+    expect(planMutationHeader).toBe("XMLHttpRequest");
+    expect(suspendMutationHeader).toBe("XMLHttpRequest");
+    expect(suspendCalls).toBe(1);
+    expect(pageErrors).toEqual([]);
+  });
+
   test("system analytics page loads", async ({ page }) => {
     await authenticateAsSuperadmin(page);
     await page.goto("/admin/analytics");

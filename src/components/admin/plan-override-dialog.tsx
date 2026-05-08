@@ -17,6 +17,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { ApiErrorNotice } from "@/components/dashboard/api-error-notice";
 import { Loader2 } from "lucide-react";
 import type { UserPlan } from "@/lib/links/limits";
 
@@ -41,21 +42,34 @@ export function PlanOverrideDialog({
   userEmail,
   onConfirm,
 }: Props) {
-  const [selectedPlan, setSelectedPlan] = useState<UserPlan>(currentPlan);
+  const [selectedPlan, setSelectedPlan] = useState<UserPlan | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<unknown | null>(null);
+  const effectivePlan = selectedPlan ?? currentPlan;
+
+  function handleOpenChange(nextOpen: boolean) {
+    if (!nextOpen) {
+      setSelectedPlan(null);
+      setSubmitError(null);
+    }
+    onOpenChange(nextOpen);
+  }
 
   async function handleConfirm() {
     setIsSubmitting(true);
+    setSubmitError(null);
     try {
-      await onConfirm(selectedPlan);
-      onOpenChange(false);
+      await onConfirm(effectivePlan);
+      handleOpenChange(false);
+    } catch (err) {
+      setSubmitError(err);
     } finally {
       setIsSubmitting(false);
     }
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Change User Plan</DialogTitle>
@@ -64,10 +78,13 @@ export function PlanOverrideDialog({
             plan is <strong>{currentPlan}</strong>.
           </DialogDescription>
         </DialogHeader>
+        {submitError ? (
+          <ApiErrorNotice error={submitError} title="Plan update failed" />
+        ) : null}
         <div className="space-y-3 py-3">
           <label className="text-sm font-medium">New Plan</label>
           <Select
-            value={selectedPlan}
+            value={effectivePlan}
             onValueChange={(value) => {
               if (!value) return;
               if (isUserPlan(value)) setSelectedPlan(value);
@@ -93,7 +110,7 @@ export function PlanOverrideDialog({
           </Button>
           <Button
             onClick={() => void handleConfirm()}
-            disabled={isSubmitting || selectedPlan === currentPlan}
+            disabled={isSubmitting || effectivePlan === currentPlan}
           >
             {isSubmitting && <Loader2 className="mr-2 size-4 animate-spin" />}
             Change Plan

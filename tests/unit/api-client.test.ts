@@ -69,6 +69,24 @@ describe("browser api client", () => {
     });
   });
 
+  it("should fall back to HTTP status details for non-JSON failures", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () =>
+        new Response("Bad gateway", {
+          status: 502,
+          statusText: "Bad Gateway",
+        }),
+      ),
+    );
+
+    await expect(apiFetch("/api/v1/test")).rejects.toMatchObject({
+      code: "HTTP_502",
+      message: "Bad Gateway",
+      status: 502,
+    });
+  });
+
   it("should produce a friendly message for known error codes", () => {
     const error = new ApiClientError({
       code: "SUPERADMIN_REQUIRED",
