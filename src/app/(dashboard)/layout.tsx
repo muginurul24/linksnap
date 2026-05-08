@@ -33,6 +33,11 @@ function getSessionString(
   return typeof value === "string" ? value : null;
 }
 
+function getSessionRole(session: SessionWithUserId): string | null {
+  const role = session?.user as { role?: unknown } | undefined;
+  return typeof role?.role === "string" ? role.role : null;
+}
+
 export default async function DashboardLayout({
   children,
 }: {
@@ -65,7 +70,7 @@ export default async function DashboardLayout({
     <ThemeProvider attribute="class" defaultTheme="dark" enableSystem disableTransitionOnChange>
       <TooltipProvider>
         <SidebarProvider defaultOpen defaultOpenMobile={false}>
-          <PlanProvider userPlan={userPlan}>
+          <PlanProvider userPlan={userPlan} role={getSessionRole(session)}>
             <AppSidebar user={sidebarUser} />
             <main className="flex min-h-screen w-full flex-col">
               <AppHeader />

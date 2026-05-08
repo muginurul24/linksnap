@@ -8,24 +8,45 @@ import {
 } from "react";
 import type { UserPlan } from "@/lib/links/limits";
 
-const PlanContext = createContext<UserPlan | null>(null);
+type PlanContextValue = {
+  userPlan: UserPlan;
+  role: string | null;
+};
+
+const PlanContext = createContext<PlanContextValue | null>(null);
 
 export function PlanProvider({
   children,
   userPlan,
+  role = null,
 }: {
   children: ReactNode;
   userPlan: UserPlan;
+  role?: string | null;
 }) {
-  return createElement(PlanContext.Provider, { value: userPlan }, children);
+  return createElement(
+    PlanContext.Provider,
+    { value: { userPlan, role } },
+    children,
+  );
 }
 
 export function usePlan(): UserPlan {
-  const userPlan = useContext(PlanContext);
+  const context = useContext(PlanContext);
 
-  if (!userPlan) {
+  if (!context) {
     throw new Error("usePlan must be used within PlanProvider.");
   }
 
-  return userPlan;
+  return context.userPlan;
+}
+
+export function useUserRole(): string | null {
+  const context = useContext(PlanContext);
+
+  if (!context) {
+    throw new Error("useUserRole must be used within PlanProvider.");
+  }
+
+  return context.role;
 }

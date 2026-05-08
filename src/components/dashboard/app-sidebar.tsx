@@ -17,9 +17,10 @@ import {
 } from "@/components/ui/dropdown-menu";
 import {
   LayoutDashboard, Link2, Globe, Megaphone, BarChart3, Settings, QrCode, Zap,
-  LogOut, User, CreditCard, Sparkles, BookOpen, Loader2, HelpCircle,
+  LogOut, User, CreditCard, Sparkles, BookOpen, Loader2, HelpCircle, Shield,
 } from "lucide-react";
-import { usePlan } from "@/lib/auth/plan-context";
+import { usePlan, useUserRole } from "@/lib/auth/plan-context";
+import { isSuperAdmin } from "@/lib/auth/superadmin-utils";
 import type { UserPlan } from "@/lib/links/limits";
 import { getPlanDefinition } from "@/lib/plans/definitions";
 
@@ -48,6 +49,13 @@ const mainNav = [
 
 const apiDocsNavItem = { title: "API Docs", url: "/docs", icon: BookOpen };
 
+const adminNav = [
+  { title: "Admin Dashboard", url: "/admin", icon: Shield },
+  { title: "Users", url: "/admin/users", icon: User },
+  { title: "System Analytics", url: "/admin/analytics", icon: BarChart3 },
+  { title: "Audit Log", url: "/admin/audit-log", icon: Shield },
+];
+
 const accountNav = [
   { title: "Settings", url: "/settings", icon: Settings },
   { title: "Billing", url: "/settings/billing", icon: CreditCard },
@@ -73,6 +81,7 @@ function getAvatarFallback(name: string, email: string): string {
 export function getSidebarDisplayUser(
   user: AppSidebarUser,
   plan: UserPlan,
+  role?: string | null,
 ): SidebarDisplayUser {
   const email = normalizeText(user.email) ?? "user@email.com";
   const name = normalizeText(user.name) ?? "User";
@@ -82,13 +91,14 @@ export function getSidebarDisplayUser(
     avatarUrl: normalizeText(user.image) ?? undefined,
     email,
     name,
-    planLabel: `${getPlanDefinition(plan).name} Plan`,
+    planLabel: isSuperAdmin(role) ? "Superadmin" : `${getPlanDefinition(plan).name} Plan`,
   };
 }
 
 export function isSidebarItemActive(pathname: string, url: string): boolean {
   if (url === "/dashboard") return pathname === "/dashboard";
   if (url === "/settings") return pathname === "/settings";
+  if (url === "/admin") return pathname === "/admin";
 
   return pathname === url || pathname.startsWith(`${url}/`);
 }
@@ -112,7 +122,8 @@ export function AppSidebar({ user }: { user: AppSidebarUser }) {
   const pathname = usePathname();
   const router = useRouter();
   const userPlan = usePlan();
-  const displayUser = getSidebarDisplayUser(user, userPlan);
+  const role = useUserRole();
+  const displayUser = getSidebarDisplayUser(user, userPlan, role);
   const mainNavItems = getSidebarMainNavItems(userPlan);
   const [isSigningOut, setIsSigningOut] = useState(false);
 
@@ -182,6 +193,28 @@ export function AppSidebar({ user }: { user: AppSidebarUser }) {
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
+
+        {isSuperAdmin(role) && (
+          <SidebarGroup>
+            <SidebarGroupLabel>Admin</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {adminNav.map((item) => (
+                  <SidebarMenuItem key={item.url}>
+                    <SidebarMenuButton
+                      isActive={isSidebarItemActive(pathname, item.url)}
+                      render={<Link href={item.url} />}
+                      tooltip={item.title}
+                    >
+                      <item.icon className="size-4" />
+                      <span>{item.title}</span>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
 
         {shouldShowSidebarUpgradeCard(userPlan) && (
           <SidebarGroup>
