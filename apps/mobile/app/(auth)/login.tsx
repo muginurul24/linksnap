@@ -2,7 +2,6 @@ import { useState } from "react";
 import { KeyboardAvoidingView, Text, View } from "react-native";
 import * as Haptics from "expo-haptics";
 import { router } from "expo-router";
-import Animated, { FadeInUp } from "react-native-reanimated";
 import { Lock, Mail } from "lucide-react-native";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
@@ -39,7 +38,7 @@ export default function LoginScreen(): JSX.Element {
   return (
     <Screen scroll={false}>
       <KeyboardAvoidingView behavior="padding" className="flex-1 justify-center">
-        <Animated.View className="gap-6" entering={FadeInUp.springify().damping(15).stiffness(150)}>
+        <View className="gap-6">
           <View className="items-center gap-2">
             <Text className="text-display text-accent">LinkSnap</Text>
             <Text className="text-body text-content-secondary">Smart links for serious growth teams.</Text>
@@ -68,7 +67,7 @@ export default function LoginScreen(): JSX.Element {
           <Button accessibilityLabel="Create account" onPress={() => router.push("/register")} variant="ghost">
             Create an account
           </Button>
-        </Animated.View>
+        </View>
       </KeyboardAvoidingView>
     </Screen>
   );

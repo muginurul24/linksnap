@@ -52,9 +52,6 @@ declare module "react-native" {
   };
 }
 
-declare module "react-native-reanimated" {
-  import type React from "react";
-
   export const FadeIn: {
     duration: (duration: number) => unknown;
     springify: () => { damping: (value: number) => unknown };

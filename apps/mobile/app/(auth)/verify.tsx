@@ -3,7 +3,7 @@ import { Text, TextInput, View } from "react-native";
 import * as Clipboard from "expo-clipboard";
 import * as Haptics from "expo-haptics";
 import { router, useLocalSearchParams } from "expo-router";
-import Animated, { FadeInUp } from "react-native-reanimated";
+;
 import { Mail } from "lucide-react-native";
 import { authApi } from "@/lib/api/auth";
 import { Button } from "@/components/ui/Button";
@@ -58,7 +58,7 @@ export default function VerifyScreen(): JSX.Element {
 
   return (
     <Screen scroll={false}>
-      <Animated.View className="flex-1 justify-center gap-6" entering={FadeInUp.springify().damping(15).stiffness(150)}>
+      <View className="flex-1 justify-center gap-6">
         <Card className="items-center gap-5 py-8" variant="glass">
           <View className="h-20 w-20 items-center justify-center rounded-3xl bg-accent/10">
             <Mail color={colors.accent.DEFAULT} size={42} />
@@ -93,7 +93,7 @@ export default function VerifyScreen(): JSX.Element {
             {countdown > 0 ? `Resend code in ${countdown}s` : "Resend code"}
           </Button>
         </Card>
-      </Animated.View>
+      </View>
     </Screen>
   );
 }

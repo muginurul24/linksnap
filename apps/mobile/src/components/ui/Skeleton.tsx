@@ -1,6 +1,4 @@
-import { useEffect } from "react";
 import { View } from "react-native";
-import Animated, { useAnimatedStyle, useReducedMotion, useSharedValue, withRepeat, withTiming } from "react-native-reanimated";
 import { cn } from "@/lib/utils/cn";
 
 type SkeletonProps = {
@@ -9,21 +7,7 @@ type SkeletonProps = {
 };
 
 function ShimmerBlock({ className }: { className: string }): JSX.Element {
-  const offset = useSharedValue(-1);
-  const reduceMotion = useReducedMotion();
-
-  useEffect(() => {
-    if (!reduceMotion) {
-      // eslint-disable-next-line react-hooks/immutability
-      offset.value = withRepeat(withTiming(1, { duration: 1100 }), -1, false);
-    }
-  }, [offset, reduceMotion]);
-
-  const animatedStyle = useAnimatedStyle(() => ({
-    opacity: reduceMotion ? 0.55 : 0.45 + Math.abs(Number(offset.value)) * 0.18,
-  }));
-
-  return <Animated.View className={cn("overflow-hidden rounded-xl bg-surface-300/70", className)} style={animatedStyle} />;
+  return <View className={cn("overflow-hidden rounded-xl bg-surface-300/70 opacity-55", className)} />;
 }
 
 export function Skeleton({ className, variant = "card" }: SkeletonProps): JSX.Element {
