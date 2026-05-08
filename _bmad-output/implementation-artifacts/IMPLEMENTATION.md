@@ -1442,10 +1442,10 @@ rtk bun run db:studio    # Open Drizzle Studio (in another terminal)
 ### 🟢 LOW — Polish Items
 
 ### TASK 17.9 — Add DB Proxy Symbol Trap Handlers
-- [ ] File: `src/lib/db/index.ts`
-- [ ] Add `Symbol.toPrimitive` and `Symbol.iterator` handlers to the Proxy
-- [ ] Prevents runtime errors if any tool/library tries to iterate or coerce `db`
-- [ ] Tests: unit (proxy symbol behavior)
+- [x] File: `src/lib/db/index.ts`
+- [x] Add `Symbol.toPrimitive` and `Symbol.iterator` handlers to the Proxy
+- [x] Prevents runtime errors if any tool/library tries to iterate or coerce `db`
+- [x] Tests: unit (proxy symbol behavior)
 
 ### TASK 17.10 — Validate Destination URL Protocols
 - [ ] File: `src/lib/validations/link.ts` — `createLinkSchema`

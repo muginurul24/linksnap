@@ -5979,3 +5979,36 @@ Added createdAt/id cursor pagination support for `GET /api/v1/links`, `GET /api/
 - ✅ No secrets, raw SQL, or `dangerouslySetInnerHTML` introduced.
 
 **Next Task:** 17.9 — Add DB Proxy Symbol Trap Handlers
+
+### 17.9 — Add DB Proxy Symbol Trap Handlers
+- **Date:** 2026-05-08 07:32 GMT+7
+- **Duration:** 0h 15m
+- **Status:** ✅ Complete
+
+**What I Did:**
+Added safe `Symbol.toPrimitive`, `Symbol.iterator`, `toString`, and `valueOf` handlers to the lazy DB proxy. Tooling or libraries can now coerce or inspect the proxy without accidentally opening a database connection or throwing iterator/coercion runtime errors.
+
+**Files Changed:**
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Checked off Task 17.9.
+- `src/lib/db/index.ts` — Added DB proxy symbol and primitive trap handlers.
+- `tests/unit/db-proxy.test.ts` — Covered string coercion and empty iterator behavior.
+
+**Decisions Made:**
+- Returned a stable proxy description for primitive coercion to avoid leaking connection details.
+- Used an empty iterator because the proxy is not a collection and iteration should be inspection-safe only.
+
+**Tests:**
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Targeted Unit: `rtk bun run test -- tests/unit/db-proxy.test.ts` — 1 file passed, 2 tests passed.
+- ✅ Unit/Integration: `rtk bun run test` — 126 files passed, 556 tests passed.
+- ✅ Build: `rtk bun run build` — Passed.
+
+**Issues Encountered:**
+- The runtime proxy is iterable but the static Drizzle DB type is not; the test casts to `Iterable<unknown>` to verify runtime behavior.
+
+**Security Checks:**
+- ✅ Proxy inspection does not read `DATABASE_URL` or open a connection.
+- ✅ No secrets, raw SQL, public inputs, or `dangerouslySetInnerHTML` introduced.
+
+**Next Task:** 17.10 — Validate Destination URL Protocols
