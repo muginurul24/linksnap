@@ -1,4 +1,5 @@
 import type { users } from "@/lib/db/schema";
+import { isSuperAdmin } from "@/lib/auth/superadmin-utils";
 
 export type UserPlan = typeof users.$inferSelect["plan"];
 
@@ -44,63 +45,92 @@ const API_ENDPOINT_RATE_LIMITS: Record<UserPlan, number> = {
   BUSINESS: 120,
 };
 
-export function canUseCustomSlug(plan: UserPlan): boolean {
-  return plan !== "FREE";
+/**
+ * Resolve effective plan for a user, taking into account superadmin role.
+ * Superadmins get BUSINESS-equivalent access regardless of their stored plan.
+ */
+export function resolveEffectivePlan(
+  plan: UserPlan,
+  role?: string | null,
+): UserPlan {
+  if (isSuperAdmin(role)) return "BUSINESS";
+  return plan;
 }
 
-export function getLinkQuota(plan: UserPlan): number {
-  return LINK_QUOTAS[plan];
+export function canUseCustomSlug(plan: UserPlan, role?: string | null): boolean {
+  return resolveEffectivePlan(plan, role) !== "FREE";
 }
 
-export function getLinkPageQuota(plan: UserPlan): number {
-  return LINK_PAGE_QUOTAS[plan];
+export function getLinkQuota(plan: UserPlan, role?: string | null): number {
+  return LINK_QUOTAS[resolveEffectivePlan(plan, role)];
 }
 
-export function getSmartRuleQuota(plan: UserPlan): number {
-  return SMART_RULE_QUOTAS[plan];
+export function getLinkPageQuota(plan: UserPlan, role?: string | null): number {
+  return LINK_PAGE_QUOTAS[resolveEffectivePlan(plan, role)];
 }
 
-export function getCampaignQuota(plan: UserPlan): number {
-  return CAMPAIGN_QUOTAS[plan];
+export function getSmartRuleQuota(plan: UserPlan, role?: string | null): number {
+  return SMART_RULE_QUOTAS[resolveEffectivePlan(plan, role)];
 }
 
-export function getQrQuota(plan: UserPlan): number {
-  return QR_QUOTAS[plan];
+export function getCampaignQuota(plan: UserPlan, role?: string | null): number {
+  return CAMPAIGN_QUOTAS[resolveEffectivePlan(plan, role)];
 }
 
-export function getLinkCreationRateLimit(plan: UserPlan): number {
-  return LINK_CREATION_RATE_LIMITS[plan];
+export function getQrQuota(plan: UserPlan, role?: string | null): number {
+  return QR_QUOTAS[resolveEffectivePlan(plan, role)];
 }
 
-export function getApiEndpointRateLimit(plan: UserPlan): number {
-  return API_ENDPOINT_RATE_LIMITS[plan];
+export function getLinkCreationRateLimit(
+  plan: UserPlan,
+  role?: string | null,
+): number {
+  return LINK_CREATION_RATE_LIMITS[resolveEffectivePlan(plan, role)];
 }
 
-export function hasReachedLinkQuota(plan: UserPlan, linkCount: number): boolean {
-  return linkCount >= getLinkQuota(plan);
+export function getApiEndpointRateLimit(
+  plan: UserPlan,
+  role?: string | null,
+): number {
+  return API_ENDPOINT_RATE_LIMITS[resolveEffectivePlan(plan, role)];
+}
+
+export function hasReachedLinkQuota(
+  plan: UserPlan,
+  linkCount: number,
+  role?: string | null,
+): boolean {
+  return linkCount >= getLinkQuota(plan, role);
 }
 
 export function hasReachedLinkPageQuota(
   plan: UserPlan,
   linkPageCount: number,
+  role?: string | null,
 ): boolean {
-  return linkPageCount >= getLinkPageQuota(plan);
+  return linkPageCount >= getLinkPageQuota(plan, role);
 }
 
 export function hasReachedCampaignQuota(
   plan: UserPlan,
   campaignCount: number,
+  role?: string | null,
 ): boolean {
-  return campaignCount >= getCampaignQuota(plan);
+  return campaignCount >= getCampaignQuota(plan, role);
 }
 
-export function hasReachedQrQuota(plan: UserPlan, qrCount: number): boolean {
-  return qrCount >= getQrQuota(plan);
+export function hasReachedQrQuota(
+  plan: UserPlan,
+  qrCount: number,
+  role?: string | null,
+): boolean {
+  return qrCount >= getQrQuota(plan, role);
 }
 
 export function exceedsSmartRuleQuota(
   plan: UserPlan,
   smartRuleCount: number,
+  role?: string | null,
 ): boolean {
-  return smartRuleCount > getSmartRuleQuota(plan);
+  return smartRuleCount > getSmartRuleQuota(plan, role);
 }

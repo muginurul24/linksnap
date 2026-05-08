@@ -7,6 +7,7 @@ import { eq } from "drizzle-orm";
 import { authorizeCredentials } from "@/lib/auth/credentials";
 import {
   applyJwtTokenToSession,
+  applyRoleToJwtToken,
   applyUserToJwtToken,
 } from "@/lib/auth/session-token";
 
@@ -66,7 +67,27 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   ],
   callbacks: {
     async jwt({ token, user, account }) {
-      return applyUserToJwtToken(token, user, account);
+      const nextToken = applyUserToJwtToken(token, user, account);
+      // Propagate role from DB on login (or use existing role from token on refresh)
+      const existingRole = (token as { role?: string }).role;
+      if (existingRole) {
+        return applyRoleToJwtToken(nextToken, existingRole);
+      }
+      if (user?.id && typeof user.id === "string") {
+        try {
+          const [dbUser] = await db
+            .select({ role: users.role })
+            .from(users)
+            .where(eq(users.id, user.id))
+            .limit(1);
+          if (dbUser?.role) {
+            return applyRoleToJwtToken(nextToken, dbUser.role);
+          }
+        } catch {
+          // Non-critical: role propagation failed, token still valid
+        }
+      }
+      return nextToken;
     },
     async session({ session, token }) {
       return applyJwtTokenToSession(session, token);
