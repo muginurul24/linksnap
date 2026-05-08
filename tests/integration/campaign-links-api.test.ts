@@ -36,6 +36,7 @@ type MockListedLink = {
 
 type ListLinksInput = {
   campaignId?: string;
+  cursor?: { createdAt: Date; id: string };
   limit: number;
   page: number;
   search?: string;
@@ -103,6 +104,7 @@ vi.mock("@/lib/db/queries/links", () => ({
           link.userId === input.userId &&
           (!input.campaignId || link.campaignId === input.campaignId),
       ),
+      nextCursor: input.cursor ? "next-campaign-link-cursor" : null,
       total: mockState.total,
     };
   },

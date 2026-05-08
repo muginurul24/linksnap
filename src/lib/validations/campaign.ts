@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 const CAMPAIGN_SLUG_PATTERN = /^[a-z0-9-]{3,100}$/;
+const MAX_PAGE_LIMIT = 100;
 
 function emptyStringToNull(value: unknown): unknown {
   if (typeof value !== "string") return value;
@@ -103,9 +104,13 @@ export type UpdateCampaignInput = z.infer<typeof updateCampaignSchema>;
 
 export const listCampaignsQuerySchema = z
   .object({
+    cursor: z.preprocess(
+      emptyStringToUndefined,
+      z.string().trim().max(512, "Cursor is too long").optional(),
+    ),
     limit: z.preprocess(
       emptyStringToUndefined,
-      z.coerce.number().int().min(1).max(100).default(20),
+      z.coerce.number().int().min(1).max(MAX_PAGE_LIMIT).default(20),
     ),
     page: z.preprocess(
       emptyStringToUndefined,

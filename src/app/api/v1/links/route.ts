@@ -9,6 +9,10 @@ import {
 } from "@/lib/api/response";
 import { buildShortUrl } from "@/lib/api/base-url";
 import {
+  createListMeta,
+  parseCreatedAtCursorParam,
+} from "@/lib/api/pagination";
+import {
   countLinksByUserId,
   createLinkRecord,
   findLinkBySlug,
@@ -27,6 +31,7 @@ import {
 } from "@/lib/links/limits";
 import { hydrateRedirectClickCounts } from "@/lib/links/click-count-cache";
 import { generateRandomSlug } from "@/lib/links/slug";
+import type { CreatedAtCursor } from "@/lib/pagination/cursor";
 import { slidingWindowRateLimit } from "@/lib/redis/rate-limit";
 import {
   createLinkSchema,
@@ -289,13 +294,27 @@ export async function GET(request: NextRequest) {
     });
     if (rateLimit) return rateLimit;
 
-    const result = await listLinks(parsed.data, authResult.userId);
+    const parsedCursor = parseCreatedAtCursorParam(
+      parsed.data.cursor,
+      requestId,
+    );
+    if ("response" in parsedCursor) return parsedCursor.response;
+
+    const result = await listLinks(
+      parsed.data,
+      authResult.userId,
+      parsedCursor.cursor,
+    );
     const data = result.items.map((link) => withShortUrl(request, link));
 
     return successResponse(data, 200, {
-      limit: parsed.data.limit,
-      page: parsed.data.page,
-      total: result.total,
+      ...createListMeta({
+        cursor: parsed.data.cursor,
+        limit: parsed.data.limit,
+        nextCursor: result.nextCursor,
+        page: parsed.data.page,
+        total: result.total,
+      }),
     });
   } catch (error) {
     logApiErrorResponse({ code: "INTERNAL_ERROR", error, requestId, route: "GET /api/v1/links" });
@@ -328,9 +347,11 @@ async function createLink(
 async function listLinks(
   input: ListLinksQuery,
   userId: string,
-): Promise<{ items: ListedLink[]; total: number }> {
+  cursor?: CreatedAtCursor,
+): Promise<{ items: ListedLink[]; nextCursor: string | null; total: number }> {
   const result = await listLinksByUserId({
     campaignId: input.campaignId,
+    cursor,
     limit: input.limit,
     page: input.page,
     search: input.search,

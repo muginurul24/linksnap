@@ -22,6 +22,10 @@ import {
 } from "@/lib/db/schema";
 import type { UserPlan } from "@/lib/links/limits";
 import type { RedirectLink } from "@/lib/links/redirect";
+import {
+  getCursorPage,
+  type CreatedAtCursor,
+} from "@/lib/pagination/cursor";
 
 export type CreatedLink = {
   destinationUrl: string;
@@ -56,6 +60,7 @@ export type ListedLink = {
 
 export type ListedLinkPage = {
   brandName: string;
+  createdAt: Date;
   ctaClicks: number;
   ctaText: string;
   hasCountdown: boolean;
@@ -135,9 +140,17 @@ export type EditableLink = LinkDetail & {
 
 type ListLinksInput = {
   campaignId?: string;
+  cursor?: CreatedAtCursor;
   limit: number;
   page: number;
   search?: string;
+  userId: string;
+};
+
+type ListLinkPagesInput = {
+  cursor?: CreatedAtCursor;
+  limit: number;
+  page: number;
   userId: string;
 };
 
@@ -245,6 +258,7 @@ export async function listLinkPagesByUserId(
     .select({
       brandName: linkPages.brandName,
       countdownTarget: linkPages.countdownTarget,
+      createdAt: linkPages.createdAt,
       ctaText: linkPages.ctaText,
       hasLinkPage: links.hasLinkPage,
       id: linkPages.id,
@@ -261,72 +275,61 @@ export async function listLinkPagesByUserId(
     .where(eq(links.userId, userId))
     .orderBy(desc(linkPages.updatedAt));
 
-  if (pages.length === 0) return [];
+  return hydrateListedLinkPages(pages);
+}
 
-  const eventCounts = await db
-    .select({
-      eventType: clickEvents.eventType,
-      linkId: clickEvents.linkId,
-      value: count(),
-    })
-    .from(clickEvents)
-    .where(
-      and(
-        inArray(
-          clickEvents.eventType,
-          ["LINK_PAGE_VIEW", "LINK_PAGE_CTA_CLICK"],
-        ),
-        inArray(
-          clickEvents.linkId,
-          pages.map((page) => page.linkId),
-        ),
-      ),
-    )
-    .groupBy(clickEvents.linkId, clickEvents.eventType);
+export async function listLinkPagesByUserIdPaginated({
+  cursor,
+  limit,
+  page,
+  userId,
+}: ListLinkPagesInput): Promise<{
+  items: ListedLinkPage[];
+  nextCursor: string | null;
+  total: number;
+}> {
+  const baseWhere = eq(links.userId, userId);
+  const cursorWhere = cursor ? buildLinkPagesCursorWhere(cursor) : undefined;
+  const paginatedWhere = cursorWhere ? and(baseWhere, cursorWhere) : baseWhere;
+  const offset = (page - 1) * limit;
+  const rowLimit = cursor ? limit + 1 : limit;
 
-  const countsByLinkId = new Map<
-    string,
-    { ctaClicks: number; pageViews: number }
-  >();
+  const [pages, totalRows] = await Promise.all([
+    db
+      .select({
+        brandName: linkPages.brandName,
+        countdownTarget: linkPages.countdownTarget,
+        createdAt: linkPages.createdAt,
+        ctaText: linkPages.ctaText,
+        hasLinkPage: links.hasLinkPage,
+        id: linkPages.id,
+        isLinkActive: links.isActive,
+        linkId: linkPages.linkId,
+        showCountdown: linkPages.showCountdown,
+        showQrCode: linkPages.showQrCode,
+        slug: links.slug,
+        title: linkPages.title,
+        updatedAt: linkPages.updatedAt,
+      })
+      .from(linkPages)
+      .innerJoin(links, eq(linkPages.linkId, links.id))
+      .where(paginatedWhere)
+      .orderBy(desc(linkPages.createdAt), desc(linkPages.id))
+      .limit(rowLimit)
+      .offset(cursor ? 0 : offset),
+    db
+      .select({ value: count() })
+      .from(linkPages)
+      .innerJoin(links, eq(linkPages.linkId, links.id))
+      .where(baseWhere),
+  ]);
+  const cursorPage = cursor ? getCursorPage(pages, limit) : null;
 
-  for (const eventCount of eventCounts) {
-    const counts = countsByLinkId.get(eventCount.linkId) ?? {
-      ctaClicks: 0,
-      pageViews: 0,
-    };
-
-    if (eventCount.eventType === "LINK_PAGE_CTA_CLICK") {
-      counts.ctaClicks = Number(eventCount.value);
-    }
-
-    if (eventCount.eventType === "LINK_PAGE_VIEW") {
-      counts.pageViews = Number(eventCount.value);
-    }
-
-    countsByLinkId.set(eventCount.linkId, counts);
-  }
-
-  return pages.map((page) => {
-    const counts = countsByLinkId.get(page.linkId) ?? {
-      ctaClicks: 0,
-      pageViews: 0,
-    };
-
-    return {
-      brandName: page.brandName,
-      ctaClicks: counts.ctaClicks,
-      ctaText: page.ctaText,
-      hasCountdown: page.showCountdown === true && page.countdownTarget !== null,
-      id: page.id,
-      isActive: page.hasLinkPage && page.isLinkActive,
-      linkId: page.linkId,
-      pageViews: counts.pageViews,
-      showQrCode: page.showQrCode ?? true,
-      slug: page.slug,
-      title: page.title,
-      updatedAt: page.updatedAt,
-    };
-  });
+  return {
+    items: await hydrateListedLinkPages(cursorPage?.items ?? pages),
+    nextCursor: cursorPage?.nextCursor ?? null,
+    total: totalRows[0]?.value ?? 0,
+  };
 }
 
 export async function findLinkBySlug(slug: string): Promise<{ id: string } | null> {
@@ -819,15 +822,30 @@ function buildListLinksWhere({
   return where;
 }
 
+function buildLinksCursorWhere(cursor: CreatedAtCursor): SQL | undefined {
+  return or(
+    lt(links.createdAt, cursor.createdAt),
+    and(eq(links.createdAt, cursor.createdAt), lt(links.id, cursor.id)),
+  );
+}
+
 export async function listLinksByUserId({
   campaignId,
+  cursor,
   limit,
   page,
   search,
   userId,
-}: ListLinksInput): Promise<{ items: ListedLink[]; total: number }> {
+}: ListLinksInput): Promise<{
+  items: ListedLink[];
+  nextCursor: string | null;
+  total: number;
+}> {
   const where = buildListLinksWhere({ campaignId, search, userId });
+  const cursorWhere = cursor ? buildLinksCursorWhere(cursor) : undefined;
+  const paginatedWhere = cursorWhere ? and(where, cursorWhere) : where;
   const offset = (page - 1) * limit;
+  const rowLimit = cursor ? limit + 1 : limit;
 
   const [items, totalRows] = await Promise.all([
     db
@@ -844,17 +862,112 @@ export async function listLinksByUserId({
         updatedAt: links.updatedAt,
       })
       .from(links)
-      .where(where)
-      .orderBy(desc(links.createdAt))
-      .limit(limit)
-      .offset(offset),
+      .where(paginatedWhere)
+      .orderBy(desc(links.createdAt), desc(links.id))
+      .limit(rowLimit)
+      .offset(cursor ? 0 : offset),
     db.select({ value: count() }).from(links).where(where),
   ]);
+  const cursorPage = cursor ? getCursorPage(items, limit) : null;
 
   return {
-    items,
+    items: cursorPage?.items ?? items,
+    nextCursor: cursorPage?.nextCursor ?? null,
     total: totalRows[0]?.value ?? 0,
   };
+}
+
+function buildLinkPagesCursorWhere(cursor: CreatedAtCursor): SQL | undefined {
+  return or(
+    lt(linkPages.createdAt, cursor.createdAt),
+    and(eq(linkPages.createdAt, cursor.createdAt), lt(linkPages.id, cursor.id)),
+  );
+}
+
+async function hydrateListedLinkPages(
+  pages: Array<{
+    brandName: string;
+    countdownTarget: Date | null;
+    createdAt: Date;
+    ctaText: string;
+    hasLinkPage: boolean;
+    id: string;
+    isLinkActive: boolean;
+    linkId: string;
+    showCountdown: boolean | null;
+    showQrCode: boolean | null;
+    slug: string;
+    title: string;
+    updatedAt: Date;
+  }>,
+): Promise<ListedLinkPage[]> {
+  if (pages.length === 0) return [];
+
+  const eventCounts = await db
+    .select({
+      eventType: clickEvents.eventType,
+      linkId: clickEvents.linkId,
+      value: count(),
+    })
+    .from(clickEvents)
+    .where(
+      and(
+        inArray(
+          clickEvents.eventType,
+          ["LINK_PAGE_VIEW", "LINK_PAGE_CTA_CLICK"],
+        ),
+        inArray(
+          clickEvents.linkId,
+          pages.map((page) => page.linkId),
+        ),
+      ),
+    )
+    .groupBy(clickEvents.linkId, clickEvents.eventType);
+
+  const countsByLinkId = new Map<
+    string,
+    { ctaClicks: number; pageViews: number }
+  >();
+
+  for (const eventCount of eventCounts) {
+    const counts = countsByLinkId.get(eventCount.linkId) ?? {
+      ctaClicks: 0,
+      pageViews: 0,
+    };
+
+    if (eventCount.eventType === "LINK_PAGE_CTA_CLICK") {
+      counts.ctaClicks = Number(eventCount.value);
+    }
+
+    if (eventCount.eventType === "LINK_PAGE_VIEW") {
+      counts.pageViews = Number(eventCount.value);
+    }
+
+    countsByLinkId.set(eventCount.linkId, counts);
+  }
+
+  return pages.map((page) => {
+    const counts = countsByLinkId.get(page.linkId) ?? {
+      ctaClicks: 0,
+      pageViews: 0,
+    };
+
+    return {
+      brandName: page.brandName,
+      createdAt: page.createdAt,
+      ctaClicks: counts.ctaClicks,
+      ctaText: page.ctaText,
+      hasCountdown: page.showCountdown === true && page.countdownTarget !== null,
+      id: page.id,
+      isActive: page.hasLinkPage && page.isLinkActive,
+      linkId: page.linkId,
+      pageViews: counts.pageViews,
+      showQrCode: page.showQrCode ?? true,
+      slug: page.slug,
+      title: page.title,
+      updatedAt: page.updatedAt,
+    };
+  });
 }
 
 export function isUniqueConstraintViolation(error: unknown): boolean {

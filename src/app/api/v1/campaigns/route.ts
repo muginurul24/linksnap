@@ -7,6 +7,10 @@ import {
   successResponse,
 } from "@/lib/api/response";
 import {
+  createListMeta,
+  parseCreatedAtCursorParam,
+} from "@/lib/api/pagination";
+import {
   countCampaignsByUserId,
   createCampaignRecord,
   isUniqueCampaignConstraintViolation,
@@ -142,19 +146,28 @@ export async function GET(request: NextRequest) {
     const parsedQuery = parseListQuery(request, requestId);
     if ("response" in parsedQuery) return parsedQuery.response;
 
-    const { items, total } = await listCampaignsByUserId({
+    const parsedCursor = parseCreatedAtCursorParam(
+      parsedQuery.query.cursor,
+      requestId,
+    );
+    if ("response" in parsedCursor) return parsedCursor.response;
+
+    const { items, nextCursor, total } = await listCampaignsByUserId({
       ...parsedQuery.query,
+      cursor: parsedCursor.cursor,
       userId: authResult.userId,
     });
 
     return successResponse(
       items.map((campaign) => formatCampaign(campaign)),
       200,
-      {
+      createListMeta({
+        cursor: parsedQuery.query.cursor,
         limit: parsedQuery.query.limit,
+        nextCursor,
         page: parsedQuery.query.page,
         total,
-      },
+      }),
     );
   } catch (error) {
     logApiErrorResponse({ code: "INTERNAL_ERROR", error, requestId, route: "GET /api/v1/campaigns" });

@@ -5938,3 +5938,44 @@ Removed `clickCount` from the long-lived redirect metadata cache and introduced 
 - ✅ No raw SQL, new public inputs, or `dangerouslySetInnerHTML` introduced.
 
 **Next Task:** 17.7 — Add Cursor-Based Pagination for List Endpoints
+
+### 17.7 — Add Cursor-Based Pagination for List Endpoints
+- **Date:** 2026-05-08 07:28 GMT+7
+- **Duration:** 0h 35m
+- **Status:** ✅ Complete
+
+**What I Did:**
+Added createdAt/id cursor pagination support for `GET /api/v1/links`, `GET /api/v1/campaigns`, and `GET /api/v1/pages` while keeping existing `page` + `limit` behavior intact. Cursor-mode responses now return `nextCursor` metadata, and list queries use stable `createdAt DESC, id DESC` ordering with `limit + 1` fetches.
+
+**Files Changed:**
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Checked off Task 17.7.
+- `src/lib/pagination/cursor.ts` — Added createdAt/id cursor encoding, decoding, and page trimming helpers.
+- `src/lib/api/pagination.ts` — Added cursor parse error handling and backward-compatible list metadata helper.
+- `src/lib/validations/link.ts`, `src/lib/validations/campaign.ts` — Added optional `cursor` params and explicit 100-item max limits.
+- `src/lib/db/queries/links.ts` — Added cursor pagination for links and Link Pages.
+- `src/lib/db/queries/campaigns.ts` — Added cursor pagination for campaigns.
+- `src/app/api/v1/links/route.ts`, `src/app/api/v1/campaigns/route.ts`, `src/app/api/v1/pages/route.ts` — Wired cursor parsing and `nextCursor` response metadata.
+- `src/app/api/v1/campaigns/[id]/links/route.ts` — Kept shared campaign-list query schema compatible by supporting cursor there too.
+- Integration/unit tests — Added cursor coverage for links, campaigns, Link Pages, and cursor helper behavior.
+
+**Decisions Made:**
+- Used opaque base64url JSON cursors instead of exposing raw timestamp/id pairs in query params.
+- Kept page-mode metadata exactly shaped as `{ page, limit, total }`; cursor-mode metadata is `{ limit, nextCursor, total }`.
+- Extended campaign-link listing because it reuses the campaign list query schema and would otherwise accept a cursor it could not execute.
+
+**Tests:**
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Targeted Unit/Integration: `rtk bun run test -- tests/unit/cursor-pagination.test.ts tests/unit/link-validation.test.ts tests/integration/list-links-api.test.ts tests/integration/campaigns-api.test.ts tests/integration/list-link-pages-api.test.ts tests/integration/campaign-links-api.test.ts` — 6 files passed, 58 tests passed.
+- ✅ Unit/Integration: `rtk bun run test` — 125 files passed, 554 tests passed.
+- ✅ Build: `rtk bun run build` — Passed.
+
+**Issues Encountered:**
+- `GET /api/v1/campaigns/[id]/links` reused `listCampaignsQuerySchema`; added cursor support there to keep schema and execution behavior aligned.
+
+**Security Checks:**
+- ✅ Cursor payloads are decoded server-side and validated before query execution.
+- ✅ Existing auth, ownership, and rate-limit checks remain before list execution.
+- ✅ No secrets, raw SQL, or `dangerouslySetInnerHTML` introduced.
+
+**Next Task:** 17.9 — Add DB Proxy Symbol Trap Handlers

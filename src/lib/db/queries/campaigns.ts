@@ -1,6 +1,7 @@
-import { and, count, desc, eq, ilike, inArray, or, type SQL } from "drizzle-orm";
+import { and, count, desc, eq, ilike, inArray, lt, or, type SQL } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { campaigns, links } from "@/lib/db/schema";
+import { getCursorPage, type CreatedAtCursor } from "@/lib/pagination/cursor";
 import type {
   CreateCampaignInput,
   UpdateCampaignInput,
@@ -26,6 +27,7 @@ export type CampaignWithLinkCount = CampaignRecord & {
 };
 
 type ListCampaignsInput = {
+  cursor?: CreatedAtCursor;
   limit: number;
   page: number;
   search?: string;
@@ -102,6 +104,13 @@ function buildListCampaignsWhere({
   return where;
 }
 
+function buildCampaignsCursorWhere(cursor: CreatedAtCursor): SQL | undefined {
+  return or(
+    lt(campaigns.createdAt, cursor.createdAt),
+    and(eq(campaigns.createdAt, cursor.createdAt), lt(campaigns.id, cursor.id)),
+  );
+}
+
 async function countCampaignLinks(campaignId: string): Promise<number> {
   const [row] = await db
     .select({ value: count() })
@@ -152,29 +161,39 @@ export async function createCampaignRecord({
 }
 
 export async function listCampaignsByUserId({
+  cursor,
   limit,
   page,
   search,
   userId,
-}: ListCampaignsInput): Promise<{ items: CampaignWithLinkCount[]; total: number }> {
+}: ListCampaignsInput): Promise<{
+  items: CampaignWithLinkCount[];
+  nextCursor: string | null;
+  total: number;
+}> {
   const where = buildListCampaignsWhere({ search, userId });
+  const cursorWhere = cursor ? buildCampaignsCursorWhere(cursor) : undefined;
+  const paginatedWhere = cursorWhere ? and(where, cursorWhere) : where;
   const offset = (page - 1) * limit;
+  const rowLimit = cursor ? limit + 1 : limit;
 
   const [items, totalRows] = await Promise.all([
     db
       .select(campaignSelectColumns)
       .from(campaigns)
       .leftJoin(links, eq(links.campaignId, campaigns.id))
-      .where(where)
+      .where(paginatedWhere)
       .groupBy(...getCampaignGroupByColumns())
-      .orderBy(desc(campaigns.createdAt))
-      .limit(limit)
-      .offset(offset),
+      .orderBy(desc(campaigns.createdAt), desc(campaigns.id))
+      .limit(rowLimit)
+      .offset(cursor ? 0 : offset),
     db.select({ value: count() }).from(campaigns).where(where),
   ]);
+  const cursorPage = cursor ? getCursorPage(items, limit) : null;
 
   return {
-    items,
+    items: cursorPage?.items ?? items,
+    nextCursor: cursorPage?.nextCursor ?? null,
     total: totalRows[0]?.value ?? 0,
   };
 }

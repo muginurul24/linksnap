@@ -8,6 +8,10 @@ import {
 } from "@/lib/api/response";
 import { buildShortUrl } from "@/lib/api/base-url";
 import {
+  createListMeta,
+  parseCreatedAtCursorParam,
+} from "@/lib/api/pagination";
+import {
   buildCampaignUtmParams,
   previewCampaignUtmUrls,
 } from "@/lib/campaigns/utm-builder";
@@ -245,11 +249,18 @@ export async function GET(
     const parsedQuery = parseListQuery(request, requestId);
     if ("response" in parsedQuery) return parsedQuery.response;
 
+    const parsedCursor = parseCreatedAtCursorParam(
+      parsedQuery.query.cursor,
+      requestId,
+    );
+    if ("response" in parsedCursor) return parsedCursor.response;
+
     await getAuthorizedCampaign(parsedParams.params.id, authResult.userId);
 
-    const { items, total } = await listLinksByUserId({
+    const { items, nextCursor, total } = await listLinksByUserId({
       campaignId: parsedParams.params.id,
       ...parsedQuery.query,
+      cursor: parsedCursor.cursor,
       userId: authResult.userId,
     });
 
@@ -258,11 +269,13 @@ export async function GET(
     return successResponse(
       freshItems.map((link) => formatLink(request, link)),
       200,
-      {
+      createListMeta({
+        cursor: parsedQuery.query.cursor,
         limit: parsedQuery.query.limit,
+        nextCursor,
         page: parsedQuery.query.page,
         total,
-      },
+      }),
     );
   } catch (error) {
     const knownError = handleKnownError(error, requestId);

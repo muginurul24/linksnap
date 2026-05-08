@@ -24,6 +24,7 @@ type MockListedLink = {
 
 type ListLinksInput = {
   campaignId?: string;
+  cursor?: { createdAt: Date; id: string };
   limit: number;
   page: number;
   search?: string;
@@ -95,7 +96,11 @@ vi.mock("@/lib/db/queries/links", () => ({
   isUniqueConstraintViolation: () => false,
   listLinksByUserId: async (input: ListLinksInput) => {
     mockState.capturedListInput = input;
-    return { items: mockState.links, total: mockState.total };
+    return {
+      items: mockState.links,
+      nextCursor: input.cursor ? "next-link-cursor" : null,
+      total: mockState.total,
+    };
   },
 }));
 
@@ -110,6 +115,7 @@ vi.mock("@/lib/links/click-count-cache", () => ({
 }));
 
 import { GET } from "../../src/app/api/v1/links/route";
+import { encodeCreatedAtCursor } from "../../src/lib/pagination/cursor";
 
 const previousBaseUrl = process.env.NEXT_PUBLIC_APP_URL;
 
@@ -204,6 +210,34 @@ describe("list links API", () => {
     expect(body.meta).toEqual({ page: 1, limit: 20, total: 12 });
     expect(mockState.capturedListInput).toMatchObject({
       limit: 20,
+      page: 1,
+      userId: "user-1",
+    });
+  });
+
+  it("should list authenticated user links with cursor pagination metadata", async () => {
+    const cursor = encodeCreatedAtCursor({
+      createdAt: new Date("2026-05-06T10:00:00.000Z"),
+      id: "f4bd85a6-2e8c-47fc-894d-3dbe3c7d86b0",
+    });
+
+    const response = await GET(createGetRequest(`/api/v1/links?cursor=${cursor}&limit=5`));
+    const body = await readJson<ListLinkResponse[]>(response);
+
+    expect(response.status).toBe(200);
+    expect(body.success).toBe(true);
+    if (!body.success) return;
+    expect(body.meta).toEqual({
+      limit: 5,
+      nextCursor: "next-link-cursor",
+      total: 12,
+    });
+    expect(mockState.capturedListInput).toMatchObject({
+      cursor: {
+        createdAt: new Date("2026-05-06T10:00:00.000Z"),
+        id: "f4bd85a6-2e8c-47fc-894d-3dbe3c7d86b0",
+      },
+      limit: 5,
       page: 1,
       userId: "user-1",
     });

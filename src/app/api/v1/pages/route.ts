@@ -8,12 +8,20 @@ import {
   successResponse,
 } from "@/lib/api/response";
 import {
+  createListMeta,
+  parseCreatedAtCursorParam,
+} from "@/lib/api/pagination";
+import {
   getUserPlanById,
-  listLinkPagesByUserId,
+  listLinkPagesByUserIdPaginated,
   type ListedLinkPage,
 } from "@/lib/db/queries/links";
 import { getApiEndpointRateLimit, type UserPlan } from "@/lib/links/limits";
 import { slidingWindowRateLimit } from "@/lib/redis/rate-limit";
+import {
+  listPagesQuerySchema,
+  type ListPagesQuery,
+} from "@/lib/validations/link";
 
 type SessionWithUserId = {
   user?: {
@@ -95,6 +103,7 @@ async function checkRateLimit({
 function formatLinkPage(page: ListedLinkPage) {
   return {
     brandName: page.brandName,
+    createdAt: page.createdAt.toISOString(),
     ctaClicks: page.ctaClicks,
     ctaText: page.ctaText,
     hasCountdown: page.hasCountdown,
@@ -107,6 +116,31 @@ function formatLinkPage(page: ListedLinkPage) {
     title: page.title,
     updatedAt: page.updatedAt.toISOString(),
   };
+}
+
+function getQueryParams(request: NextRequest): Record<string, string> {
+  return Object.fromEntries(request.nextUrl.searchParams.entries());
+}
+
+function parseListQuery(
+  request: NextRequest,
+  requestId: string,
+): { query: ListPagesQuery } | { response: Response } {
+  const parsed = listPagesQuerySchema.safeParse(getQueryParams(request));
+
+  if (!parsed.success) {
+    return {
+      response: errorResponse(
+        "VALIDATION_ERROR",
+        "Invalid Link Page list query.",
+        400,
+        requestId,
+        parsed.error.flatten(),
+      ),
+    };
+  }
+
+  return { query: parsed.data };
 }
 
 export async function GET(request: NextRequest) {
@@ -123,9 +157,32 @@ export async function GET(request: NextRequest) {
     });
     if (rateLimit) return rateLimit;
 
-    const pages = await listLinkPagesByUserId(authResult.userId);
+    const parsedQuery = parseListQuery(request, requestId);
+    if ("response" in parsedQuery) return parsedQuery.response;
 
-    return successResponse(pages.map(formatLinkPage));
+    const parsedCursor = parseCreatedAtCursorParam(
+      parsedQuery.query.cursor,
+      requestId,
+    );
+    if ("response" in parsedCursor) return parsedCursor.response;
+
+    const { items, nextCursor, total } = await listLinkPagesByUserIdPaginated({
+      ...parsedQuery.query,
+      cursor: parsedCursor.cursor,
+      userId: authResult.userId,
+    });
+
+    return successResponse(
+      items.map(formatLinkPage),
+      200,
+      createListMeta({
+        cursor: parsedQuery.query.cursor,
+        limit: parsedQuery.query.limit,
+        nextCursor,
+        page: parsedQuery.query.page,
+        total,
+      }),
+    );
   } catch (error) {
     logApiErrorResponse({ code: "INTERNAL_ERROR", error, requestId, route: "GET /api/v1/pages" });
     return errorResponse(

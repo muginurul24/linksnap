@@ -38,6 +38,7 @@ type UpdateCampaignRecordInput = Partial<
 };
 
 type ListCampaignsInput = {
+  cursor?: { createdAt: Date; id: string };
   limit: number;
   page: number;
   search?: string;
@@ -146,6 +147,7 @@ vi.mock("@/lib/db/queries/campaigns", () => ({
       items: mockState.campaigns.filter(
         (campaign) => campaign.userId === input.userId,
       ),
+      nextCursor: input.cursor ? "next-campaign-cursor" : null,
       total: mockState.total,
     };
   },
@@ -190,6 +192,7 @@ import {
   GET as GETCampaign,
   PATCH as PATCHCampaign,
 } from "../../src/app/api/v1/campaigns/[id]/route";
+import { encodeCreatedAtCursor } from "../../src/lib/pagination/cursor";
 
 function createRequest(path: string, method = "GET", body?: unknown): NextRequest {
   return new NextRequest(`http://localhost:3000${path}`, {
@@ -309,6 +312,36 @@ describe("campaigns API", () => {
       limit: 5,
       page: 2,
       search: "ramadhan",
+      userId: "user-1",
+    });
+  });
+
+  it("should list campaigns with cursor pagination metadata", async () => {
+    const cursor = encodeCreatedAtCursor({
+      createdAt: new Date("2026-05-06T10:00:00.000Z"),
+      id: campaignId,
+    });
+
+    const response = await GETCampaigns(
+      createRequest(`/api/v1/campaigns?cursor=${cursor}&limit=5`),
+    );
+    const body = await readJson<CampaignResponse[]>(response);
+
+    expect(response.status).toBe(200);
+    expect(body.success).toBe(true);
+    if (!body.success) return;
+    expect(body.meta).toEqual({
+      limit: 5,
+      nextCursor: "next-campaign-cursor",
+      total: 1,
+    });
+    expect(mockState.capturedListInput).toMatchObject({
+      cursor: {
+        createdAt: new Date("2026-05-06T10:00:00.000Z"),
+        id: campaignId,
+      },
+      limit: 5,
+      page: 1,
       userId: "user-1",
     });
   });

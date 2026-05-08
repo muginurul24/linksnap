@@ -2,6 +2,7 @@ import { z } from "zod";
 
 const SLUG_PATTERN = /^[a-z0-9-]{3,50}$/;
 const MAX_URL_LENGTH = 2048;
+export const MAX_PAGE_LIMIT = 100;
 
 function emptyStringToUndefined(value: unknown): unknown {
   return typeof value === "string" && value.trim() === "" ? undefined : value;
@@ -147,9 +148,13 @@ export const listLinksQuerySchema = z
       emptyStringToUndefined,
       z.string().uuid("Campaign ID must be a valid UUID").optional(),
     ),
+    cursor: z.preprocess(
+      emptyStringToUndefined,
+      z.string().trim().max(512, "Cursor is too long").optional(),
+    ),
     limit: z.preprocess(
       emptyStringToUndefined,
-      z.coerce.number().int().min(1).max(100).default(20),
+      z.coerce.number().int().min(1).max(MAX_PAGE_LIMIT).default(20),
     ),
     page: z.preprocess(
       emptyStringToUndefined,
@@ -163,6 +168,25 @@ export const listLinksQuerySchema = z
   .strict();
 
 export type ListLinksQuery = z.infer<typeof listLinksQuerySchema>;
+
+export const listPagesQuerySchema = z
+  .object({
+    cursor: z.preprocess(
+      emptyStringToUndefined,
+      z.string().trim().max(512, "Cursor is too long").optional(),
+    ),
+    limit: z.preprocess(
+      emptyStringToUndefined,
+      z.coerce.number().int().min(1).max(MAX_PAGE_LIMIT).default(20),
+    ),
+    page: z.preprocess(
+      emptyStringToUndefined,
+      z.coerce.number().int().min(1).default(1),
+    ),
+  })
+  .strict();
+
+export type ListPagesQuery = z.infer<typeof listPagesQuerySchema>;
 
 function emptyStringToDate(value: unknown): unknown {
   if (typeof value !== "string") return value;

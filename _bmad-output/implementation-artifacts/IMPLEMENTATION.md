@@ -1429,12 +1429,12 @@ rtk bun run db:studio    # Open Drizzle Studio (in another terminal)
 - [x] Tests: unit (separate cache keys), integration (click count freshness)
 
 ### TASK 17.7 — Add Cursor-Based Pagination for List Endpoints
-- [ ] Files: `GET /api/v1/links`, `GET /api/v1/campaigns`, `GET /api/v1/pages`
-- [ ] Add optional `cursor` param (uses `createdAt` + `id` as cursor)
-- [ ] Add `maxPageLimit` (e.g., 100 items max per request)
-- [ ] Keep backward compatibility with `page` + `limit` params
-- [ ] Return `nextCursor` in response for cursor-based navigation
-- [ ] Tests: integration (cursor pagination returns correct next page)
+- [x] Files: `GET /api/v1/links`, `GET /api/v1/campaigns`, `GET /api/v1/pages`
+- [x] Add optional `cursor` param (uses `createdAt` + `id` as cursor)
+- [x] Add `maxPageLimit` (e.g., 100 items max per request)
+- [x] Keep backward compatibility with `page` + `limit` params
+- [x] Return `nextCursor` in response for cursor-based navigation
+- [x] Tests: integration (cursor pagination returns correct next page)
 
 ### TASK 17.8 — Add `global-error.tsx` Root Error Boundary
 - [x] ✅ Already created by Claw Kun (see `src/app/global-error.tsx`)
