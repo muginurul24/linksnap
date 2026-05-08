@@ -7852,3 +7852,47 @@ Added admin loading/error boundary tests, generated a production build, checked 
 - ✅ Production smoke confirmed no reflected script payload, no `.env` exposure, generic malformed JSON errors, and invalid webhook signature rejection.
 
 **Next Task:** Remaining unchecked items require manual/external verification or Flutter SDK/device support.
+
+### 21F — Flutter Mobile Audit & Hardening
+- **Date:** 2026-05-08 19:42 GMT+7
+- **Duration:** 1h 05m
+- **Status:** ✅ Complete
+
+**What I Did:**
+Audited `apps/mobile_flutter` for production readiness and implemented the recommendations that can be completed without native Android/iOS host generation. Hardened runtime configuration, aligned mobile link/payment requests with the current backend contract, removed implicit production sample-data fallback, centralized the production domain, reduced sensitive debug logging, made retry behavior idempotency-aware, and added focused Flutter unit tests for config and validators.
+
+**Files Changed:**
+- `apps/mobile_flutter/.gitignore` — Ignored Flutter local/build artifacts and real env files.
+- `apps/mobile_flutter/.env.example` — Pointed API and short-link defaults to `https://www.justqiu.cloud` and made sample data opt-in.
+- `apps/mobile_flutter/lib/core/config/app_config.dart` — Added validated API/short-link configuration and sample-data gate.
+- `apps/mobile_flutter/lib/core/network/api_client.dart` — Hardened Dio logging, auth refresh, skip-auth refresh calls, and retry policy.
+- `apps/mobile_flutter/lib/core/network/api_endpoints.dart` — Mapped mobile payment constants to the existing `/api/v1/payments/*` backend.
+- `apps/mobile_flutter/lib/features/**` — Removed silent production sample fallbacks, fixed links payload/query names, centralized short-link display/copy/share URLs, and improved failed save/delete handling.
+- `apps/mobile_flutter/test/**` — Added config and validator unit tests.
+- `apps/mobile_flutter/pubspec.lock` — Tracked the Flutter app lockfile.
+
+**Decisions Made:**
+- Sample data is now opt-in through `USE_SAMPLE_DATA=true` so production failures surface as errors instead of fake success.
+- Short URLs now come from `SHORT_LINK_BASE_URL` so future domain changes do not require UI string edits.
+- Non-idempotent requests are no longer retried by default to avoid duplicate create/payment operations.
+- Left mobile JWT auth as a documented backend-contract gap because the current protected web APIs use NextAuth cookies, while the Flutter client expects Bearer tokens and `/api/v1/auth/login` + `/refresh`.
+
+**Tests:**
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Unit: `rtk bun run test` — 137 files passed, 1 skipped; 627 tests passed, 2 skipped.
+- ⚠️ Flutter SDK: `rtk proxy timeout 8s /snap/bin/flutter --version` — blocked by Snap bootstrap downloading `flutter_linux_3.41.9-stable.tar.xz` (1.4 GB).
+- ⬜ Flutter analyze/test/build — pending Flutter SDK initialization and native host files.
+
+**Issues Encountered:**
+- `/snap/bin/flutter` exists but is not initialized; invoking it starts a large SDK download, so analyzer/test/build could not be run inside this turn.
+- Existing mobile auth endpoints in Flutter do not fully exist on the backend; this requires a separate backend auth contract task before real mobile login can pass E2E.
+
+**Security Checks:**
+- ✅ No `.env` or secrets committed.
+- ✅ Debug Dio logging no longer records request/response bodies or headers.
+- ✅ Bearer refresh calls skip stale auth header injection.
+- ✅ Tokens remain in `FlutterSecureStorage`.
+- ✅ Sample data is disabled by default.
+
+**Next Task:** Implement mobile-compatible auth API contract or complete Flutter SDK/native host generation.

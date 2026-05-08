@@ -2,9 +2,9 @@ import 'dart:async';
 
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../config/app_config.dart';
 import '../storage/secure_storage.dart';
 import 'api_endpoints.dart';
 
@@ -18,7 +18,7 @@ class ApiClient {
   ApiClient({required SecureStorage storage}) : _storage = storage {
     dio = Dio(
       BaseOptions(
-        baseUrl: dotenv.env['API_BASE_URL'] ?? 'https://linksnap.id',
+        baseUrl: AppConfig.apiBaseUrl,
         connectTimeout: const Duration(seconds: 30),
         receiveTimeout: const Duration(seconds: 30),
         sendTimeout: const Duration(seconds: 30),
@@ -34,8 +34,10 @@ class ApiClient {
     if (kDebugMode) {
       dio.interceptors.add(
         LogInterceptor(
-          requestBody: true,
-          responseBody: true,
+          requestBody: false,
+          responseBody: false,
+          requestHeader: false,
+          responseHeader: false,
           logPrint: (object) => debugPrint(object.toString()),
         ),
       );
@@ -55,6 +57,12 @@ class _AuthInterceptor extends Interceptor {
 
   @override
   Future<void> onRequest(RequestOptions options, RequestInterceptorHandler handler) async {
+    if (options.extra['skipAuth'] == true) {
+      options.headers.remove('Authorization');
+      handler.next(options);
+      return;
+    }
+
     final token = await storage.getToken();
     if (token != null && token.isNotEmpty) {
       options.headers['Authorization'] = 'Bearer $token';
@@ -66,14 +74,13 @@ class _AuthInterceptor extends Interceptor {
   Future<void> onError(DioException err, ErrorInterceptorHandler handler) async {
     final statusCode = err.response?.statusCode;
     final isRefreshCall = err.requestOptions.path == ApiEndpoints.authRefresh;
-    if (statusCode != 401 || isRefreshCall) {
+    if (statusCode != 401 || isRefreshCall || err.requestOptions.extra['skipAuth'] == true) {
       handler.next(err);
       return;
     }
 
     try {
-      final token = await (_refreshing ??= _refreshToken());
-      _refreshing = null;
+      final token = await _refreshTokenOnce();
       if (token == null) {
         await storage.clearSession();
         handler.next(err);
@@ -84,9 +91,23 @@ class _AuthInterceptor extends Interceptor {
       final response = await dio.fetch<dynamic>(retryOptions);
       handler.resolve(response);
     } catch (_) {
-      _refreshing = null;
       await storage.clearSession();
       handler.next(err);
+    }
+  }
+
+  Future<String?> _refreshTokenOnce() async {
+    final existing = _refreshing;
+    if (existing != null) return existing;
+
+    final next = _refreshToken();
+    _refreshing = next;
+    try {
+      return await next;
+    } finally {
+      if (identical(_refreshing, next)) {
+        _refreshing = null;
+      }
     }
   }
 
@@ -98,7 +119,10 @@ class _AuthInterceptor extends Interceptor {
     final response = await dio.post<Map<String, dynamic>>(
       ApiEndpoints.authRefresh,
       data: <String, dynamic>{'refreshToken': refreshToken},
-      options: Options(headers: <String, dynamic>{'Authorization': null}),
+      options: Options(
+        headers: <String, dynamic>{'Authorization': null},
+        extra: <String, dynamic>{'allowRetry': false, 'skipAuth': true},
+      ),
     );
     final data = response.data?['data'] as Map<String, dynamic>?;
     final accessToken = data?['token'] as String?;
@@ -123,7 +147,7 @@ class _RetryInterceptor extends Interceptor {
     final statusCode = err.response?.statusCode ?? 0;
     final request = err.requestOptions;
     final retries = request.extra['retryCount'] as int? ?? 0;
-    if (statusCode < 500 || retries >= 3) {
+    if (!_shouldRetry(err) || retries >= 3) {
       handler.next(err);
       return;
     }
@@ -136,5 +160,21 @@ class _RetryInterceptor extends Interceptor {
     } catch (_) {
       handler.next(err);
     }
+  }
+
+  bool _shouldRetry(DioException err) {
+    final request = err.requestOptions;
+    final explicitlyAllowed = request.extra['allowRetry'] == true;
+    final method = request.method.toUpperCase();
+    final safeMethod = method == 'GET' || method == 'HEAD' || method == 'OPTIONS';
+    if (!explicitlyAllowed && !safeMethod) return false;
+
+    final statusCode = err.response?.statusCode ?? 0;
+    if (statusCode >= 500) return true;
+
+    return err.type == DioExceptionType.connectionTimeout ||
+        err.type == DioExceptionType.receiveTimeout ||
+        err.type == DioExceptionType.sendTimeout ||
+        err.type == DioExceptionType.connectionError;
   }
 }

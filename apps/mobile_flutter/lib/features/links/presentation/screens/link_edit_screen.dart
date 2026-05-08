@@ -31,6 +31,7 @@ class _LinkEditScreenState extends ConsumerState<LinkEditScreen> {
   int _themeIndex = 0;
   int _accentIndex = 0;
   bool _saving = false;
+  String? _error;
 
   @override
   void dispose() {
@@ -130,6 +131,10 @@ class _LinkEditScreenState extends ConsumerState<LinkEditScreen> {
                       ),
                     ),
                   ],
+                  if (_error != null) ...<Widget>[
+                    const SizedBox(height: 16),
+                    Text(_error!, style: const TextStyle(color: AppColors.error)),
+                  ],
                 ],
               ).animate().fadeIn(duration: 300.ms),
               Align(
@@ -151,16 +156,27 @@ class _LinkEditScreenState extends ConsumerState<LinkEditScreen> {
   }
 
   Future<void> _save() async {
-    setState(() => _saving = true);
-    await ref.read(linksRepositoryProvider).updateLink(widget.id, <String, dynamic>{
-      'slug': _slugController.text,
-      'destination': _destinationController.text,
-      'title': _titleController.text,
-      'linkPage': _linkPage,
+    setState(() {
+      _saving = true;
+      _error = null;
     });
-    if (mounted) {
-      setState(() => _saving = false);
-      context.pop();
+    try {
+      await ref.read(linksRepositoryProvider).updateLink(widget.id, <String, dynamic>{
+        'slug': _slugController.text.trim(),
+        'destinationUrl': _destinationController.text.trim(),
+        'title': _titleController.text.trim(),
+      });
+      if (mounted) {
+        setState(() => _saving = false);
+        context.pop();
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          _saving = false;
+          _error = 'Could not save changes. Please try again.';
+        });
+      }
     }
   }
 }

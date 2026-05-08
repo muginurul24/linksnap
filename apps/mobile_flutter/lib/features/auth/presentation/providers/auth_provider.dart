@@ -114,6 +114,11 @@ class AuthNotifier extends StateNotifier<AuthState> {
     try {
       final payload = utf8.decode(base64Url.decode(base64Url.normalize(parts[1])));
       final json = jsonDecode(payload) as Map<String, dynamic>;
+      final expiresAt = json['exp'];
+      if (expiresAt is num) {
+        final expires = DateTime.fromMillisecondsSinceEpoch(expiresAt.toInt() * 1000);
+        return DateTime.now().isAfter(expires);
+      }
       final issuedAt = json['iat'];
       if (issuedAt is! num) return false;
       final issued = DateTime.fromMillisecondsSinceEpoch(issuedAt.toInt() * 1000);

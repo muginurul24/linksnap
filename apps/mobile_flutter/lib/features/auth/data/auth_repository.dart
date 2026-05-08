@@ -55,8 +55,13 @@ class AuthRepository {
     final token = await _storage.getToken(biometric: biometric);
     final userJson = await _storage.getUserJson();
     if (token == null || userJson == null) return (token, null);
-    final decoded = jsonDecode(userJson) as Map<String, dynamic>;
-    return (token, UserModel.fromJson(decoded));
+    try {
+      final decoded = jsonDecode(userJson) as Map<String, dynamic>;
+      return (token, UserModel.fromJson(decoded));
+    } catch (_) {
+      await _storage.clearSession();
+      return (null, null);
+    }
   }
 
   Future<void> logout() => _storage.clearSession();

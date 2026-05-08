@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/config/app_config.dart';
 import '../../../core/network/api_client.dart';
 import '../../../core/network/api_endpoints.dart';
 import '../../../shared/models/app_models.dart';
@@ -18,17 +19,22 @@ class LinksRepository {
     try {
       final response = await _dio.get<Map<String, dynamic>>(
         ApiEndpoints.links,
-        queryParameters: <String, dynamic>{'q': query, 'filter': filter, 'page': page},
+        queryParameters: <String, dynamic>{'search': query, 'page': page},
       );
       final data = response.data?['data'];
       final items = data is List ? data : (data as Map?)?['items'];
       if (items is List) {
-        return items.map((item) => LinkModel.fromJson((item as Map).cast<String, dynamic>())).toList();
+        final links = items.map((item) => LinkModel.fromJson((item as Map).cast<String, dynamic>())).toList();
+        return _filterLinks(links: links, query: query, filter: filter);
       }
     } catch (_) {
+      if (!AppConfig.useSampleData) rethrow;
       await Future<void>.delayed(const Duration(milliseconds: 350));
     }
-    return _filteredSample(query: query, filter: filter);
+    if (!AppConfig.useSampleData) {
+      throw StateError('Unexpected links response.');
+    }
+    return _filterLinks(links: sampleLinks, query: query, filter: filter);
   }
 
   Future<LinkModel> getLink(String id) async {
@@ -37,7 +43,11 @@ class LinksRepository {
       final data = response.data?['data'];
       if (data is Map) return LinkModel.fromJson(data.cast<String, dynamic>());
     } catch (_) {
+      if (!AppConfig.useSampleData) rethrow;
       await Future<void>.delayed(const Duration(milliseconds: 250));
+    }
+    if (!AppConfig.useSampleData) {
+      throw StateError('Unexpected link response.');
     }
     return sampleLinks.firstWhere((link) => link.id == id, orElse: () => sampleLinks.first);
   }
@@ -47,16 +57,19 @@ class LinksRepository {
       final response = await _dio.post<Map<String, dynamic>>(
         ApiEndpoints.linkCreate,
         data: <String, dynamic>{
-          'destination': destination,
+          'destinationUrl': destination,
           'slug': slug,
           'title': title,
-          'linkPage': linkPage,
         },
       );
       final data = response.data?['data'];
       if (data is Map) return LinkModel.fromJson(data.cast<String, dynamic>());
     } catch (_) {
+      if (!AppConfig.useSampleData) rethrow;
       await Future<void>.delayed(const Duration(milliseconds: 450));
+    }
+    if (!AppConfig.useSampleData) {
+      throw StateError('Unexpected create link response.');
     }
     final generatedSlug = slug?.isNotEmpty == true ? slug! : Uri.parse(destination).host.replaceAll('.', '-');
     return LinkModel(
@@ -76,6 +89,7 @@ class LinksRepository {
     try {
       await _dio.patch<Map<String, dynamic>>(ApiEndpoints.linkEdit(id), data: payload);
     } catch (_) {
+      if (!AppConfig.useSampleData) rethrow;
       await Future<void>.delayed(const Duration(milliseconds: 350));
     }
   }
@@ -84,13 +98,14 @@ class LinksRepository {
     try {
       await _dio.delete<Map<String, dynamic>>(ApiEndpoints.linkDelete(id));
     } catch (_) {
+      if (!AppConfig.useSampleData) rethrow;
       await Future<void>.delayed(const Duration(milliseconds: 250));
     }
   }
 
-  List<LinkModel> _filteredSample({required String query, required String filter}) {
+  List<LinkModel> _filterLinks({required List<LinkModel> links, required String query, required String filter}) {
     final needle = query.trim().toLowerCase();
-    return sampleLinks.where((link) {
+    return links.where((link) {
       final matchesSearch = needle.isEmpty ||
           link.slug.toLowerCase().contains(needle) ||
           link.destination.toLowerCase().contains(needle) ||

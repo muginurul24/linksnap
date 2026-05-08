@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../../../core/config/app_config.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../shared/widgets/app_widgets.dart';
 import '../providers/links_provider.dart';
@@ -30,7 +31,7 @@ class LinkDetailScreen extends ConsumerWidget {
             loading: () => const ShimmerLoader(variant: ShimmerVariant.detail),
             error: (error, _) => ErrorStateWidget(message: error.toString(), onRetry: () => ref.invalidate(linkDetailProvider(id))),
             data: (link) {
-              final shortUrl = 'https://linksnap.id/${link.slug}';
+              final shortUrl = AppConfig.shortLinkUri(link.slug).toString();
               return Column(
                 children: <Widget>[
                   AppCard(
@@ -38,7 +39,7 @@ class LinkDetailScreen extends ConsumerWidget {
                     padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 20),
                     child: Column(
                       children: <Widget>[
-                        Text('linksnap.id/${link.slug}', style: Theme.of(context).textTheme.headlineLarge, textAlign: TextAlign.center),
+                        Text(AppConfig.shortLinkDisplay(link.slug), style: Theme.of(context).textTheme.headlineLarge, textAlign: TextAlign.center),
                         const SizedBox(height: 20),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.center,

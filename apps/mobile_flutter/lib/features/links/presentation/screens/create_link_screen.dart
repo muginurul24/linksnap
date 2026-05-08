@@ -4,6 +4,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:share_plus/share_plus.dart';
 
+import '../../../../core/config/app_config.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/utils/validators.dart';
 import '../../../../shared/widgets/app_widgets.dart';
@@ -39,6 +40,8 @@ class _CreateLinkScreenState extends ConsumerState<CreateLinkScreen> {
   Widget build(BuildContext context) {
     final validUrl = Validators.isValidUrl(_urlController.text);
     final slug = _slugController.text.isEmpty ? _suggestedSlug : _slugController.text;
+    final shortLinkDisplay = AppConfig.shortLinkDisplay(slug);
+    final shortLinkUrl = AppConfig.shortLinkUri(slug).toString();
     final recent = ref.watch(recentCreatedLinksProvider);
     return AppScaffold(
       title: 'Create Link',
@@ -74,14 +77,14 @@ class _CreateLinkScreenState extends ConsumerState<CreateLinkScreen> {
                   child: Row(
                     children: <Widget>[
                       Expanded(
-                        child: Text('linksnap.id/$slug', style: Theme.of(context).textTheme.titleLarge, overflow: TextOverflow.ellipsis),
+                        child: Text(shortLinkDisplay, style: Theme.of(context).textTheme.titleLarge, overflow: TextOverflow.ellipsis),
                       ),
                       HapticIconButton(
                         icon: _copied ? Icons.check_circle : Icons.copy,
                         label: 'Copy preview',
                         color: _copied ? AppColors.success : AppColors.accent,
                         onPressed: () async {
-                          await Clipboard.setData(ClipboardData(text: 'https://linksnap.id/$slug'));
+                          await Clipboard.setData(ClipboardData(text: shortLinkUrl));
                           setState(() => _copied = true);
                         },
                       ),
@@ -179,7 +182,7 @@ class _CreateLinkScreenState extends ConsumerState<CreateLinkScreen> {
         link,
         ...ref.read(recentCreatedLinksProvider),
       ];
-      await Share.share('https://linksnap.id/${link.slug}');
+      await Share.share(AppConfig.shortLinkUri(link.slug).toString());
     } catch (error) {
       setState(() => _error = 'Could not create link. Please try again.');
     } finally {

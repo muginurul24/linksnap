@@ -6,8 +6,10 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../core/config/app_config.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../shared/widgets/app_widgets.dart';
+import '../../data/links_repository.dart';
 import '../providers/links_provider.dart';
 
 class LinksListScreen extends ConsumerStatefulWidget {
@@ -101,10 +103,23 @@ class _LinksListScreenState extends ConsumerState<LinksListScreen> {
                         confirmDismiss: (direction) async {
                           HapticFeedback.lightImpact();
                           if (direction == DismissDirection.endToStart) {
-                            await Clipboard.setData(ClipboardData(text: 'https://linksnap.id/${link.slug}'));
+                            await Clipboard.setData(ClipboardData(text: AppConfig.shortLinkUri(link.slug).toString()));
                             return false;
                           }
-                          return _confirmDelete(link.slug);
+                          final confirmed = await _confirmDelete(link.slug);
+                          if (!confirmed) return false;
+                          try {
+                            await ref.read(linksRepositoryProvider).deleteLink(link.id);
+                            ref.invalidate(linksListProvider);
+                            return true;
+                          } catch (_) {
+                            if (mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text('Could not delete link. Please try again.')),
+                              );
+                            }
+                            return false;
+                          }
                         },
                         background: _dismissBg(AppColors.error, Icons.delete_outline, Alignment.centerLeft),
                         secondaryBackground: _dismissBg(AppColors.accent, Icons.copy, Alignment.centerRight),
@@ -158,7 +173,7 @@ class _LinksListScreenState extends ConsumerState<LinksListScreen> {
       builder: (context) => AlertDialog(
         backgroundColor: AppColors.surface100,
         title: const Text('Delete Link'),
-        content: Text('Delete linksnap.id/$slug?'),
+        content: Text('Delete ${AppConfig.shortLinkDisplay(slug)}?'),
         actions: <Widget>[
           TextButton(
             onPressed: () {

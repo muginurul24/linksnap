@@ -21,13 +21,16 @@ class AuthApi {
   }
 
   Future<UserModel> register(String name, String email, String password) async {
-    final response = await _dio.post<Map<String, dynamic>>(
+    await _dio.post<Map<String, dynamic>>(
       ApiEndpoints.authRegister,
-      data: <String, dynamic>{'name': name.trim(), 'email': email.trim(), 'password': password},
+      data: <String, dynamic>{'email': email.trim(), 'password': password},
     );
-    final data = _data(response);
-    final userJson = (data['user'] as Map?)?.cast<String, dynamic>() ?? data;
-    return UserModel.fromJson(userJson);
+    return UserModel(
+      id: '',
+      name: name.trim().isEmpty ? 'LinkSnap User' : name.trim(),
+      email: email.trim(),
+      plan: 'FREE',
+    );
   }
 
   Future<AuthSession> verifyEmail(String email, String otp) async {
@@ -61,6 +64,11 @@ class AuthApi {
 
   Map<String, dynamic> _data(Response<Map<String, dynamic>> response) {
     final body = response.data ?? <String, dynamic>{};
+    if (body['success'] == false) {
+      final apiError = body['error'];
+      final message = apiError is Map ? apiError['message'] : null;
+      throw StateError(message?.toString() ?? 'API request failed.');
+    }
     final data = body['data'];
     if (data is Map<String, dynamic>) return data;
     if (data is Map) return data.cast<String, dynamic>();

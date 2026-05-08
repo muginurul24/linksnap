@@ -43,14 +43,14 @@ class ApiEndpoints {
   static const analyticsReferrers = '/api/v1/analytics/referrers';
   static const analyticsExport = '/api/v1/analytics/export';
 
-  static const billingPlans = '/api/v1/billing/plans';
-  static const billingSubscription = '/api/v1/billing/subscription';
-  static const billingCheckout = '/api/v1/billing/checkout';
-  static const billingCheckoutStatus = '/api/v1/billing/checkout/status';
-  static const billingHistory = '/api/v1/billing/history';
-  static const billingInvoices = '/api/v1/billing/invoices';
-  static const billingCancel = '/api/v1/billing/cancel';
-  static const billingResume = '/api/v1/billing/resume';
+  static const billingPlans = '/api/v1/payments/subscriptions/renew';
+  static const billingSubscription = '/api/v1/payments/subscriptions/renew';
+  static const billingCheckout = '/api/v1/payments/create';
+  static String billingCheckoutStatus(String orderId) => '/api/v1/payments/$orderId';
+  static const billingHistory = '/api/v1/payments/history';
+  static const billingInvoices = '/api/v1/payments/history';
+  static const billingCancel = '/api/v1/payments/subscriptions/renew';
+  static const billingResume = '/api/v1/payments/subscriptions/renew';
 
   static const settingsProfile = '/api/v1/settings/profile';
   static const settingsAvatar = '/api/v1/settings/avatar';

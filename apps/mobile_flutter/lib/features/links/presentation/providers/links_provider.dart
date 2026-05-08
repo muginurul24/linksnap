@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/config/app_config.dart';
 import '../../../../shared/models/app_models.dart';
 import '../../data/links_repository.dart';
 
@@ -19,4 +20,6 @@ final linkDetailProvider = FutureProvider.family<LinkModel, String>((ref, id) as
   return ref.watch(linksRepositoryProvider).getLink(id);
 });
 
-final recentCreatedLinksProvider = StateProvider<List<LinkModel>>((ref) => sampleLinks.take(3).toList());
+final recentCreatedLinksProvider = StateProvider<List<LinkModel>>((ref) {
+  return AppConfig.useSampleData ? sampleLinks.take(3).toList() : <LinkModel>[];
+});
