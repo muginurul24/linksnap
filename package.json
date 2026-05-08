@@ -28,6 +28,7 @@
     "@maxmind/geoip2-node": "^6.3.4",
     "@neondatabase/serverless": "^1.1.0",
     "@upstash/redis": "^1.38.0",
+    "@vercel/speed-insights": "^2.0.0",
     "bcryptjs": "^3.0.3",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",

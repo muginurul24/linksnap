@@ -8098,3 +8098,51 @@ Fixed the `/links/new` CSP eval violation by routing all project Zod schema modu
 - ✅ No secrets committed.
 
 **Next Task:** Commit, push, wait for production deploy, then smoke-test CSP headers and `/links/new` runtime.
+
+### 21F.6 — Add Vercel Speed Insights
+- **Date:** 2026-05-08 22:04 GMT+7
+- **Duration:** 0h 35m
+- **Status:** ✅ Complete
+
+**What I Did:**
+Installed `@vercel/speed-insights` and mounted Vercel Speed Insights globally from the root layout. Added a client wrapper with `beforeSend` URL sanitization so telemetry uses route templates and strips query strings/hashes before sending vitals.
+
+**Files Changed:**
+- `package.json` — Added the Speed Insights dependency.
+- `bun.lock` — Locked `@vercel/speed-insights@2.0.0`.
+- `src/app/layout.tsx` — Mounted the global Speed Insights wrapper.
+- `src/components/observability/vercel-speed-insights.tsx` — Added the client-side Vercel component wrapper.
+- `src/lib/observability/speed-insights.ts` — Added telemetry URL sanitization.
+- `src/lib/security/headers.ts` — Added narrow CSP allowances for Vercel Speed Insights script and vitals endpoints.
+- `tests/unit/security-headers.test.ts` — Updated CSP regression coverage.
+- `tests/unit/vercel-speed-insights.test.ts` — Added global mount and sanitizer regression tests.
+- `_bmad-output/planning-artifacts/spec-vercel-speed-insights.md` — Added quick-dev spec for the change.
+- `_bmad-output/implementation-artifacts/JOURNAL.md` — Logged the implementation.
+
+**Decisions Made:**
+- Used `@vercel/speed-insights/next` through a local wrapper so the root layout keeps a small client boundary.
+- Kept production scripts nonce-based and did not add `unsafe-inline` or `unsafe-eval`.
+- Allowed only `https://va.vercel-scripts.com` for script loading and `https://vitals.vercel-insights.com` for DSN-backed vitals beacons.
+- Sanitized telemetry URLs to avoid leaking email addresses, reset tokens, hashes, concrete admin IDs, or other query/path identifiers when a route template is available.
+
+**Tests:**
+- ✅ Targeted unit: `rtk bun run test -- tests/unit/vercel-speed-insights.test.ts tests/unit/security-headers.test.ts` — 9 passed.
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Full unit/integration: `rtk bun run test` — 142 passed, 1 skipped; 643 passed, 2 skipped.
+- ✅ Build: `rtk bun run build` — Passed.
+- ✅ Bundle scan: `rtk proxy rg -n "Function\\(|eval\\(" .next/static/chunks/app/layout-*.js` — No matches.
+
+**Issues Encountered:**
+- The installed package can use Vercel DSN mode, which loads `va.vercel-scripts.com` and posts to `vitals.vercel-insights.com`; added narrow CSP entries for those domains instead of loosening script policy.
+- The upstream script sends `location.href` by default; added `beforeSend` sanitization as a privacy guard.
+- Next.js MCP server discovery found no running dev server, so runtime inspection was done with production build and bundle checks.
+
+**Security Checks:**
+- ✅ No secrets committed.
+- ✅ No production `unsafe-eval` added.
+- ✅ No production script `unsafe-inline` added.
+- ✅ Telemetry strips query strings and hashes.
+- ✅ Dynamic route IDs are replaced with route templates when Next exposes the route.
+
+**Next Task:** Commit, push, wait for production deploy, then smoke-test Speed Insights/CSP on `https://www.justqiu.cloud`.

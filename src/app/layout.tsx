@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { headers } from "next/headers";
+import { VercelSpeedInsights } from "@/components/observability/vercel-speed-insights";
 import { CspNonceProvider } from "@/components/security/nonce-provider";
 import { CSP_NONCE_HEADER } from "@/lib/security/headers";
 import { indexRobots, siteConfig } from "@/lib/seo/metadata";
@@ -41,6 +42,7 @@ export default async function RootLayout({
     >
       <body className="min-h-screen bg-background font-sans antialiased">
         <CspNonceProvider nonce={nonce}>{children}</CspNonceProvider>
+        <VercelSpeedInsights />
       </body>
     </html>
   );

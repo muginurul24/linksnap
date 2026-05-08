@@ -48,10 +48,15 @@ describe("security headers", () => {
     });
 
     expect(csp).toContain("default-src 'self'");
-    expect(csp).toContain("script-src 'self' 'nonce-test-nonce' 'strict-dynamic'");
+    expect(csp).toContain(
+      "script-src 'self' https://va.vercel-scripts.com 'nonce-test-nonce' 'strict-dynamic'",
+    );
     expect(csp).toContain("script-src-attr 'none'");
     expect(csp).toContain("style-src 'self' 'unsafe-inline'");
     expect(csp).toContain("style-src-attr 'unsafe-inline'");
+    expect(csp).toContain(
+      "connect-src 'self' https://vitals.vercel-insights.com",
+    );
     expect(csp).toContain("frame-ancestors 'none'");
     expect(csp).toContain("object-src 'none'");
     expect(csp).toContain("base-uri 'self'");
