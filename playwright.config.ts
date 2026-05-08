@@ -28,10 +28,11 @@ export default defineConfig({
   webServer: {
     command:
       process.env.PLAYWRIGHT_WEB_SERVER_COMMAND ??
-      `rtk bun run dev --hostname 127.0.0.1 --port ${port}`,
+      `rtk bun run dev --webpack --hostname 127.0.0.1 --port ${port}`,
     env: {
       AUTH_EMAIL_DELIVERY: "file",
       AUTH_EMAIL_FILE: authEmailFile,
+      AUTH_TRUST_HOST: "true",
       AUTH_URL: baseURL,
       CRON_SECRET: "e2e-cron-secret",
       NEXTAUTH_URL: baseURL,

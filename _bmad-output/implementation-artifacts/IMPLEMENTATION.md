@@ -1583,7 +1583,7 @@ src/
   );
   ```
 - [x] Add `SUPERADMIN_ROLE = "superadmin"` constant to `src/lib/db/schema.ts`
-- [ ] Run `rtk bun run db:push`
+- [x] Run `rtk bun run db:push`
 - [x] Tests: unit (audit log table columns, indexes exist)
 
 ### TASK 18.2 — Auth: Propagate Role to JWT + Superadmin Guards
@@ -1629,7 +1629,7 @@ src/
 - [x] Add npm script: `"seed:superadmin": "bun run scripts/seed-superadmin.ts"`
 - [x] Document in `_bmad-output/planning-artifacts/` — create `SUPERADMIN.md` with setup instructions
 - [x] Tests: unit (seed script logic, idempotency)
-- [ ] **Run the script** — promote `iqooz9xmg@gmail.com`
+- [x] **Run the script** — promote `iqooz9xmg@gmail.com`
 
 ### TASK 18.4 — Admin API: User Management Endpoints
 - [x] File: `src/lib/db/queries/admin.ts` (NEW)
@@ -1751,7 +1751,7 @@ src/
   - Click user → change plan → verify success toast + audit log entry
   - Suspend user → verify user shows as suspended
   - View audit log → verify entries appear
-- [ ] Tests must pass: `rtk bun run test:e2e -- tests/e2e/admin-flow.spec.ts`
+- [x] Tests must pass: `rtk bun run test:e2e -- tests/e2e/admin-flow.spec.ts`
 
 ---
 
@@ -1809,7 +1809,7 @@ Good luck. Ship it. 👑🚀
 ### TASK 19.2 — Add Loading + Error Boundaries to All Admin Pages
 - [x] 5 loading.tsx: admin, admin/users, admin/analytics, admin/audit-log, admin/users/[id]
 - [x] 5 error.tsx: same locations — error boundary with retry button
-- [ ] Tests: unit (error boundary renders), integration (skeleton appears)
+- [x] Tests: unit (error boundary renders), integration (skeleton appears)
 
 ### TASK 19.3 — Clean Up Type Assertions
 - [x] `src/proxy.ts`: eliminate `as unknown as MiddlewareHandler`
@@ -1823,13 +1823,13 @@ Good luck. Ship it. 👑🚀
 - [x] After removal: typecheck + test + build must pass
 
 ### TASK 19.5 — Ensure lucide-react Tree-Shaking
-- [ ] 66 files import lucide-react — verify tree-shaking in production build
-- [ ] If bundle >50KB for icons, use `lucide-react/dynamic` for admin-only icons
-- [ ] Tests: bundle size comparison
+- [x] 66 files import lucide-react — verify tree-shaking in production build
+- [x] If bundle >50KB for icons, use `lucide-react/dynamic` for admin-only icons
+- [x] Tests: bundle size comparison
 
 ### TASK 19.6 — Accessibility Audit
 - [ ] aria-label on icon-only buttons
-- [ ] alt text on AvatarImage components
+- [x] alt text on AvatarImage components
 - [ ] Keyboard navigation Tab order + focus visible
 - [ ] Headings hierarchy (h1→h2→h3), landmarks (nav, main, aside)
 - [ ] Target: Lighthouse score ≥ 95
@@ -1838,7 +1838,7 @@ Good luck. Ship it. 👑🚀
 - [x] Add composite indexes: (user_id, created_at) on links, (link_id, timestamp) on clickEvents
 - [x] Add partial index on transactions WHERE status = 'SETTLEMENT'
 - [x] Optimize getSystemStats(): combine 7 queries into 1-2 with CTEs
-- [ ] db:push + verify query plans with EXPLAIN
+- [x] db:push + verify query plans with EXPLAIN
 
 ### TASK 19.8 — Redis TTL & Cache Strategy Review
 - [x] Add TTL to click queue items (1h) and dead-letter entries (7d)
@@ -1846,9 +1846,9 @@ Good luck. Ship it. 👑🚀
 - [x] Verify all cache keys have explicit TTL strategy
 
 ### TASK 19.9 — Bundle Size Optimization
-- [ ] Analyze .next build output for large chunks (>100KB)
-- [ ] Dynamic import recharts/framer-motion for admin-only pages
-- [ ] Verify first-load JS ≤ 200KB gzipped for landing page
+- [x] Analyze .next build output for large chunks (>100KB)
+- [x] Dynamic import recharts/framer-motion for admin-only pages
+- [x] Verify first-load JS ≤ 200KB gzipped for landing page
 
 ### TASK 19.10 — Console Cleanup
 - [x] Verify zero console.log in production code (only logger.ts)
@@ -1858,7 +1858,7 @@ Good luck. Ship it. 👑🚀
 - [x] Verify all /api/v1/* routes pass CSRF guard
 - [x] Verify all admin routes have adminRouteGuard
 - [x] All user input through Zod, all queries through Drizzle ORM
-- [ ] Run security:smoke against production — must pass
+- [x] Run security:smoke against production — must pass
 
 ### TASK 19.12 — Code Quality Final Pass
 - [x] lint + typecheck zero errors
