@@ -5859,3 +5859,42 @@ Migrated API route and application error logging from bare `console.error` calls
 - ✅ No secrets, raw SQL, or `dangerouslySetInnerHTML` introduced.
 
 **Next Task:** 17.5 — Extract Duplicated `getRedirectLink()` and `getBaseUrl()`
+
+### 17.5 — Extract Duplicated `getRedirectLink()` and `getBaseUrl()`
+- **Date:** 2026-05-08 07:07 GMT+7
+- **Duration:** 0h 25m
+- **Status:** ✅ Complete
+
+**What I Did:**
+Extracted the duplicated redirect-link cache lookup into a shared module and moved short URL base URL resolution into a shared API helper. Updated the public redirect page, Link Page CTA route, link APIs, QR API, and campaign link API to use the shared helpers without changing response shapes.
+
+**Files Changed:**
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Checked off Task 17.5.
+- `src/lib/links/redirect-cache.ts` — Added shared cached redirect link lookup.
+- `src/app/[slug]/page.tsx` — Reused shared redirect cache helper.
+- `src/app/[slug]/go/route.ts` — Reused shared redirect cache helper.
+- `src/lib/api/base-url.ts` — Added shared base URL and short URL helpers.
+- `src/app/api/v1/links/route.ts`, `src/app/api/v1/links/[id]/route.ts`, `src/app/api/v1/qr/[slug]/route.ts`, `src/app/api/v1/campaigns/[id]/links/route.ts` — Reused shared short URL helper.
+- `tests/unit/redirect-cache.test.ts` — Covered cache hit and DB fallback caching behavior.
+- `tests/unit/base-url.test.ts` — Covered configured and request-origin base URL behavior.
+
+**Decisions Made:**
+- Kept cache serialization in `src/lib/links/redirect.ts` and only centralized the lookup orchestration in `redirect-cache.ts`.
+- Preserved the existing `NEXT_PUBLIC_APP_URL` precedence and trailing-slash trimming behavior for all API short URL responses.
+
+**Tests:**
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Targeted Unit/Integration: `rtk bun run test -- tests/unit/base-url.test.ts tests/unit/redirect-cache.test.ts tests/integration/create-redirect-click-flow.test.ts tests/integration/smart-rule-redirect-flow.test.ts tests/integration/split-test-redirect-distribution.test.ts tests/integration/list-links-api.test.ts tests/integration/link-item-api.test.ts tests/integration/qr-api.test.ts tests/integration/campaign-links-api.test.ts` — 9 files passed, 42 tests passed.
+- ✅ Unit/Integration: `rtk bun run test` — 123 files passed, 538 tests passed.
+- ✅ Build: `rtk bun run build` — Passed.
+
+**Issues Encountered:**
+- A diff command needed quoted `[slug]` paths under zsh; no code changes were affected.
+
+**Security Checks:**
+- ✅ No API response authorization behavior changed.
+- ✅ Redirect cache behavior remains server-side and uses existing Redis helpers.
+- ✅ No secrets, raw SQL, or `dangerouslySetInnerHTML` introduced.
+
+**Next Task:** 17.6 — Decouple Click Count from Redirect Cache

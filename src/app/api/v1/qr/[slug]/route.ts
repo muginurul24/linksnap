@@ -5,6 +5,7 @@ import {
   errorResponse,
   logApiErrorResponse,
 } from "@/lib/api/response";
+import { buildShortUrl } from "@/lib/api/base-url";
 import { getClientIpFromHeaders } from "@/lib/analytics/ip";
 import { findQrGenerationLinkBySlug } from "@/lib/db/queries/links";
 import { hasReachedQrQuota } from "@/lib/links/limits";
@@ -26,17 +27,6 @@ const QR_RATE_LIMIT_PER_MINUTE = 120;
 
 function getQueryParams(request: NextRequest): Record<string, string> {
   return Object.fromEntries(request.nextUrl.searchParams.entries());
-}
-
-function getBaseUrl(request: NextRequest): string {
-  const configuredBaseUrl = process.env.NEXT_PUBLIC_APP_URL?.trim();
-  if (configuredBaseUrl) return configuredBaseUrl.replace(/\/+$/, "");
-
-  return request.nextUrl.origin;
-}
-
-function buildShortUrl(request: NextRequest, slug: string): string {
-  return `${getBaseUrl(request)}/${slug}`;
 }
 
 export function getQrCodeCacheKey({

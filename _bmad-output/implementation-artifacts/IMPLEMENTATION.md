@@ -1412,13 +1412,13 @@ rtk bun run db:studio    # Open Drizzle Studio (in another terminal)
 - [x] Tests: unit (logger output format)
 
 ### TASK 17.5 — Extract Duplicated `getRedirectLink()` and `getBaseUrl()`
-- [ ] Create `src/lib/links/redirect-cache.ts` — extract shared `getRedirectLink()` with cache logic
-- [ ] Refactor `src/app/[slug]/page.tsx` to import from shared module
-- [ ] Refactor `src/app/[slug]/go/route.ts` to import from shared module
-- [ ] Create `src/lib/api/base-url.ts` — extract `getBaseUrl()` used in 4+ route files
-- [ ] Refactor all route handlers to use shared `getBaseUrl()`
-- [ ] Verify zero behavioral changes — all existing tests must pass
-- [ ] Tests: update imports, run full suite
+- [x] Create `src/lib/links/redirect-cache.ts` — extract shared `getRedirectLink()` with cache logic
+- [x] Refactor `src/app/[slug]/page.tsx` to import from shared module
+- [x] Refactor `src/app/[slug]/go/route.ts` to import from shared module
+- [x] Create `src/lib/api/base-url.ts` — extract `getBaseUrl()` used in 4+ route files
+- [x] Refactor all route handlers to use shared `getBaseUrl()`
+- [x] Verify zero behavioral changes — all existing tests must pass
+- [x] Tests: update imports, run full suite
 
 ### TASK 17.6 — Decouple Click Count from Redirect Cache
 - [ ] Current: `redirect:${slug}` cache includes `clickCount` — stale for up to 300s

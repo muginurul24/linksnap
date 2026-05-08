@@ -6,6 +6,7 @@ import {
   logApiErrorResponse,
   successResponse,
 } from "@/lib/api/response";
+import { buildShortUrl } from "@/lib/api/base-url";
 import {
   buildCampaignUtmParams,
   previewCampaignUtmUrls,
@@ -68,17 +69,6 @@ class LinkOwnershipError extends Error {
 
 function getSessionUserId(session: SessionWithUserId): string | null {
   return typeof session?.user?.id === "string" ? session.user.id : null;
-}
-
-function getBaseUrl(request: NextRequest): string {
-  const configuredBaseUrl = process.env.NEXT_PUBLIC_APP_URL?.trim();
-  if (configuredBaseUrl) return configuredBaseUrl.replace(/\/+$/, "");
-
-  return request.nextUrl.origin;
-}
-
-function buildShortUrl(request: NextRequest, slug: string): string {
-  return `${getBaseUrl(request)}/${slug}`;
 }
 
 function formatLink(request: NextRequest, link: ListedLink) {
