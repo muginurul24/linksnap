@@ -1,7 +1,11 @@
 import { requireSuperAdmin } from "@/lib/auth/superadmin";
 import { slidingWindowRateLimit } from "@/lib/redis/rate-limit";
 import { errorResponse, createRequestId } from "@/lib/api/response";
-import type { NextResponse } from "next/server";
+import { getDb } from "@/lib/db";
+import { users, SUPERADMIN_ROLE } from "@/lib/db/schema";
+import { eq } from "drizzle-orm";
+import { logger } from "@/lib/observability/logger";
+import { NextResponse, type NextResponse as NextResponseType } from "next/server";
 
 type AdminRouteContext = {
   adminUserId: string;
@@ -10,7 +14,12 @@ type AdminRouteContext = {
 
 type AdminGuardResult =
   | { ok: true; admin: AdminRouteContext }
-  | { ok: false; response: NextResponse };
+  | { ok: false; response: NextResponseType };
+
+function withAdminHeaders(response: NextResponseType): NextResponseType {
+  response.headers.set("X-Admin-Action", "true");
+  return response;
+}
 
 export async function adminRouteGuard(): Promise<AdminGuardResult> {
   const requestId = createRequestId();
@@ -19,15 +28,54 @@ export async function adminRouteGuard(): Promise<AdminGuardResult> {
   if (!authResult.ok) {
     return {
       ok: false,
-      response: errorResponse(
+      response: withAdminHeaders(errorResponse(
         authResult.status === 403 ? "SUPERADMIN_REQUIRED" : "AUTHENTICATION_REQUIRED",
         authResult.message,
         authResult.status,
         requestId,
-      ),
+      )),
     };
   }
 
+  // Re-validate role against DB on every admin API call
+  // If user was demoted since JWT was issued, reject immediately
+  try {
+    const db = getDb();
+    const [dbUser] = await db
+      .select({ role: users.role })
+      .from(users)
+      .where(eq(users.id, authResult.userId))
+      .limit(1);
+
+    if (!dbUser || dbUser.role !== SUPERADMIN_ROLE) {
+      logger.warn("admin_guard_role_mismatch", {
+        userId: authResult.userId,
+        dbRole: dbUser?.role ?? "not_found",
+      });
+      return {
+        ok: false,
+        response: withAdminHeaders(errorResponse(
+          "SUPERADMIN_REQUIRED",
+          "Superadmin access required.",
+          403,
+          requestId,
+        )),
+      };
+    }
+  } catch (error) {
+    logger.error("admin_guard_db_validation_failed", { error, userId: authResult.userId });
+    return {
+      ok: false,
+      response: withAdminHeaders(errorResponse(
+        "INTERNAL_ERROR",
+        "Unable to verify admin access.",
+        500,
+        requestId,
+      )),
+    };
+  }
+
+  // Rate limit: 30 req/min for admin routes
   const rateLimit = await slidingWindowRateLimit({
     key: `admin:api:${authResult.userId}`,
     limit: 30,
@@ -37,13 +85,13 @@ export async function adminRouteGuard(): Promise<AdminGuardResult> {
   if (rateLimit.limited) {
     return {
       ok: false,
-      response: errorResponse(
+      response: withAdminHeaders(errorResponse(
         "RATE_LIMITED",
         "Too many admin API requests.",
         429,
         requestId,
         { retryAfter: rateLimit.retryAfter },
-      ),
+      )),
     };
   }
 
