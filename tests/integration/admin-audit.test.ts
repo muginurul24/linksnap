@@ -1,8 +1,9 @@
 import { describe, it, expect, beforeAll } from "vitest";
 
-// Integration tests require a real database connection.
-// Skip if DATABASE_URL is not set.
-const shouldSkip = !process.env.DATABASE_URL;
+// Integration tests require a real, reachable database connection.
+// CI may expose placeholder DATABASE_URL values, so keep this opt-in.
+const shouldSkip =
+  process.env.RUN_DB_INTEGRATION_TESTS !== "true" || !process.env.DATABASE_URL;
 
 describe.skipIf(shouldSkip)("adminAuditLog queries (integration)", () => {
   let insertAdminAuditLog: typeof import("@/lib/db/queries/admin-audit").insertAdminAuditLog;
