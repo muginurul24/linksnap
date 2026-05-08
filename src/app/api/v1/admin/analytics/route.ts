@@ -14,7 +14,10 @@ export async function GET() {
 
   try {
     const stats = await getSystemStats();
-    return withAdminActionHeader(successResponse(stats));
+    const response = withAdminActionHeader(successResponse(stats));
+    response.headers.set("Cache-Control", "no-store");
+
+    return response;
   } catch (error) {
     logApiErrorResponse({
       code: "INTERNAL_ERROR",

@@ -8378,3 +8378,50 @@ Rebuilt `/analytics` into a decision-ready dashboard with KPI cards, click trend
 - ✅ No secrets added.
 
 **Next Task:** 22.5 — Admin Analytics Control Center.
+
+### 22.5 — Admin Analytics Control Center
+- **Date:** 2026-05-09 01:44 GMT+7
+- **Duration:** 0h 35m
+- **Status:** ✅ Complete
+
+**What I Did:**
+Upgraded `/admin/analytics` from a basic client stats page into a read-only superadmin control center with richer platform aggregates, growth charts, plan distribution, top users by links/clicks, revenue snapshot, operational health, loading/error/success states, manual refresh, request-ID aware errors, and mobile E2E coverage.
+
+**Files Changed:**
+- `src/lib/db/queries/admin.ts` — Expanded `getSystemStats` with active/new users, new links, clicks last 30 days, settled revenue, growth trend, top users, and operational health metrics.
+- `src/app/api/v1/admin/analytics/route.ts` — Returned richer stats and set `Cache-Control: no-store`.
+- `src/app/(dashboard)/admin/analytics/page.tsx` — Converted page to server-gated superadmin access with DB role revalidation.
+- `src/app/(dashboard)/admin/analytics/admin-analytics-client.tsx` — Added control center UI, charts, refresh, loading, and friendly API error handling.
+- `src/app/(dashboard)/admin/analytics/loading.tsx` — Updated skeleton for the new control center layout.
+- `src/app/(dashboard)/admin/analytics/error.tsx` — Added request/reference ID display in the friendly error boundary.
+- `src/app/(dashboard)/analytics/analytics-dashboard-client.tsx` — Corrected anchor button semantics for top-link navigation.
+- `tests/e2e/admin-flow.spec.ts` — Added admin analytics success, loading, error-with-request-ID, and mobile Playwright coverage.
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Checked off 22.5.
+- `_bmad-output/implementation-artifacts/JOURNAL.md` — Logged 22.5.
+
+**Decisions Made:**
+- Kept admin analytics uncached (`no-store`) because it contains platform-wide operational data and superadmin-only visibility.
+- Added server-page role verification in addition to the existing admin API guard, so the page shell is also superadmin-only.
+- Kept rate-limit telemetry as an enforcement-status panel because rate-limit events are not persisted yet.
+
+**Tests:**
+- ✅ Targeted unit/integration: `rtk bun run test -- tests/integration/admin-api.test.ts tests/unit/admin-error-boundaries.test.tsx tests/integration/admin-loading-states.test.tsx` — 16 passed.
+- ✅ E2E targeted: `rtk bun run test:e2e -- tests/e2e/admin-flow.spec.ts -g "system analytics"` — 4 passed.
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Full unit/integration: `rtk bun run test` — 147 passed, 1 skipped; 659 passed, 2 skipped.
+- ✅ Production build: `rtk bun run build` — Passed.
+
+**Issues Encountered:**
+- React hook lint rejected a refresh function that set state synchronously when called from the initial effect; split initial fetch and manual refresh paths.
+- Initial E2E title lookup for `Operational Health` also matched the page description; changed assertions to exact title matching.
+- Base UI warned when a `Button` rendered an anchor without `nativeButton={false}`; corrected new top-user/top-link navigation buttons.
+
+**Security Checks:**
+- ✅ Page and API are superadmin-only.
+- ✅ DB role is revalidated before rendering the control center shell.
+- ✅ Admin analytics responses are not cached.
+- ✅ No secrets or stack traces are rendered.
+- ✅ API errors show friendly copy and request IDs only.
+
+**Next Task:** 22.6 — Redis Cache Policy Matrix.

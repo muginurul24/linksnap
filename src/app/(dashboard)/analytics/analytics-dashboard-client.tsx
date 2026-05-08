@@ -383,6 +383,7 @@ function TopLinksTable({ summary }: { summary: DashboardAnalyticsSummary }) {
                       render={
                         <Link href={`/links/${encodeURIComponent(link.slug)}/edit`} />
                       }
+                      nativeButton={false}
                       size="icon-sm"
                       variant="ghost"
                     >

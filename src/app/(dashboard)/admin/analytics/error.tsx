@@ -31,6 +31,11 @@ export default function AdminAnalyticsError({
         <p className="mt-1 text-sm text-muted-foreground">
           An error occurred while loading analytics data. Please try again.
         </p>
+        {error.digest ? (
+          <p className="mt-2 text-xs text-muted-foreground">
+            Request ID: {error.digest}
+          </p>
+        ) : null}
       </div>
       <div className="flex gap-3">
         <Button type="button" variant="outline" size="sm" onClick={() => reset()}>

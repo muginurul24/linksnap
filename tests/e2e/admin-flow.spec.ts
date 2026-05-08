@@ -139,6 +139,72 @@ async function authenticateAsSuperadmin(page: Page): Promise<void> {
   ]);
 }
 
+function createAdminAnalyticsFixture() {
+  return {
+    activeUsers: 8,
+    adminActionsLast30Days: 6,
+    clicksLast30Days: 42,
+    failedPaymentsLast30Days: 1,
+    growthTrend: Array.from({ length: 30 }, (_, index) => ({
+      clicks: index % 3 === 0 ? 8 : 2,
+      date: `2026-05-${String(index + 1).padStart(2, "0")}`,
+      links: index % 4 === 0 ? 3 : 1,
+      users: index % 5 === 0 ? 2 : 0,
+    })),
+    lastUpdatedAt: "2026-05-09T01:30:00.000Z",
+    linksLast30Days: 7,
+    pendingPayments: 2,
+    planDistribution: { BUSINESS: 2, FREE: 6, PRO: 3 },
+    recentAdminActions: [
+      { action: "user.plan.change", count: 4 },
+      { action: "user.suspend", count: 2 },
+    ],
+    settledRevenueIdr: 428000,
+    topUsersByClicks: [
+      {
+        email: "clicks@example.com",
+        id: "user-clicks",
+        name: "Clicks User",
+        plan: "PRO",
+        totalClicks: 120,
+        totalLinks: 8,
+      },
+    ],
+    topUsersByLinks: [
+      {
+        email: "links@example.com",
+        id: "user-links",
+        name: "Links User",
+        plan: "BUSINESS",
+        totalClicks: 80,
+        totalLinks: 16,
+      },
+    ],
+    totalClicks: 150,
+    totalLinks: 22,
+    totalRevenueIdr: 428000,
+    totalUsers: 11,
+    usersLast30Days: 3,
+  };
+}
+
+async function mockAdminAnalyticsSuccess(page: Page, delayMs = 0): Promise<void> {
+  await page.route("**/api/v1/admin/analytics", async (route) => {
+    if (delayMs > 0) {
+      await new Promise((resolve) => setTimeout(resolve, delayMs));
+    }
+
+    await route.fulfill({
+      body: JSON.stringify({
+        data: createAdminAnalyticsFixture(),
+        success: true,
+      }),
+      contentType: "application/json",
+      status: 200,
+    });
+  });
+}
+
 test.describe("Admin Flow — Superadmin", () => {
   test.beforeAll(async () => {
     await ensureSuperadminExists();
@@ -441,22 +507,82 @@ test.describe("Admin Flow — Superadmin", () => {
     expect(pageErrors).toEqual([]);
   });
 
-  test("system analytics page loads", async ({ page }) => {
+  test("system analytics page loads as a read-only control center", async ({ page }) => {
+    await mockAdminAnalyticsSuccess(page);
     await authenticateAsSuperadmin(page);
     await page.goto("/admin/analytics");
 
-    // Wait for the heading
     await expect(
       page.getByRole("heading", { name: "System Analytics" }),
     ).toBeVisible({ timeout: 30_000 });
+    await expect(page.getByText("Read-only")).toBeVisible();
+    await expect(page.getByText("Last updated")).toBeVisible();
+    await expect(page.getByRole("button", { name: "Refresh" })).toBeVisible();
+    await expect(page.getByText("Active Users")).toBeVisible();
+    await expect(page.getByText("Growth Trend")).toBeVisible();
+    await expect(page.getByText("Plan Distribution")).toBeVisible();
+    await expect(page.getByText("Top Users by Links")).toBeVisible();
+    await expect(page.getByText("Top Users by Clicks")).toBeVisible();
+    await expect(page.getByText("Operational Health", { exact: true })).toBeVisible();
+  });
 
-    // Verify stats cards
-    const totalUsersCard = page.locator("text=Total Users");
-    await expect(totalUsersCard).toBeVisible({ timeout: 5_000 });
+  test("system analytics shows loading state while data is fetched", async ({
+    page,
+  }) => {
+    await mockAdminAnalyticsSuccess(page, 800);
+    await authenticateAsSuperadmin(page);
+    await page.goto("/admin/analytics");
 
-    // Verify plan distribution section
-    const planDist = page.locator("text=Plan Distribution");
-    await expect(planDist).toBeVisible({ timeout: 5_000 });
+    await expect(page.getByLabel("Loading system analytics")).toBeVisible({
+      timeout: 10_000,
+    });
+    await expect(
+      page.getByRole("heading", { name: "System Analytics" }),
+    ).toBeVisible({ timeout: 30_000 });
+  });
+
+  test("system analytics shows friendly API errors with request ID", async ({
+    page,
+  }) => {
+    await page.route("**/api/v1/admin/analytics", async (route) => {
+      await route.fulfill({
+        body: JSON.stringify({
+          error: {
+            code: "INTERNAL_ERROR",
+            message: "Unable to get system analytics.",
+            requestId: "req_admin_analytics_e2e",
+          },
+          success: false,
+        }),
+        contentType: "application/json",
+        status: 500,
+      });
+    });
+    await authenticateAsSuperadmin(page);
+    await page.goto("/admin/analytics");
+
+    await expect(
+      page.getByText("System analytics are temporarily unavailable"),
+    ).toBeVisible({ timeout: 30_000 });
+    await expect(page.getByText("Request ID: req_admin_analytics_e2e")).toBeVisible();
+    await expect(page.getByRole("button", { name: "Try again" })).toBeVisible();
+  });
+
+  test("system analytics stays usable on mobile", async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await mockAdminAnalyticsSuccess(page);
+    await authenticateAsSuperadmin(page);
+    await page.goto("/admin/analytics");
+
+    await expect(
+      page.getByRole("heading", { name: "System Analytics" }),
+    ).toBeVisible({ timeout: 30_000 });
+    await expect(page.getByText("Operational Health", { exact: true })).toBeVisible();
+
+    const hasHorizontalOverflow = await page.evaluate(
+      () => document.documentElement.scrollWidth > window.innerWidth + 1,
+    );
+    expect(hasHorizontalOverflow).toBe(false);
   });
 
   test("audit log page loads", async ({ page }) => {

@@ -2966,7 +2966,7 @@ Premium Flutter experience. 🟢
 
 ### TASK 22.5 — Admin Analytics Control Center
 
-- [ ] Upgrade `/admin/analytics` from a basic stats page into a platform control center:
+- [x] Upgrade `/admin/analytics` from a basic stats page into a platform control center:
   - total users, active users, new users
   - total links, new links
   - total clicks, clicks last 30 days
@@ -2975,10 +2975,10 @@ Premium Flutter experience. 🟢
   - growth trend chart
   - top users by links/clicks
   - operational health panel for recent errors/rate limits where available
-- [ ] Keep the page read-only and superadmin-only.
-- [ ] Show last updated timestamp and manual refresh button.
-- [ ] Add friendly error state with request ID and "Try again".
-- [ ] Add unit and Playwright coverage for loading, success, error, and mobile layout.
+- [x] Keep the page read-only and superadmin-only.
+- [x] Show last updated timestamp and manual refresh button.
+- [x] Add friendly error state with request ID and "Try again".
+- [x] Add unit and Playwright coverage for loading, success, error, and mobile layout.
 
 ### TASK 22.6 — Redis Cache Policy Matrix
 

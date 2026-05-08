@@ -1,6 +1,24 @@
-import { eq, ilike, or, and, count, desc, inArray, sql } from "drizzle-orm";
+import {
+  and,
+  count,
+  countDistinct,
+  desc,
+  eq,
+  gte,
+  ilike,
+  inArray,
+  or,
+  sql,
+} from "drizzle-orm";
 import { getDb } from "@/lib/db";
-import { users, links, clickEvents, transactions, subscriptions } from "@/lib/db/schema";
+import {
+  adminAuditLog,
+  clickEvents,
+  links,
+  subscriptions,
+  transactions,
+  users,
+} from "@/lib/db/schema";
 import type { UserPlan } from "@/lib/links/limits";
 
 export type AdminUser = {
@@ -26,13 +44,41 @@ export type AdminUserDetail = AdminUser & {
 };
 
 export type AdminSystemStats = {
+  activeUsers: number;
+  adminActionsLast30Days: number;
+  clicksLast30Days: number;
+  failedPaymentsLast30Days: number;
+  growthTrend: Array<{
+    clicks: number;
+    date: string;
+    links: number;
+    users: number;
+  }>;
+  lastUpdatedAt: string;
   totalUsers: number;
   totalLinks: number;
   totalClicks: number;
+  pendingPayments: number;
   totalRevenueIdr: number;
+  settledRevenueIdr: number;
   planDistribution: Record<UserPlan, number>;
+  recentAdminActions: Array<{
+    action: string;
+    count: number;
+  }>;
+  topUsersByClicks: AdminTopUser[];
+  topUsersByLinks: AdminTopUser[];
   usersLast30Days: number;
   linksLast30Days: number;
+};
+
+export type AdminTopUser = {
+  email: string;
+  id: string;
+  name: string | null;
+  plan: UserPlan;
+  totalClicks: number;
+  totalLinks: number;
 };
 
 export async function listAllUsers({
@@ -250,40 +296,185 @@ export async function unsuspendUser(
   return true;
 }
 
-export async function getSystemStats(): Promise<AdminSystemStats> {
+const DAY_MS = 24 * 60 * 60 * 1000;
+const ADMIN_ANALYTICS_WINDOW_DAYS = 30;
+
+function dateKey(date: Date): string {
+  return date.toISOString().slice(0, 10);
+}
+
+function startOfUtcDay(date: Date): Date {
+  return new Date(Date.UTC(
+    date.getUTCFullYear(),
+    date.getUTCMonth(),
+    date.getUTCDate(),
+  ));
+}
+
+function buildGrowthBuckets(now: Date): AdminSystemStats["growthTrend"] {
+  const today = startOfUtcDay(now);
+
+  return Array.from({ length: ADMIN_ANALYTICS_WINDOW_DAYS }, (_, index) => {
+    const date = new Date(
+      today.getTime() - (ADMIN_ANALYTICS_WINDOW_DAYS - 1 - index) * DAY_MS,
+    );
+
+    return {
+      clicks: 0,
+      date: dateKey(date),
+      links: 0,
+      users: 0,
+    };
+  });
+}
+
+function countByDate<T extends { count: number; date: string }>(
+  rows: T[],
+): Map<string, number> {
+  return new Map(rows.map((row) => [row.date, Number(row.count)]));
+}
+
+export async function getSystemStats(now = new Date()): Promise<AdminSystemStats> {
   const db = getDb();
-  const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
-  const thirtyDaysAgoISO = thirtyDaysAgo.toISOString();
+  const thirtyDaysAgo = new Date(
+    startOfUtcDay(now).getTime() - (ADMIN_ANALYTICS_WINDOW_DAYS - 1) * DAY_MS,
+  );
+  const userDate =
+    sql<string>`to_char(date_trunc('day', ${users.createdAt}), 'YYYY-MM-DD')`;
+  const linkDate =
+    sql<string>`to_char(date_trunc('day', ${links.createdAt}), 'YYYY-MM-DD')`;
+  const clickDate =
+    sql<string>`to_char(date_trunc('day', ${clickEvents.timestamp}), 'YYYY-MM-DD')`;
 
-  // Single CTE-based query combining 5 scalar stats into one round trip.
-  // Plan distribution still needs a separate GROUP BY query.
-  const [stats] = await db
-    .select({
-      totalUsers: count(users.id),
-      totalLinks: sql<number>`(SELECT count(*) FROM ${links})`.mapWith(Number),
-      totalClicks: sql<number>`(SELECT count(*) FROM ${clickEvents})`.mapWith(Number),
-      totalRevenueIdr:
-        sql<number>`COALESCE((SELECT sum(gross_amount_idr) FROM ${transactions} WHERE status = 'SETTLEMENT'), 0)`.mapWith(
-          Number,
-        ),
-      usersLast30Days:
-        sql<number>`(SELECT count(*) FROM ${users} WHERE created_at >= ${thirtyDaysAgoISO})`.mapWith(
-          Number,
-        ),
-      linksLast30Days:
-        sql<number>`(SELECT count(*) FROM ${links} WHERE created_at >= ${thirtyDaysAgoISO})`.mapWith(
-          Number,
-        ),
-    })
-    .from(users);
+  const clickCountExpr = count(clickEvents.id);
+  const distinctLinkCountExpr = countDistinct(links.id);
 
-  const planRows = await db
-    .select({
-      plan: users.plan,
-      count: count(users.id),
-    })
-    .from(users)
-    .groupBy(users.plan);
+  const [
+    stats,
+    planRows,
+    userGrowthRows,
+    linkGrowthRows,
+    clickGrowthRows,
+    topUsersByLinksRows,
+    topUsersByClicksRows,
+    recentAdminActionRows,
+  ] = await Promise.all([
+    db
+      .select({
+        activeUsers:
+          sql<number>`count(*) filter (where ${users.deletedAt} is null)`.mapWith(
+            Number,
+          ),
+        adminActionsLast30Days:
+          sql<number>`(SELECT count(*) FROM ${adminAuditLog} WHERE ${adminAuditLog.createdAt} >= ${thirtyDaysAgo})`.mapWith(
+            Number,
+          ),
+        clicksLast30Days:
+          sql<number>`(SELECT count(*) FROM ${clickEvents} WHERE ${clickEvents.timestamp} >= ${thirtyDaysAgo})`.mapWith(
+            Number,
+          ),
+        failedPaymentsLast30Days:
+          sql<number>`(SELECT count(*) FROM ${transactions} WHERE ${transactions.createdAt} >= ${thirtyDaysAgo} AND ${transactions.status} IN ('CANCEL', 'DENY', 'EXPIRE'))`.mapWith(
+            Number,
+          ),
+        linksLast30Days:
+          sql<number>`(SELECT count(*) FROM ${links} WHERE ${links.createdAt} >= ${thirtyDaysAgo})`.mapWith(
+            Number,
+          ),
+        pendingPayments:
+          sql<number>`(SELECT count(*) FROM ${transactions} WHERE ${transactions.status} = 'PENDING')`.mapWith(
+            Number,
+          ),
+        settledRevenueIdr:
+          sql<number>`COALESCE((SELECT sum(gross_amount_idr) FROM ${transactions} WHERE ${transactions.status} = 'SETTLEMENT'), 0)`.mapWith(
+            Number,
+          ),
+        totalClicks:
+          sql<number>`(SELECT count(*) FROM ${clickEvents})`.mapWith(Number),
+        totalLinks: sql<number>`(SELECT count(*) FROM ${links})`.mapWith(Number),
+        totalUsers: count(users.id),
+        usersLast30Days:
+          sql<number>`count(*) filter (where ${users.createdAt} >= ${thirtyDaysAgo})`.mapWith(
+            Number,
+          ),
+      })
+      .from(users)
+      .then((rows) => rows[0]),
+    db
+      .select({
+        count: count(users.id),
+        plan: users.plan,
+      })
+      .from(users)
+      .groupBy(users.plan),
+    db
+      .select({
+        count: count(users.id),
+        date: userDate,
+      })
+      .from(users)
+      .where(gte(users.createdAt, thirtyDaysAgo))
+      .groupBy(userDate)
+      .orderBy(userDate),
+    db
+      .select({
+        count: count(links.id),
+        date: linkDate,
+      })
+      .from(links)
+      .where(gte(links.createdAt, thirtyDaysAgo))
+      .groupBy(linkDate)
+      .orderBy(linkDate),
+    db
+      .select({
+        count: count(clickEvents.id),
+        date: clickDate,
+      })
+      .from(clickEvents)
+      .where(gte(clickEvents.timestamp, thirtyDaysAgo))
+      .groupBy(clickDate)
+      .orderBy(clickDate),
+    db
+      .select({
+        email: users.email,
+        id: users.id,
+        name: users.name,
+        plan: users.plan,
+        totalClicks: clickCountExpr,
+        totalLinks: distinctLinkCountExpr,
+      })
+      .from(users)
+      .leftJoin(links, eq(links.userId, users.id))
+      .leftJoin(clickEvents, eq(clickEvents.linkId, links.id))
+      .groupBy(users.id, users.email, users.name, users.plan)
+      .orderBy(desc(distinctLinkCountExpr), desc(users.createdAt))
+      .limit(5),
+    db
+      .select({
+        email: users.email,
+        id: users.id,
+        name: users.name,
+        plan: users.plan,
+        totalClicks: clickCountExpr,
+        totalLinks: distinctLinkCountExpr,
+      })
+      .from(users)
+      .leftJoin(links, eq(links.userId, users.id))
+      .leftJoin(clickEvents, eq(clickEvents.linkId, links.id))
+      .groupBy(users.id, users.email, users.name, users.plan)
+      .orderBy(desc(clickCountExpr), desc(users.createdAt))
+      .limit(5),
+    db
+      .select({
+        action: adminAuditLog.action,
+        count: count(adminAuditLog.id),
+      })
+      .from(adminAuditLog)
+      .where(gte(adminAuditLog.createdAt, thirtyDaysAgo))
+      .groupBy(adminAuditLog.action)
+      .orderBy(desc(count(adminAuditLog.id)))
+      .limit(5),
+  ]);
 
   const planDistribution: Record<UserPlan, number> = {
     BUSINESS: 0,
@@ -295,14 +486,52 @@ export async function getSystemStats(): Promise<AdminSystemStats> {
       planDistribution[row.plan] = row.count;
     }
   }
+  const userGrowth = countByDate(userGrowthRows);
+  const linkGrowth = countByDate(linkGrowthRows);
+  const clickGrowth = countByDate(clickGrowthRows);
+  const growthTrend = buildGrowthBuckets(now).map((bucket) => ({
+    ...bucket,
+    clicks: clickGrowth.get(bucket.date) ?? 0,
+    links: linkGrowth.get(bucket.date) ?? 0,
+    users: userGrowth.get(bucket.date) ?? 0,
+  }));
+  const topUsersByClicks = topUsersByClicksRows.map((row) => ({
+    email: row.email,
+    id: row.id,
+    name: row.name,
+    plan: row.plan,
+    totalClicks: Number(row.totalClicks),
+    totalLinks: Number(row.totalLinks),
+  }));
 
   return {
+    activeUsers: stats?.activeUsers ?? 0,
+    adminActionsLast30Days: stats?.adminActionsLast30Days ?? 0,
+    clicksLast30Days: stats?.clicksLast30Days ?? 0,
+    failedPaymentsLast30Days: stats?.failedPaymentsLast30Days ?? 0,
+    growthTrend,
+    lastUpdatedAt: now.toISOString(),
+    linksLast30Days: stats?.linksLast30Days ?? 0,
+    pendingPayments: stats?.pendingPayments ?? 0,
+    planDistribution,
+    recentAdminActions: recentAdminActionRows.map((row) => ({
+      action: row.action,
+      count: Number(row.count),
+    })),
+    settledRevenueIdr: stats?.settledRevenueIdr ?? 0,
+    topUsersByClicks,
+    topUsersByLinks: topUsersByLinksRows.map((row) => ({
+      email: row.email,
+      id: row.id,
+      name: row.name,
+      plan: row.plan,
+      totalClicks: Number(row.totalClicks),
+      totalLinks: Number(row.totalLinks),
+    })),
     totalUsers: stats?.totalUsers ?? 0,
     totalLinks: stats?.totalLinks ?? 0,
     totalClicks: stats?.totalClicks ?? 0,
-    totalRevenueIdr: stats?.totalRevenueIdr ?? 0,
-    planDistribution,
+    totalRevenueIdr: stats?.settledRevenueIdr ?? 0,
     usersLast30Days: stats?.usersLast30Days ?? 0,
-    linksLast30Days: stats?.linksLast30Days ?? 0,
   };
 }
