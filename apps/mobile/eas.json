@@ -7,9 +7,12 @@
     "development": {
       "developmentClient": true,
       "distribution": "internal",
-      "cache": { "disabled": true },
+      "cache": {
+        "disabled": true
+      },
       "env": {
-        "NPM_CONFIG_LEGACY_PEER_DEPS": "true"
+        "NPM_CONFIG_LEGACY_PEER_DEPS": "true",
+        "NODE_OPTIONS": "--max-old-space-size=4096"
       },
       "ios": {
         "simulator": true
@@ -20,9 +23,12 @@
     },
     "preview": {
       "distribution": "internal",
-      "cache": { "disabled": true },
+      "cache": {
+        "disabled": true
+      },
       "env": {
-        "NPM_CONFIG_LEGACY_PEER_DEPS": "true"
+        "NPM_CONFIG_LEGACY_PEER_DEPS": "true",
+        "NODE_OPTIONS": "--max-old-space-size=4096"
       },
       "ios": {
         "simulator": false
