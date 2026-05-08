@@ -1448,11 +1448,11 @@ rtk bun run db:studio    # Open Drizzle Studio (in another terminal)
 - [x] Tests: unit (proxy symbol behavior)
 
 ### TASK 17.10 — Validate Destination URL Protocols
-- [ ] File: `src/lib/validations/link.ts` — `createLinkSchema`
-- [ ] Add URL protocol validation: reject `javascript:`, `data:`, `file:`, `vbscript:`
-- [ ] Only allow `http:` and `https:` protocols
-- [ ] Return clear error: "URL must start with http:// or https://"
-- [ ] Tests: unit (reject dangerous protocols)
+- [x] File: `src/lib/validations/link.ts` — `createLinkSchema`
+- [x] Add URL protocol validation: reject `javascript:`, `data:`, `file:`, `vbscript:`
+- [x] Only allow `http:` and `https:` protocols
+- [x] Return clear error: "URL must start with http:// or https://"
+- [x] Tests: unit (reject dangerous protocols)
 
 ### TASK 17.11 — Cache Subscription Status in Dashboard Layout
 - [ ] File: `src/app/(dashboard)/layout.tsx`

@@ -6012,3 +6012,36 @@ Added safe `Symbol.toPrimitive`, `Symbol.iterator`, `toString`, and `valueOf` ha
 - ✅ No secrets, raw SQL, public inputs, or `dangerouslySetInnerHTML` introduced.
 
 **Next Task:** 17.10 — Validate Destination URL Protocols
+
+### 17.10 — Validate Destination URL Protocols
+- **Date:** 2026-05-08 07:36 GMT+7
+- **Duration:** 0h 15m
+- **Status:** ✅ Complete
+
+**What I Did:**
+Separated destination URL protocol validation from hostname safety validation. `createLinkSchema` and `updateLinkSchema` now reject non-HTTP(S) protocols with the explicit message `URL must start with http:// or https://`, while existing private/internal host blocking remains intact.
+
+**Files Changed:**
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Checked off Task 17.10.
+- `src/lib/validations/link.ts` — Added explicit HTTP(S) protocol helper and protocol-specific schema error.
+- `tests/unit/link-validation.test.ts` — Added dangerous protocol coverage for `javascript:`, `data:`, `file:`, and `vbscript:`.
+
+**Decisions Made:**
+- Kept SSRF-style private host blocking as a separate validation step so protocol errors stay clear without weakening host safety.
+
+**Tests:**
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Targeted Unit: `rtk bun run test -- tests/unit/link-validation.test.ts` — 1 file passed, 29 tests passed.
+- ✅ Unit/Integration: `rtk bun run test` — 126 files passed, 561 tests passed.
+- ✅ Build: `rtk bun run build` — Passed.
+
+**Issues Encountered:**
+- Existing validation already rejected dangerous protocols, but the user-facing error was too generic; fixed by splitting protocol and host refinements.
+
+**Security Checks:**
+- ✅ Only `http:` and `https:` destination protocols are allowed.
+- ✅ Private/internal host blocking remains active.
+- ✅ No secrets, raw SQL, or `dangerouslySetInnerHTML` introduced.
+
+**Next Task:** 17.11 — Cache Subscription Status in Dashboard Layout

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   createLinkSchema,
+  hasHttpDestinationProtocol,
   isSafeDestinationUrl,
   linkAnalyticsQuerySchema,
   listLinksQuerySchema,
@@ -70,6 +71,7 @@ describe("link validation", () => {
     "javascript:alert(1)",
     "data:text/plain,hello",
     "file:///etc/passwd",
+    "vbscript:msgbox(1)",
     "http://localhost:3000",
     "http://127.0.0.1/admin",
     "http://10.0.0.1/admin",
@@ -84,6 +86,22 @@ describe("link validation", () => {
   it("should allow public HTTP and HTTPS destination URLs", () => {
     expect(isSafeDestinationUrl("https://example.com/path")).toBe(true);
     expect(isSafeDestinationUrl("http://example.com/path")).toBe(true);
+  });
+
+  it.each([
+    "javascript:alert(1)",
+    "data:text/plain,hello",
+    "file:///etc/passwd",
+    "vbscript:msgbox(1)",
+  ])("should reject dangerous protocols with a clear create-link error for %s", (url) => {
+    const parsed = createLinkSchema.safeParse({ destinationUrl: url });
+
+    expect(hasHttpDestinationProtocol(url)).toBe(false);
+    expect(parsed.success).toBe(false);
+    if (parsed.success) return;
+    expect(parsed.error.flatten().fieldErrors.destinationUrl).toContain(
+      "URL must start with http:// or https://",
+    );
   });
 
   it("should parse list query defaults when query params are omitted", () => {

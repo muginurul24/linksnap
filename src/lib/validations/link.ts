@@ -71,9 +71,25 @@ function isBlockedHostname(hostname: string): boolean {
 export function isSafeDestinationUrl(value: string): boolean {
   try {
     const url = new URL(value);
-    if (url.protocol !== "http:" && url.protocol !== "https:") return false;
+    return hasHttpDestinationProtocol(value) && !isBlockedHostname(url.hostname);
+  } catch {
+    return false;
+  }
+}
 
-    return !isBlockedHostname(url.hostname);
+export function hasHttpDestinationProtocol(value: string): boolean {
+  try {
+    const url = new URL(value);
+
+    return url.protocol === "http:" || url.protocol === "https:";
+  } catch {
+    return false;
+  }
+}
+
+function hasAllowedDestinationHost(value: string): boolean {
+  try {
+    return !isBlockedHostname(new URL(value).hostname);
   } catch {
     return false;
   }
@@ -85,7 +101,8 @@ const destinationUrlSchema = z
   .min(1, "Destination URL is required")
   .max(MAX_URL_LENGTH, "Destination URL is too long")
   .url("Enter a valid URL")
-  .refine(isSafeDestinationUrl, "Destination URL is not allowed")
+  .refine(hasHttpDestinationProtocol, "URL must start with http:// or https://")
+  .refine(hasAllowedDestinationHost, "Destination URL host is not allowed")
   .transform((value) => new URL(value).toString());
 
 const slugSchema = z
