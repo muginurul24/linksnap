@@ -1,3 +1,4 @@
+import { createServer } from "node:http";
 import { describe, expect, it, vi } from "vitest";
 import {
   buildPayGateChargePayload,
@@ -133,6 +134,42 @@ describe("PayGate client", () => {
     expect(new Headers(requests[0]?.init?.headers).get("Idempotency-Key")).toBe(
       "idem_lookup_LS-456",
     );
+  });
+
+  it("should use a server-to-server transport without fetch metadata headers by default", async () => {
+    const capturedHeaders: Record<string, string | string[] | undefined> = {};
+    const server = createServer((request, response) => {
+      Object.assign(capturedHeaders, request.headers);
+      response.writeHead(201, { "content-type": "application/json" });
+      response.end(JSON.stringify(createPayGateResponse()));
+    });
+
+    await new Promise<void>((resolve) => {
+      server.listen(0, "127.0.0.1", resolve);
+    });
+
+    try {
+      const address = server.address();
+      if (!address || typeof address === "string") {
+        throw new Error("Unable to start PayGate test server.");
+      }
+
+      const transaction = await createPayGateCharge(createChargeInput(), {
+        apiBaseUrl: `http://127.0.0.1:${address.port}`,
+        storeApiToken: "store-token",
+      });
+
+      expect(transaction.data.order_id).toBe("LS-123");
+      expect(capturedHeaders.origin).toBeUndefined();
+      expect(capturedHeaders["sec-fetch-dest"]).toBeUndefined();
+      expect(capturedHeaders["sec-fetch-mode"]).toBeUndefined();
+      expect(capturedHeaders["sec-fetch-site"]).toBeUndefined();
+      expect(capturedHeaders.authorization).toBe("Bearer store-token");
+    } finally {
+      await new Promise<void>((resolve, reject) => {
+        server.close((error) => (error ? reject(error) : resolve()));
+      });
+    }
   });
 
   it("should require a store API token", async () => {

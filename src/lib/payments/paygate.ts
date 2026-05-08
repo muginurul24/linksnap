@@ -1,9 +1,12 @@
+import { request as httpRequest } from "node:http";
+import { request as httpsRequest } from "node:https";
 import type { PaidPlan, PaymentDuration } from "@/lib/validations/payment";
 import { formatPaymentItemName } from "@/lib/payments/pricing";
 
 const DEFAULT_PAYGATE_API_BASE_URL = "https://paygate.digixsolution.net";
 
 type Fetcher = typeof fetch;
+type PayGateResponseLike = Pick<Response, "json" | "ok" | "status">;
 
 type PayGateCustomer = {
   email: string | null;
@@ -176,8 +179,73 @@ function getPayGateErrorMessage(body: unknown): string {
   return "PayGate failed to create a transaction.";
 }
 
-async function readJsonBody(response: Response): Promise<unknown> {
+async function readJsonBody(response: PayGateResponseLike): Promise<unknown> {
   return response.json().catch(() => null);
+}
+
+function requestWithNodeHttp(
+  url: string,
+  init: {
+    body?: string;
+    headers: Record<string, string>;
+    method: "GET" | "POST";
+  },
+): Promise<PayGateResponseLike> {
+  return new Promise((resolve, reject) => {
+    const parsedUrl = new URL(url);
+    const request = parsedUrl.protocol === "http:" ? httpRequest : httpsRequest;
+    const body = init.body ?? "";
+    const headers = {
+      ...init.headers,
+      ...(body ? { "Content-Length": Buffer.byteLength(body).toString() } : {}),
+    };
+
+    const outgoingRequest = request(
+      parsedUrl,
+      {
+        headers,
+        method: init.method,
+      },
+      (response) => {
+        const chunks: Buffer[] = [];
+
+        response.on("data", (chunk: Buffer | string) => {
+          chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+        });
+        response.on("end", () => {
+          const status = response.statusCode ?? 0;
+          const responseText = Buffer.concat(chunks).toString("utf8");
+
+          resolve({
+            json: async () => JSON.parse(responseText),
+            ok: status >= 200 && status < 300,
+            status,
+          });
+        });
+      },
+    );
+
+    outgoingRequest.on("error", reject);
+
+    if (body) outgoingRequest.write(body);
+    outgoingRequest.end();
+  });
+}
+
+async function sendPayGateRequest(
+  url: string,
+  init: {
+    body?: string;
+    headers: Record<string, string>;
+    method: "GET" | "POST";
+  },
+  config?: PayGateClientConfig,
+): Promise<PayGateResponseLike> {
+  if (config?.fetcher) {
+    return config.fetcher(url, init);
+  }
+
+  return requestWithNodeHttp(url, init);
 }
 
 function parsePayGateTransactionResponse(body: unknown): PayGateTransactionResponse {
@@ -230,8 +298,7 @@ export async function createPayGateCharge(
   config?: PayGateClientConfig,
 ): Promise<PayGateChargeResponse> {
   const storeApiToken = getStoreApiToken(config);
-  const fetcher = config?.fetcher ?? fetch;
-  const response = await fetcher(`${getApiBaseUrl(config)}/v1/transactions/charge`, {
+  const response = await sendPayGateRequest(`${getApiBaseUrl(config)}/v1/transactions/charge`, {
     body: JSON.stringify(buildPayGateChargePayload(input)),
     headers: {
       Accept: "application/json",
@@ -240,7 +307,7 @@ export async function createPayGateCharge(
       "Idempotency-Key": `idem_${input.orderId}`,
     },
     method: "POST",
-  });
+  }, config);
   const body = await readJsonBody(response);
 
   if (!response.ok) {
@@ -259,8 +326,7 @@ export async function getPayGateTransaction(
   config?: PayGateClientConfig,
 ): Promise<PayGateTransactionResponse> {
   const storeApiToken = getStoreApiToken(config);
-  const fetcher = config?.fetcher ?? fetch;
-  const response = await fetcher(
+  const response = await sendPayGateRequest(
     `${getApiBaseUrl(config)}/v1/transactions/${encodeURIComponent(orderId)}`,
     {
       headers: {
@@ -270,6 +336,7 @@ export async function getPayGateTransaction(
       },
       method: "GET",
     },
+    config,
   );
   const body = await readJsonBody(response);
 
