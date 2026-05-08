@@ -73,8 +73,7 @@
       "expo-router",
       "expo-secure-store",
       "expo-notifications",
-      "./plugins/with-certificate-pinning"
-    ],
+          ],
     "extra": {
       "eas": {
         "projectId": "6ef63dd5-df7a-4e1d-96f8-330e79df0556"
