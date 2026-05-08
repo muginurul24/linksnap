@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
 import { auth } from "@/lib/auth";
+import { getSessionUserId, type SessionWithUserId } from "@/lib/auth/session-helpers";
 import {
   createRequestId,
   errorResponse,
@@ -26,12 +27,6 @@ type CampaignRouteContext = {
   params: Promise<{ id: string }>;
 };
 
-type SessionWithUserId = {
-  user?: {
-    id?: unknown;
-  } | null;
-} | null;
-
 class CampaignNotFoundError extends Error {
   constructor() {
     super("Campaign not found.");
@@ -42,10 +37,6 @@ class CampaignForbiddenError extends Error {
   constructor() {
     super("Campaign is owned by another user.");
   }
-}
-
-function getSessionUserId(session: SessionWithUserId): string | null {
-  return typeof session?.user?.id === "string" ? session.user.id : null;
 }
 
 function formatCampaign(

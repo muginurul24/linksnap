@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { PlanGate } from "@/components/plan-gate";
 import { auth } from "@/lib/auth";
+import { getSessionUserId, type SessionWithUserId } from "@/lib/auth/session-helpers";
 import {
   countLinksByUserId,
   listLinksByUserId,
@@ -41,21 +42,11 @@ import { getLinkCreateQuotaState } from "./link-plan-gates";
 
 const PAGE_LIMIT = 20;
 
-type SessionWithUserId = {
-  user?: {
-    id?: unknown;
-  } | null;
-} | null;
-
 type LinksPageProps = {
   searchParams: Promise<{
     search?: string | string[];
   }>;
 };
-
-function getSessionUserId(session: SessionWithUserId): string | null {
-  return typeof session?.user?.id === "string" ? session.user.id : null;
-}
 
 function getShortUrl(slug: string): string {
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL?.trim().replace(/\/+$/, "");

@@ -1,18 +1,9 @@
 import { redirect } from "next/navigation";
 import { BackNavigationLink } from "@/components/dashboard/back-navigation-link";
 import { auth } from "@/lib/auth";
+import { getSessionUserId, type SessionWithUserId } from "@/lib/auth/session-helpers";
 import { countLinkPagesByUserId } from "@/lib/db/queries/links";
 import { CreateLinkForm } from "../link-form";
-
-type SessionWithUserId = {
-  user?: {
-    id?: unknown;
-  } | null;
-} | null;
-
-function getSessionUserId(session: SessionWithUserId): string | null {
-  return typeof session?.user?.id === "string" ? session.user.id : null;
-}
 
 export default async function NewLinkPage() {
   const session = await auth();

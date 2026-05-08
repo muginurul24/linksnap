@@ -12,6 +12,7 @@ import {
 } from "@/lib/analytics/dashboard";
 import { analyticsEmptyState } from "@/lib/analytics/empty-state";
 import { auth } from "@/lib/auth";
+import { getSessionUserId, type SessionWithUserId } from "@/lib/auth/session-helpers";
 import { listClickEventsForUser } from "@/lib/db/queries/click-events";
 import { dashboardAnalyticsQuerySchema } from "@/lib/validations/analytics";
 import { AnalyticsDashboardClient } from "./analytics-dashboard-client";
@@ -24,12 +25,6 @@ type AnalyticsPageProps = {
   }>;
 };
 
-type SessionWithUserId = {
-  user?: {
-    id?: unknown;
-  } | null;
-} | null;
-
 const RANGE_OPTIONS: Array<{
   href: string;
   key: Exclude<DashboardAnalyticsRangeKey, "custom">;
@@ -39,10 +34,6 @@ const RANGE_OPTIONS: Array<{
   { href: "/analytics?range=30", key: "30", label: "Last 30 Days" },
   { href: "/analytics?range=90", key: "90", label: "Last 90 Days" },
 ];
-
-function getSessionUserId(session: SessionWithUserId): string | null {
-  return typeof session?.user?.id === "string" ? session.user.id : null;
-}
 
 function firstParam(value: string | string[] | undefined): string | undefined {
   return Array.isArray(value) ? value[0] : value;

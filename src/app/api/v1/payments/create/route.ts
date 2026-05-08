@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
 import { auth } from "@/lib/auth";
+import { getSessionUserId, type SessionWithUserId } from "@/lib/auth/session-helpers";
 import {
   createRequestId,
   errorResponse,
@@ -36,21 +37,11 @@ import {
 
 export const runtime = "nodejs";
 
-type SessionWithUserId = {
-  user?: {
-    id?: unknown;
-  } | null;
-} | null;
-
 type AuthenticatedPaymentUser = {
   email: string | null;
   name: string | null;
   userId: string;
 };
-
-function getSessionUserId(session: SessionWithUserId): string | null {
-  return typeof session?.user?.id === "string" ? session.user.id : null;
-}
 
 function generatePaymentOrderId(): string {
   const entropy = crypto.randomUUID().replaceAll("-", "").slice(0, 12);

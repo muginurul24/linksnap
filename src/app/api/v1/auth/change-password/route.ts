@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
 import { auth } from "@/lib/auth";
+import { getSessionUserId, type SessionWithUserId } from "@/lib/auth/session-helpers";
 import { hashPassword,
   verifyPassword } from "@/lib/auth/password";
 import {
@@ -17,16 +18,6 @@ import { slidingWindowRateLimit } from "@/lib/redis/rate-limit";
 import { changePasswordSchema } from "@/lib/validations/auth";
 
 export const runtime = "nodejs";
-
-type SessionWithUserId = {
-  user?: {
-    id?: unknown;
-  } | null;
-} | null;
-
-function getSessionUserId(session: SessionWithUserId): string | null {
-  return typeof session?.user?.id === "string" ? session.user.id : null;
-}
 
 export async function POST(request: NextRequest) {
   const requestId = createRequestId();

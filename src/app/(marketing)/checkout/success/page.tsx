@@ -11,6 +11,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { auth } from "@/lib/auth";
+import { getSessionUserId, type SessionWithUserId } from "@/lib/auth/session-helpers";
 import {
   findCheckoutTransactionByOrderId,
   findSubscriptionByUserId,
@@ -27,12 +28,6 @@ type CheckoutSuccessPageProps = {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 };
 
-type SessionWithUserId = {
-  user?: {
-    id?: unknown;
-  } | null;
-} | null;
-
 const description =
   "Review your LinkSnap checkout status and continue to your dashboard.";
 
@@ -44,10 +39,6 @@ export const metadata: Metadata = {
     noIndex: true,
   }),
 };
-
-function getSessionUserId(session: SessionWithUserId): string | null {
-  return typeof session?.user?.id === "string" ? session.user.id : null;
-}
 
 function getFirstParam(value: string | string[] | undefined): string | undefined {
   return Array.isArray(value) ? value[0] : value;

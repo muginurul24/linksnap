@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
 import { auth } from "@/lib/auth";
+import { getSessionUserId, type SessionWithUserId } from "@/lib/auth/session-helpers";
 import {
   createRequestId,
   errorResponse,
@@ -12,16 +13,6 @@ import { getApiEndpointRateLimit, type UserPlan } from "@/lib/links/limits";
 import { deleteDashboardSubscriptionSnapshot } from "@/lib/payments/dashboard-subscription-cache";
 import { slidingWindowRateLimit } from "@/lib/redis/rate-limit";
 import { settingsProfileSchema } from "@/lib/validations/settings";
-
-type SessionWithUserId = {
-  user?: {
-    id?: unknown;
-  } | null;
-} | null;
-
-function getSessionUserId(session: SessionWithUserId): string | null {
-  return typeof session?.user?.id === "string" ? session.user.id : null;
-}
 
 async function getAuthenticatedSettingsUser(
   requestId: string,

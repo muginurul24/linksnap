@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
 import { auth } from "@/lib/auth";
+import { getSessionUserId, type SessionWithUserId } from "@/lib/auth/session-helpers";
 import { authenticateApiKeyRequest } from "@/lib/auth/api-key";
 import {
   createRequestId,
@@ -10,16 +11,6 @@ import {
 import { canAccessApiDocs } from "@/lib/api-docs/access";
 import { createOpenApiSpec } from "@/lib/api-docs/spec";
 import { findBillingUserById } from "@/lib/db/queries/payments";
-
-type SessionWithUserId = {
-  user?: {
-    id?: unknown;
-  } | null;
-} | null;
-
-function getSessionUserId(session: SessionWithUserId): string | null {
-  return typeof session?.user?.id === "string" ? session.user.id : null;
-}
 
 export async function GET(request: NextRequest) {
   const requestId = createRequestId();

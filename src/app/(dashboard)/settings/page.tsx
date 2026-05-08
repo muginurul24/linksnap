@@ -9,6 +9,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { User, Bell, Shield, Key } from "lucide-react";
 import { auth } from "@/lib/auth";
+import { getSessionRole, getSessionUserId } from "@/lib/auth/session-helpers";
 import { type ApiKeyListItem } from "@/lib/db/queries/api-keys";
 import {
   ApiKeysPanel,
@@ -39,14 +40,7 @@ type SettingsPageProps = {
 
 const SETTINGS_TABS = new Set(["api", "notifications", "profile", "security"]);
 
-function getSessionUserId(session: SessionWithUserId): string | null {
-  return typeof session?.user?.id === "string" ? session.user.id : null;
-}
 
-function getSessionRole(session: SessionWithUserId): string | null {
-  const role = session?.user?.role;
-  return typeof role === "string" ? role : null;
-}
 
 function getDefaultSettingsTab(value: string | string[] | undefined): string {
   const raw = Array.isArray(value) ? value[0] : value;

@@ -1,5 +1,6 @@
 import {
   auth } from "@/lib/auth";
+import { getSessionUserId, type SessionWithUserId } from "@/lib/auth/session-helpers";
 import {
   createRequestId,
   errorResponse,
@@ -10,16 +11,6 @@ import { getDashboardOverviewByUserId } from "@/lib/db/queries/dashboard";
 import { getUserPlanById } from "@/lib/db/queries/links";
 import { getApiEndpointRateLimit } from "@/lib/links/limits";
 import { slidingWindowRateLimit } from "@/lib/redis/rate-limit";
-
-type SessionWithUserId = {
-  user?: {
-    id?: unknown;
-  } | null;
-} | null;
-
-function getSessionUserId(session: SessionWithUserId): string | null {
-  return typeof session?.user?.id === "string" ? session.user.id : null;
-}
 
 export async function GET() {
   const requestId = createRequestId();

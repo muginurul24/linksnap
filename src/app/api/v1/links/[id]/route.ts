@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
 import { auth } from "@/lib/auth";
+import { getSessionUserId, type SessionWithUserId } from "@/lib/auth/session-helpers";
 import {
   createRequestId,
   errorResponse,
@@ -36,12 +37,6 @@ type LinkRouteContext = {
   params: Promise<{ id: string }>;
 };
 
-type SessionWithUserId = {
-  user?: {
-    id?: unknown;
-  } | null;
-} | null;
-
 class LinkNotFoundError extends Error {
   constructor() {
     super("Link not found.");
@@ -64,10 +59,6 @@ class CustomSlugPlanError extends Error {
   constructor() {
     super("Custom slugs require an upgraded plan.");
   }
-}
-
-function getSessionUserId(session: SessionWithUserId): string | null {
-  return typeof session?.user?.id === "string" ? session.user.id : null;
 }
 
 function formatLinkDetail(request: NextRequest, link: LinkDetail) {

@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
 import { auth } from "@/lib/auth";
+import { getSessionUserId, type SessionWithUserId } from "@/lib/auth/session-helpers";
 import { authenticateApiKeyRequest } from "@/lib/auth/api-key";
 import {
   createRequestId,
@@ -22,16 +23,6 @@ import {
   listPagesQuerySchema,
   type ListPagesQuery,
 } from "@/lib/validations/link";
-
-type SessionWithUserId = {
-  user?: {
-    id?: unknown;
-  } | null;
-} | null;
-
-function getSessionUserId(session: SessionWithUserId): string | null {
-  return typeof session?.user?.id === "string" ? session.user.id : null;
-}
 
 async function getAuthenticatedUser(
   request: NextRequest,

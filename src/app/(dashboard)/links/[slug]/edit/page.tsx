@@ -1,6 +1,7 @@
 import { notFound, redirect } from "next/navigation";
 import { BackNavigationLink } from "@/components/dashboard/back-navigation-link";
 import { auth } from "@/lib/auth";
+import { getSessionUserId, type SessionWithUserId } from "@/lib/auth/session-helpers";
 import {
   countLinkPagesByUserId,
   findEditableLinkBySlugForUser,
@@ -14,16 +15,6 @@ import {
 type EditLinkPageProps = {
   params: Promise<{ slug: string }>;
 };
-
-type SessionWithUserId = {
-  user?: {
-    id?: unknown;
-  } | null;
-} | null;
-
-function getSessionUserId(session: SessionWithUserId): string | null {
-  return typeof session?.user?.id === "string" ? session.user.id : null;
-}
 
 function toInitialLink(link: Awaited<ReturnType<typeof findEditableLinkBySlugForUser>>): EditableLinkInitialData {
   if (!link) notFound();

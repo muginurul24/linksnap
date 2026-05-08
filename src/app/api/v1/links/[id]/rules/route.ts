@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
 import { auth } from "@/lib/auth";
+import { getSessionUserId, type SessionWithUserId } from "@/lib/auth/session-helpers";
 import {
   createRequestId,
   errorResponse,
@@ -36,12 +37,6 @@ import { getSmartRulesCacheKey } from "@/lib/rules/rule-engine";
 type SmartRulesRouteContext = {
   params: Promise<{ id: string }>;
 };
-
-type SessionWithUserId = {
-  user?: {
-    id?: unknown;
-  } | null;
-} | null;
 
 class LinkNotFoundError extends Error {
   constructor() {
@@ -84,10 +79,6 @@ class SmartRuleNotFoundError extends Error {
   constructor() {
     super("Smart Rule not found.");
   }
-}
-
-function getSessionUserId(session: SessionWithUserId): string | null {
-  return typeof session?.user?.id === "string" ? session.user.id : null;
 }
 
 function getQueryParams(request: NextRequest): Record<string, string> {

@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { Download, QrCode } from "lucide-react";
 import { auth } from "@/lib/auth";
+import { getSessionUserId, type SessionWithUserId } from "@/lib/auth/session-helpers";
 import { listLinksByUserId, type ListedLink } from "@/lib/db/queries/links";
 import { findBillingUserById } from "@/lib/db/queries/payments";
 import { hydrateRedirectClickCounts } from "@/lib/links/click-count-cache";
@@ -24,16 +25,6 @@ import type { UserPlan } from "@/lib/links/limits";
 import { getQrDownloadQuotaState } from "./qr-plan-gates";
 
 const PAGE_LIMIT = 60;
-
-type SessionWithUserId = {
-  user?: {
-    id?: unknown;
-  } | null;
-} | null;
-
-function getSessionUserId(session: SessionWithUserId): string | null {
-  return typeof session?.user?.id === "string" ? session.user.id : null;
-}
 
 function getShortUrl(slug: string): string {
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL?.trim().replace(/\/+$/, "");

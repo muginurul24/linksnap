@@ -1,6 +1,7 @@
 import { notFound, redirect } from "next/navigation";
 import { BackNavigationLink } from "@/components/dashboard/back-navigation-link";
 import { auth } from "@/lib/auth";
+import { getSessionUserId, type SessionWithUserId } from "@/lib/auth/session-helpers";
 import { findCampaignById } from "@/lib/db/queries/campaigns";
 import { campaignIdParamsSchema } from "@/lib/validations/campaign";
 import {
@@ -11,16 +12,6 @@ import {
 type EditCampaignPageProps = {
   params: Promise<{ id: string }>;
 };
-
-type SessionWithUserId = {
-  user?: {
-    id?: unknown;
-  } | null;
-} | null;
-
-function getSessionUserId(session: SessionWithUserId): string | null {
-  return typeof session?.user?.id === "string" ? session.user.id : null;
-}
 
 function toInitialCampaign(
   campaign: Awaited<ReturnType<typeof findCampaignById>>,

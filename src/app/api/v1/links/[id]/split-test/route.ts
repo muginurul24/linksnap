@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
 import { auth } from "@/lib/auth";
+import { getSessionUserId, type SessionWithUserId } from "@/lib/auth/session-helpers";
 import {
   createRequestId,
   errorResponse,
@@ -24,12 +25,6 @@ type SplitTestRouteContext = {
   params: Promise<{ id: string }>;
 };
 
-type SessionWithUserId = {
-  user?: {
-    id?: unknown;
-  } | null;
-} | null;
-
 class LinkNotFoundError extends Error {
   constructor() {
     super("Link not found.");
@@ -40,10 +35,6 @@ class LinkForbiddenError extends Error {
   constructor() {
     super("Link is owned by another user.");
   }
-}
-
-function getSessionUserId(session: SessionWithUserId): string | null {
-  return typeof session?.user?.id === "string" ? session.user.id : null;
 }
 
 function formatSplitTest(splitTest: SplitTestRecord | null) {

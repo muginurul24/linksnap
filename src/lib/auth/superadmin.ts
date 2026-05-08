@@ -1,22 +1,8 @@
 import { auth } from "@/lib/auth";
 import { isSuperAdmin } from "@/lib/auth/superadmin-utils";
+import { getSessionUserId, getSessionRole } from "@/lib/auth/session-helpers";
 
 export { isSuperAdmin } from "@/lib/auth/superadmin-utils";
-
-type SuperadminSession = {
-  user?: {
-    id?: unknown;
-    role?: unknown;
-  } | null;
-};
-
-function getSessionRole(session: SuperadminSession | null): string | null {
-  return typeof session?.user?.role === "string" ? session.user.role : null;
-}
-
-function getSessionUserId(session: SuperadminSession | null): string | null {
-  return typeof session?.user?.id === "string" ? session.user.id : null;
-}
 
 export type RequireSuperAdminResult =
   | { ok: true; userId: string }

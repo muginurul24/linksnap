@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
 import { auth } from "@/lib/auth";
+import { getSessionUserId, type SessionWithUserId } from "@/lib/auth/session-helpers";
 import {
   createRequestId,
   errorResponse,
@@ -40,12 +41,6 @@ type CampaignLinksRouteContext = {
   params: Promise<{ id: string }>;
 };
 
-type SessionWithUserId = {
-  user?: {
-    id?: unknown;
-  } | null;
-} | null;
-
 type ListQueryParseResult = { query: ListCampaignsQuery } | { response: Response };
 
 class CampaignNotFoundError extends Error {
@@ -70,10 +65,6 @@ class LinkOwnershipError extends Error {
   constructor() {
     super("One or more links are not owned by the user.");
   }
-}
-
-function getSessionUserId(session: SessionWithUserId): string | null {
-  return typeof session?.user?.id === "string" ? session.user.id : null;
 }
 
 function formatLink(request: NextRequest, link: ListedLink) {

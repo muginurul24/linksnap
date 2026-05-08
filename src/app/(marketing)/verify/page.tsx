@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { createPublicMetadata } from "@/lib/seo/metadata";
 import { auth } from "@/lib/auth";
+import { getSessionUserId, type SessionWithUserId } from "@/lib/auth/session-helpers";
 import { findUserVerificationStatusById } from "@/lib/db/queries/users";
 import { VerifyEmailForm } from "./verify-email-form";
 
@@ -17,16 +18,6 @@ export const metadata: Metadata = {
     noIndex: true,
   }),
 };
-
-type SessionWithUserId = {
-  user?: {
-    id?: unknown;
-  } | null;
-} | null;
-
-function getSessionUserId(session: SessionWithUserId): string | null {
-  return typeof session?.user?.id === "string" ? session.user.id : null;
-}
 
 export default async function VerifyPage() {
   const session = await auth();

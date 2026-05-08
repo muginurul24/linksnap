@@ -1,17 +1,8 @@
 import { redirect } from "next/navigation";
 import { BackNavigationLink } from "@/components/dashboard/back-navigation-link";
 import { auth } from "@/lib/auth";
+import { getSessionUserId, type SessionWithUserId } from "@/lib/auth/session-helpers";
 import { CampaignForm } from "../campaign-form";
-
-type SessionWithUserId = {
-  user?: {
-    id?: unknown;
-  } | null;
-} | null;
-
-function getSessionUserId(session: SessionWithUserId): string | null {
-  return typeof session?.user?.id === "string" ? session.user.id : null;
-}
 
 export default async function NewCampaignPage() {
   const session = await auth();

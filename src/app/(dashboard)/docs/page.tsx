@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { BookOpen, KeyRound } from "lucide-react";
 import { auth } from "@/lib/auth";
+import { getSessionRole, getSessionUserId } from "@/lib/auth/session-helpers";
 import { getApiDocsPageRedirect } from "@/lib/api-docs/access";
 import { API_DOC_SECTIONS, type ApiEndpointDoc } from "@/lib/api-docs/spec";
 import { findBillingUserById } from "@/lib/db/queries/payments";
@@ -22,14 +23,7 @@ type SessionWithUserId = {
   } | null;
 } | null;
 
-function getSessionUserId(session: SessionWithUserId): string | null {
-  return typeof session?.user?.id === "string" ? session.user.id : null;
-}
 
-function getSessionRole(session: SessionWithUserId): string | null {
-  const role = session?.user?.role;
-  return typeof role === "string" ? role : null;
-}
 
 function EndpointCard({ endpoint }: { endpoint: ApiEndpointDoc }) {
   const requestJson = endpoint.requestExample

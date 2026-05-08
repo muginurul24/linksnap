@@ -18,6 +18,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { auth } from "@/lib/auth";
+import { getSessionUserId, type SessionWithUserId } from "@/lib/auth/session-helpers";
 import {
   findBillingUserById,
   findSubscriptionByUserId,
@@ -34,12 +35,6 @@ import {
 } from "@/lib/plans/definitions";
 import type { PaidPlan } from "@/lib/validations/payment";
 import { UpgradeButton } from "./upgrade-button";
-
-type SessionWithUserId = {
-  user?: {
-    id?: unknown;
-  } | null;
-} | null;
 
 type BillingPageProps = {
   searchParams: Promise<{
@@ -71,10 +66,6 @@ function toPlanCard(plan: PlanDefinition): PlanCard {
 }
 
 const plans: PlanCard[] = PLANS.map(toPlanCard);
-
-function getSessionUserId(session: SessionWithUserId): string | null {
-  return typeof session?.user?.id === "string" ? session.user.id : null;
-}
 
 function getUpgradeReason(value: string | string[] | undefined): string | null {
   const raw = Array.isArray(value) ? value[0] : value;

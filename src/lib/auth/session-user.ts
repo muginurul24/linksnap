@@ -1,9 +1,2 @@
-export type SessionWithUserId = {
-  user?: {
-    id?: unknown;
-  } | null;
-} | null;
-
-export function getSessionUserId(session: SessionWithUserId): string | null {
-  return typeof session?.user?.id === "string" ? session.user.id : null;
-}
+// Re-export from canonical shared helper module (Phase 19.1)
+export { getSessionUserId, getSessionRole, getSessionString, type SessionWithUserId, type SessionWithRole } from "@/lib/auth/session-helpers";

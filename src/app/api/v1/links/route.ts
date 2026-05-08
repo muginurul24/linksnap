@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
 import { auth } from "@/lib/auth";
+import { getSessionUserId, type SessionWithUserId } from "@/lib/auth/session-helpers";
 import { authenticateApiKeyRequest } from "@/lib/auth/api-key";
 import {
   createRequestId,
@@ -42,12 +43,6 @@ import {
 
 const MAX_SLUG_GENERATION_ATTEMPTS = 8;
 
-type SessionWithUserId = {
-  user?: {
-    id?: unknown;
-  } | null;
-} | null;
-
 class LinkSlugConflictError extends Error {
   constructor() {
     super("Link slug is already taken.");
@@ -70,10 +65,6 @@ class LinkQuotaExceededError extends Error {
   constructor() {
     super("Link quota exceeded.");
   }
-}
-
-function getSessionUserId(session: SessionWithUserId): string | null {
-  return typeof session?.user?.id === "string" ? session.user.id : null;
 }
 
 function withShortUrl<T extends { slug: string }>(request: NextRequest, link: T) {

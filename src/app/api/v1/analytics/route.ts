@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
 import { auth } from "@/lib/auth";
+import { getSessionUserId, type SessionWithUserId } from "@/lib/auth/session-helpers";
 import {
   buildDashboardAnalyticsData,
   DashboardAnalyticsRangeError,
@@ -16,16 +17,6 @@ import { getUserPlanById } from "@/lib/db/queries/links";
 import { getApiEndpointRateLimit, type UserPlan } from "@/lib/links/limits";
 import { slidingWindowRateLimit } from "@/lib/redis/rate-limit";
 import { dashboardAnalyticsQuerySchema } from "@/lib/validations/analytics";
-
-type SessionWithUserId = {
-  user?: {
-    id?: unknown;
-  } | null;
-} | null;
-
-function getSessionUserId(session: SessionWithUserId): string | null {
-  return typeof session?.user?.id === "string" ? session.user.id : null;
-}
 
 function getQueryParams(request: NextRequest): Record<string, string> {
   return Object.fromEntries(request.nextUrl.searchParams.entries());

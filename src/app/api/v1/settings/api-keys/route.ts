@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
 import { auth } from "@/lib/auth";
+import { getSessionUserId, type SessionWithUserId } from "@/lib/auth/session-helpers";
 import {
   canUseApiKeys,
   generateApiKey,
@@ -24,20 +25,10 @@ import { createApiKeySchema } from "@/lib/validations/api-key";
 
 export const runtime = "nodejs";
 
-type SessionWithUserId = {
-  user?: {
-    id?: unknown;
-  } | null;
-} | null;
-
 type ApiKeySettingsUser = {
   plan: Extract<UserPlan, "PRO" | "BUSINESS">;
   userId: string;
 };
-
-function getSessionUserId(session: SessionWithUserId): string | null {
-  return typeof session?.user?.id === "string" ? session.user.id : null;
-}
 
 async function getAuthenticatedApiKeySettingsUser(
   method: string,

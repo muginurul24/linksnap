@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
 import { auth } from "@/lib/auth";
+import { getSessionUserId, type SessionWithUserId } from "@/lib/auth/session-helpers";
 import {
   createRequestId,
   errorResponse,
@@ -34,12 +35,6 @@ type LinkPageRouteContext = {
   params: Promise<{ id: string }>;
 };
 
-type SessionWithUserId = {
-  user?: {
-    id?: unknown;
-  } | null;
-} | null;
-
 class LinkNotFoundError extends Error {
   constructor() {
     super("Link not found.");
@@ -56,10 +51,6 @@ class LinkPageQuotaExceededError extends Error {
   constructor() {
     super("Link Page quota exceeded.");
   }
-}
-
-function getSessionUserId(session: SessionWithUserId): string | null {
-  return typeof session?.user?.id === "string" ? session.user.id : null;
 }
 
 function formatLinkPage(page: LinkPageRecord | null) {

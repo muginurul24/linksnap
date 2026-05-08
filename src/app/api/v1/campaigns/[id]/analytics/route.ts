@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
 import { auth } from "@/lib/auth";
+import { getSessionUserId, type SessionWithUserId } from "@/lib/auth/session-helpers";
 import {
   createRequestId,
   errorResponse,
@@ -36,12 +37,6 @@ type CampaignAnalyticsRouteContext = {
   params: Promise<{ id: string }>;
 };
 
-type SessionWithUserId = {
-  user?: {
-    id?: unknown;
-  } | null;
-} | null;
-
 type CampaignAnalyticsParseResult =
   | { query: CampaignAnalyticsQuery }
   | { response: Response };
@@ -69,10 +64,6 @@ class CampaignComparisonNotFoundError extends Error {
   constructor() {
     super("One or more comparison campaigns were not found.");
   }
-}
-
-function getSessionUserId(session: SessionWithUserId): string | null {
-  return typeof session?.user?.id === "string" ? session.user.id : null;
 }
 
 function getQueryParams(request: NextRequest): Record<string, string> {

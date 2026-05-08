@@ -6,6 +6,7 @@ import { AppSidebar, type AppSidebarUser } from "@/components/dashboard/app-side
 import { AppHeader } from "@/components/dashboard/app-header";
 import { SessionTimeout } from "@/components/dashboard/session-timeout";
 import { auth } from "@/lib/auth";
+import { getSessionRole, getSessionUserId } from "@/lib/auth/session-helpers";
 import { PlanProvider } from "@/lib/auth/plan-context";
 import type { UserPlan } from "@/lib/links/limits";
 import { logger } from "@/lib/observability/logger";
@@ -21,10 +22,6 @@ type SessionWithUserId = {
   } | null;
 } | null;
 
-function getSessionUserId(session: SessionWithUserId): string | null {
-  return typeof session?.user?.id === "string" ? session.user.id : null;
-}
-
 function getSessionString(
   session: SessionWithUserId,
   field: "email" | "expires" | "image" | "name",
@@ -33,10 +30,7 @@ function getSessionString(
   return typeof value === "string" ? value : null;
 }
 
-function getSessionRole(session: SessionWithUserId): string | null {
-  const role = session?.user as { role?: unknown } | undefined;
-  return typeof role?.role === "string" ? role.role : null;
-}
+
 
 export default async function DashboardLayout({
   children,

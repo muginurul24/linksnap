@@ -13,6 +13,7 @@ import { Switch } from "@/components/ui/switch";
 import { ButtonLink } from "@/components/ui/button-link";
 import { EmptyState } from "@/components/dashboard/empty-state";
 import { auth } from "@/lib/auth";
+import { getSessionUserId, type SessionWithUserId } from "@/lib/auth/session-helpers";
 import {
   listLinkPagesByUserId,
   type ListedLinkPage,
@@ -33,16 +34,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-
-type SessionWithUserId = {
-  user?: {
-    id?: unknown;
-  } | null;
-} | null;
-
-function getSessionUserId(session: SessionWithUserId): string | null {
-  return typeof session?.user?.id === "string" ? session.user.id : null;
-}
 
 function LinkPageCard({ page }: { page: ListedLinkPage }) {
   const editHref = `/links/${page.slug}/edit`;

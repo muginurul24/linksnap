@@ -18,6 +18,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { auth } from "@/lib/auth";
+import { getSessionUserId, type SessionWithUserId } from "@/lib/auth/session-helpers";
 import {
   listCampaignsByUserId,
   type CampaignWithLinkCount,
@@ -28,16 +29,6 @@ import { CampaignActions } from "./campaign-actions";
 import { getCampaignCreateQuotaState } from "./campaign-plan-gates";
 
 const PAGE_LIMIT = 50;
-
-type SessionWithUserId = {
-  user?: {
-    id?: unknown;
-  } | null;
-} | null;
-
-function getSessionUserId(session: SessionWithUserId): string | null {
-  return typeof session?.user?.id === "string" ? session.user.id : null;
-}
 
 function formatDate(date: Date): string {
   return new Intl.DateTimeFormat("en", {
