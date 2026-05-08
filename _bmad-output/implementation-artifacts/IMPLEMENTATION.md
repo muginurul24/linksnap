@@ -1471,12 +1471,12 @@ rtk bun run db:studio    # Open Drizzle Studio (in another terminal)
 - [x] ✅ Already fixed by Claw Kun — try/catch around `syncSubscriptionStatusForUser` and `findBillingUserById`
 
 ### TASK 17.15 — Add Playwright E2E Tests for Critical Flows
-- [ ] File: `e2e/auth.spec.ts` — register → verify → login → dashboard → logout
-- [ ] File: `e2e/link.spec.ts` — create link → visit short URL → verify analytics
-- [ ] File: `e2e/payment.spec.ts` — visit billing → click upgrade → verify Midtrans redirect
-- [ ] File: `e2e/settings.spec.ts` — change profile → change password → verify persistence
-- [ ] Run: `rtk bun run test:e2e` — all 4 specs must pass
-- [ ] Add to CI pipeline (after build step, optional for PR)
+- [x] File: `tests/e2e/auth.spec.ts` — register → verify → login → dashboard → logout
+- [x] File: `tests/e2e/link-flow.spec.ts` — create link → visit short URL → verify analytics
+- [x] File: `tests/e2e/payment-flow.spec.ts` — visit billing → click upgrade → verify Midtrans redirect
+- [x] File: `tests/e2e/settings-flow.spec.ts` — change profile → change password → verify persistence
+- [x] Run: `rtk bun run test:e2e` — all 4 specs must pass
+- [x] Add to CI pipeline (after build step, optional for PR)
 
 ---
 
@@ -1498,4 +1498,290 @@ rtk bun run db:studio    # Open Drizzle Studio (in another terminal)
 
 **🔴 BLOCKERS for go-live:** 17.1, 17.2, 17.3 — must be done before production launch.
 
-Good luck. Ship it. 🚀
+---
+
+## 👑 Phase 18: Superadmin — Platform Control Center
+
+> **Source:** Rafi — 2026-05-08. Grant `iqooz9xmg@gmail.com` highest-privilege access. Full user management, system analytics, and audit trail. Superadmin overrides all plan gates — every feature, every endpoint, no quota limits.
+
+> **🔒 SECURITY MANDATE:** This is the most sensitive phase in the entire project. Superadmin actions MUST be audited. Superadmin routes MUST have stricter rate limits + shorter session timeouts. Zero shortcuts on authorization checks.
+
+### 🔴 CRITICAL — Design Principles (Read Before Coding)
+
+1. **Set-once via DB only** — superadmin role is NOT assignable through any API. It's set via migration/seed on a known email hash. No self-escalation vector.
+2. **Audit everything** — every superadmin action (user plan change, user suspension, system config) writes to an append-only audit log table.
+3. **Plan bypass, not plan change** — superadmin keeps their plan in DB, but auth middleware overrides feature gates to `BUSINESS+` equivalent. Don't mutate `users.plan`.
+4. **Short session for admin pages** — superadmin dashboard uses stricter JWT validation (re-verify role on each admin request, not just at login).
+5. **No delete, only suspend** — superadmin cannot hard-delete users. Only soft-delete/suspend. Keeps data integrity.
+6. **Rate limit: 30 req/min for admin routes** — tighter than normal API routes (which are 30–120/min depending on plan).
+
+### 🏗️ Architecture Overview
+
+```
+src/
+├── lib/
+│   ├── auth/
+│   │   ├── superadmin.ts          # isSuperAdmin(), requireSuperAdmin()
+│   │   └── session-token.ts       # [MODIFIED] propagate role to JWT
+│   ├── db/
+│   │   ├── schema.ts              # [MODIFIED] adminAuditLog table
+│   │   └── queries/
+│   │       ├── admin.ts           # listUsers, getUserDetail, updateUserPlan, suspendUser
+│   │       └── admin-audit.ts     # insertAuditLog, listAuditLogs
+│   ├── admin/
+│   │   ├── guard.ts               # Superadmin route middleware
+│   │   └── audit.ts               # Audit log helpers
+│   └── validations/
+│       └── admin.ts               # Admin action schemas
+├── app/
+│   ├── api/v1/admin/
+│   │   ├── users/route.ts         # GET list, PATCH bulk
+│   │   ├── users/[id]/route.ts    # GET detail, PATCH plan, POST suspend
+│   │   ├── analytics/route.ts     # GET system-wide stats
+│   │   └── audit-log/route.ts     # GET audit trail
+│   └── (dashboard)/
+│       └── admin/
+│           ├── page.tsx            # Admin dashboard
+│           ├── users/page.tsx      # User management table
+│           ├── users/[id]/page.tsx # User detail + plan override
+│           ├── analytics/page.tsx  # System analytics
+│           └── audit-log/page.tsx  # Audit trail viewer
+└── components/
+    └── admin/
+        ├── admin-nav.tsx          # Admin sidebar section
+        ├── user-table.tsx         # Searchable user table
+        ├── plan-override-dialog.tsx
+        └── audit-log-table.tsx
+```
+
+---
+
+### TASK 18.1 — Database: Superadmin Role + Audit Log Table
+- [ ] Add `ADMIN_AUDIT_LOG_TABLE` constant comment to keep schema organized
+- [ ] Add `adminAuditLog` table to `src/lib/db/schema.ts`:
+  ```typescript
+  export const adminAuditLog = pgTable(
+    "admin_audit_log",
+    {
+      id: uuid("id").defaultRandom().primaryKey(),
+      adminUserId: uuid("admin_user_id")
+        .references(() => users.id, { onDelete: "set null" })
+        .notNull(),
+      action: varchar("action", { length: 50 }).notNull(),
+      // action values: "user.plan.change", "user.suspend", "user.unsuspend",
+      //               "system.config", "admin.login"
+      targetUserId: uuid("target_user_id")
+        .references(() => users.id, { onDelete: "set null" }),
+      metadata: jsonb("metadata").$type<Record<string, unknown>>(),
+      ipAddress: varchar("ip_address", { length: 45 }),
+      createdAt: timestamp("created_at").defaultNow().notNull(),
+    },
+    (table) => ({
+      adminUserIdIdx: index("audit_admin_user_idx").on(table.adminUserId),
+      actionIdx: index("audit_action_idx").on(table.action),
+      createdAtIdx: index("audit_created_at_idx").on(table.createdAt),
+    }),
+  );
+  ```
+- [ ] Add `SUPERADMIN_ROLE = "superadmin"` constant to `src/lib/db/schema.ts`
+- [ ] Run `rtk bun run db:push`
+- [ ] Tests: unit (audit log table columns, indexes exist)
+
+### TASK 18.2 — Auth: Propagate Role to JWT + Superadmin Guards
+- [ ] File: `src/lib/auth/session-token.ts`
+  - Add `role` to JWT on login: query `users.role` and set `token.role`
+  - Add `role` to session from JWT: `session.user.role = token.role`
+- [ ] File: `src/lib/auth/superadmin.ts` (NEW)
+  ```typescript
+  export const SUPERADMIN_ROLE = "superadmin";
+  
+  export function isSuperAdmin(role: string | null | undefined): boolean {
+    return role === SUPERADMIN_ROLE;
+  }
+  
+  export async function requireSuperAdmin(): Promise<string> {
+    const session = await auth();
+    const userId = typeof session?.user?.id === "string" ? session.user.id : null;
+    const role = (session?.user as { role?: string } | undefined)?.role;
+    
+    if (!userId || !isSuperAdmin(role)) {
+      throw new Error("Superadmin access required.");
+    }
+    return userId;
+  }
+  ```
+- [ ] File: `src/lib/links/limits.ts` — add plan bypass:
+  ```typescript
+  export function resolveEffectivePlan(plan: UserPlan, role?: string | null): UserPlan {
+    if (isSuperAdmin(role)) return "BUSINESS";
+    return plan;
+  }
+  ```
+  Update all quota functions to accept optional `role` param and call `resolveEffectivePlan`.
+- [ ] Tests: unit (JWT role propagation), unit (isSuperAdmin), unit (plan bypass)
+
+### TASK 18.3 — Seed: Promote iqooz9xmg@gmail.com to Superadmin
+- [ ] File: `scripts/seed-superadmin.ts` (NEW)
+  - Accept `--email=` CLI arg (default: `iqooz9xmg@gmail.com`)
+  - Query user by email, update `role = 'superadmin'`
+  - Idempotent — safe to run multiple times
+  - Log result: "User {email} is now superadmin" or "User {email} already superadmin"
+  - Exit code 1 if user not found (with clear error message)
+- [ ] Add npm script: `"seed:superadmin": "bun run scripts/seed-superadmin.ts"`
+- [ ] Document in `_bmad-output/planning-artifacts/` — create `SUPERADMIN.md` with setup instructions
+- [ ] Tests: unit (seed script logic, idempotency)
+- [ ] **Run the script** — promote `iqooz9xmg@gmail.com`
+
+### TASK 18.4 — Admin API: User Management Endpoints
+- [ ] File: `src/lib/db/queries/admin.ts` (NEW)
+  - `listAllUsers({ limit, page, search, plan?, status? })` — returns paginated user list with plan, status, link count, created date
+  - `getUserDetailById(id)` — full user record minus password hash
+  - `updateUserPlan({ userId, plan, adminUserId })` — change plan, log to audit
+  - `suspendUser({ userId, adminUserId })` — soft delete (set `deletedAt`)
+  - `unsuspendUser({ userId, adminUserId })` — clear `deletedAt`
+  - `getSystemStats()` — total users, total links, total clicks, total revenue (sum transactions)
+- [ ] File: `src/lib/validations/admin.ts` (NEW)
+  - `adminUpdateUserPlanSchema` — Zod: plan must be one of FREE/PRO/BUSINESS
+  - `adminUserListQuerySchema` — Zod: page, limit, search, plan filter
+- [ ] File: `src/lib/admin/guard.ts` (NEW)
+  - `adminRouteGuard()` — wrapper for API routes: verifies superadmin role, logs action to audit
+  - Returns 403 with structured error if not superadmin
+  - Returns 401 if not authenticated at all
+- [ ] File: `src/app/api/v1/admin/users/route.ts` (NEW)
+  - GET: list all users (paginated, searchable, filterable by plan)
+  - Requires superadmin auth
+- [ ] File: `src/app/api/v1/admin/users/[id]/route.ts` (NEW)
+  - GET: user detail (profile, plan, link count, subscription status, recent activity)
+  - PATCH: change user plan (body: `{ plan: "PRO" | "BUSINESS" | "FREE" }`)
+  - POST: suspend user (body: `{ action: "suspend" | "unsuspend" }`)
+  - All actions write to audit log
+- [ ] File: `src/app/api/v1/admin/analytics/route.ts` (NEW)
+  - GET: system-wide stats (total users, total links, total clicks, revenue, top plans distribution)
+- [ ] File: `src/app/api/v1/admin/audit-log/route.ts` (NEW)
+  - GET: paginated audit log entries, filterable by action type
+- [ ] Rate limit: 30 req/min for all `/api/v1/admin/*` routes
+- [ ] Tests: integration (list users, get user detail, change plan, suspend, unsuspend, system stats, audit log)
+
+### TASK 18.5 — Admin Frontend: Sidebar + Dashboard Pages
+- [ ] File: `src/components/dashboard/app-sidebar.tsx`
+  - Add "Admin" nav section (only visible when `role === "superadmin"`):
+    - "Admin Dashboard" → `/admin` with `Shield` icon
+    - Separator line between Account and Admin sections
+  - Use `usePlan()` or session to check `role`
+- [ ] File: `src/app/(dashboard)/admin/page.tsx` (NEW)
+  - Admin overview: cards for total users, total links, total clicks, MRR estimate
+  - Quick actions: "Manage Users", "View Audit Log"
+  - Recent audit log entries (last 10)
+- [ ] File: `src/app/(dashboard)/admin/users/page.tsx` (NEW)
+  - Searchable, filterable user table
+  - Columns: email, name, plan badge, links count, status (active/suspended), joined date
+  - Click row → user detail page
+- [ ] File: `src/app/(dashboard)/admin/users/[id]/page.tsx` (NEW)
+  - User profile card (email, name, avatar, join date)
+  - Plan section: current plan badge + "Change Plan" dropdown (FREE/PRO/BUSINESS)
+  - Stats: total links, total clicks, subscription status
+  - Danger zone: "Suspend User" / "Unsuspend User" button with confirmation dialog
+- [ ] File: `src/app/(dashboard)/admin/analytics/page.tsx` (NEW)
+  - System-wide charts: users over time, links created, clicks, revenue
+  - Plan distribution pie chart
+  - Top users by link count
+- [ ] File: `src/app/(dashboard)/admin/audit-log/page.tsx` (NEW)
+  - Filterable audit log table
+  - Columns: timestamp, admin, action (with badge color), target user, metadata
+  - Filter by action type
+- [ ] All admin pages: loading skeletons, empty states, error boundaries
+- [ ] Tests: unit (admin nav visibility), integration (admin pages load with data)
+
+### TASK 18.6 — Plan Bypass: Superadmin Sees Everything
+- [ ] File: `src/lib/auth/plan-context.ts`
+  - Accept optional `role` prop alongside `userPlan`
+  - Resolve effective plan via `resolveEffectivePlan(plan, role)`
+- [ ] File: `src/app/(dashboard)/layout.tsx`
+  - Pass `role` from session to `PlanProvider`
+- [ ] File: `src/lib/links/limits.ts`
+  - Update all functions: `getLinkQuota(plan, role?)`, `getApiEndpointRateLimit(plan, role?)`, etc.
+  - Each calls `resolveEffectivePlan(plan, role)` internally
+- [ ] Verify: superadmin sees all PRO/BUSINESS features (API docs, unlimited links, etc.) regardless of actual plan in DB
+- [ ] Verify: plan badge in sidebar shows "Superadmin" instead of plan name for superadmin users
+- [ ] Tests: unit (plan bypass for each quota function), integration (superadmin sees premium features)
+
+### TASK 18.7 — Security: Stricter Admin Session + Rate Limiting
+- [ ] File: `src/lib/admin/guard.ts`
+  - Superadmin session re-validation: query DB for `role` on every admin API call (not just JWT trust)
+  - If user was demoted (role changed since JWT issued), reject immediately
+  - Return 403 with code `SUPERADMIN_REQUIRED`
+- [ ] File: `src/lib/redis/rate-limit.ts` — no changes needed, reuse `slidingWindowRateLimit`
+- [ ] File: `src/app/api/v1/admin/*` — all routes
+  - Add `X-Admin-Action: true` response header for audit trail correlation
+  - Rate limit key: `admin:api:{userId}` with 30 req/min window
+- [ ] File: `src/proxy.ts`
+  - Add admin route prefix to proxy matcher: `/api/v1/admin/:path*`
+- [ ] Tests: integration (demoted superadmin gets 403), unit (rate limit enforced)
+
+### TASK 18.8 — Audit Log: Write + Display
+- [ ] File: `src/lib/admin/audit.ts` (NEW)
+  ```typescript
+  export async function writeAdminAuditLog({
+    action,
+    adminUserId,
+    metadata,
+    targetUserId,
+  }: {
+    action: string;
+    adminUserId: string;
+    metadata?: Record<string, unknown>;
+    targetUserId?: string;
+  }): Promise<void>
+  ```
+  - Fire-and-forget (don't block admin action on audit log failure)
+  - Log to `adminAuditLog` table
+- [ ] File: `src/lib/db/queries/admin-audit.ts` (NEW)
+  - `insertAdminAuditLog(...)` — insert single entry
+  - `listAdminAuditLogs({ limit, page, action? })` — paginated, filterable
+- [ ] Wire audit logging into:
+  - User plan change (18.4)
+  - User suspend/unsuspend (18.4)
+  - Any future admin actions
+- [ ] Tests: unit (audit log write + read), integration (audit entries appear after admin action)
+
+### TASK 18.9 — E2E: Superadmin Flow
+- [ ] File: `tests/e2e/admin-flow.spec.ts` (NEW)
+  - Login as superadmin → verify admin nav appears
+  - Navigate to admin dashboard → verify stats cards render
+  - Navigate to user management → search for a user → verify results
+  - Click user → change plan → verify success toast + audit log entry
+  - Suspend user → verify user shows as suspended
+  - View audit log → verify entries appear
+- [ ] Tests must pass: `rtk bun run test:e2e -- tests/e2e/admin-flow.spec.ts`
+
+---
+
+## 🚀 Ready to Start?
+
+```bash
+cd ~/projects/linksnap
+rtk bun run dev          # Start development
+rtk bun run db:studio    # Open Drizzle Studio (in another terminal)
+
+# After DB changes:
+rtk bun run db:push
+
+# Promote superadmin:
+rtk bun run seed:superadmin
+```
+
+**Priority order:** 18.1 → 18.2 → 18.3 → 18.4 → 18.5 → 18.6 → 18.7 → 18.8 → 18.9
+
+**Estimated total:** 126 + 9 = 135 tasks
+**Estimated timeline:** 2–3 days (this is a full feature, not a hardening pass)
+
+**👑 SUPERADMIN EMAIL:** `iqooz9xmg@gmail.com`
+
+**Critical security rules (Codex — do NOT violate):**
+1. ❌ NEVER expose superadmin role in client-side-only checks — always verify server-side
+2. ❌ NEVER allow role change through any API endpoint — seed script only
+3. ❌ NEVER skip audit logging — every admin mutation MUST write to `adminAuditLog`
+4. ❌ NEVER allow superadmin to delete users — suspend only
+5. ❌ NEVER trust client-side role checks — re-verify on every admin API call
+
+Good luck. Ship it. 👑🚀
