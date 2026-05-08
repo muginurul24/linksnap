@@ -1,5 +1,9 @@
 import { describe, it, expect } from "vitest";
-import { isSidebarItemActive, shouldShowSidebarUpgradeCard } from "@/components/dashboard/app-sidebar";
+import {
+  isSidebarItemActive,
+  shouldShowSidebarUpgradeCard,
+  getSidebarMainNavItems,
+} from "@/components/dashboard/app-sidebar";
 
 describe("isSidebarItemActive", () => {
   it("exact match for /dashboard", () => {
@@ -26,8 +30,12 @@ describe("isSidebarItemActive", () => {
 });
 
 describe("shouldShowSidebarUpgradeCard", () => {
-  it("shows for FREE", () => {
+  it("shows for FREE without superadmin", () => {
     expect(shouldShowSidebarUpgradeCard("FREE")).toBe(true);
+  });
+
+  it("hides for superadmin with FREE plan", () => {
+    expect(shouldShowSidebarUpgradeCard("FREE", "superadmin")).toBe(false);
   });
 
   it("hides for PRO", () => {
@@ -36,5 +44,31 @@ describe("shouldShowSidebarUpgradeCard", () => {
 
   it("hides for BUSINESS", () => {
     expect(shouldShowSidebarUpgradeCard("BUSINESS")).toBe(false);
+  });
+});
+
+describe("getSidebarMainNavItems", () => {
+  it("excludes API docs for FREE users", () => {
+    const items = getSidebarMainNavItems("FREE");
+    const hasApiDocs = items.some((item) => item.url === "/docs");
+    expect(hasApiDocs).toBe(false);
+  });
+
+  it("includes API docs for PRO users", () => {
+    const items = getSidebarMainNavItems("PRO");
+    const hasApiDocs = items.some((item) => item.url === "/docs");
+    expect(hasApiDocs).toBe(true);
+  });
+
+  it("includes API docs for superadmin regardless of plan", () => {
+    const items = getSidebarMainNavItems("FREE", "superadmin");
+    const hasApiDocs = items.some((item) => item.url === "/docs");
+    expect(hasApiDocs).toBe(true);
+  });
+
+  it("includes API docs for BUSINESS", () => {
+    const items = getSidebarMainNavItems("BUSINESS");
+    const hasApiDocs = items.some((item) => item.url === "/docs");
+    expect(hasApiDocs).toBe(true);
   });
 });

@@ -103,11 +103,13 @@ export function isSidebarItemActive(pathname: string, url: string): boolean {
   return pathname === url || pathname.startsWith(`${url}/`);
 }
 
-export function getSidebarMainNavItems(plan: UserPlan) {
+export function getSidebarMainNavItems(plan: UserPlan, role?: string | null) {
+  if (isSuperAdmin(role)) return [...mainNav, apiDocsNavItem];
   return plan === "FREE" ? mainNav : [...mainNav, apiDocsNavItem];
 }
 
-export function shouldShowSidebarUpgradeCard(plan: UserPlan): boolean {
+export function shouldShowSidebarUpgradeCard(plan: UserPlan, role?: string | null): boolean {
+  if (isSuperAdmin(role)) return false;
   return plan === "FREE";
 }
 
@@ -124,7 +126,7 @@ export function AppSidebar({ user }: { user: AppSidebarUser }) {
   const userPlan = usePlan();
   const role = useUserRole();
   const displayUser = getSidebarDisplayUser(user, userPlan, role);
-  const mainNavItems = getSidebarMainNavItems(userPlan);
+  const mainNavItems = getSidebarMainNavItems(userPlan, role);
   const [isSigningOut, setIsSigningOut] = useState(false);
 
   async function handleSignOut() {
@@ -216,7 +218,7 @@ export function AppSidebar({ user }: { user: AppSidebarUser }) {
           </SidebarGroup>
         )}
 
-        {shouldShowSidebarUpgradeCard(userPlan) && (
+        {shouldShowSidebarUpgradeCard(userPlan, role) && (
           <SidebarGroup>
             <SidebarGroupContent>
               <div className="rounded-lg border bg-card p-3 text-card-foreground shadow-sm group-data-[collapsible=icon]:hidden">
