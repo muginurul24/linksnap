@@ -2865,3 +2865,197 @@ ls build/app/outputs/flutter-apk/app-release.apk  # must exist
 **Estimated total:** 159 + 21 = 180 tasks | **Timeline:** 1 day
 
 Premium Flutter experience. 🟢
+
+---
+
+## 🔴 Phase 22: Web App Reliability, Analytics UX & Cache Governance
+
+> **Status:** Draft for Rafi review — do not implement until approved.
+> **Source:** Rafi production feedback — 2026-05-09.
+> **Goal:** Make LinkSnap's web dashboard feel reliable, helpful, and production-grade: every failed action should be understandable, every important page should have clear loading/empty/error states, analytics should show decision-ready charts, and Redis should be used intentionally with documented invalidation rules.
+
+### 🔴 Phase Rules
+
+- [ ] Do not start implementation until Rafi approves this phase.
+- [ ] One commit per task after implementation starts.
+- [ ] Read PRD, SECURITY, SUPERADMIN, IMPLEMENTATION, and JOURNAL before each task.
+- [ ] Every state-changing browser API call must include `X-Requested-With: XMLHttpRequest`.
+- [ ] Every failed API action shown to users must surface a friendly message plus `requestId` when available.
+- [ ] Use shadcn/ui primitives already in the project; do not introduce a new UI framework.
+- [ ] Keep charting on existing Recharts + `src/components/ui/chart`.
+- [ ] No raw SQL; Drizzle query builders only.
+- [ ] Redis cache must be best-effort, bounded by TTL, tenant-safe, and explicitly invalidated on writes where stale data would mislead users.
+- [ ] Never cache secrets, sessions, CSRF decisions, passwords, API keys, 2FA material, payment mutation results, or admin authorization decisions.
+
+### 🧭 Current Findings To Address
+
+- Admin user detail plan changes currently issue `PATCH /api/v1/admin/users/[id]` without the required browser mutation header, causing `403 CSRF_HEADER_REQUIRED` in production.
+- Admin user mutations throw generic client errors (`Failed to update plan`) instead of showing the API's error message, request ID, retry state, or recovery path.
+- `/analytics` has real data, but the page is still too thin for LinkSnap's PRD: it lacks KPI cards, link-page funnel context, top-link insight, clear chart fallbacks, and polished invalid-range recovery.
+- `/admin/analytics` is a basic client fetch page with generic errors and no trend charts, no retry button, no stale/last-updated state, and no cache strategy.
+- Redis usage exists but is ad hoc; the project needs a documented cache matrix, typed cache keys, TTL ownership, and invalidation coverage before more dashboard data is cached.
+
+### TASK 22.1 — Shared Browser API Client & Friendly Error Contract
+
+- [ ] Add a small dashboard-safe API helper for browser components:
+  - auto-add `X-Requested-With: XMLHttpRequest` for `POST`, `PATCH`, `PUT`, `DELETE`
+  - preserve caller-provided headers and JSON bodies
+  - parse standard `{ success, data/error }` responses
+  - expose `code`, `message`, `requestId`, `retryAfter`, and HTTP status
+- [ ] Replace repeated local `readApiError()` patterns where touched by this phase.
+- [ ] Add a reusable `ApiErrorNotice` / `ActionError` UI pattern with:
+  - human-friendly title
+  - actionable next step
+  - copyable `requestId`
+  - retry button when the action is retryable
+- [ ] Add tests covering CSRF header injection, JSON parsing, non-JSON fallback, and request ID display.
+
+### TASK 22.2 — Admin User Actions Reliability
+
+- [ ] Fix admin user detail `PATCH` and `POST` calls to use the shared API client/header contract.
+- [ ] Parse API error codes instead of throwing generic errors:
+  - `CSRF_HEADER_REQUIRED` → "Security header missing. Refresh and try again."
+  - `SUPERADMIN_REQUIRED` → "Your admin session is no longer authorized. Sign in again."
+  - `RATE_LIMITED` → show retry-after guidance
+  - `VALIDATION_ERROR` → show field/action-specific message
+- [ ] Add per-action pending state:
+  - disable plan buttons while saving
+  - disable suspend/unsuspend while processing
+  - keep existing data visible during refresh
+- [ ] Replace native `confirm()` with shadcn confirmation dialog for suspend/unsuspend.
+- [ ] Refresh user details after mutation without flashing the whole page skeleton.
+- [ ] Verify audit log still records plan and suspend changes.
+- [ ] Add unit and Playwright coverage for successful plan change, 403 handling, and suspend confirmation.
+
+### TASK 22.3 — Dashboard Analytics Data Contract & Query Optimization
+
+- [ ] Define the final dashboard analytics contract for `/analytics`:
+  - total clicks
+  - unique visitors
+  - link page views
+  - CTA clicks
+  - CTA click-through rate
+  - direct redirects
+  - top links
+  - top countries/cities
+  - device/browser/referrer breakdown
+  - daily time series
+- [ ] Move expensive analytics shaping into `lib/analytics` and `lib/db/queries/` with explicit types.
+- [ ] Avoid loading unbounded raw events when an aggregate query can answer the chart.
+- [ ] Keep retention and range caps aligned with plan limits from `lib/plans/definitions`.
+- [ ] Return empty arrays/zero metrics instead of null-ish structures that make charts break.
+- [ ] Add tests for empty data, high-volume aggregation, invalid ranges, and retention enforcement.
+
+### TASK 22.4 — `/analytics` UX Overhaul
+
+- [ ] Build a decision-ready analytics page matching PRD value:
+  - KPI summary cards above charts
+  - click trend area chart
+  - device distribution chart
+  - top referrers chart/list
+  - top countries/cities ranked list
+  - link-page funnel section: views → CTA clicks → CTR
+  - top links table with slug, destination, clicks, and quick navigation
+- [ ] Keep controls compact and mobile-friendly:
+  - 7D / 30D / 90D segmented controls
+  - custom date range validation with friendly inline errors
+  - export CSV action disabled with tooltip when there is no data
+- [ ] Add loading skeleton and route-level error boundary for `/analytics`.
+- [ ] Ensure every chart has a no-data fallback, not a blank canvas.
+- [ ] Add Playwright smoke coverage for empty analytics, data analytics, invalid range recovery, and mobile viewport.
+
+### TASK 22.5 — Admin Analytics Control Center
+
+- [ ] Upgrade `/admin/analytics` from a basic stats page into a platform control center:
+  - total users, active users, new users
+  - total links, new links
+  - total clicks, clicks last 30 days
+  - settled revenue
+  - plan distribution chart
+  - growth trend chart
+  - top users by links/clicks
+  - operational health panel for recent errors/rate limits where available
+- [ ] Keep the page read-only and superadmin-only.
+- [ ] Show last updated timestamp and manual refresh button.
+- [ ] Add friendly error state with request ID and "Try again".
+- [ ] Add unit and Playwright coverage for loading, success, error, and mobile layout.
+
+### TASK 22.6 — Redis Cache Policy Matrix
+
+- [ ] Add a cache policy document to planning artifacts and keep it linked from this phase.
+- [ ] Classify cache use by domain:
+  - **Cache:** redirect metadata, smart rules, QR render payloads, GeoIP lookup results, dashboard subscription snapshot, short-lived analytics aggregates, short-lived admin analytics aggregates, public static marketing content via HTTP caching.
+  - **Use Redis as ephemeral state, not cache:** rate limits, 2FA challenges, pending email changes, click queue.
+  - **Do not cache:** auth sessions, superadmin authorization checks, CSRF/origin decisions, password/reset secrets, API key plaintext, payment create/mutation results, webhook verification outcomes, admin mutation results, raw PII-heavy analytics event lists.
+- [ ] Define TTLs, key naming, tenant scoping, invalidation triggers, and stale-data tolerance for every approved cache.
+- [ ] Add tests that assert sensitive domains have no cache helpers and approved domains use expected TTLs.
+
+### TASK 22.7 — Typed Cache Keys & Invalidation Helpers
+
+- [ ] Introduce typed cache key builders for dashboard/admin analytics aggregates.
+- [ ] Keep keys scoped by user/admin/range and never by unsanitized free-form input.
+- [ ] Add invalidation helpers for:
+  - link create/update/delete
+  - Link Page changes
+  - Smart Rules changes
+  - click queue processing
+  - subscription/plan changes
+  - admin plan overrides
+- [ ] Keep Redis failures non-fatal but logged through the project logger.
+- [ ] Add tests for cache hit, miss, invalidation, and Redis failure fallback.
+
+### TASK 22.8 — Dashboard & Admin Error Boundaries Pass
+
+- [ ] Audit dashboard routes for missing `loading.tsx` and `error.tsx`.
+- [ ] Ensure each route has:
+  - skeleton loading state
+  - friendly error state
+  - retry/reload action
+  - navigation fallback
+  - no stack traces or raw technical errors in UI
+- [ ] Prioritize `/analytics`, `/admin/users`, `/admin/users/[id]`, `/admin/analytics`, `/links/new`, `/settings/billing`.
+- [ ] Add regression tests for each route-level error boundary.
+
+### TASK 22.9 — Form & Action UX Consistency Pass
+
+- [ ] Standardize button busy states across dashboard/admin actions.
+- [ ] Prevent double-submit for all create/update/delete/checkout/admin actions.
+- [ ] Show toast success only after the server confirms success.
+- [ ] Show inline validation errors near the field/action that caused them.
+- [ ] Use accessible labels and focus management for dialogs and destructive actions.
+- [ ] Add tests for duplicate-click prevention on high-risk actions.
+
+### TASK 22.10 — Security, Observability & Production Smoke
+
+- [ ] Verify all touched APIs keep Zod validation, auth, authorization, ownership, and rate limits.
+- [ ] Verify no new client route logs secrets or raw error stacks.
+- [ ] Add structured logs for analytics/cache/admin-action failures with `requestId`.
+- [ ] Add smoke commands for production:
+  - public `/`
+  - authenticated `/analytics`
+  - superadmin `/admin/users/[id]` plan change
+  - superadmin `/admin/analytics`
+  - cache fallback when Redis is unavailable in tests
+- [ ] Run before completion:
+  - `rtk bun run typecheck`
+  - `rtk bun run lint`
+  - `rtk bun run test`
+  - targeted Playwright tests for dashboard/admin analytics
+  - production smoke after deploy
+
+### 📊 Phase 22 Task Summary
+
+| Task | Area | Priority |
+|---|---|---|
+| 22.1 | Shared API errors + mutation headers | P0 |
+| 22.2 | Admin user action 403 + UX | P0 |
+| 22.3 | Analytics data contract/query optimization | P1 |
+| 22.4 | `/analytics` UX overhaul | P1 |
+| 22.5 | Admin analytics control center | P1 |
+| 22.6 | Redis cache policy matrix | P0 |
+| 22.7 | Typed cache keys + invalidation | P1 |
+| 22.8 | Error boundaries pass | P1 |
+| 22.9 | Form/action UX consistency | P2 |
+| 22.10 | Security/observability/smoke | P0 |
+
+**Estimated total:** 180 + 10 = 190 tasks | **Implementation gate:** Awaiting Rafi approval.
