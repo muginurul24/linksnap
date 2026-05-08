@@ -186,7 +186,12 @@ export function AppHeader() {
           />
         </form>
         {mounted && (
-          <Button variant="ghost" size="icon" onClick={() => setTheme(theme === "dark" ? "light" : "dark")}>
+          <Button
+            variant="ghost"
+            size="icon"
+            aria-label={theme === "dark" ? "Switch to light theme" : "Switch to dark theme"}
+            onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+          >
             {theme === "dark" ? <Sun className="size-4" /> : <Moon className="size-4" />}
           </Button>
         )}
