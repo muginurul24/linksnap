@@ -4,15 +4,16 @@ import { getSessionUserId } from "@/lib/auth/session-helpers";
 import {
   buildDashboardAnalyticsData,
   DashboardAnalyticsRangeError,
+  getDashboardAnalyticsRetentionDays,
   normalizeDashboardAnalyticsRange,
-  } from "@/lib/analytics/dashboard";
+} from "@/lib/analytics/dashboard";
 import {
   createRequestId,
   errorResponse,
   logApiErrorResponse,
   successResponse,
 } from "@/lib/api/response";
-import { listClickEventsForUser } from "@/lib/db/queries/click-events";
+import { getDashboardAnalyticsAggregatesForUser } from "@/lib/db/queries/click-events";
 import { getUserPlanById } from "@/lib/db/queries/links";
 import { getApiEndpointRateLimit, type UserPlan } from "@/lib/links/limits";
 import { slidingWindowRateLimit } from "@/lib/redis/rate-limit";
@@ -92,18 +93,17 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const range = normalizeDashboardAnalyticsRange(parsedQuery.data);
-    const events = await listClickEventsForUser({
+    const range = normalizeDashboardAnalyticsRange(parsedQuery.data, new Date(), {
+      retentionDays: getDashboardAnalyticsRetentionDays(authResult.userPlan),
+    });
+    const aggregates = await getDashboardAnalyticsAggregatesForUser({
       from: range.from,
       to: range.to,
       userId: authResult.userId,
     });
-    const analytics = buildDashboardAnalyticsData({ events, range });
+    const analytics = buildDashboardAnalyticsData({ aggregates, range });
 
-    return successResponse({
-      range: analytics.range,
-      summary: analytics.summary,
-    });
+    return successResponse(analytics);
   } catch (error) {
     if (error instanceof DashboardAnalyticsRangeError) {
       return errorResponse(

@@ -2927,9 +2927,9 @@ Premium Flutter experience. 🟢
 - [x] Verify audit log still records plan and suspend changes.
 - [x] Add unit and Playwright coverage for successful plan change, 403 handling, and suspend confirmation.
 
-### TASK 22.3 — Dashboard Analytics Data Contract & Query Optimization
+### [x] TASK 22.3 — Dashboard Analytics Data Contract & Query Optimization
 
-- [ ] Define the final dashboard analytics contract for `/analytics`:
+- [x] Define the final dashboard analytics contract for `/analytics`:
   - total clicks
   - unique visitors
   - link page views
@@ -2940,11 +2940,11 @@ Premium Flutter experience. 🟢
   - top countries/cities
   - device/browser/referrer breakdown
   - daily time series
-- [ ] Move expensive analytics shaping into `lib/analytics` and `lib/db/queries/` with explicit types.
-- [ ] Avoid loading unbounded raw events when an aggregate query can answer the chart.
-- [ ] Keep retention and range caps aligned with plan limits from `lib/plans/definitions`.
-- [ ] Return empty arrays/zero metrics instead of null-ish structures that make charts break.
-- [ ] Add tests for empty data, high-volume aggregation, invalid ranges, and retention enforcement.
+- [x] Move expensive analytics shaping into `lib/analytics` and `lib/db/queries/` with explicit types.
+- [x] Avoid loading unbounded raw events when an aggregate query can answer the chart.
+- [x] Keep retention and range caps aligned with plan limits from `lib/plans/definitions`.
+- [x] Return empty arrays/zero metrics instead of null-ish structures that make charts break.
+- [x] Add tests for empty data, high-volume aggregation, invalid ranges, and retention enforcement.
 
 ### TASK 22.4 — `/analytics` UX Overhaul
 

@@ -6,6 +6,7 @@ import { ButtonLink } from "@/components/ui/button-link";
 import { Input } from "@/components/ui/input";
 import {
   buildDashboardAnalyticsData,
+  getDashboardAnalyticsRetentionDays,
   normalizeDashboardAnalyticsRange,
   type DashboardAnalyticsRange,
   type DashboardAnalyticsRangeKey,
@@ -13,7 +14,8 @@ import {
 import { analyticsEmptyState } from "@/lib/analytics/empty-state";
 import { auth } from "@/lib/auth";
 import { getSessionUserId } from "@/lib/auth/session-helpers";
-import { listClickEventsForUser } from "@/lib/db/queries/click-events";
+import { getDashboardAnalyticsAggregatesForUser } from "@/lib/db/queries/click-events";
+import { getUserPlanById } from "@/lib/db/queries/links";
 import { dashboardAnalyticsQuerySchema } from "@/lib/validations/analytics";
 import { AnalyticsDashboardClient } from "@/app/(dashboard)/analytics/analytics-dashboard-client";
 
@@ -41,6 +43,7 @@ function firstParam(value: string | string[] | undefined): string | undefined {
 
 function getAnalyticsRange(
   params: Awaited<AnalyticsPageProps["searchParams"]>,
+  retentionDays: number,
 ): DashboardAnalyticsRange {
   const parsed = dashboardAnalyticsQuerySchema.safeParse({
     from: firstParam(params.from),
@@ -49,13 +52,19 @@ function getAnalyticsRange(
   });
 
   if (!parsed.success) {
-    return normalizeDashboardAnalyticsRange({ range: "30" });
+    return normalizeDashboardAnalyticsRange({ range: "30" }, new Date(), {
+      retentionDays,
+    });
   }
 
   try {
-    return normalizeDashboardAnalyticsRange(parsed.data);
+    return normalizeDashboardAnalyticsRange(parsed.data, new Date(), {
+      retentionDays,
+    });
   } catch {
-    return normalizeDashboardAnalyticsRange({ range: "30" });
+    return normalizeDashboardAnalyticsRange({ range: "30" }, new Date(), {
+      retentionDays,
+    });
   }
 }
 
@@ -118,14 +127,20 @@ export default async function AnalyticsPage({ searchParams }: AnalyticsPageProps
   const userId = getSessionUserId(session);
   if (!userId) redirect("/login?callbackUrl=/analytics");
 
+  const userPlan = await getUserPlanById(userId);
+  if (!userPlan) redirect("/login?callbackUrl=/analytics");
+
   const params = await searchParams;
-  const range = getAnalyticsRange(params);
-  const events = await listClickEventsForUser({
+  const range = getAnalyticsRange(
+    params,
+    getDashboardAnalyticsRetentionDays(userPlan),
+  );
+  const aggregates = await getDashboardAnalyticsAggregatesForUser({
     from: range.from,
     to: range.to,
     userId,
   });
-  const analytics = buildDashboardAnalyticsData({ events, range });
+  const analytics = buildDashboardAnalyticsData({ aggregates, range });
   const hasClicks = analytics.summary.totalClicks > 0;
 
   return (

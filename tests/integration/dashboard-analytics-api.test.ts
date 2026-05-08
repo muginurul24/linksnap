@@ -1,6 +1,9 @@
 import { NextRequest } from "next/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { ClickEventForAnalytics } from "../../src/lib/db/queries/click-events";
+import type {
+  ClickEventForAnalytics,
+  DashboardAnalyticsAggregates,
+} from "../../src/lib/db/queries/click-events";
 
 type UserPlan = "FREE" | "PRO" | "BUSINESS";
 
@@ -53,7 +56,7 @@ type DashboardAnalyticsResponse = {
 
 const mockState = vi.hoisted(() => ({
   capturedInput: null as ListClickEventsForUserInput | null,
-  clickEvents: [] as ClickEventForAnalytics[],
+  aggregates: null as DashboardAnalyticsAggregates | null,
   rateLimitOptions: [] as RateLimitOptions[],
   rateLimitResult: { limited: false as const, remaining: 99 } as RateLimitResult,
   session: { user: { id: "user-1" } } as MockSession,
@@ -76,14 +79,11 @@ vi.mock("@/lib/redis/rate-limit", () => ({
 }));
 
 vi.mock("@/lib/db/queries/click-events", () => ({
-  listClickEventsForUser: async (input: ListClickEventsForUserInput) => {
+  getDashboardAnalyticsAggregatesForUser: async (
+    input: ListClickEventsForUserInput,
+  ) => {
     mockState.capturedInput = input;
-    return mockState.clickEvents.filter(
-      (event) =>
-        event.timestamp >= input.from &&
-        event.timestamp <= input.to &&
-        input.userId === "user-1",
-    );
+    return mockState.aggregates;
   },
 }));
 
@@ -110,6 +110,51 @@ function createClickEvent(
   };
 }
 
+function buildMockAggregates(
+  events: ClickEventForAnalytics[],
+): DashboardAnalyticsAggregates {
+  return {
+    browserBreakdown: [{ count: 2, label: "Chrome" }],
+    clicksPerDay: [
+      { date: "2026-05-05", totalClicks: 1 },
+      { date: "2026-05-06", totalClicks: 1 },
+    ],
+    deviceBreakdown: [
+      { count: 1, label: "desktop" },
+      { count: 1, label: "mobile" },
+    ],
+    summary: {
+      countdownCtaClicks: 0,
+      countdownViews: 0,
+      ctaClicks: 0,
+      directRedirects: 2,
+      pageViews: 0,
+      totalClicks: events.length,
+      uniqueVisitors: new Set(events.map((event) => event.ipHash)).size,
+      withoutCountdownCtaClicks: 0,
+      withoutCountdownViews: 0,
+    },
+    topCities: [{ count: 2, label: "Jakarta" }],
+    topCountries: [
+      { count: 1, label: "ID" },
+      { count: 1, label: "US" },
+    ],
+    topLinks: [
+      {
+        destinationUrl: "https://example.com",
+        id: "link-1",
+        slug: "promo",
+        title: "Promo",
+        totalClicks: 2,
+      },
+    ],
+    topReferrers: [
+      { count: 1, label: "Direct" },
+      { count: 1, label: "https://referrer.example" },
+    ],
+  };
+}
+
 async function readJson<T>(response: Response): Promise<ApiEnvelope<T>> {
   return response.json() as Promise<ApiEnvelope<T>>;
 }
@@ -117,7 +162,7 @@ async function readJson<T>(response: Response): Promise<ApiEnvelope<T>> {
 describe("dashboard analytics API", () => {
   beforeEach(() => {
     mockState.capturedInput = null;
-    mockState.clickEvents = [
+    mockState.aggregates = buildMockAggregates([
       createClickEvent(),
       createClickEvent({
         country: "US",
@@ -126,7 +171,7 @@ describe("dashboard analytics API", () => {
         referrer: null,
         timestamp: new Date("2026-05-05T10:00:00.000Z"),
       }),
-    ];
+    ]);
     mockState.rateLimitOptions = [];
     mockState.rateLimitResult = { limited: false, remaining: 99 };
     mockState.session = { user: { id: "user-1" } };

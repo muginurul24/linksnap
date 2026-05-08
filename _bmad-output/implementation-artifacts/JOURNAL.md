@@ -8290,3 +8290,50 @@ Reworked the admin user detail actions so plan changes and suspend/unsuspend req
 - ✅ Request IDs are displayed without stack traces or raw internals.
 
 **Next Task:** 22.3 — Dashboard Analytics Data Contract & Query Optimization.
+
+### 22.3 — Dashboard Analytics Data Contract & Query Optimization
+- **Date:** 2026-05-09 01:07 GMT+7
+- **Duration:** 0h 45m
+- **Status:** ✅ Complete
+
+**What I Did:**
+Reworked dashboard analytics to use typed aggregate queries instead of loading raw click event rows for `/analytics`. Added a stable dashboard analytics contract with summary metrics, unique visitors, link page funnel metrics, daily time series, top links, top countries/cities, device/browser/referrer breakdowns, CSV export data, and plan retention metadata.
+
+**Files Changed:**
+- `src/lib/db/queries/click-events.ts` — Added aggregate dashboard analytics query with grouped counts, top links, daily buckets, and visitor counts.
+- `src/lib/analytics/dashboard.ts` — Added final dashboard analytics contract types, plan retention enforcement, empty aggregate handling, top links, unique visitors, and CSV updates.
+- `src/app/api/v1/analytics/route.ts` — Switched API route to aggregate query and plan-aware retention.
+- `src/app/(dashboard)/analytics/page.tsx` — Switched server page data load to aggregate query and plan-aware retention fallback.
+- `src/lib/api-docs/spec.ts` — Updated `/api/v1/analytics` response example.
+- `tests/unit/dashboard-analytics.test.ts` — Added empty aggregate, high-volume aggregate, and retention tests.
+- `tests/unit/dashboard-analytics-contract.test.ts` — Added contract/source guardrails.
+- `tests/integration/dashboard-analytics-api.test.ts` — Updated API integration tests to use the aggregate contract.
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Checked off 22.3.
+- `_bmad-output/implementation-artifacts/JOURNAL.md` — Logged 22.3.
+
+**Decisions Made:**
+- Kept the API route dynamic and session-scoped; no shared HTTP cache for user analytics.
+- Used Drizzle aggregate queries with SQL expressions only for safe database-side grouping/counting, avoiding unbounded raw event hydration.
+- Enforced plan retention from `lib/plans/definitions` while keeping the existing dashboard hard cap at 90 days.
+- Kept backward-compatible `uniqueClicks` while adding clearer `uniqueVisitors` for the new UI contract.
+
+**Tests:**
+- ✅ Targeted unit/integration: `rtk bun run test -- tests/integration/dashboard-analytics-api.test.ts tests/unit/dashboard-analytics.test.ts tests/unit/dashboard-analytics-contract.test.ts tests/unit/click-events-query.test.ts` — 16 passed.
+- ✅ Timed-out auth rerun: `rtk bun run test -- tests/integration/change-password-api.test.ts tests/integration/forgot-reset-password-flow.test.ts tests/integration/mobile-auth-api.test.ts` — 12 passed.
+- ✅ Typecheck: `rtk bun run typecheck` — Passed after build completed regenerating `.next/types`.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Full unit/integration: `rtk bun run test` — 147 passed, 1 skipped; 659 passed, 2 skipped.
+- ✅ Production build: `rtk bun run build` — Passed.
+
+**Issues Encountered:**
+- Running `typecheck` concurrently with `next build` caused `.next/types` file-not-found errors while build regenerated type files; reran typecheck after build and it passed.
+- Full test run timed out three auth-heavy integration tests while build was also running; reran those tests alone and the full test suite alone, both passed.
+
+**Security Checks:**
+- ✅ Auth and plan lookup remain server-side.
+- ✅ Analytics query is scoped by authenticated `userId`.
+- ✅ Range inputs remain Zod-validated.
+- ✅ Plan retention is enforced before querying.
+- ✅ No secrets added.
+
+**Next Task:** 22.4 — `/analytics` UX Overhaul.

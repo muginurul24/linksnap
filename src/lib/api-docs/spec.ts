@@ -325,7 +325,23 @@ export const API_DOC_SECTIONS: ApiDocSection[] = [
         method: "GET",
         path: "/api/v1/analytics",
         rateLimit: PLAN_RATE_LIMIT,
-        responseExample: { data: { summary: { totalClicks: 120 } }, success: true },
+        responseExample: {
+          data: {
+            range: { key: "30", maxDays: 30, retentionDays: 30 },
+            summary: {
+              linkPageAnalytics: {
+                ctaClickThroughRate: 0.24,
+                ctaClicks: 24,
+                directRedirects: 80,
+                pageViews: 100,
+              },
+              topLinks: [{ id: "link-id", slug: "promo", totalClicks: 42 }],
+              totalClicks: 180,
+              uniqueVisitors: 132,
+            },
+          },
+          success: true,
+        },
         summary: "Read dashboard-wide analytics for the authenticated user.",
       },
       {
