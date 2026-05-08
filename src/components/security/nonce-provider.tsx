@@ -1,5 +1,6 @@
 "use client";
 
+import { CSPProvider as BaseUiCspProvider } from "@base-ui/react/csp-provider";
 import { createContext, useContext } from "react";
 
 const CspNonceContext = createContext<string | null>(null);
@@ -13,7 +14,9 @@ export function CspNonceProvider({
 }) {
   return (
     <CspNonceContext.Provider value={nonce}>
-      {children}
+      <BaseUiCspProvider nonce={nonce ?? undefined}>
+        {children}
+      </BaseUiCspProvider>
     </CspNonceContext.Provider>
   );
 }

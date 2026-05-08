@@ -149,6 +149,11 @@ test.describe("Admin Flow — Superadmin", () => {
   });
 
   test("admin nav appears after superadmin login", async ({ page }) => {
+    const consoleErrors: string[] = [];
+    page.on("console", (message) => {
+      if (message.type() === "error") consoleErrors.push(message.text());
+    });
+
     await authenticateAsSuperadmin(page);
     await page.goto("/links");
 
@@ -159,6 +164,12 @@ test.describe("Admin Flow — Superadmin", () => {
     // Verify plan label shows "Superadmin"
     const planLabel = page.getByText("Superadmin", { exact: true }).first();
     await expect(planLabel).toBeVisible();
+
+    await page.locator('[data-slot="dropdown-menu-trigger"]').last().click();
+    await expect(page.getByText("My Account", { exact: true })).toBeVisible();
+    expect(consoleErrors.join("\n")).not.toContain(
+      "app_sidebar_dropdown_menu_render_error",
+    );
   });
 
   test("admin dashboard page loads with stats cards", async ({ page }) => {

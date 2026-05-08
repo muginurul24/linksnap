@@ -7940,3 +7940,41 @@ Implemented the backend auth contract expected by `apps/mobile_flutter`: passwor
 - ✅ No secrets committed.
 
 **Next Task:** Complete Flutter SDK/native host generation and run Flutter analyze/test/release build when the SDK is initialized.
+
+### 21F.2 — Dashboard CSP + Dropdown Runtime Fix
+- **Date:** 2026-05-08 20:18 GMT+7
+- **Duration:** 0h 40m
+- **Status:** ✅ Complete
+
+**What I Did:**
+Fixed dashboard runtime errors reported from production by passing the request CSP nonce into Base UI's CSP provider and replacing the sidebar dropdown label primitive that required an unavailable `Menu.Group` context.
+
+**Files Changed:**
+- `src/components/security/nonce-provider.tsx` — Wrapped children with Base UI `CSPProvider` using the same nonce.
+- `src/components/ui/dropdown-menu.tsx` — Rendered dropdown labels as plain labeled markup instead of `Menu.GroupLabel` outside a group.
+- `tests/unit/dropdown-menu-label.test.tsx` — Added regression coverage for standalone dropdown labels.
+- `tests/e2e/admin-flow.spec.ts` — Added browser coverage for opening the sidebar user dropdown without render errors.
+- `_bmad-output/implementation-artifacts/JOURNAL.md` — Logged the fix.
+
+**Decisions Made:**
+- Kept `script-src` strict and nonce-based instead of adding `unsafe-inline` for scripts.
+- Used Base UI's nonce provider for Base UI-owned inline style/script elements.
+- Avoided `Menu.GroupLabel` in the wrapper because the shared `DropdownMenuLabel` component is used as a standalone label.
+
+**Tests:**
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Unit: `rtk bun run test -- tests/unit/dropdown-menu-label.test.tsx tests/unit/security-headers.test.ts tests/unit/plan-context.test.tsx tests/unit/dashboard-plan-gates.test.tsx` — 15 passed.
+- ✅ Full unit/integration: `rtk bun run test` — 140 files passed, 1 skipped; 636 tests passed, 2 skipped.
+- ✅ E2E: `rtk bun run test:e2e -- tests/e2e/admin-flow.spec.ts -g "admin nav appears"` — 1 passed.
+- ✅ Build: `rtk bun run build` — Passed.
+
+**Issues Encountered:**
+- Production CSP console output included one inline-script violation; current HTML inspection shows Next-generated scripts are already nonced, so this fix targets the confirmed app-owned Base UI CSP/dropdown failures without weakening script CSP.
+
+**Security Checks:**
+- ✅ No secrets committed.
+- ✅ CSP remains nonce-based for scripts.
+- ✅ Base UI receives the existing per-request nonce instead of broad script relaxation.
+
+**Next Task:** Deploy and smoke-test `https://www.justqiu.cloud/dashboard` after Vercel finishes building this commit.
