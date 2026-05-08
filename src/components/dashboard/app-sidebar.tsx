@@ -4,7 +4,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { signOut } from "next-auth/react";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { Component, useState } from "react";
+import type { ReactNode } from "react";
 import {
   Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent,
   SidebarGroupLabel, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarRail,
@@ -118,6 +119,32 @@ export const SIDEBAR_UPGRADE_CARD_COPY =
 
 export function getSignOutMenuLabel(isSigningOut: boolean): string {
   return isSigningOut ? "Signing out..." : "Sign Out";
+}
+
+class DropdownErrorBoundary extends Component<
+  { children: ReactNode; fallback: ReactNode },
+  { hasError: boolean }
+> {
+  constructor(props: { children: ReactNode; fallback: ReactNode }) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+
+  componentDidCatch(error: Error) {
+    console.error("[app-sidebar] dropdown menu render error", {
+      name: error.name,
+      message: error.message,
+    });
+  }
+
+  render() {
+    if (this.state.hasError) return this.props.fallback;
+    return this.props.children;
+  }
 }
 
 export function AppSidebar({ user }: { user: AppSidebarUser }) {
@@ -244,45 +271,63 @@ export function AppSidebar({ user }: { user: AppSidebarUser }) {
       <SidebarFooter>
         <SidebarMenu>
           <SidebarMenuItem>
-            <DropdownMenu>
-              <DropdownMenuTrigger render={<SidebarMenuButton size="lg" />}>
-                <Avatar className="size-8 rounded-lg">
-                  <AvatarImage src={displayUser.avatarUrl} alt={displayUser.name} />
-                  <AvatarFallback className="rounded-lg bg-primary/10 text-xs">
-                    {displayUser.avatarFallback}
-                  </AvatarFallback>
-                </Avatar>
-                <div className="flex flex-col gap-0.5 leading-none">
-                  <span className="text-sm font-semibold">{displayUser.name}</span>
-                  <span className="text-xs text-muted-foreground">
-                    {displayUser.email}
-                  </span>
-                </div>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent className="w-56" align="end" side="right" sideOffset={4}>
-                <DropdownMenuLabel>My Account</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => router.push("/settings")}>
-                  <User className="mr-2 size-4" /> Settings
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => router.push("/settings/billing")}>
-                  <CreditCard className="mr-2 size-4" /> Billing
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  className="text-destructive"
-                  disabled={isSigningOut}
-                  onClick={() => void handleSignOut()}
-                >
-                  {isSigningOut ? (
-                    <Loader2 className="mr-2 size-4 animate-spin" />
-                  ) : (
-                    <LogOut className="mr-2 size-4" />
-                  )}
-                  {getSignOutMenuLabel(isSigningOut)}
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <DropdownErrorBoundary
+              fallback={
+                <SidebarMenuButton size="lg">
+                  <Avatar className="size-8 rounded-lg">
+                    <AvatarFallback className="rounded-lg bg-primary/10 text-xs">
+                      {displayUser.avatarFallback}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex flex-col gap-0.5 leading-none">
+                    <span className="text-sm font-semibold">{displayUser.name}</span>
+                    <span className="text-xs text-muted-foreground">
+                      {displayUser.email}
+                    </span>
+                  </div>
+                </SidebarMenuButton>
+              }
+            >
+              <DropdownMenu>
+                <DropdownMenuTrigger render={<SidebarMenuButton size="lg" />}>
+                  <Avatar className="size-8 rounded-lg">
+                    <AvatarImage src={displayUser.avatarUrl} alt={displayUser.name} />
+                    <AvatarFallback className="rounded-lg bg-primary/10 text-xs">
+                      {displayUser.avatarFallback}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex flex-col gap-0.5 leading-none">
+                    <span className="text-sm font-semibold">{displayUser.name}</span>
+                    <span className="text-xs text-muted-foreground">
+                      {displayUser.email}
+                    </span>
+                  </div>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-56" align="end" side="right" sideOffset={4}>
+                  <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => router.push("/settings")}>
+                    <User className="mr-2 size-4" /> Settings
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => router.push("/settings/billing")}>
+                    <CreditCard className="mr-2 size-4" /> Billing
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    className="text-destructive"
+                    disabled={isSigningOut}
+                    onClick={() => void handleSignOut()}
+                  >
+                    {isSigningOut ? (
+                      <Loader2 className="mr-2 size-4 animate-spin" />
+                    ) : (
+                      <LogOut className="mr-2 size-4" />
+                    )}
+                    {getSignOutMenuLabel(isSigningOut)}
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </DropdownErrorBoundary>
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarFooter>
