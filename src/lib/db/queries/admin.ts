@@ -1,6 +1,6 @@
-import { eq, ilike, or, and, count, desc, sql, sum } from "drizzle-orm";
+import { eq, ilike, or, and, count, desc, inArray, sql, sum } from "drizzle-orm";
 import { getDb } from "@/lib/db";
-import { users, links, clickEvents, transactions } from "@/lib/db/schema";
+import { users, links, clickEvents, transactions, subscriptions } from "@/lib/db/schema";
 import type { UserPlan } from "@/lib/links/limits";
 
 export type AdminUser = {
@@ -96,7 +96,7 @@ export async function listAllUsers({
         count: count(links.id),
       })
       .from(links)
-      .where(sql`${links.userId} = ANY(ARRAY[${sql.join(userIds.map((uid) => sql`${uid}::uuid`))}])`)
+      .where(inArray(links.userId, userIds))
       .groupBy(links.userId);
     for (const row of counts) {
       linkCounts[row.userId] = row.count;
@@ -137,21 +137,21 @@ export async function getUserDetailById(
     .innerJoin(links, eq(links.id, clickEvents.linkId))
     .where(eq(links.userId, id));
 
-  // Get subscription status
+  // Get subscription status (best-effort)
   let subscriptionPlan: string | null = null;
   let subscriptionStatus: string | null = null;
   try {
-    const subRows = await db
+    const [sub] = await db
       .select({
-        plan: sql<string>`s.plan`,
-        status: sql<string>`s.status`,
+        plan: subscriptions.plan,
+        status: subscriptions.status,
       })
-      .from(sql`subscriptions s`)
-      .where(sql`s.user_id = ${id}::uuid`)
+      .from(subscriptions)
+      .where(eq(subscriptions.userId, id))
       .limit(1);
-    if (subRows.length > 0) {
-      subscriptionPlan = subRows[0].plan;
-      subscriptionStatus = subRows[0].status;
+    if (sub) {
+      subscriptionPlan = sub.plan;
+      subscriptionStatus = sub.status;
     }
   } catch {
     // Subscription lookup is best-effort
