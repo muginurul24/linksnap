@@ -4,6 +4,7 @@ import { useState } from "react";
 import { CheckCircle2, Copy, Key, Loader2, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { PlanGate } from "@/components/plan-gate";
+import { isSuperAdmin } from "@/lib/auth/superadmin-utils";
 import { Badge } from "@/components/ui/badge";
 import { DeleteConfirmationDialog } from "@/components/dashboard/delete-confirmation-dialog";
 import { Button } from "@/components/ui/button";
@@ -16,7 +17,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { usePlan } from "@/lib/auth/plan-context";
+import { usePlan, useUserRole } from "@/lib/auth/plan-context";
 import type { UserPlan } from "@/lib/links/limits";
 
 export type ApiKeyPanelItem = {
@@ -62,7 +63,8 @@ type ApiKeyDeleteResponse =
       success: false;
     };
 
-function canManageApiKeys(plan: UserPlan): boolean {
+function canManageApiKeys(plan: UserPlan, role?: string | null): boolean {
+  if (isSuperAdmin(role)) return true;
   return plan === "PRO" || plan === "BUSINESS";
 }
 
@@ -82,6 +84,7 @@ async function copyToClipboard(value: string): Promise<void> {
 
 export function ApiKeysPanel({ initialApiKeys }: ApiKeysPanelProps) {
   const plan = usePlan();
+  const role = useUserRole();
   const [apiKeys, setApiKeys] = useState(initialApiKeys);
   const [createdKey, setCreatedKey] = useState<{
     key: string;
@@ -154,7 +157,7 @@ export function ApiKeysPanel({ initialApiKeys }: ApiKeysPanelProps) {
     }
   }
 
-  const canCreateApiKeys = canManageApiKeys(plan);
+  const canCreateApiKeys = canManageApiKeys(plan, role);
 
   return (
     <div className="space-y-4">

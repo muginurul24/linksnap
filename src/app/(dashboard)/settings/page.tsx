@@ -27,6 +27,7 @@ import { loadSettingsPageData } from "./settings-page-data";
 type SessionWithUserId = {
   user?: {
     id?: unknown;
+    role?: unknown;
   } | null;
 } | null;
 
@@ -40,6 +41,11 @@ const SETTINGS_TABS = new Set(["api", "notifications", "profile", "security"]);
 
 function getSessionUserId(session: SessionWithUserId): string | null {
   return typeof session?.user?.id === "string" ? session.user.id : null;
+}
+
+function getSessionRole(session: SessionWithUserId): string | null {
+  const role = session?.user?.role;
+  return typeof role === "string" ? role : null;
 }
 
 function getDefaultSettingsTab(value: string | string[] | undefined): string {
@@ -69,7 +75,8 @@ export default async function SettingsPage({ searchParams }: SettingsPageProps) 
 
   const params = await searchParams;
   const defaultTab = getDefaultSettingsTab(params.tab);
-  const settingsData = await loadSettingsPageData(userId);
+  const role = getSessionRole(session);
+  const settingsData = await loadSettingsPageData(userId, role);
 
   return (
     <>

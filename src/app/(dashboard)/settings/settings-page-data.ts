@@ -7,6 +7,7 @@ import {
   findSettingsUserById,
   type SettingsUser,
 } from "@/lib/db/queries/settings";
+import { isSuperAdmin } from "@/lib/auth/superadmin-utils";
 import type { UserPlan } from "@/lib/links/limits";
 import { logger } from "@/lib/observability/logger";
 
@@ -25,11 +26,15 @@ export type SettingsPageData =
       status: "error";
     };
 
-export function canManageApiKeys(plan: UserPlan): boolean {
+export function canManageApiKeys(plan: UserPlan, role?: string | null): boolean {
+  if (isSuperAdmin(role)) return true;
   return plan === "PRO" || plan === "BUSINESS";
 }
 
-export async function loadSettingsPageData(userId: string): Promise<SettingsPageData> {
+export async function loadSettingsPageData(
+  userId: string,
+  role?: string | null,
+): Promise<SettingsPageData> {
   try {
     const [billingUser, settingsUser] = await Promise.all([
       findBillingUserById(userId),
@@ -47,7 +52,7 @@ export async function loadSettingsPageData(userId: string): Promise<SettingsPage
       };
     }
 
-    const apiKeys = canManageApiKeys(plan)
+    const apiKeys = canManageApiKeys(plan, role)
       ? await listApiKeysByUserId(userId)
       : [];
 

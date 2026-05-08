@@ -18,11 +18,17 @@ import { CopySnippetButton } from "@/app/(dashboard)/docs/copy-snippet-button";
 type SessionWithUserId = {
   user?: {
     id?: unknown;
+    role?: unknown;
   } | null;
 } | null;
 
 function getSessionUserId(session: SessionWithUserId): string | null {
   return typeof session?.user?.id === "string" ? session.user.id : null;
+}
+
+function getSessionRole(session: SessionWithUserId): string | null {
+  const role = session?.user?.role;
+  return typeof role === "string" ? role : null;
 }
 
 function EndpointCard({ endpoint }: { endpoint: ApiEndpointDoc }) {
@@ -76,9 +82,11 @@ function EndpointCard({ endpoint }: { endpoint: ApiEndpointDoc }) {
 export default async function ApiDocsPage() {
   const session = await auth();
   const userId = getSessionUserId(session);
+  const role = getSessionRole(session);
   const billingUser = userId ? await findBillingUserById(userId) : null;
   const redirectTarget = getApiDocsPageRedirect({
     plan: billingUser?.plan,
+    role,
     userId,
   });
 
