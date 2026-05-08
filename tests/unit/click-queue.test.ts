@@ -19,7 +19,7 @@ const mockState = vi.hoisted(() => ({
   deadLetters: [] as string[],
   increments: [] as Array<{ currentClickCount?: number; linkId: string }>,
   ltrimCalls: [] as Array<{ end: number; key: string; start: number }>,
-  queue: [] as string[],
+  queue: [] as unknown[],
   rpushThrows: false,
   persisted: [] as RedirectClickInput[],
   persistThrows: false,
@@ -31,10 +31,10 @@ vi.mock("@/lib/redis", () => ({
     ltrim: async (key: string, start: number, end: number) => {
       mockState.ltrimCalls.push({ end, key, start });
     },
-    rpush: async (key: string, value: string) => {
+    rpush: async (key: string, value: unknown) => {
       if (mockState.rpushThrows) throw new Error("redis unavailable");
       if (key.endsWith(":dead-letter")) {
-        mockState.deadLetters.push(value);
+        mockState.deadLetters.push(String(value));
         return;
       }
       mockState.queue.push(value);
@@ -83,7 +83,7 @@ describe("click queue", () => {
     await enqueueRedirectClick(sampleInput);
 
     expect(mockState.queue).toHaveLength(1);
-    expect(JSON.parse(mockState.queue[0] ?? "{}")).toMatchObject({
+    expect(JSON.parse(String(mockState.queue[0] ?? "{}"))).toMatchObject({
       input: sampleInput,
       version: 1,
     });
@@ -132,6 +132,22 @@ describe("click queue", () => {
 
   it("should process queued click events into persistence", async () => {
     await enqueueRedirectClick(sampleInput);
+
+    await expect(processRedirectClickQueue({ limit: 5 })).resolves.toEqual({
+      deadLettered: 0,
+      processed: 1,
+    });
+
+    expect(mockState.persisted).toEqual([sampleInput]);
+    expect(mockState.queue).toEqual([]);
+  });
+
+  it("should process object payloads returned by Redis clients", async () => {
+    mockState.queue.push({
+      enqueuedAt: new Date().toISOString(),
+      input: sampleInput,
+      version: 1,
+    });
 
     await expect(processRedirectClickQueue({ limit: 5 })).resolves.toEqual({
       deadLettered: 0,

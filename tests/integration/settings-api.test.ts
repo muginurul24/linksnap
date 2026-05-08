@@ -45,6 +45,7 @@ const defaultNotifications: UserNotificationPreferences = {
 };
 
 const mockState = vi.hoisted(() => ({
+  deletedSubscriptionSnapshots: [] as string[],
   plan: "FREE" as UserPlan | null,
   rateLimitOptions: [] as RateLimitOptions[],
   rateLimitResult: { limited: false as const, remaining: 99 } as RateLimitResult,
@@ -108,6 +109,12 @@ vi.mock("@/lib/db/queries/settings", () => ({
   },
 }));
 
+vi.mock("@/lib/payments/dashboard-subscription-cache", () => ({
+  deleteDashboardSubscriptionSnapshot: async (userId: string) => {
+    mockState.deletedSubscriptionSnapshots.push(userId);
+  },
+}));
+
 import { PATCH as patchNotifications } from "../../src/app/api/v1/settings/notifications/route";
 import { PATCH as patchProfile } from "../../src/app/api/v1/settings/profile/route";
 import { loadSettingsPageData } from "../../src/app/(dashboard)/settings/settings-page-data";
@@ -129,6 +136,7 @@ async function readJson<T>(response: Response): Promise<ApiEnvelope<T>> {
 
 describe("settings API", () => {
   beforeEach(() => {
+    mockState.deletedSubscriptionSnapshots = [];
     mockState.plan = "FREE";
     mockState.rateLimitOptions.length = 0;
     mockState.rateLimitResult = { limited: false, remaining: 99 };
@@ -152,6 +160,7 @@ describe("settings API", () => {
     if (!body.success) return;
     expect(body.data).toEqual({ email: "user@example.com", name: "Rafi" });
     expect(mockState.user?.name).toBe("Rafi");
+    expect(mockState.deletedSubscriptionSnapshots).toEqual([USER_ID]);
   });
 
   it("should clear the profile name when blank", async () => {

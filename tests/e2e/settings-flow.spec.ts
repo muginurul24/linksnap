@@ -129,14 +129,16 @@ test("should update profile and change password from settings page", async ({
     ).toBeVisible({ timeout: 10_000 });
 
     await page.getByRole("tab", { name: /Security/ }).click();
-    await page.getByLabel("Current Password").fill(password);
+    await page.getByRole("textbox", { name: "Current Password" }).fill(password);
     await page.getByLabel("New Password", { exact: true }).fill(newPassword);
     await expect(page.getByText("Password strength: Strong")).toBeVisible();
-    await page.getByLabel("Confirm New Password").fill(newPassword);
+    await page
+      .getByRole("textbox", { name: "Confirm New Password" })
+      .fill(newPassword);
     await page.getByRole("button", { name: "Update Password" }).click();
-    await expect(page.getByText("Password changed")).toBeVisible({
-      timeout: 10_000,
-    });
+    await expect(
+      page.getByLabel("Security").getByText("Password changed"),
+    ).toBeVisible({ timeout: 10_000 });
 
     await expect
       .poll(

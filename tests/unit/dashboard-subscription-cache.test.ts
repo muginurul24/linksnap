@@ -33,6 +33,9 @@ vi.mock("@/lib/payments/subscription", () => ({
 }));
 
 vi.mock("@/lib/redis", () => ({
+  cacheDelete: async (key: string) => {
+    mockState.cache.delete(key);
+  },
   cacheGet: async <T>(key: string): Promise<T | null> =>
     (mockState.cache.get(key) as T | undefined) ?? null,
   cacheSet: async (key: string, value: unknown, ttl: number) => {
@@ -43,6 +46,7 @@ vi.mock("@/lib/redis", () => ({
 
 import {
   DASHBOARD_SUBSCRIPTION_CACHE_TTL_SECONDS,
+  deleteDashboardSubscriptionSnapshot,
   getDashboardSubscriptionCacheKey,
   getDashboardSubscriptionSnapshot,
 } from "@/lib/payments/dashboard-subscription-cache";
@@ -96,5 +100,19 @@ describe("dashboard subscription cache", () => {
         },
       },
     ]);
+  });
+
+  it("should delete cached dashboard subscription snapshots", async () => {
+    mockState.cache.set(getDashboardSubscriptionCacheKey("user-1"), {
+      email: "cached@example.com",
+      name: "Cached User",
+      plan: "PRO",
+    });
+
+    await deleteDashboardSubscriptionSnapshot("user-1");
+
+    expect(mockState.cache.has(getDashboardSubscriptionCacheKey("user-1"))).toBe(
+      false,
+    );
   });
 });

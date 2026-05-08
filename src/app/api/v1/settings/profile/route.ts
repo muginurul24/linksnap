@@ -9,6 +9,7 @@ import {
 import { findBillingUserById } from "@/lib/db/queries/payments";
 import { updateSettingsUserProfile } from "@/lib/db/queries/settings";
 import { getApiEndpointRateLimit, type UserPlan } from "@/lib/links/limits";
+import { deleteDashboardSubscriptionSnapshot } from "@/lib/payments/dashboard-subscription-cache";
 import { slidingWindowRateLimit } from "@/lib/redis/rate-limit";
 import { settingsProfileSchema } from "@/lib/validations/settings";
 
@@ -119,6 +120,8 @@ export async function PATCH(request: NextRequest) {
         requestId,
       );
     }
+
+    await deleteDashboardSubscriptionSnapshot(authResult.userId);
 
     return successResponse({
       email: user.email,

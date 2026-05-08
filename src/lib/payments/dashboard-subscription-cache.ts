@@ -1,6 +1,6 @@
 import { findBillingUserById } from "@/lib/db/queries/payments";
 import type { UserPlan } from "@/lib/links/limits";
-import { cacheGet, cacheSet } from "@/lib/redis";
+import { cacheDelete, cacheGet, cacheSet } from "@/lib/redis";
 import { syncSubscriptionStatusForUser } from "@/lib/payments/subscription";
 
 export const DASHBOARD_SUBSCRIPTION_CACHE_TTL_SECONDS = 60;
@@ -33,4 +33,10 @@ export async function getDashboardSubscriptionSnapshot(
   await cacheSet(cacheKey, snapshot, DASHBOARD_SUBSCRIPTION_CACHE_TTL_SECONDS);
 
   return snapshot;
+}
+
+export async function deleteDashboardSubscriptionSnapshot(
+  userId: string,
+): Promise<void> {
+  await cacheDelete(getDashboardSubscriptionCacheKey(userId));
 }

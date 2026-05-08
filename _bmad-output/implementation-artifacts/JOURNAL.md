@@ -6080,3 +6080,52 @@ Added a Redis-backed dashboard subscription snapshot cache with a 60-second TTL.
 - ✅ No raw SQL, public inputs, or `dangerouslySetInnerHTML` introduced.
 
 **Next Task:** 17.15 — Add Playwright E2E Tests for Critical Flows
+
+### 17.15 — Add Playwright E2E Tests for Critical Flows
+- **Date:** 2026-05-08 08:04 GMT+7
+- **Duration:** 1h 20m
+- **Status:** ✅ Complete
+
+**What I Did:**
+Stabilized the critical Playwright E2E flows and wired optional E2E execution into CI. The existing auth, link, payment, and settings specs now pass together; redirect analytics tests explicitly process queued click events, settings profile updates invalidate the cached dashboard snapshot, and the Redis queue parser handles Upstash object payloads as well as raw JSON strings.
+
+**Files Changed:**
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Checked off Task 17.15 using the repository's `tests/e2e` path convention.
+- `.github/workflows/ci.yml` — Added optional Playwright install and E2E run steps gated by `RUN_E2E`.
+- `playwright.config.ts` — Added E2E cron secret for the click queue processor endpoint.
+- `src/lib/analytics/click-queue.ts` — Accepted Redis queue payloads returned as objects and preserved dead-letter behavior.
+- `src/lib/payments/dashboard-subscription-cache.ts` — Added cached dashboard snapshot deletion.
+- `src/app/api/v1/settings/profile/route.ts` — Invalidated dashboard snapshot cache after profile updates.
+- `tests/e2e/link-flow.spec.ts` — Processed queued redirect clicks before DB assertions and cleaned Redis queue state between runs.
+- `tests/e2e/settings-flow.spec.ts` — Tightened selectors for password fields and status messages.
+- `tests/unit/click-queue.test.ts` — Added regression coverage for object queue payloads.
+- `tests/unit/dashboard-subscription-cache.test.ts` — Covered snapshot deletion.
+- `tests/integration/settings-api.test.ts` — Verified profile updates invalidate the dashboard snapshot cache.
+
+**Decisions Made:**
+- Kept E2E CI optional behind `RUN_E2E` because Playwright browser/dependency installation is heavier than the regular PR build path.
+- Used the existing cron-protected click queue endpoint in E2E instead of bypassing queue behavior in tests.
+- Invalidated the dashboard snapshot cache on profile update rather than shortening the cache TTL.
+
+**Tests:**
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Targeted Unit/Integration: `rtk bun run test -- tests/unit/click-queue.test.ts tests/integration/click-queue-cron-api.test.ts tests/unit/dashboard-subscription-cache.test.ts tests/integration/settings-api.test.ts` — 4 files passed, 19 tests passed.
+- ✅ Unit/Integration: `rtk bun run test` — 127 files passed, 565 tests passed.
+- ✅ Build: `rtk bun run build` — Passed.
+- ✅ Targeted E2E: `rtk bun run test:e2e -- tests/e2e/settings-flow.spec.ts` — 1 test passed.
+- ✅ E2E: `rtk bun run test:e2e` — 16 tests passed.
+
+**Issues Encountered:**
+- Redirect analytics E2E initially failed because Phase 17.3 queues click persistence; resolved by invoking the cron-protected queue processor in tests.
+- Upstash returned queued JSON as an object in the app runtime; updated parser and unit coverage for both string and object payloads.
+- Settings profile E2E initially saw stale sidebar identity due the dashboard snapshot cache; resolved by cache invalidation after profile updates.
+- Password/status selectors matched both controls and toast content; tightened Playwright locators to stable UI regions.
+
+**Security Checks:**
+- ✅ Click queue processor remains protected by bearer `CRON_SECRET`.
+- ✅ Settings profile route still authenticates, validates input, and rate-limits before mutation.
+- ✅ No secrets committed; E2E cron value is test-only config.
+- ✅ No raw SQL or `dangerouslySetInnerHTML` introduced.
+
+**Next Task:** 18.1 — Database: Superadmin Role + Audit Log Table

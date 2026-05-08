@@ -33,6 +33,7 @@ export default defineConfig({
       AUTH_EMAIL_DELIVERY: "file",
       AUTH_EMAIL_FILE: authEmailFile,
       AUTH_URL: baseURL,
+      CRON_SECRET: "e2e-cron-secret",
       NEXTAUTH_URL: baseURL,
       NEXT_PUBLIC_APP_URL: baseURL,
       PAYMENT_EMAIL_DELIVERY: "file",

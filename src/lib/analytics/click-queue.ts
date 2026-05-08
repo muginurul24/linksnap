@@ -37,13 +37,22 @@ function serializeRedirectClick(input: RedirectClickInput): string {
   } satisfies QueuedRedirectClick);
 }
 
-function parseRedirectClick(payload: string): RedirectClickInput {
-  const parsed = JSON.parse(payload) as Partial<QueuedRedirectClick>;
-  if (parsed.version !== 1 || typeof parsed.input !== "object" || !parsed.input) {
+function parseRedirectClick(payload: unknown): RedirectClickInput {
+  const parsed =
+    typeof payload === "string" ? (JSON.parse(payload) as unknown) : payload;
+
+  if (!isQueuedRedirectClick(parsed)) {
     throw new Error("Invalid redirect click queue payload.");
   }
 
-  return parsed.input as RedirectClickInput;
+  return parsed.input;
+}
+
+function isQueuedRedirectClick(payload: unknown): payload is QueuedRedirectClick {
+  if (typeof payload !== "object" || !payload) return false;
+
+  const candidate = payload as Partial<QueuedRedirectClick>;
+  return candidate.version === 1 && typeof candidate.input === "object" && !!candidate.input;
 }
 
 export async function enqueueRedirectClick(
@@ -93,9 +102,11 @@ async function incrementCountWhenNeeded(
   });
 }
 
-async function moveToDeadLetter(payload: string): Promise<void> {
+async function moveToDeadLetter(payload: unknown): Promise<void> {
   try {
-    await redis.rpush(REDIRECT_CLICK_DEAD_LETTER_KEY, payload);
+    const deadLetterPayload =
+      typeof payload === "string" ? payload : JSON.stringify(payload);
+    await redis.rpush(REDIRECT_CLICK_DEAD_LETTER_KEY, deadLetterPayload);
   } catch (error) {
     logger.error("redirect_click_dead_letter_failed", { error });
   }
@@ -111,8 +122,8 @@ export async function processRedirectClickQueue({
   let processed = 0;
 
   for (let index = 0; index < boundedLimit; index += 1) {
-    const payload = await redis.lpop<string>(REDIRECT_CLICK_QUEUE_KEY);
-    if (!payload) break;
+    const payload = await redis.lpop<unknown>(REDIRECT_CLICK_QUEUE_KEY);
+    if (payload === null || payload === undefined) break;
 
     try {
       await persistRedirectClick(parseRedirectClick(payload));

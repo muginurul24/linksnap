@@ -11,12 +11,17 @@ import {
   users,
 } from "../../src/lib/db/schema";
 import { hashPassword } from "../../src/lib/auth/password";
+import {
+  REDIRECT_CLICK_DEAD_LETTER_KEY,
+  REDIRECT_CLICK_QUEUE_KEY,
+} from "../../src/lib/analytics/click-queue";
 import { redis } from "../../src/lib/redis";
 import { retryTransientDb } from "./db-retry";
 
 loadEnvConfig(process.cwd());
 
 const testIp = "198.51.100.28";
+const e2eCronSecret = "e2e-cron-secret";
 const mobileUserAgent =
   "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 Version/17.0 Mobile/15E148 Safari/604.1";
 const desktopUserAgent =
@@ -43,6 +48,10 @@ async function createVerifiedUser(email: string, password: string): Promise<stri
   return user.id;
 }
 
+async function cleanupRedirectClickQueue(): Promise<void> {
+  await redis.del(REDIRECT_CLICK_QUEUE_KEY, REDIRECT_CLICK_DEAD_LETTER_KEY);
+}
+
 async function cleanupLinkFlowState(
   email: string,
   userId?: string,
@@ -54,6 +63,8 @@ async function cleanupLinkFlowState(
     `rate-limit:auth:login:${testIp}`,
     "rate-limit:auth:login:unknown",
     `rate-limit:api:qr:${testIp}`,
+    REDIRECT_CLICK_DEAD_LETTER_KEY,
+    REDIRECT_CLICK_QUEUE_KEY,
     ...(userId
       ? [
           `rate-limit:api:links:list:${userId}`,
@@ -115,6 +126,19 @@ async function countClicksForLink(linkId: string): Promise<number> {
   );
 
   return row?.value ?? 0;
+}
+
+async function processRedirectClickQueue(page: Page): Promise<void> {
+  const response = await page.request.get(
+    "/api/v1/analytics/click-queue/process?limit=100",
+    {
+      headers: {
+        authorization: `Bearer ${e2eCronSecret}`,
+      },
+    },
+  );
+
+  expect(response.ok()).toBe(true);
 }
 
 async function createLinkPageFixture({
@@ -236,6 +260,10 @@ test.use({
   },
 });
 
+test.beforeEach(async () => {
+  await cleanupRedirectClickQueue();
+});
+
 test("should create link from dashboard then log redirect analytics", async ({ page }) => {
   const email = `e2e-link-${Date.now()}@example.com`;
   const password = "Password1";
@@ -269,6 +297,7 @@ test("should create link from dashboard then log redirect analytics", async ({ p
     const linkId = await getLinkIdBySlug(slug);
     await page.goto(`/${slug}`);
     await page.waitForURL("https://example.com/e2e", { timeout: 15_000 });
+    await processRedirectClickQueue(page);
 
     await expect
       .poll(() => countClicksForLink(linkId), {
@@ -358,6 +387,7 @@ test("should configure a Link Page then render the public page and CTA redirect"
 
     await page.getByRole("link", { name: "Open offer" }).click();
     await page.waitForURL("https://example.com/e2e-page", { timeout: 15_000 });
+    await processRedirectClickQueue(page);
 
     await expect
       .poll(() => countClicksForLink(linkId), {
@@ -445,6 +475,7 @@ test("should configure Smart Rules then redirect by browser user agent", async (
         },
       )
       .toBe("https://example.com/default");
+    await processRedirectClickQueue(page);
 
     await expect
       .poll(() => countClicksForLink(linkId), {
@@ -526,6 +557,7 @@ test("should run campaign workflow from an authenticated dashboard session", asy
 
     await page.goto(`/${slug}`);
     await page.waitForURL(taggedUrl, { timeout: 15_000 });
+    await processRedirectClickQueue(page);
 
     await expect
       .poll(() => countClicksForLink(linkId), {
