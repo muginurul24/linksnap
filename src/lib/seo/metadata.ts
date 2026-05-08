@@ -22,7 +22,7 @@ export const siteConfig = {
   url: "https://www.justqiu.cloud",
   title: "LinkSnap - Smart Short Links & Micro Landing Pages",
   description:
-    "Turn every short link into a branded conversion path with smart redirects, Link Pages, QR codes, campaign analytics, and Midtrans-ready billing.",
+    "Turn every short link into a branded conversion path with smart redirects, Link Pages, QR codes, campaign analytics, and PayGate-powered billing.",
   ogImagePath: "/opengraph-image",
   socialImagePath: "/landing-preview.png",
   updatedAt: new Date("2026-05-07T00:00:00.000Z"),
@@ -32,7 +32,7 @@ export const siteConfig = {
     "smart redirects",
     "qr code generator",
     "campaign analytics",
-    "Midtrans payments",
+    "PayGate payments",
     "Indonesia marketing tools",
   ],
 } as const;

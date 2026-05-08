@@ -38,26 +38,46 @@ export const checkoutCancelQuerySchema = z
   })
   .strict();
 
-export const midtransWebhookNotificationSchema = z
-  .object({
-    fraud_status: z.string().optional(),
-    gross_amount: z.string().min(1, "Gross amount is required"),
-    order_id: z.string().min(1, "Order ID is required").max(100),
-    payment_type: z.string().max(50).optional(),
-    settlement_time: z.string().optional(),
-    signature_key: z.string().min(1, "Signature key is required"),
-    status_code: z.string().min(1, "Status code is required").max(10),
-    transaction_status: z.string().min(1, "Transaction status is required"),
-    transaction_time: z.string().optional(),
-  })
-  .passthrough();
+export const payGateWebhookSchema = z.object({
+  amount: z.number().int().positive(),
+  currency: z.string().optional(),
+  customer: z
+    .object({
+      email: z.string().optional(),
+      name: z.string().optional(),
+    })
+    .optional(),
+  event: z.string(),
+  metadata: z.record(z.string(), z.unknown()).optional(),
+  midtrans: z
+    .object({
+      fraud_status: z.string().optional(),
+      transaction_id: z.string().optional(),
+      transaction_status: z.string().optional(),
+    })
+    .optional(),
+  order_id: z.string().min(1, "Order ID is required").max(100),
+  paid_at: z.string().optional(),
+  payment_type: z.string().optional(),
+  status: z.enum([
+    "paid",
+    "pending",
+    "failed",
+    "expired",
+    "cancelled",
+    "challenge",
+    "refunded",
+    "partial_refunded",
+  ]),
+  store_id: z.string(),
+  transaction_id: z.string(),
+  webhook_id: z.string(),
+});
 
 export type CreatePaymentInput = z.infer<typeof createPaymentSchema>;
 export type CheckoutCancelQuery = z.infer<typeof checkoutCancelQuerySchema>;
 export type CheckoutSuccessQuery = z.infer<typeof checkoutSuccessQuerySchema>;
 export type PaymentHistoryQuery = z.infer<typeof paymentHistoryQuerySchema>;
-export type MidtransWebhookNotification = z.infer<
-  typeof midtransWebhookNotificationSchema
->;
+export type PayGateWebhookPayload = z.infer<typeof payGateWebhookSchema>;
 export type PaidPlan = z.infer<typeof paidPlanSchema>;
 export type PaymentDuration = z.infer<typeof paymentDurationSchema>;

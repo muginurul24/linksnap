@@ -16,7 +16,7 @@ const faqs = [
   },
   {
     answer:
-      "Use the billing page to start a Midtrans checkout. The plan badge updates after payment settlement is synced.",
+      "Use the billing page to start a PayGate checkout. The plan badge updates after payment settlement is synced.",
     question: "How do I upgrade my plan?",
   },
   {

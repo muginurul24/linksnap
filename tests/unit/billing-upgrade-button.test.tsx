@@ -23,14 +23,13 @@ describe("billing upgrade button", () => {
     expect(markup).toContain("disabled");
   });
 
-  it("should choose the Midtrans create endpoint and redirect URL", () => {
+  it("should choose the PayGate create endpoint and checkout redirect URL", () => {
     expect(getPaymentCreateEndpoint()).toBe("/api/v1/payments/create");
     expect(
       getPaymentRedirectUrl({
         orderId: "LS-123",
-        redirectUrl: "https://app.sandbox.midtrans.com/snap/v2/vtweb/token-1",
-        snapToken: "token-1",
+        redirectUrl: "/checkout/success?order_id=LS-123",
       }),
-    ).toBe("https://app.sandbox.midtrans.com/snap/v2/vtweb/token-1");
+    ).toBe("/checkout/success?order_id=LS-123");
   });
 });

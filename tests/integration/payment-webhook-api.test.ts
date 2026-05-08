@@ -1,7 +1,7 @@
+import { createHmac } from "node:crypto";
 import { NextRequest } from "next/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { calculateMidtransSignature } from "../../src/lib/payments/webhook";
-import type { MidtransWebhookNotification } from "../../src/lib/validations/payment";
+import type { PayGateWebhookPayload } from "../../src/lib/validations/payment";
 
 type PaymentStatus = "PENDING" | "SETTLEMENT" | "CANCEL" | "DENY" | "EXPIRE";
 type UserPlan = "FREE" | "PRO" | "BUSINESS";
@@ -121,37 +121,54 @@ function createTransaction(
   };
 }
 
-function createNotification(
-  overrides: Partial<MidtransWebhookNotification> = {},
-): MidtransWebhookNotification {
-  const notification = {
-    gross_amount: "128000.00",
-    order_id: "LS-123",
-    payment_type: "bank_transfer",
-    settlement_time: "2026-05-07 08:00:00",
-    signature_key: "",
-    status_code: "200",
-    transaction_status: "settlement",
-    ...overrides,
-  } satisfies MidtransWebhookNotification;
-
+function createWebhookPayload(
+  overrides: Partial<PayGateWebhookPayload> = {},
+): PayGateWebhookPayload {
   return {
-    ...notification,
-    signature_key:
-      overrides.signature_key ??
-      calculateMidtransSignature({
-        grossAmount: notification.gross_amount,
-        orderId: notification.order_id,
-        serverKey: "server-key",
-        statusCode: notification.status_code,
-      }),
+    amount: 128000,
+    currency: "IDR",
+    event: "transaction.updated",
+    midtrans: {
+      fraud_status: "accept",
+      transaction_id: "trx-1",
+      transaction_status: "settlement",
+    },
+    order_id: "LS-123",
+    paid_at: "2026-05-07T08:00:00+07:00",
+    payment_type: "bank_transfer",
+    status: "paid",
+    store_id: "st_123",
+    transaction_id: "paygate-transaction-1",
+    webhook_id: "wd_123",
+    ...overrides,
   };
 }
 
-function createRequest(body: unknown): NextRequest {
+function signPayload(rawBody: string, timestamp: string, secret = "webhook-secret"): string {
+  return `sha256=${createHmac("sha256", secret)
+    .update(`${timestamp}.${rawBody}`)
+    .digest("hex")}`;
+}
+
+function createRequest(
+  body: unknown,
+  {
+    signature,
+    timestamp = "2026-05-07T08:00:00+07:00",
+  }: {
+    signature?: string;
+    timestamp?: string;
+  } = {},
+): NextRequest {
+  const rawBody = JSON.stringify(body);
+
   return new NextRequest("http://localhost:3000/api/v1/payments/webhook", {
-    body: JSON.stringify(body),
-    headers: { "content-type": "application/json" },
+    body: rawBody,
+    headers: {
+      "content-type": "application/json",
+      "x-webhook-signature": signature ?? signPayload(rawBody, timestamp),
+      "x-webhook-timestamp": timestamp,
+    },
     method: "POST",
   });
 }
@@ -162,7 +179,7 @@ async function readJson<T>(response: Response): Promise<ApiEnvelope<T>> {
 
 describe("payment webhook API", () => {
   beforeEach(() => {
-    process.env.MIDTRANS_SERVER_KEY = "server-key";
+    process.env.PAYGATE_WEBHOOK_SECRET = "webhook-secret";
     mockState.invoiceInputs = [];
     mockState.subscriptions = [];
     mockState.transaction = createTransaction();
@@ -170,8 +187,8 @@ describe("payment webhook API", () => {
     mockState.userPlanUpdates = [];
   });
 
-  it("should process a settlement notification and activate subscription", async () => {
-    const response = await POST(createRequest(createNotification()));
+  it("should process a paid webhook and activate subscription", async () => {
+    const response = await POST(createRequest(createWebhookPayload()));
     const body = await readJson<{
       activatedSubscription: boolean;
       ignored: boolean;
@@ -220,10 +237,9 @@ describe("payment webhook API", () => {
   it("should update pending notifications without activating subscription", async () => {
     const response = await POST(
       createRequest(
-        createNotification({
-          settlement_time: undefined,
-          status_code: "201",
-          transaction_status: "pending",
+        createWebhookPayload({
+          paid_at: undefined,
+          status: "pending",
         }),
       ),
     );
@@ -248,7 +264,7 @@ describe("payment webhook API", () => {
       status: "SETTLEMENT",
     });
 
-    const response = await POST(createRequest(createNotification()));
+    const response = await POST(createRequest(createWebhookPayload()));
     const body = await readJson<{ ignored: boolean; status: PaymentStatus }>(
       response,
     );
@@ -267,11 +283,9 @@ describe("payment webhook API", () => {
 
   it("should reject invalid signatures", async () => {
     const response = await POST(
-      createRequest(
-        createNotification({
-          signature_key: "bad-signature",
-        }),
-      ),
+      createRequest(createWebhookPayload(), {
+        signature: "sha256=bad-signature",
+      }),
     );
     const body = await readJson<unknown>(response);
 
@@ -285,8 +299,8 @@ describe("payment webhook API", () => {
   it("should reject amount mismatches", async () => {
     const response = await POST(
       createRequest(
-        createNotification({
-          gross_amount: "999999.00",
+        createWebhookPayload({
+          amount: 999999,
         }),
       ),
     );
@@ -301,7 +315,7 @@ describe("payment webhook API", () => {
   it("should return not found for unknown order IDs", async () => {
     mockState.transaction = null;
 
-    const response = await POST(createRequest(createNotification()));
+    const response = await POST(createRequest(createWebhookPayload()));
     const body = await readJson<unknown>(response);
 
     expect(response.status).toBe(404);

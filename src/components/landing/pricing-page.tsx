@@ -41,9 +41,9 @@ const faqs: Faq[] = [
       "Existing links keep working. Creating new links, pages, QR codes, or campaigns is limited until you upgrade or remove unused resources.",
   },
   {
-    question: "Do yearly plans charge through Midtrans?",
+    question: "Do yearly plans charge through PayGate?",
     answer:
-      "Yes. Checkout uses Midtrans Snap, and successful payments activate the selected monthly or yearly subscription period.",
+      "Yes. Checkout uses PayGate bank transfer processing, and successful payments activate the selected monthly or yearly subscription period.",
   },
   {
     question: "Can I downgrade later?",
@@ -59,7 +59,7 @@ const trustItems: Array<{ icon: LucideIcon; text: string }> = [
   },
   {
     icon: CreditCard,
-    text: "Midtrans Snap checkout for monthly or yearly plans",
+    text: "PayGate checkout for monthly or yearly plans",
   },
   {
     icon: Link2,

@@ -96,12 +96,9 @@ describe("checkout pages", () => {
     const markup = renderToStaticMarkup(element);
 
     expect(markup).toContain("Checkout complete");
-    expect(markup).toContain("Pro Plan");
-    expect(markup).toContain("Jun 7, 2026");
-    expect(markup).toContain("LS-1777777777777-abcdef123456");
-    expect(markup).toContain('href="/dashboard?refresh=plan"');
-    expect(markup).toContain('href="/settings/billing?refresh=plan"');
-    expect(mockState.syncCalls).toEqual(["user-1"]);
+    expect(markup).toContain("Finish the bank transfer");
+    expect(markup).toContain("Loading");
+    expect(mockState.syncCalls).toEqual([]);
   });
 
   it("should render an unavailable state when the order id is invalid", async () => {

@@ -1,7 +1,7 @@
 export type ApiAuthKind =
   | "API key"
   | "Cron secret"
-  | "Midtrans signature"
+  | "PayGate signature"
   | "Public"
   | "Session";
 
@@ -421,8 +421,8 @@ export const API_DOC_SECTIONS: ApiDocSection[] = [
         path: "/api/v1/payments/create",
         rateLimit: PLAN_RATE_LIMIT,
         requestExample: { duration: "MONTHLY", plan: "PRO" },
-        responseExample: { data: { redirectUrl: "https://app.midtrans.com/..." }, success: true },
-        summary: "Create a Midtrans Snap checkout transaction.",
+        responseExample: { data: { orderId: "order-id", redirectUrl: "/checkout/success?order_id=order-id", vaNumbers: [] }, success: true },
+        summary: "Create a PayGate checkout transaction.",
       },
       {
         auth: "API key",
@@ -441,13 +441,13 @@ export const API_DOC_SECTIONS: ApiDocSection[] = [
         summary: "Expire due subscriptions from a trusted scheduler.",
       },
       {
-        auth: "Midtrans signature",
+        auth: "PayGate signature",
         method: "POST",
         path: "/api/v1/payments/webhook",
         rateLimit: WEBHOOK_RATE_LIMIT,
-        requestExample: { order_id: "order-id", transaction_status: "settlement" },
+        requestExample: { amount: 128000, order_id: "order-id", status: "paid" },
         responseExample: { data: { status: "SETTLEMENT" }, success: true },
-        summary: "Process Midtrans payment notifications.",
+        summary: "Process PayGate payment callbacks.",
       },
     ],
     title: "Payments API",

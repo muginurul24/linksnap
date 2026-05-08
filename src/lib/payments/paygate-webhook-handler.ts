@@ -11,11 +11,10 @@ import {
   createOrRenewSubscriptionForPayment,
 } from "@/lib/payments/subscription";
 import {
-  mapMidtransStatus,
-  parseMidtransGrossAmount,
-  parseMidtransTimestamp,
-} from "@/lib/payments/webhook";
-import type { MidtransWebhookNotification } from "@/lib/validations/payment";
+  mapPayGateStatus,
+  parsePayGateTimestamp,
+  type PayGateWebhookStatus,
+} from "@/lib/payments/paygate-webhook";
 
 const TERMINAL_PAYMENT_STATUSES = new Set<PaymentStatus>([
   "CANCEL",
@@ -24,7 +23,15 @@ const TERMINAL_PAYMENT_STATUSES = new Set<PaymentStatus>([
   "SETTLEMENT",
 ]);
 
-export type MidtransWebhookResult = {
+type PayGateWebhookPayload = {
+  amount: number;
+  order_id: string;
+  paid_at?: string;
+  payment_type?: string;
+  status: PayGateWebhookStatus;
+};
+
+export type PayGateWebhookResult = {
   activatedSubscription: boolean;
   ignored: boolean;
   orderId: string;
@@ -39,7 +46,7 @@ export class UnknownPaymentOrderError extends Error {
 
 export class PaymentAmountMismatchError extends Error {
   constructor(orderId: string) {
-    super(`Payment order ${orderId} amount does not match Midtrans notification.`);
+    super(`Payment order ${orderId} amount does not match PayGate webhook.`);
   }
 }
 
@@ -59,55 +66,51 @@ function shouldIgnoreStatusTransition(
   return TERMINAL_PAYMENT_STATUSES.has(currentStatus);
 }
 
-function assertNotificationAmountMatches(
-  notification: MidtransWebhookNotification,
+function assertWebhookAmountMatches(
+  payload: PayGateWebhookPayload,
   transaction: PaymentTransactionForWebhook,
 ): void {
-  const notifiedAmount = parseMidtransGrossAmount(notification.gross_amount);
-
-  if (notifiedAmount !== transaction.grossAmountIdr) {
+  if (payload.amount !== transaction.grossAmountIdr) {
     throw new PaymentAmountMismatchError(transaction.orderId);
   }
 }
 
-export async function handleMidtransPaymentWebhook(
-  notification: MidtransWebhookNotification,
-): Promise<MidtransWebhookResult> {
-  const statusAction = mapMidtransStatus(notification);
+export async function handlePayGatePaymentWebhook(
+  payload: PayGateWebhookPayload,
+): Promise<PayGateWebhookResult> {
+  const statusAction = mapPayGateStatus(payload.status);
 
   if (!statusAction) {
     return {
       activatedSubscription: false,
       ignored: true,
-      orderId: notification.order_id,
+      orderId: payload.order_id,
       status: null,
     };
   }
 
-  const transaction = await findPaymentTransactionByOrderId(notification.order_id);
-  if (!transaction) throw new UnknownPaymentOrderError(notification.order_id);
+  const transaction = await findPaymentTransactionByOrderId(payload.order_id);
+  if (!transaction) throw new UnknownPaymentOrderError(payload.order_id);
 
-  assertNotificationAmountMatches(notification, transaction);
+  assertWebhookAmountMatches(payload, transaction);
 
   if (shouldIgnoreStatusTransition(transaction.status, statusAction.status)) {
     return {
       activatedSubscription: false,
       ignored: true,
-      orderId: notification.order_id,
+      orderId: payload.order_id,
       status: transaction.status,
     };
   }
 
   const paidAt = statusAction.activateSubscription
-    ? parseMidtransTimestamp(
-        notification.settlement_time ?? notification.transaction_time,
-      ) ?? new Date()
+    ? parsePayGateTimestamp(payload.paid_at) ?? new Date()
     : undefined;
   const updatedTransaction = await updatePaymentTransactionStatus({
     expectedStatus: transaction.status,
-    orderId: notification.order_id,
+    orderId: payload.order_id,
     paidAt,
-    paymentMethod: notification.payment_type ?? null,
+    paymentMethod: payload.payment_type ?? null,
     status: statusAction.status,
   });
 
@@ -115,7 +118,7 @@ export async function handleMidtransPaymentWebhook(
     return {
       activatedSubscription: false,
       ignored: true,
-      orderId: notification.order_id,
+      orderId: payload.order_id,
       status: statusAction.status,
     };
   }
@@ -135,7 +138,7 @@ export async function handleMidtransPaymentWebhook(
   return {
     activatedSubscription: statusAction.activateSubscription,
     ignored: false,
-    orderId: notification.order_id,
+    orderId: payload.order_id,
     status: statusAction.status,
   };
 }

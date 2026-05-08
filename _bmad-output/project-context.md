@@ -11,7 +11,7 @@
 - **Cache:** Redis 7 (Upstash serverless)
 - **Auth:** NextAuth.js v5 (web), SecureStore + JWT (mobile)
 - **Email:** Resend
-- **Payment:** Midtrans Snap
+- **Payment:** PayGate middleware
 - **Testing:** Vitest + Playwright (web), Jest + Detox (mobile)
 - **Linting:** Biome
 - **Hosting:** Vercel (web), EAS (mobile)

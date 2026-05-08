@@ -36,18 +36,16 @@ type PendingTransactionInput = {
   userId: string;
 };
 
-type MidtransInput = {
-  callbackUrls: {
-    error: string;
-    finish: string;
-    unfinish: string;
-  };
+type PayGateInput = {
+  bank?: string;
+  callbackUrl: string;
   customer: {
     email: string | null;
     name: string | null;
   };
   duration: PaymentDuration;
   grossAmountIdr: number;
+  metadata?: Record<string, unknown>;
   orderId: string;
   plan: PaymentPlan;
 };
@@ -65,18 +63,27 @@ const previousAppUrl = process.env.APP_URL;
 const previousPublicAppUrl = process.env.NEXT_PUBLIC_APP_URL;
 
 const mockState = vi.hoisted(() => ({
-  attachedTokens: [] as Array<{ orderId: string; snapToken: string }>,
   billingUser: {
     email: "buyer@example.com",
     name: "Rafi Link",
     plan: "PRO" as UserPlan,
   } as MockBillingUser | null,
-  midtransConfigured: true,
-  midtransError: null as Error | null,
-  midtransInputs: [] as MidtransInput[],
-  midtransResponse: {
-    redirectUrl: "https://app.sandbox.midtrans.com/snap/v2/vtweb/token-1",
-    token: "token-1",
+  payGateConfigured: true,
+  payGateError: null as Error | null,
+  payGateInputs: [] as PayGateInput[],
+  payGateResponse: {
+    data: {
+      amount: 128000,
+      midtrans: {
+        va_numbers: [{ bank: "bca", va_number: "88001234567890" }],
+      },
+      order_id: "LS-1746691200000-abc123def456",
+      payment_type: "bank_transfer",
+      platform_order_id: "linksnap_LS-1746691200000-abc123def456",
+      status: "pending",
+      transaction_id: "paygate-transaction-1",
+    },
+    success: true,
   },
   pendingInputs: [] as PendingTransactionInput[],
   rateLimitOptions: [] as RateLimitOptions[],
@@ -96,25 +103,6 @@ vi.mock("@/lib/redis/rate-limit", () => ({
 }));
 
 vi.mock("@/lib/db/queries/payments", () => ({
-  attachTransactionSnapToken: async (input: {
-    orderId: string;
-    snapToken: string;
-  }) => {
-    mockState.attachedTokens.push(input);
-    const pending = mockState.pendingInputs.find(
-      (transaction) => transaction.orderId === input.orderId,
-    );
-
-    if (!pending) return null;
-
-    return {
-      grossAmountIdr: pending.grossAmountIdr,
-      grossAmountUsd: pending.grossAmountUsd,
-      orderId: pending.orderId,
-      plan: pending.plan,
-      snapToken: input.snapToken,
-    };
-  },
   createPendingTransactionRecord: async (input: PendingTransactionInput) => {
     mockState.pendingInputs.push(input);
     return {
@@ -128,9 +116,9 @@ vi.mock("@/lib/db/queries/payments", () => ({
   findBillingUserById: async () => mockState.billingUser,
 }));
 
-vi.mock("@/lib/payments/midtrans", () => {
-  class MidtransConfigurationError extends Error {}
-  class MidtransApiError extends Error {
+vi.mock("@/lib/payments/paygate", () => {
+  class PayGateConfigurationError extends Error {}
+  class PayGateApiError extends Error {
     readonly status: number;
 
     constructor(status: number, message: string) {
@@ -140,23 +128,29 @@ vi.mock("@/lib/payments/midtrans", () => {
   }
 
   return {
-    MidtransApiError,
-    MidtransConfigurationError,
-    assertMidtransConfigured: () => {
-      if (!mockState.midtransConfigured) {
-        throw new MidtransConfigurationError("missing server key");
+    PayGateApiError,
+    PayGateConfigurationError,
+    assertPayGateConfigured: () => {
+      if (!mockState.payGateConfigured) {
+        throw new PayGateConfigurationError("missing store token");
       }
     },
-    createMidtransSnapTransaction: async (input: MidtransInput) => {
-      mockState.midtransInputs.push(input);
-      if (mockState.midtransError) throw mockState.midtransError;
+    createPayGateCharge: async (input: PayGateInput) => {
+      mockState.payGateInputs.push(input);
+      if (mockState.payGateError) throw mockState.payGateError;
 
-      return mockState.midtransResponse;
+      return {
+        ...mockState.payGateResponse,
+        data: {
+          ...mockState.payGateResponse.data,
+          order_id: input.orderId,
+        },
+      };
     },
   };
 });
 
-import { MidtransApiError } from "../../src/lib/payments/midtrans";
+import { PayGateApiError } from "../../src/lib/payments/paygate";
 import { POST } from "../../src/app/api/v1/payments/create/route";
 
 function restoreEnv(key: "APP_URL" | "NEXT_PUBLIC_APP_URL", value: string | undefined) {
@@ -185,18 +179,27 @@ describe("create payment API", () => {
     process.env.APP_URL = "https://www.justqiu.cloud/";
     restoreEnv("NEXT_PUBLIC_APP_URL", previousPublicAppUrl);
     process.env.USD_IDR_RATE = "16000";
-    mockState.attachedTokens = [];
     mockState.billingUser = {
       email: "buyer@example.com",
       name: "Rafi Link",
       plan: "PRO",
     };
-    mockState.midtransConfigured = true;
-    mockState.midtransError = null;
-    mockState.midtransInputs = [];
-    mockState.midtransResponse = {
-      redirectUrl: "https://app.sandbox.midtrans.com/snap/v2/vtweb/token-1",
-      token: "token-1",
+    mockState.payGateConfigured = true;
+    mockState.payGateError = null;
+    mockState.payGateInputs = [];
+    mockState.payGateResponse = {
+      data: {
+        amount: 128000,
+        midtrans: {
+          va_numbers: [{ bank: "bca", va_number: "88001234567890" }],
+        },
+        order_id: "LS-1746691200000-abc123def456",
+        payment_type: "bank_transfer",
+        platform_order_id: "linksnap_LS-1746691200000-abc123def456",
+        status: "pending",
+        transaction_id: "paygate-transaction-1",
+      },
+      success: true,
     };
     mockState.pendingInputs = [];
     mockState.rateLimitOptions = [];
@@ -209,7 +212,7 @@ describe("create payment API", () => {
     restoreEnv("NEXT_PUBLIC_APP_URL", previousPublicAppUrl);
   });
 
-  it("should create a Midtrans Snap transaction for a paid plan", async () => {
+  it("should create a PayGate bank transfer transaction for a paid plan", async () => {
     const response = await POST(
       createRequest({
         duration: "MONTHLY",
@@ -219,7 +222,9 @@ describe("create payment API", () => {
     const body = await readJson<{
       orderId: string;
       redirectUrl: string;
-      snapToken: string;
+      status: string;
+      transactionId: string;
+      vaNumbers: Array<{ bank: string; va_number: string }>;
     }>(response);
 
     expect(response.status).toBe(201);
@@ -227,8 +232,11 @@ describe("create payment API", () => {
     if (!body.success) return;
 
     expect(body.data).toMatchObject({
-      redirectUrl: "https://app.sandbox.midtrans.com/snap/v2/vtweb/token-1",
-      snapToken: "token-1",
+      paymentType: "bank_transfer",
+      redirectUrl: expect.stringContaining("/checkout/success?order_id="),
+      status: "pending",
+      transactionId: "paygate-transaction-1",
+      vaNumbers: [{ bank: "bca", va_number: "88001234567890" }],
     });
     expect(body.data.orderId).toMatch(/^LS-\d+-[a-f0-9]{12}$/);
     expect(mockState.rateLimitOptions).toEqual([
@@ -244,27 +252,23 @@ describe("create payment API", () => {
         userId: "user-1",
       },
     ]);
-    expect(mockState.midtransInputs).toEqual([
+    expect(mockState.payGateInputs).toEqual([
       {
-        callbackUrls: {
-          error: `https://www.justqiu.cloud/checkout/cancel?order_id=${body.data.orderId}&status=error`,
-          finish: `https://www.justqiu.cloud/checkout/success?order_id=${body.data.orderId}`,
-          unfinish: `https://www.justqiu.cloud/checkout/cancel?order_id=${body.data.orderId}&status=unfinish`,
-        },
+        bank: "bca",
+        callbackUrl: "https://www.justqiu.cloud/api/v1/payments/webhook",
         customer: {
           email: "buyer@example.com",
           name: "Rafi Link",
         },
         duration: "MONTHLY",
         grossAmountIdr: 128000,
+        metadata: {
+          duration: "MONTHLY",
+          plan: "PRO",
+          source: "linksnap",
+        },
         orderId: body.data.orderId,
         plan: "PRO",
-      },
-    ]);
-    expect(mockState.attachedTokens).toEqual([
-      {
-        orderId: body.data.orderId,
-        snapToken: "token-1",
       },
     ]);
   });
@@ -283,7 +287,7 @@ describe("create payment API", () => {
     if (body.success) return;
     expect(body.error.code).toBe("VALIDATION_ERROR");
     expect(mockState.pendingInputs).toEqual([]);
-    expect(mockState.midtransInputs).toEqual([]);
+    expect(mockState.payGateInputs).toEqual([]);
   });
 
   it("should require authentication", async () => {
@@ -320,11 +324,11 @@ describe("create payment API", () => {
     if (body.success) return;
     expect(body.error.code).toBe("RATE_LIMITED");
     expect(mockState.pendingInputs).toEqual([]);
-    expect(mockState.midtransInputs).toEqual([]);
+    expect(mockState.payGateInputs).toEqual([]);
   });
 
   it("should return payment configuration errors without creating transactions", async () => {
-    mockState.midtransConfigured = false;
+    mockState.payGateConfigured = false;
 
     const response = await POST(
       createRequest({
@@ -339,11 +343,11 @@ describe("create payment API", () => {
     if (body.success) return;
     expect(body.error.code).toBe("PAYMENT_CONFIGURATION_ERROR");
     expect(mockState.pendingInputs).toEqual([]);
-    expect(mockState.midtransInputs).toEqual([]);
+    expect(mockState.payGateInputs).toEqual([]);
   });
 
-  it("should return provider errors when Midtrans rejects the transaction", async () => {
-    mockState.midtransError = new MidtransApiError(400, "bad parameter");
+  it("should return provider errors when PayGate rejects the transaction", async () => {
+    mockState.payGateError = new PayGateApiError(400, "bad parameter");
 
     const response = await POST(
       createRequest({
@@ -358,6 +362,5 @@ describe("create payment API", () => {
     if (body.success) return;
     expect(body.error.code).toBe("PAYMENT_PROVIDER_ERROR");
     expect(mockState.pendingInputs).toHaveLength(1);
-    expect(mockState.attachedTokens).toEqual([]);
   });
 });

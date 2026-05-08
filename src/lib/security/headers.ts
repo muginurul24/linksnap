@@ -42,7 +42,7 @@ export function createContentSecurityPolicy({
     "img-src 'self' data: blob: https:",
     "font-src 'self' data:",
     "connect-src 'self'",
-    "frame-src 'self' https://app.midtrans.com https://app.sandbox.midtrans.com",
+    "frame-src 'self'",
     "object-src 'none'",
     "base-uri 'self'",
     "form-action 'self'",

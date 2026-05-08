@@ -73,7 +73,7 @@
     return new Response("Forbidden", { status: 403 });
   }
   ```
-- [x] **Custom header requirement** — Proxy enforces `X-Requested-With: XMLHttpRequest` on mutating `/api/v1/*` requests, with Midtrans webhook exempted for server-to-server callbacks.
+- [x] **Custom header requirement** — Proxy enforces `X-Requested-With: XMLHttpRequest` on mutating `/api/v1/*` requests, with PayGate webhook exempted for server-to-server callbacks.
 
 ### SEC-06: Security Misconfiguration
 - [x] **Security headers** — All implemented in `next.config.ts`:
@@ -156,7 +156,7 @@
     return !blocked.some(b => parsed.hostname.startsWith(b) || parsed.hostname === b);
   }
   ```
-- [x] **Webhook validation** — Midtrans webhooks verified via SHA512 signature with timing-safe comparison before processing.
+- [x] **Webhook validation** — PayGate webhooks verified via HMAC-SHA256 signature with timing-safe comparison before processing.
 - [ ] **No user-controlled fetch URLs** — Verify no user input flows into `fetch()` calls
   ```bash
   rtk grep -r "fetch(req\|fetch(body\|fetch(params" src/
@@ -176,11 +176,11 @@
 - [ ] **Suspicious activity detection** — Alert on login from new IP/location
 
 ### SEC-12: Payment Security
-- [ ] **Midtrans signature verification** — SHA512 HMAC on every webhook
+- [x] **PayGate signature verification** — HMAC-SHA256 on every webhook
 - [ ] **Amount validation server-side** — Never trust client-submitted amounts
 - [ ] **Idempotent webhooks** — Check `orderId` before processing
-- [ ] **No card data storage** — Midtrans handles all PCI compliance
-- [ ] **Webhook IP whitelist** — Only accept webhooks from Midtrans IPs
+- [ ] **No card data storage** — PayGate handles payment provider handoff; LinkSnap stores no card data
+- [ ] **Webhook IP allowlist** — Restrict callbacks to PayGate infrastructure where supported
 
 ### SEC-13: Data Protection
 - [ ] **GDPR compliance** — Users can request data export/deletion

@@ -24,7 +24,7 @@ const sections: LegalSection[] = [
     title: "3. Sharing and processors",
     paragraphs: [
       "We share information with service providers only as needed to operate LinkSnap. Current provider categories include hosting, database, Redis cache, authentication, email delivery, payment processing, analytics infrastructure, and observability.",
-      "Payment checkout is handled by Midtrans. Email delivery is handled by Resend. Database and cache infrastructure are handled by managed providers such as Neon and Upstash.",
+      "Payment checkout is handled by PayGate. Email delivery is handled by Resend. Database and cache infrastructure are handled by managed providers such as Neon and Upstash.",
     ],
   },
   {

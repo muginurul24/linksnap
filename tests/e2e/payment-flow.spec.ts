@@ -1,3 +1,4 @@
+import { createHmac } from "node:crypto";
 import { expect, test, type Page } from "@playwright/test";
 import { loadEnvConfig } from "@next/env";
 import { eq } from "drizzle-orm";
@@ -5,7 +6,6 @@ import { db } from "../../src/lib/db";
 import { subscriptions, transactions, users } from "../../src/lib/db/schema";
 import { hashPassword } from "../../src/lib/auth/password";
 import { redis } from "../../src/lib/redis";
-import { calculateMidtransSignature } from "../../src/lib/payments/webhook";
 import { retryTransientDb } from "./db-retry";
 
 loadEnvConfig(process.cwd());
@@ -126,9 +126,23 @@ async function findBillingStateSafely(userId: string) {
   }
 }
 
-function hasUsableMidtransConfig(): boolean {
-  const key = process.env.MIDTRANS_SERVER_KEY?.trim();
-  return Boolean(key && !key.includes("placeholder") && !key.startsWith("__"));
+function hasUsablePayGateConfig(): boolean {
+  const token = process.env.PAYGATE_STORE_API_TOKEN?.trim();
+  const secret = process.env.PAYGATE_WEBHOOK_SECRET?.trim();
+  return Boolean(
+    token &&
+      secret &&
+      !token.includes("placeholder") &&
+      !secret.includes("placeholder") &&
+      !token.startsWith("__") &&
+      !secret.startsWith("__"),
+  );
+}
+
+function signPayGateWebhook(rawBody: string, timestamp: string): string {
+  return `sha256=${createHmac("sha256", process.env.PAYGATE_WEBHOOK_SECRET ?? "")
+    .update(`${timestamp}.${rawBody}`)
+    .digest("hex")}`;
 }
 
 test.use({
@@ -166,7 +180,31 @@ test("should start billing upgrade from the Pro button and redirect to checkout"
         body: JSON.stringify({
           data: {
             orderId,
-            redirectUrl: `${baseURL}/checkout/cancel?order_id=${orderId}`,
+            redirectUrl: `${baseURL}/checkout/success?order_id=${orderId}`,
+            status: "pending",
+            transactionId: "paygate-transaction-1",
+            vaNumbers: [{ bank: "bca", va_number: "88001234567890" }],
+          },
+          success: true,
+        }),
+        contentType: "application/json",
+        status: 200,
+      });
+    });
+    await page.route(`**/api/v1/payments/${orderId}`, async (route) => {
+      await route.fulfill({
+        body: JSON.stringify({
+          data: {
+            amount: 128000,
+            currency: "IDR",
+            localStatus: "PENDING",
+            midtrans: {
+              va_numbers: [{ bank: "bca", va_number: "88001234567890" }],
+            },
+            order_id: orderId,
+            payment_type: "bank_transfer",
+            status: "pending",
+            transaction_id: "paygate-transaction-1",
           },
           success: true,
         }),
@@ -180,11 +218,13 @@ test("should start billing upgrade from the Pro button and redirect to checkout"
     await page.getByRole("button", { name: "Upgrade to Pro" }).click();
 
     await expect(page).toHaveURL(
-      new RegExp(`/checkout/cancel\\?order_id=${orderId}$`),
+      new RegExp(`/checkout/success\\?order_id=${orderId}$`),
       { timeout: 15_000 },
     );
+    await expect(page.getByText("Checkout complete", { exact: true })).toBeVisible();
+    await expect(page.getByText("88001234567890")).toBeVisible();
     await expect(
-      page.getByText("Payment was cancelled", { exact: true }),
+      page.getByText("Payment status refreshes every 10 seconds after transfer."),
     ).toBeVisible();
   } finally {
     await cleanupPaymentFlowState(email, userId);
@@ -196,8 +236,8 @@ test("should create sandbox payment and activate billing through webhook", async
   page,
 }) => {
   test.skip(
-    !hasUsableMidtransConfig(),
-    "A non-placeholder MIDTRANS_SERVER_KEY is required for sandbox payment E2E.",
+    !hasUsablePayGateConfig(),
+    "Non-placeholder PayGate token and webhook secret values are required for payment E2E.",
   );
 
   if (!baseURL) throw new Error("Playwright baseURL is not configured.");
@@ -239,7 +279,7 @@ test("should create sandbox payment and activate billing through webhook", async
       test.skip(
         failure?.error?.code === "PAYMENT_CONFIGURATION_ERROR" ||
           failure?.error?.code === "PAYMENT_PROVIDER_ERROR",
-        "Midtrans sandbox is unavailable or local credentials are not usable.",
+        "PayGate sandbox is unavailable or local credentials are not usable.",
       );
     }
     expect(createPaymentResponse.ok()).toBe(true);
@@ -267,23 +307,28 @@ test("should create sandbox payment and activate billing through webhook", async
       throw new Error("Created payment transaction was not found.");
     }
 
-    const grossAmount = `${transaction.grossAmountIdr}.00`;
+    const timestamp = "2026-05-07T08:00:00+07:00";
+    const webhookPayload = {
+      amount: transaction.grossAmountIdr,
+      currency: "IDR",
+      event: "transaction.updated",
+      order_id: orderId,
+      paid_at: timestamp,
+      payment_type: "bank_transfer",
+      status: "paid",
+      store_id: "st_e2e",
+      transaction_id: "paygate-transaction-e2e",
+      webhook_id: "wd_e2e",
+    };
+    const rawWebhookPayload = JSON.stringify(webhookPayload);
     const webhookResponse = await page.request.post(
       `${baseURL}/api/v1/payments/webhook`,
       {
-        data: {
-          gross_amount: grossAmount,
-          order_id: orderId,
-          payment_type: "bank_transfer",
-          settlement_time: "2026-05-07 08:00:00",
-          signature_key: calculateMidtransSignature({
-            grossAmount,
-            orderId,
-            serverKey: process.env.MIDTRANS_SERVER_KEY ?? "",
-            statusCode: "200",
-          }),
-          status_code: "200",
-          transaction_status: "settlement",
+        data: webhookPayload,
+        headers: {
+          "content-type": "application/json",
+          "x-webhook-signature": signPayGateWebhook(rawWebhookPayload, timestamp),
+          "x-webhook-timestamp": timestamp,
         },
       },
     );
@@ -302,8 +347,7 @@ test("should create sandbox payment and activate billing through webhook", async
 
     await page.goto(`/checkout/success?order_id=${orderId}`);
     await expect(page.getByText("Checkout complete")).toBeVisible();
-    await expect(page.getByText("Pro Plan", { exact: true })).toBeVisible();
-    await expect(page.getByText("Next billing date")).toBeVisible();
+    await expect(page.getByText("Payment confirmed")).toBeVisible();
     await expect(
       page.getByRole("link", { name: "Go to Dashboard" }),
     ).toBeVisible();

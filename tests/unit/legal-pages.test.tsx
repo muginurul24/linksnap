@@ -19,7 +19,7 @@ describe("legal pages", () => {
 
     expect(markup).toContain("Privacy Policy");
     expect(markup).toContain("Information we collect");
-    expect(markup).toContain("Midtrans");
+    expect(markup).toContain("PayGate");
     expect(markup).toContain("Resend");
   });
 

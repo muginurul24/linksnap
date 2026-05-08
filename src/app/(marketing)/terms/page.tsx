@@ -23,7 +23,7 @@ const sections: LegalSection[] = [
   {
     title: "3. Plans, payments, and billing",
     paragraphs: [
-      "Free and paid plan limits are shown in the product and may change as the service evolves. Paid checkout is processed by Midtrans; LinkSnap does not store payment card data.",
+      "Free and paid plan limits are shown in the product and may change as the service evolves. Paid checkout is processed by PayGate; LinkSnap does not store payment card data.",
       "A paid plan starts when the payment provider confirms settlement through the server-side webhook. If a payment is pending, the account may remain on the previous plan until confirmation is received.",
     ],
   },

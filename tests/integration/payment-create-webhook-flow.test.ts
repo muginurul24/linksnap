@@ -1,7 +1,7 @@
+import { createHmac } from "node:crypto";
 import { NextRequest } from "next/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { calculateMidtransSignature } from "../../src/lib/payments/webhook";
-import type { MidtransWebhookNotification } from "../../src/lib/validations/payment";
+import type { PayGateWebhookPayload } from "../../src/lib/validations/payment";
 
 type UserPlan = "FREE" | "PRO" | "BUSINESS";
 type PaidPlan = "PRO" | "BUSINESS";
@@ -55,9 +55,9 @@ vi.mock("@/lib/redis/rate-limit", () => ({
   },
 }));
 
-vi.mock("@/lib/payments/midtrans", () => {
-  class MidtransConfigurationError extends Error {}
-  class MidtransApiError extends Error {
+vi.mock("@/lib/payments/paygate", () => {
+  class PayGateConfigurationError extends Error {}
+  class PayGateApiError extends Error {
     readonly status: number;
 
     constructor(status: number, message: string) {
@@ -67,14 +67,29 @@ vi.mock("@/lib/payments/midtrans", () => {
   }
 
   return {
-    MidtransApiError,
-    MidtransConfigurationError,
-    assertMidtransConfigured: () => undefined,
-    createMidtransSnapTransaction: async () => ({
-      redirectUrl: "https://app.sandbox.midtrans.com/snap/v2/vtweb/token-1",
-      token: "token-1",
+    PayGateApiError,
+    PayGateConfigurationError,
+    assertPayGateConfigured: () => undefined,
+    createPayGateCharge: async ({
+      grossAmountIdr,
+      orderId,
+    }: {
+      grossAmountIdr: number;
+      orderId: string;
+    }) => ({
+      data: {
+        amount: grossAmountIdr,
+        midtrans: {
+          va_numbers: [{ bank: "bca", va_number: "88001234567890" }],
+        },
+        order_id: orderId,
+        payment_type: "bank_transfer",
+        platform_order_id: `linksnap_${orderId}`,
+        status: "pending",
+        transaction_id: "paygate-transaction-1",
+      },
+      success: true,
     }),
-    getMidtransServerKey: () => "server-key",
   };
 });
 
@@ -196,35 +211,48 @@ function createPaymentRequest(): NextRequest {
   });
 }
 
-function createWebhookRequest(
-  notification: MidtransWebhookNotification,
-): NextRequest {
+function signWebhookPayload(
+  rawBody: string,
+  timestamp: string,
+  secret = "webhook-secret",
+): string {
+  return `sha256=${createHmac("sha256", secret)
+    .update(`${timestamp}.${rawBody}`)
+    .digest("hex")}`;
+}
+
+function createWebhookRequest(payload: PayGateWebhookPayload): NextRequest {
+  const timestamp = "2026-05-07T08:00:00+07:00";
+  const rawBody = JSON.stringify(payload);
+
   return new NextRequest("http://localhost:3000/api/v1/payments/webhook", {
-    body: JSON.stringify(notification),
-    headers: { "content-type": "application/json" },
+    body: rawBody,
+    headers: {
+      "content-type": "application/json",
+      "x-webhook-signature": signWebhookPayload(rawBody, timestamp),
+      "x-webhook-timestamp": timestamp,
+    },
     method: "POST",
   });
 }
 
-function createSettlementNotification(orderId: string): MidtransWebhookNotification {
-  const notification = {
-    gross_amount: "128000.00",
+function createPaidWebhookPayload(orderId: string): PayGateWebhookPayload {
+  return {
+    amount: 128000,
+    currency: "IDR",
+    event: "transaction.updated",
+    midtrans: {
+      fraud_status: "accept",
+      transaction_id: "trx-1",
+      transaction_status: "settlement",
+    },
     order_id: orderId,
     payment_type: "bank_transfer",
-    settlement_time: "2026-05-07 08:00:00",
-    signature_key: "",
-    status_code: "200",
-    transaction_status: "settlement",
-  } satisfies MidtransWebhookNotification;
-
-  return {
-    ...notification,
-    signature_key: calculateMidtransSignature({
-      grossAmount: notification.gross_amount,
-      orderId: notification.order_id,
-      serverKey: "server-key",
-      statusCode: notification.status_code,
-    }),
+    paid_at: "2026-05-07T08:00:00+07:00",
+    status: "paid",
+    store_id: "st_123",
+    transaction_id: "paygate-transaction-1",
+    webhook_id: "wd_123",
   };
 }
 
@@ -234,6 +262,7 @@ async function readJson<T>(response: Response): Promise<ApiEnvelope<T>> {
 
 describe("payment create to webhook flow", () => {
   beforeEach(() => {
+    process.env.PAYGATE_WEBHOOK_SECRET = "webhook-secret";
     process.env.USD_IDR_RATE = "16000";
     mockState.invoiceEmails = [];
     mockState.rateLimitKeys = [];
@@ -249,7 +278,7 @@ describe("payment create to webhook flow", () => {
 
   it("should create transaction then activate subscription from webhook", async () => {
     const createResponse = await createPayment(createPaymentRequest());
-    const createBody = await readJson<{ orderId: string; snapToken: string }>(
+    const createBody = await readJson<{ orderId: string; transactionId: string }>(
       createResponse,
     );
 
@@ -258,7 +287,7 @@ describe("payment create to webhook flow", () => {
     if (!createBody.success) return;
 
     const webhookResponse = await processWebhook(
-      createWebhookRequest(createSettlementNotification(createBody.data.orderId)),
+      createWebhookRequest(createPaidWebhookPayload(createBody.data.orderId)),
     );
     const webhookBody = await readJson<{
       activatedSubscription: boolean;
@@ -279,7 +308,7 @@ describe("payment create to webhook flow", () => {
         orderId: createBody.data.orderId,
         paymentMethod: "bank_transfer",
         plan: "PRO",
-        snapToken: "token-1",
+        snapToken: null,
         status: "SETTLEMENT",
       },
     ]);

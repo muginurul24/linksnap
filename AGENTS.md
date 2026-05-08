@@ -79,7 +79,7 @@ git add .
 
 ### When You're Stuck
 - If a task needs credentials I don't have: mark it ⚠️ Partial, note what's missing, move to the next task
-- If a task depends on an external service (Google Cloud Console, Midtrans dashboard): same approach
+- If a task depends on an external service (Google Cloud Console, PayGate dashboard): same approach
 - Never block the whole flow on one task — keep moving forward
 
 ---
@@ -93,7 +93,7 @@ git add .
 - Redis (Upstash) — cache, rate limiting, sessions
 - NextAuth.js v5 — Google OAuth + Credentials
 - Resend — transactional email
-- Midtrans — payments (Snap)
+- PayGate — payment middleware
 - Framer Motion — animations
 - Inter (sans) + JetBrains Mono (mono) — fonts
 - Vitest + Playwright — testing

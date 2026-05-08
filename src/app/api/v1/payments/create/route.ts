@@ -8,17 +8,16 @@ import {
   successResponse,
 } from "@/lib/api/response";
 import {
-  attachTransactionSnapToken,
   createPendingTransactionRecord,
   findBillingUserById,
 } from "@/lib/db/queries/payments";
 import { getApiEndpointRateLimit } from "@/lib/links/limits";
 import {
-  assertMidtransConfigured,
-  createMidtransSnapTransaction,
-  MidtransApiError,
-  MidtransConfigurationError,
-} from "@/lib/payments/midtrans";
+  assertPayGateConfigured,
+  createPayGateCharge,
+  PayGateApiError,
+  PayGateConfigurationError,
+} from "@/lib/payments/paygate";
 import {
   calculateGrossAmountIdr,
   calculatePlanAmountUsd,
@@ -28,6 +27,7 @@ import {
 import {
   buildPaymentRedirectUrls,
   getConfiguredPaymentBaseUrl,
+  normalizePaymentBaseUrl,
 } from "@/lib/payments/redirects";
 import { slidingWindowRateLimit } from "@/lib/redis/rate-limit";
 import {
@@ -112,6 +112,10 @@ function calculatePaymentAmount(input: CreatePaymentInput): {
   return { grossAmountIdr, grossAmountUsd };
 }
 
+function buildPaymentWebhookUrl(baseUrl: string): string {
+  return `${normalizePaymentBaseUrl(baseUrl)}/api/v1/payments/webhook`;
+}
+
 export async function POST(request: NextRequest) {
   const requestId = createRequestId();
 
@@ -131,12 +135,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    assertMidtransConfigured();
+    assertPayGateConfigured();
 
     const { grossAmountIdr, grossAmountUsd } = calculatePaymentAmount(parsedBody.data);
     const orderId = generatePaymentOrderId();
+    const paymentBaseUrl = getConfiguredPaymentBaseUrl() ?? request.nextUrl.origin;
     const callbackUrls = buildPaymentRedirectUrls({
-      baseUrl: getConfiguredPaymentBaseUrl() ?? request.nextUrl.origin,
+      baseUrl: paymentBaseUrl,
       orderId,
     });
 
@@ -149,8 +154,9 @@ export async function POST(request: NextRequest) {
       userId: authResult.userId,
     });
 
-    const snapTransaction = await createMidtransSnapTransaction({
-      callbackUrls,
+    const payGateCharge = await createPayGateCharge({
+      bank: "bca",
+      callbackUrl: buildPaymentWebhookUrl(paymentBaseUrl),
       customer: {
         email: authResult.email,
         name: authResult.name,
@@ -159,28 +165,29 @@ export async function POST(request: NextRequest) {
       grossAmountIdr,
       orderId,
       plan: parsedBody.data.plan,
+      metadata: {
+        duration: parsedBody.data.duration,
+        plan: parsedBody.data.plan,
+        source: "linksnap",
+      },
     });
 
-    const transaction = await attachTransactionSnapToken({
-      orderId,
-      snapToken: snapTransaction.token,
-    });
-
-    if (!transaction) {
-      throw new Error("Unable to attach Midtrans Snap token.");
-    }
+    const payGateTransaction = payGateCharge.data;
 
     return successResponse(
       {
         orderId,
-        redirectUrl: snapTransaction.redirectUrl,
-        snapToken: snapTransaction.token,
+        paymentType: payGateTransaction.payment_type,
+        redirectUrl: callbackUrls.finish,
+        status: payGateTransaction.status,
+        transactionId: payGateTransaction.transaction_id,
+        vaNumbers: payGateTransaction.midtrans?.va_numbers ?? [],
       },
       201,
     );
   } catch (error) {
     if (
-      error instanceof MidtransConfigurationError ||
+      error instanceof PayGateConfigurationError ||
       error instanceof PaymentConfigurationError
     ) {
       return errorResponse(
@@ -191,7 +198,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (error instanceof MidtransApiError) {
+    if (error instanceof PayGateApiError) {
       logApiErrorResponse({
         code: "PAYMENT_PROVIDER_ERROR",
         error,

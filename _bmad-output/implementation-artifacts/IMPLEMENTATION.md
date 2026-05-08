@@ -1869,6 +1869,391 @@ Good luck. Ship it. 👑🚀
 
 ---
 
-**Estimated total:** 135 + 12 = 147 tasks | **Timeline:** 2-3 days
+## 🟢 Phase 20: Migrate from Midtrans Direct to PayGate Middleware
 
-Final boss. 🟢
+> **Source:** Rafi — 2026-05-08. Replace direct Midtrans Snap + Webhook integration with PayGate (payment-platform at paygate.digixsolution.net), a production Midtrans middleware that provides Store API, webhook delivery, audit logs, and rate limiting.
+
+> **Why:** PayGate is the single source of truth for all Midtrans integrations across Rafi's projects. Migrating Linksnap to use PayGate means centralized key management, audit trails, webhook retry, rate limiting, and unified monitoring. Linksnap becomes a PayGate merchant — no more handling Midtrans server keys directly.
+
+> **Architecture change:**
+> ```
+> BEFORE: Linksnap → Midtrans Snap API (direct, server key)
+>         Midtrans webhook → Linksnap (direct, SHA512)
+>
+> AFTER:  Linksnap → PayGate Charge API (server-to-server, Bearer token)
+>         PayGate → Midtrans (internal, opaque to Linksnap)
+>         Midtrans webhook → PayGate → Linksnap webhook callback (HMAC-SHA256)
+> ```
+
+### 🔴 Rules
+1. Zero Midtrans references in production code — only PayGate
+2. PayGate Store API token must NEVER appear in browser code — server-to-server only
+3. Every PayGate webhook must be verified with HMAC-SHA256 before processing
+4. All API calls to PayGate require `Idempotency-Key` header
+5. Remove ALL old Midtrans env vars, types, schemas, and tests
+6. 604 existing tests must remain green — add PayGate-specific tests, not just rename
+
+### 📦 PayGate API Contract
+
+**Charge Endpoint:** `POST {PAYGATE_API_BASE_URL}/v1/transactions/charge`
+- Auth: `Authorization: Bearer {STORE_API_TOKEN}`
+- Headers: `Idempotency-Key`, `Content-Type: application/json`
+- Request body:
+  ```json
+  {
+    "order_id": "LS-1746691200000-abc123def456",
+    "amount": 128000,
+    "currency": "IDR",
+    "payment_type": "bank_transfer",
+    "bank": "bca",
+    "customer": { "name": "Rafi Link", "email": "buyer@example.com", "phone": "081234567890" },
+    "items": [{ "id": "linksnap-pro-monthly", "name": "LinkSnap Pro Monthly", "price": 128000, "quantity": 1 }],
+    "callback_url": "https://linksnap.test/api/v1/payments/webhook",
+    "metadata": { "source": "linksnap", "plan": "PRO", "duration": "MONTHLY" }
+  }
+  ```
+- Response (201):
+  ```json
+  {
+    "success": true,
+    "data": {
+      "transaction_id": "uuid",
+      "order_id": "LS-...",
+      "platform_order_id": "linksnap_LS-...",
+      "status": "pending",
+      "payment_type": "bank_transfer",
+      "amount": 128000,
+      "midtrans": {
+        "transaction_id": "trx_...",
+        "va_numbers": [{ "bank": "bca", "va_number": "88001234567890" }],
+        "transaction_status": "pending",
+        "fraud_status": "accept"
+      }
+    }
+  }
+  ```
+
+**Webhook Callback (PayGate → Linksnap):** `POST {linksnap}/api/v1/payments/webhook`
+- Headers: `X-Webhook-Id`, `X-Webhook-Timestamp`, `X-Webhook-Signature: sha256=<HMAC>`
+- Request body:
+  ```json
+  {
+    "event": "transaction.updated",
+    "webhook_id": "wd_...",
+    "store_id": "st_...",
+    "order_id": "LS-1746691200000-abc123def456",
+    "transaction_id": "uuid",
+    "status": "paid",
+    "payment_type": "bank_transfer",
+    "amount": 128000,
+    "currency": "IDR",
+    "paid_at": "2026-05-08T10:00:00+08:00",
+    "customer": { "name": "Rafi Link", "email": "buyer@example.com" },
+    "midtrans": { "transaction_status": "settlement", "fraud_status": "accept", "transaction_id": "trx_..." },
+    "metadata": { "source": "linksnap", "plan": "PRO", "duration": "MONTHLY" }
+  }
+  ```
+- Signature verification: `HMAC-SHA256(webhook_secret, "{timestamp}.{raw_body}")`
+- MUST respond `2xx` within seconds — heavy work goes to queue
+
+**PayGate Status → Linksnap PaymentStatus mapping:**
+| PayGate status | Linksnap PaymentStatus | Activate subscription |
+|---|---|---|
+| `pending` | `PENDING` | No |
+| `paid` | `SETTLEMENT` | Yes |
+| `failed` | `DENY` | No |
+| `expired` | `EXPIRE` | No |
+| `cancelled` | `CANCEL` | No |
+| `challenge` | `PENDING` | No |
+| `refunded` / `partial_refunded` | Terminal — ignore (already SETTLEMENT) | No |
+
+### 📋 New Environment Variables
+
+Remove these from `.env` and `.env.example`:
+- `MIDTRANS_IS_PRODUCTION`
+- `MIDTRANS_SERVER_KEY`
+- `MIDTRANS_CLIENT_KEY`
+- `MIDTRANS_MERCHANT_ID`
+
+Add these to `.env.example`:
+- `PAYGATE_API_BASE_URL=https://paygate.digixsolution.net` — PayGate API base URL
+- `PAYGATE_STORE_API_TOKEN=sk_store_live_xxxxxxxxxxxxxxxxxxxx` — Store API token from PayGate dashboard
+- `PAYGATE_WEBHOOK_SECRET=whsec_store_xxxxxxxxxxxxxxxxxxxx` — Webhook secret for verifying incoming callbacks
+
+### 📁 File Changes Summary
+| Action | File |
+|---|---|
+| **NEW** | `src/lib/payments/paygate.ts` — PayGate Charge API client |
+| **NEW** | `src/lib/payments/paygate-webhook.ts` — PayGate webhook verification + status mapping |
+| **NEW** | `src/lib/payments/paygate-webhook-handler.ts` — PayGate webhook orchestrator |
+| **NEW** | `tests/unit/paygate-client.test.ts` — PayGate client tests |
+| **NEW** | `tests/unit/paygate-webhook.test.ts` — PayGate webhook tests |
+| **DELETE** | `src/lib/payments/midtrans.ts` |
+| **DELETE** | `src/lib/payments/webhook.ts` |
+| **DELETE** | `src/lib/payments/webhook-handler.ts` |
+| **DELETE** | `tests/unit/midtrans-client.test.ts` |
+| **DELETE** | `tests/unit/midtrans-webhook.test.ts` |
+| **MODIFY** | `src/lib/validations/payment.ts` — Replace Midtrans schema with PayGate |
+| **MODIFY** | `src/app/api/v1/payments/create/route.ts` — PayGate charge flow |
+| **MODIFY** | `src/app/api/v1/payments/webhook/route.ts` — PayGate webhook flow |
+| **MODIFY** | `.env.example` — Replace Midtrans env vars with PayGate |
+| **MODIFY** | `tests/integration/create-payment-api.test.ts` — PayGate charge tests |
+| **MODIFY** | `tests/integration/payment-webhook-api.test.ts` — PayGate webhook tests |
+| **MODIFY** | `tests/integration/payment-create-webhook-flow.test.ts` — PayGate flow tests |
+| **MODIFY** | `tests/integration/billing-page-midtrans.test.tsx` → rename + update |
+| **MODIFY** | `tests/e2e/payment-flow.spec.ts` — PayGate references |
+| **MODIFY** | `tests/unit/api-security.test.ts` — Update webhook security refs |
+| **MODIFY** | `src/lib/api-docs/spec.ts` — Document PayGate integration |
+| **MODIFY** | `src/lib/seo/metadata.ts` — Update payment provider mentions |
+| **MODIFY** | `src/lib/security/headers.ts` — Update webhook allowed origins |
+| **MODIFY** | `src/components/landing/pricing-page.tsx` — Update payment brand |
+| **MODIFY** | Marketing/legal pages — Update payment provider mentions |
+| **MODIFY** | `AGENTS.md` — Update Midtrans references |
+| **MODIFY** | `_bmad-output/project-context.md` — Update payment stack |
+
+---
+
+### [x] TASK 20.1 — Create PayGate Charge API Client (`src/lib/payments/paygate.ts`)
+
+Create the PayGate API client that replaces the Midtrans Snap client.
+
+**Requirements:**
+- Export `PayGateClientConfig` type: `{ apiBaseUrl?: string, fetcher?: typeof fetch, storeApiToken?: string }`
+- Export `PayGateConfigurationError` — thrown when `PAYGATE_STORE_API_TOKEN` missing
+- Export `PayGateApiError` — thrown on non-2xx, wraps status + response body
+- Export `assertPayGateConfigured(config?)` — throws if token missing
+- Export `buildPayGateChargePayload(input)` — builds the charge request body matching PayGate contract
+- Export `createPayGateCharge(input, config?)` — POST to charge endpoint, returns PayGate charge response
+- Export `PayGateChargeInput` type and `PayGateChargeResponse` type
+- Internal helper: `getStoreApiToken(config?)` — reads from config or `PAYGATE_STORE_API_TOKEN` env
+- Internal helper: `getApiBaseUrl(config?)` — default to `https://paygate.digixsolution.net`
+- Idempotency key: use order_id as base — `idem_{orderId}`
+- Include `callback_url` in payload pointing to `/api/v1/payments/webhook`
+- Thread `metadata` for plan/duration/source so PayGate audit logs are useful
+- All errors must include the PayGate response body for debugging
+
+### [x] TASK 20.2 — Create PayGate Webhook Verification + Status Mapping (`src/lib/payments/paygate-webhook.ts`)
+
+Create webhook signature verification and status mapping replacing Midtrans SHA512 logic.
+
+**Requirements:**
+- Export `verifyPayGateWebhookSignature(rawBody, timestamp, signature, secret?)` — HMAC-SHA256 verification
+  - Compute: `HMAC-SHA256(secret, "{timestamp}.{rawBody}")`
+  - Compare with timing-safe comparison
+  - Secret from `PAYGATE_WEBHOOK_SECRET` env if not provided
+- Export `mapPayGateStatus(status)` — maps PayGate normalized status to Linksnap PaymentStatus
+  - `payGateStatus` → `{ activateSubscription: boolean, status: PaymentStatus }`
+  - Map: paid→SETTLEMENT (activate), pending→PENDING, failed→DENY, expired→EXPIRE, cancelled→CANCEL, challenge→PENDING, refunded/partial_refunded→skip (already terminal)
+- Export `PayGateWebhookStatusAction` type
+- Export `parsePayGateTimestamp(value)` — parse ISO 8601 timestamp string to Date
+- Signature mismatch: return `false`, don't throw
+- Must use `node:crypto` timing-safe comparison
+
+### [x] TASK 20.3 — Create PayGate Webhook Handler (`src/lib/payments/paygate-webhook-handler.ts`)
+
+Create the webhook orchestrator that replaces the Midtrans webhook handler.
+
+**Requirements:**
+- Export `handlePayGatePaymentWebhook(payload)` — processes incoming PayGate webhook
+- Extract `order_id` from the webhook payload (PayGate uses merchant's order_id)
+- Find transaction via `findPaymentTransactionByOrderId(order_id)`
+- Validate webhook amount matches stored transaction (compare `payload.amount` with `transaction.grossAmountIdr`)
+- Check for terminal status transitions (same logic as existing)
+- Call `updatePaymentTransactionStatus(...)` on state change
+- On paid status: call `createOrRenewSubscriptionForPayment(...)`
+- Export `PayGateWebhookResult` type
+- Export `UnknownPaymentOrderError`, `PaymentAmountMismatchError`, `InvalidPaymentPlanError`
+- Handle PayGate's nested `amount` (integer IDR) vs old `gross_amount` (string)
+- Parse `paid_at` from PayGate's ISO timestamp
+
+### [x] TASK 20.4 — Update Payment Validation Schema (`src/lib/validations/payment.ts`)
+
+Replace `midtransWebhookNotificationSchema` with PayGate webhook schema.
+
+**Requirements:**
+- Remove: `midtransWebhookNotificationSchema`, `MidtransWebhookNotification` type
+- Add: `payGateWebhookSchema` — Zod schema for PayGate callback payload:
+  ```ts
+  {
+    event: z.string(),
+    webhook_id: z.string(),
+    store_id: z.string(),
+    order_id: z.string().min(1).max(100),
+    transaction_id: z.string(),
+    status: z.enum(["paid", "pending", "failed", "expired", "cancelled", "challenge", "refunded", "partial_refunded"]),
+    payment_type: z.string().optional(),
+    amount: z.number().int().positive(),
+    currency: z.string().optional(),
+    paid_at: z.string().optional(),
+    customer: z.object({ name: z.string().optional(), email: z.string().optional() }).optional(),
+    midtrans: z.object({
+      transaction_status: z.string().optional(),
+      fraud_status: z.string().optional(),
+      transaction_id: z.string().optional(),
+    }).optional(),
+    metadata: z.record(z.unknown()).optional(),
+  }
+  ```
+- Export: `PayGateWebhookPayload` type from schema
+- Keep all other schemas unchanged: `createPaymentSchema`, `paidPlanSchema`, etc.
+
+### [x] TASK 20.5 — Update Payment Create API Route (`src/app/api/v1/payments/create/route.ts`)
+
+Replace Midtrans Snap transaction creation with PayGate Charge API.
+
+**Requirements:**
+- Replace `import { createMidtransSnapTransaction, assertMidtransConfigured, MidtransApiError, MidtransConfigurationError } from "@/lib/payments/midtrans"` with PayGate equivalents
+- Replace `assertMidtransConfigured()` with `assertPayGateConfigured()`
+- Replace `createMidtransSnapTransaction(...)` with `createPayGateCharge(...)`
+- Build charge payload with PayGate contract:
+  - `payment_type: "bank_transfer"`, `bank: "bca"` (default, can expand later)
+  - Include `items` array matching what Midtrans Snap was sending
+  - Include `callback_url` pointing to `/api/v1/payments/webhook` on the same APP_URL
+  - Include `metadata: { source: "linksnap", plan, duration }`
+- Response shape stays the same: `{ orderId, redirectUrl, snapToken }`
+  - NOTE: PayGate doesn't return Snap redirect URL or token. We don't use Snap UI.
+  - PayGate returns VA numbers for bank transfer — store these for displaying to user
+  - Return `{ orderId, transactionId, status, vaNumbers }` or similar
+  - **CRITICAL DESIGN DECISION:** Linksnap currently uses Midtrans Snap (redirect to Midtrans-hosted payment page). PayGate doesn't expose Snap UI. Two options:
+    a) Use PayGate bank_transfer → show VA number to user directly in Linksnap UI (no redirect)
+    b) Keep Midtrans Snap for the payment page UI but route through PayGate for charge creation
+    
+    **Decision: Option (a)** — build a self-hosted checkout page showing VA number. This eliminates reliance on Midtrans-hosted pages entirely.
+- Handle PayGate errors:
+  - `PayGateConfigurationError` → 503
+  - `PayGateApiError` → 502 with provider status
+- Generate idempotency key: `idem_{orderId}`
+
+### [x] TASK 20.6 — Update Webhook API Route (`src/app/api/v1/payments/webhook/route.ts`)
+
+Replace Midtrans webhook processing with PayGate webhook.
+
+**Requirements:**
+- Replace Midtrans webhook imports with PayGate equivalents
+- Verify signature using `verifyPayGateWebhookSignature()`:
+  - Read `X-Webhook-Timestamp` and `X-Webhook-Signature` headers
+  - Read raw request body for HMAC computation
+  - If signature invalid → 401
+- Parse body with `payGateWebhookSchema`
+- Call `handlePayGatePaymentWebhook(parsedBody.data)`
+- Return same response shape: `{ activatedSubscription, ignored, orderId, status }`
+- Handle errors: configuration (503), order not found (404), amount mismatch (400), plan invalid (500), internal (500)
+- Log all errors for observability
+
+### TASK 20.7 — Build Self-Hosted Checkout Page (VA Number Display)
+
+Since PayGate doesn't expose Snap UI, build a checkout success page that shows VA payment instructions.
+
+**Requirements:**
+- Modify `src/app/(marketing)/checkout/success/page.tsx`:
+  - On mount, fetch transaction details from PayGate: `GET {PAYGATE_API_BASE_URL}/v1/transactions/{order_id}`
+  - Display VA number, bank name, amount, expiry instructions
+  - Add copy-to-clipboard for VA number
+  - Show payment status (polling every 10s until paid)
+- Add a server-side endpoint `GET /api/v1/payments/{order_id}` that proxies to PayGate (keeps token server-side)
+- The checkout page must:
+  - Parse `order_id` from URL query params (existing schema)
+  - Show loading skeleton while fetching
+  - Show error state if transaction not found
+  - Show VA instructions in clean, accessible layout
+  - Auto-redirect to billing page on `paid` status
+
+### [x] TASK 20.8 — Clean Up Remaining Midtrans References
+
+Audit and update ALL files that reference Midtrans.
+
+**Requirements:**
+- `src/lib/seo/metadata.ts` — update payment provider mentions
+- `src/lib/security/headers.ts` — update webhook allowed origins
+- `src/components/landing/pricing-page.tsx` — update "Powered by Midtrans" references
+- `src/app/(marketing)/privacy/page.tsx` — update payment processor mentions
+- `src/app/(marketing)/terms/page.tsx` — update payment processor mentions
+- `src/app/(dashboard)/help/page.tsx` — update help docs references
+- `src/app/(marketing)/checkout/success/page.tsx` — update Midtrans references
+- `AGENTS.md` — update Midtrans references
+- `_bmad-output/project-context.md` — update payment stack section
+- `_bmad-output/planning-artifacts/SECURITY.md` — update payment security notes
+- Do NOT modify `_bmad-output/planning-artifacts/` spec files (historical documents)
+
+### [x] TASK 20.9 — Update Environment Config
+
+Update `.env.example` and environment documentation.
+
+**Requirements:**
+- Remove all `MIDTRANS_*` entries from `.env.example`
+- Add:
+  ```bash
+  # PayGate (Payment Middleware)
+  PAYGATE_API_BASE_URL=https://paygate.digixsolution.net
+  PAYGATE_STORE_API_TOKEN=sk_store_live_xxxxxxxxxxxxxxxxxxxx
+  PAYGATE_WEBHOOK_SECRET=whsec_store_xxxxxxxxxxxxxxxxxxxx
+  ```
+- Update all `.env.example` comments to describe PayGate vars
+- Do NOT touch actual `.env` file (contains secrets)
+
+### [x] TASK 20.10 — Create PayGate Unit Tests
+
+Create `tests/unit/paygate-client.test.ts` and `tests/unit/paygate-webhook.test.ts`.
+
+**`paygate-client.test.ts` requirements:**
+- Test charge payload building with all required fields
+- Test charge API call with mock fetcher (verify URL, headers, auth)
+- Test idempotency key in headers
+- Test PayGateConfigurationError when token missing
+- Test PayGateApiError on non-2xx responses
+- Test successful response parsing (VA numbers present)
+- Test callback_url is correctly included
+
+**`paygate-webhook.test.ts` requirements:**
+- Test HMAC-SHA256 signature verification (valid + invalid)
+- Test status mapping: paid→SETTLEMENT, pending→PENDING, failed→DENY, expired→EXPIRE, cancelled→CANCEL
+- Test that refunded/partial_refunded do NOT activate subscription
+- Test parsePayGateTimestamp with ISO 8601
+
+### [x] TASK 20.11 — Update Integration Tests
+
+Update all integration tests referencing Midtrans.
+
+**Requirements:**
+- `tests/integration/create-payment-api.test.ts`:
+  - Mock PayGate client instead of Midtrans
+  - Update all `MidtransInput` types → `PayGateInput`
+  - Update mock responses to match PayGate charge response shape
+  - Test 201 with VA numbers in response
+- `tests/integration/payment-webhook-api.test.ts`:
+  - Mock PayGate webhook handler instead of Midtrans
+  - Update notification payload shape to PayGate webhook format
+  - Verify HMAC-SHA256 signature header test
+  - Test status lifecycle: pending → paid
+- `tests/integration/payment-create-webhook-flow.test.ts`:
+  - Full flow with PayGate: create charge → webhook callback → subscription activated
+- `tests/integration/billing-page-midtrans.test.tsx`:
+  - Rename to `tests/integration/billing-page-paygate.test.tsx`
+  - Update all Midtrans references to PayGate
+- `tests/e2e/payment-flow.spec.ts`:
+  - Update payment flow for self-hosted checkout
+  - Test VA number display page
+  - Test status polling
+- `tests/unit/api-security.test.ts`:
+  - Update Midtrans webhook references to PayGate
+
+### TASK 20.12 — Verify & Finalize
+
+Final validation pass.
+
+**Requirements:**
+- Run `rtk bun run typecheck` — must pass with 0 errors
+- Run `rtk bun run test` — all existing tests must still pass
+- Run `rtk bun run lint` — 0 errors
+- Run `rtk bun run build` — production build must succeed
+- Verify zero remaining `import.*midtrans` in `src/` directory
+- Verify zero remaining `MIDTRANS_` in `.env.example`
+- Verify `rtk bun run typecheck` catches any stale Midtrans type references
+- Grep for "midtrans" (case-insensitive) in `src/` — only allowed in comments/docs
+- Grep for "midtrans" (case-insensitive) in `tests/` — only allowed in historical test names that have been updated
+
+---
+
+**Estimated total:** 147 + 12 = 159 tasks | **Timeline:** 1-2 days
+
+PayGate integration complete. 🟢

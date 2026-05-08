@@ -57,7 +57,7 @@ vi.mock("@/lib/db/queries/payments", () => ({
 
 import BillingPage from "../../src/app/(dashboard)/settings/billing/page";
 
-describe("billing page Midtrans checkout", () => {
+describe("billing page PayGate checkout", () => {
   beforeEach(() => {
     mockState.billingUser = {
       email: "buyer@example.com",
@@ -92,7 +92,7 @@ describe("billing page Midtrans checkout", () => {
           duration: "MONTHLY",
           grossAmountIdr: 128000,
           grossAmountUsd: 8,
-          id: "transaction-midtrans",
+          id: "transaction-paygate",
           orderId: "LS-1777777777777-abcdef123456",
           paidAt: new Date("2026-05-07T07:05:00.000Z"),
           paymentMethod: "bank_transfer",

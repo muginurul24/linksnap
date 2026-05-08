@@ -9,14 +9,11 @@ import {
   InvalidPaymentPlanError,
   PaymentAmountMismatchError,
   UnknownPaymentOrderError,
-  handleMidtransPaymentWebhook,
-} from "@/lib/payments/webhook-handler";
-import {
-  MidtransConfigurationError,
-  getMidtransServerKey,
-} from "@/lib/payments/midtrans";
-import { verifyMidtransSignature } from "@/lib/payments/webhook";
-import { midtransWebhookNotificationSchema } from "@/lib/validations/payment";
+  handlePayGatePaymentWebhook,
+} from "@/lib/payments/paygate-webhook-handler";
+import { PayGateConfigurationError } from "@/lib/payments/paygate";
+import { verifyPayGateWebhookSignature } from "@/lib/payments/paygate-webhook";
+import { payGateWebhookSchema } from "@/lib/validations/payment";
 
 export const runtime = "nodejs";
 
@@ -24,30 +21,37 @@ export async function POST(request: NextRequest) {
   const requestId = createRequestId();
 
   try {
-    const body = await request.json().catch(() => null);
-    const parsedBody = midtransWebhookNotificationSchema.safeParse(body);
+    const rawBody = await request.text();
+    const timestamp = request.headers.get("x-webhook-timestamp");
+    const signature = request.headers.get("x-webhook-signature");
+
+    if (
+      !timestamp ||
+      !signature ||
+      !verifyPayGateWebhookSignature(rawBody, timestamp, signature)
+    ) {
+      return errorResponse(
+        "INVALID_SIGNATURE",
+        "Invalid PayGate webhook signature.",
+        401,
+        requestId,
+      );
+    }
+
+    const body = JSON.parse(rawBody) as unknown;
+    const parsedBody = payGateWebhookSchema.safeParse(body);
 
     if (!parsedBody.success) {
       return errorResponse(
         "VALIDATION_ERROR",
-        "Invalid Midtrans notification.",
+        "Invalid PayGate webhook payload.",
         400,
         requestId,
         parsedBody.error.flatten(),
       );
     }
 
-    const serverKey = getMidtransServerKey();
-    if (!verifyMidtransSignature(parsedBody.data, serverKey)) {
-      return errorResponse(
-        "INVALID_SIGNATURE",
-        "Invalid Midtrans notification signature.",
-        401,
-        requestId,
-      );
-    }
-
-    const result = await handleMidtransPaymentWebhook(parsedBody.data);
+    const result = await handlePayGatePaymentWebhook(parsedBody.data);
 
     return successResponse(
       {
@@ -59,7 +63,16 @@ export async function POST(request: NextRequest) {
       200,
     );
   } catch (error) {
-    if (error instanceof MidtransConfigurationError) {
+    if (error instanceof SyntaxError) {
+      return errorResponse(
+        "VALIDATION_ERROR",
+        "Invalid PayGate webhook payload.",
+        400,
+        requestId,
+      );
+    }
+
+    if (error instanceof PayGateConfigurationError) {
       return errorResponse(
         "PAYMENT_CONFIGURATION_ERROR",
         "Payment provider is not configured.",

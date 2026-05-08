@@ -88,7 +88,7 @@ describe("API mutation security", () => {
     });
   });
 
-  it("should exempt Midtrans webhook callbacks from custom browser headers", () => {
+  it("should exempt PayGate webhook callbacks from custom browser headers", () => {
     const result = validateApiMutationRequest({
       allowedOrigins,
       method: "POST",
