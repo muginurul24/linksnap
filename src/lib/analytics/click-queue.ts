@@ -12,6 +12,8 @@ export const REDIRECT_CLICK_DEAD_LETTER_KEY =
 export const REDIRECT_CLICK_QUEUE_MAX_LENGTH = 10_000;
 export const REDIRECT_CLICK_QUEUE_PROCESS_LIMIT = 100;
 const REDIRECT_CLICK_FAILURE_ALERT_THRESHOLD = 0.05;
+const REDIRECT_CLICK_QUEUE_TTL_SECONDS = 60 * 60; // 1 hour
+const REDIRECT_CLICK_DEAD_LETTER_TTL_SECONDS = 60 * 60 * 24 * 7; // 7 days
 
 type QueuedRedirectClick = {
   enqueuedAt: string;
@@ -59,11 +61,14 @@ export async function enqueueRedirectClick(
   input: RedirectClickInput,
 ): Promise<void> {
   await redis.rpush(REDIRECT_CLICK_QUEUE_KEY, serializeRedirectClick(input));
-  await redis.ltrim(
-    REDIRECT_CLICK_QUEUE_KEY,
-    -REDIRECT_CLICK_QUEUE_MAX_LENGTH,
-    -1,
-  );
+  await Promise.all([
+    redis.ltrim(
+      REDIRECT_CLICK_QUEUE_KEY,
+      -REDIRECT_CLICK_QUEUE_MAX_LENGTH,
+      -1,
+    ),
+    redis.expire(REDIRECT_CLICK_QUEUE_KEY, REDIRECT_CLICK_QUEUE_TTL_SECONDS),
+  ]);
 }
 
 export async function recordRedirectClick(
@@ -107,6 +112,10 @@ async function moveToDeadLetter(payload: unknown): Promise<void> {
     const deadLetterPayload =
       typeof payload === "string" ? payload : JSON.stringify(payload);
     await redis.rpush(REDIRECT_CLICK_DEAD_LETTER_KEY, deadLetterPayload);
+    await redis.expire(
+      REDIRECT_CLICK_DEAD_LETTER_KEY,
+      REDIRECT_CLICK_DEAD_LETTER_TTL_SECONDS,
+    );
   } catch (error) {
     logger.error("redirect_click_dead_letter_failed", { error });
   }

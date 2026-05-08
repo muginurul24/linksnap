@@ -27,6 +27,9 @@ const mockState = vi.hoisted(() => ({
 
 vi.mock("@/lib/redis", () => ({
   redis: {
+    expire: async (_key: string, _seconds: number) => {
+      // no-op in tests
+    },
     lpop: async () => mockState.queue.shift() ?? null,
     ltrim: async (key: string, start: number, end: number) => {
       mockState.ltrimCalls.push({ end, key, start });
