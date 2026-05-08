@@ -1,0 +1,311 @@
+import { eq, ilike, or, and, count, desc, sql, sum } from "drizzle-orm";
+import { getDb } from "@/lib/db";
+import { users, links, clickEvents, transactions } from "@/lib/db/schema";
+import type { UserPlan } from "@/lib/links/limits";
+
+export type AdminUser = {
+  id: string;
+  email: string;
+  name: string | null;
+  plan: UserPlan;
+  role: string;
+  emailVerified: Date | null;
+  deletedAt: Date | null;
+  createdAt: Date;
+  linkCount: number;
+};
+
+export type AdminUserDetail = AdminUser & {
+  avatarUrl: string | null;
+  googleId: string | null;
+  twoFactorEnabled: boolean;
+  updatedAt: Date;
+  totalClicks: number;
+  subscriptionPlan: string | null;
+  subscriptionStatus: string | null;
+};
+
+export type AdminSystemStats = {
+  totalUsers: number;
+  totalLinks: number;
+  totalClicks: number;
+  totalRevenueIdr: number;
+  planDistribution: Record<UserPlan, number>;
+  usersLast30Days: number;
+  linksLast30Days: number;
+};
+
+export async function listAllUsers({
+  limit,
+  page,
+  search,
+  plan,
+}: {
+  limit: number;
+  page: number;
+  search?: string;
+  plan?: string;
+}): Promise<{ users: AdminUser[]; total: number }> {
+  const db = getDb();
+  const offset = (page - 1) * limit;
+
+  const conditions = [];
+  if (search) {
+    conditions.push(
+      or(
+        ilike(users.email, `%${search}%`),
+        ilike(users.name ?? sql`''`, `%${search}%`),
+      ),
+    );
+  }
+  if (plan) {
+    conditions.push(eq(users.plan, plan as UserPlan));
+  }
+
+  const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+
+  const [totalRow] = await db
+    .select({ total: count(users.id) })
+    .from(users)
+    .where(whereClause);
+
+  const rawUsers = await db
+    .select({
+      id: users.id,
+      email: users.email,
+      name: users.name,
+      plan: users.plan,
+      role: users.role,
+      emailVerified: users.emailVerified,
+      deletedAt: users.deletedAt,
+      createdAt: users.createdAt,
+    })
+    .from(users)
+    .where(whereClause)
+    .orderBy(desc(users.createdAt))
+    .limit(limit)
+    .offset(offset);
+
+  // Get link counts for each user
+  const userIds = rawUsers.map((u) => u.id);
+  let linkCounts: Record<string, number> = {};
+  if (userIds.length > 0) {
+    const counts = await db
+      .select({
+        userId: links.userId,
+        count: count(links.id),
+      })
+      .from(links)
+      .where(sql`${links.userId} = ANY(ARRAY[${sql.join(userIds.map((uid) => sql`${uid}::uuid`))}])`)
+      .groupBy(links.userId);
+    for (const row of counts) {
+      linkCounts[row.userId] = row.count;
+    }
+  }
+
+  const usersList: AdminUser[] = rawUsers.map((u) => ({
+    id: u.id,
+    email: u.email,
+    name: u.name,
+    plan: u.plan as UserPlan,
+    role: u.role,
+    emailVerified: u.emailVerified,
+    deletedAt: u.deletedAt,
+    createdAt: u.createdAt,
+    linkCount: linkCounts[u.id] ?? 0,
+  }));
+
+  return { users: usersList, total: totalRow?.total ?? 0 };
+}
+
+export async function getUserDetailById(
+  id: string,
+): Promise<AdminUserDetail | null> {
+  const db = getDb();
+
+  const [user] = await db
+    .select()
+    .from(users)
+    .where(eq(users.id, id))
+    .limit(1);
+
+  if (!user) return null;
+
+  const [clickCountRow] = await db
+    .select({ total: count(clickEvents.id) })
+    .from(clickEvents)
+    .innerJoin(links, eq(links.id, clickEvents.linkId))
+    .where(eq(links.userId, id));
+
+  // Get subscription status
+  let subscriptionPlan: string | null = null;
+  let subscriptionStatus: string | null = null;
+  try {
+    const subRows = await db
+      .select({
+        plan: sql<string>`s.plan`,
+        status: sql<string>`s.status`,
+      })
+      .from(sql`subscriptions s`)
+      .where(sql`s.user_id = ${id}::uuid`)
+      .limit(1);
+    if (subRows.length > 0) {
+      subscriptionPlan = subRows[0].plan;
+      subscriptionStatus = subRows[0].status;
+    }
+  } catch {
+    // Subscription lookup is best-effort
+  }
+
+  return {
+    id: user.id,
+    email: user.email,
+    name: user.name,
+    plan: user.plan as UserPlan,
+    role: user.role,
+    emailVerified: user.emailVerified,
+    deletedAt: user.deletedAt,
+    createdAt: user.createdAt,
+    avatarUrl: user.avatarUrl,
+    googleId: user.googleId,
+    twoFactorEnabled: user.twoFactorEnabled,
+    updatedAt: user.updatedAt,
+    linkCount: 0,
+    totalClicks: clickCountRow?.total ?? 0,
+    subscriptionPlan,
+    subscriptionStatus,
+  };
+}
+
+export async function updateUserPlan({
+  userId,
+  plan,
+}: {
+  userId: string;
+  plan: UserPlan;
+}): Promise<{ updated: boolean; previousPlan: string | null }> {
+  const db = getDb();
+
+  const [existing] = await db
+    .select({ plan: users.plan })
+    .from(users)
+    .where(eq(users.id, userId))
+    .limit(1);
+
+  if (!existing) return { updated: false, previousPlan: null };
+
+  await db
+    .update(users)
+    .set({ plan })
+    .where(eq(users.id, userId));
+
+  return { updated: true, previousPlan: existing.plan };
+}
+
+export async function suspendUser(
+  userId: string,
+): Promise<boolean> {
+  const db = getDb();
+
+  const [existing] = await db
+    .select({ deletedAt: users.deletedAt })
+    .from(users)
+    .where(eq(users.id, userId))
+    .limit(1);
+
+  if (!existing) return false;
+
+  await db
+    .update(users)
+    .set({ deletedAt: new Date() })
+    .where(eq(users.id, userId));
+
+  return true;
+}
+
+export async function unsuspendUser(
+  userId: string,
+): Promise<boolean> {
+  const db = getDb();
+
+  const [existing] = await db
+    .select({ deletedAt: users.deletedAt })
+    .from(users)
+    .where(eq(users.id, userId))
+    .limit(1);
+
+  if (!existing) return false;
+
+  await db
+    .update(users)
+    .set({ deletedAt: null })
+    .where(eq(users.id, userId));
+
+  return true;
+}
+
+export async function getSystemStats(): Promise<AdminSystemStats> {
+  const db = getDb();
+
+  const [userStats] = await db
+    .select({ total: count(users.id) })
+    .from(users);
+
+  const [linkStats] = await db
+    .select({ total: count(links.id) })
+    .from(links);
+
+  const [clickStats] = await db
+    .select({ total: count(clickEvents.id) })
+    .from(clickEvents);
+
+  const [revenueStats] = await db
+    .select({ total: sum(transactions.grossAmountIdr) })
+    .from(transactions)
+    .where(eq(transactions.status, "SETTLEMENT"));
+
+  const revenueIdr = typeof revenueStats?.total === "number" ? revenueStats.total : 0;
+
+  // Plan distribution
+  const planRows = await db
+    .select({
+      plan: users.plan,
+      count: count(users.id),
+    })
+    .from(users)
+    .groupBy(users.plan);
+
+  const planDistribution: Record<string, number> = {
+    FREE: 0,
+    PRO: 0,
+    BUSINESS: 0,
+  };
+  for (const row of planRows) {
+    if (row.plan) {
+      planDistribution[row.plan as UserPlan] = row.count;
+    }
+  }
+
+  // Last 30 days new users
+  const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+  const [users30d] = await db
+    .select({ total: count(users.id) })
+    .from(users)
+    .where(sql`${users.createdAt} >= ${thirtyDaysAgo.toISOString()}`);
+
+  // Last 30 days new links
+  const [links30d] = await db
+    .select({ total: count(links.id) })
+    .from(links)
+    .where(sql`${links.createdAt} >= ${thirtyDaysAgo.toISOString()}`);
+
+  return {
+    totalUsers: userStats?.total ?? 0,
+    totalLinks: linkStats?.total ?? 0,
+    totalClicks: clickStats?.total ?? 0,
+    totalRevenueIdr: revenueIdr,
+    planDistribution: planDistribution as Record<UserPlan, number>,
+    usersLast30Days: users30d?.total ?? 0,
+    linksLast30Days: links30d?.total ?? 0,
+  };
+}
