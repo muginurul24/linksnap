@@ -58,12 +58,17 @@ const dashboardAuthProxy = auth((request) => {
   );
 });
 
-type MiddlewareHandler = (
-  request: NextRequest,
-  event: NextFetchEvent,
-) => ReturnType<typeof dashboardAuthProxy>;
-
-const runDashboardAuthProxy = dashboardAuthProxy as unknown as MiddlewareHandler;
+/**
+ * NextAuth auth() returns an AppRouteHandlerFn expecting authjs's internal
+ * Request type, while Next.js App Router middleware passes NextRequest.
+ * The types disagree but runtime shapes are compatible. The double-cast
+ * is required by TypeScript and is a known NextAuth compat pattern.
+ */
+const runDashboardAuthProxy =
+  dashboardAuthProxy as unknown as (
+    request: NextRequest,
+    event: NextFetchEvent,
+  ) => ReturnType<typeof dashboardAuthProxy>;
 
 function getPublicRedirectSlug(pathname: string): string | null {
   const segments = pathname.split("/").filter(Boolean);
