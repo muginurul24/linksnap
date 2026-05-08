@@ -8058,3 +8058,43 @@ Removed the remaining dashboard `unsafe-eval` CSP violation from app client chun
 - ✅ Scope limited to client bundle compatibility; no secrets committed.
 
 **Next Task:** Commit, push, wait for production deploy, then smoke-test CSP headers and dashboard runtime.
+
+### 21F.5 — Make Client Zod Validation CSP-Safe
+- **Date:** 2026-05-08 21:48 GMT+7
+- **Duration:** 0h 45m
+- **Status:** ✅ Complete
+
+**What I Did:**
+Fixed the `/links/new` CSP eval violation by routing all project Zod schema modules through an internal runtime wrapper that enables Zod `jitless` mode in browser runtimes before client-side schemas are created.
+
+**Files Changed:**
+- `src/lib/validations/zod.ts` — Added the shared Zod wrapper with browser-only `jitless` configuration.
+- `src/lib/validations/*.ts` — Switched project validation schemas to import Zod from the wrapper.
+- `tests/unit/zod-runtime-config.test.ts` — Added regression coverage that client-side Zod parsing does not touch the `Function` constructor when CSP blocks it.
+- `_bmad-output/implementation-artifacts/JOURNAL.md` — Logged the fix.
+
+**Decisions Made:**
+- Did not add production `script-src 'unsafe-eval'`.
+- Kept server-side validation on Zod's default runtime by enabling `jitless` only when `window` exists.
+- Centralized the Zod import path so future client forms inherit the strict-CSP-safe behavior.
+
+**Tests:**
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Targeted regression: `rtk bun run test -- tests/unit/zod-runtime-config.test.ts tests/unit/link-validation.test.ts tests/unit/form-validation-ux.test.tsx tests/unit/link-form-plan-gates.test.tsx` — 44 passed.
+- ✅ Bun targeted: `rtk bun test tests/unit/zod-runtime-config.test.ts` — 3 passed.
+- ✅ Full unit/integration: `rtk bun run test` — 141 files passed, 1 skipped; 640 tests passed, 2 skipped.
+- ✅ Build: `rtk bun run build` — Passed.
+- ✅ Bundle verification: `/links/new` production chunks include the wrapper module with `jitless: true` before project schemas use Zod.
+
+**Issues Encountered:**
+- The violating `Function(...)` came from Zod's object parser JIT path in client-side form validation.
+- The initial test used Vitest helpers that are not available under `bun test`; replaced them with direct `globalThis` restoration so the regression works in both runners.
+
+**Security Checks:**
+- ✅ No production `unsafe-eval` added.
+- ✅ Script CSP remains nonce-gated with `strict-dynamic`.
+- ✅ Client-side validation remains intact, but Zod's eval/JIT path is disabled in browsers.
+- ✅ No secrets committed.
+
+**Next Task:** Commit, push, wait for production deploy, then smoke-test CSP headers and `/links/new` runtime.

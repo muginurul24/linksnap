@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from "@/lib/validations/zod";
 
 export const adminUpdateUserPlanSchema = z.object({
   plan: z.enum(["FREE", "PRO", "BUSINESS"]),

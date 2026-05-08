@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from "@/lib/validations/zod";
 import { isSafeDestinationUrl } from "@/lib/validations/link";
 
 const MAX_URL_LENGTH = 2048;

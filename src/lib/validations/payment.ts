@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from "@/lib/validations/zod";
 
 export const paidPlanSchema = z.enum(["PRO", "BUSINESS"]);
 export const paymentDurationSchema = z.enum(["MONTHLY", "YEARLY"]);

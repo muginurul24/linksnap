@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from "@/lib/validations/zod";
 
 const MAX_URL_LENGTH = 2048;
 const HEX_COLOR_PATTERN = /^#[0-9a-fA-F]{6}$/;

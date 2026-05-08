@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from "@/lib/validations/zod";
 import { getCountryByCode } from "@/lib/countries";
 import { isSafeDestinationUrl } from "@/lib/validations/link";
 

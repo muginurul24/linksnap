@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from "@/lib/validations/zod";
 
 const CAMPAIGN_SLUG_PATTERN = /^[a-z0-9-]{3,100}$/;
 const MAX_PAGE_LIMIT = 100;

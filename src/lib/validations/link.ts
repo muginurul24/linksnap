@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from "@/lib/validations/zod";
 
 const SLUG_PATTERN = /^[a-z0-9-]{3,50}$/;
 const MAX_URL_LENGTH = 2048;

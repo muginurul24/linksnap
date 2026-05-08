@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from "@/lib/validations/zod";
 
 function emptyStringToUndefined(value: unknown): unknown {
   if (typeof value !== "string") return value;
