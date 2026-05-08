@@ -1,5 +1,4 @@
-import { NextRequest } from "next/server";
-import { adminRouteGuard } from "@/lib/admin/guard";
+import { adminRouteGuard, withAdminActionHeader } from "@/lib/admin/guard";
 import { getSystemStats } from "@/lib/db/queries/admin";
 import {
   errorResponse,
@@ -7,7 +6,7 @@ import {
   successResponse,
 } from "@/lib/api/response";
 
-export async function GET(_request: NextRequest) {
+export async function GET() {
   const guard = await adminRouteGuard();
   if (!guard.ok) return guard.response;
 
@@ -15,7 +14,7 @@ export async function GET(_request: NextRequest) {
 
   try {
     const stats = await getSystemStats();
-    return successResponse(stats);
+    return withAdminActionHeader(successResponse(stats));
   } catch (error) {
     logApiErrorResponse({
       code: "INTERNAL_ERROR",
@@ -23,11 +22,11 @@ export async function GET(_request: NextRequest) {
       requestId: admin.requestId,
       route: "GET /api/v1/admin/analytics",
     });
-    return errorResponse(
+    return withAdminActionHeader(errorResponse(
       "INTERNAL_ERROR",
       "Unable to get system analytics.",
       500,
       admin.requestId,
-    );
+    ));
   }
 }

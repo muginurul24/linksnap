@@ -1,23 +1,9 @@
 import type { Metadata } from "next";
-import { Inter, JetBrains_Mono } from "next/font/google";
 import { headers } from "next/headers";
 import { CspNonceProvider } from "@/components/security/nonce-provider";
 import { CSP_NONCE_HEADER } from "@/lib/security/headers";
 import { indexRobots, siteConfig } from "@/lib/seo/metadata";
 import "./globals.css";
-
-const inter = Inter({
-  subsets: ["latin"],
-  variable: "--font-inter",
-  display: "swap",
-});
-
-const jetbrainsMono = JetBrains_Mono({
-  subsets: ["latin"],
-  variable: "--font-jetbrains-mono",
-  display: "swap",
-  preload: false,
-});
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteConfig.url),
@@ -51,7 +37,7 @@ export default async function RootLayout({
       lang="en"
       data-scroll-behavior="smooth"
       suppressHydrationWarning
-      className={`${inter.variable} ${jetbrainsMono.variable} dark`}
+      className="dark"
     >
       <body className="min-h-screen bg-background font-sans antialiased">
         <CspNonceProvider nonce={nonce}>{children}</CspNonceProvider>

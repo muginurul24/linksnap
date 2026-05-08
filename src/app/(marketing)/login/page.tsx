@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { createPublicMetadata } from "@/lib/seo/metadata";
 import { auth } from "@/lib/auth";
-import { LoginForm } from "./login-form";
+import { LoginForm } from "@/app/(marketing)/login/login-form";
 
 const description =
   "Sign in to your LinkSnap workspace to manage short links, Link Pages, QR codes, campaigns, and analytics.";

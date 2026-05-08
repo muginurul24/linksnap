@@ -135,7 +135,11 @@ export function CheckoutStatusClient({ orderId }: CheckoutStatusClientProps) {
   }, [orderId]);
 
   useEffect(() => {
-    void loadTransaction();
+    const timeoutId = window.setTimeout(() => {
+      void loadTransaction();
+    }, 0);
+
+    return () => window.clearTimeout(timeoutId);
   }, [loadTransaction]);
 
   useEffect(() => {

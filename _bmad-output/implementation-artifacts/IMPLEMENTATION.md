@@ -1556,8 +1556,8 @@ src/
 ---
 
 ### TASK 18.1 — Database: Superadmin Role + Audit Log Table
-- [ ] Add `ADMIN_AUDIT_LOG_TABLE` constant comment to keep schema organized
-- [ ] Add `adminAuditLog` table to `src/lib/db/schema.ts`:
+- [x] Add `ADMIN_AUDIT_LOG_TABLE` constant comment to keep schema organized
+- [x] Add `adminAuditLog` table to `src/lib/db/schema.ts`:
   ```typescript
   export const adminAuditLog = pgTable(
     "admin_audit_log",
@@ -1582,15 +1582,15 @@ src/
     }),
   );
   ```
-- [ ] Add `SUPERADMIN_ROLE = "superadmin"` constant to `src/lib/db/schema.ts`
+- [x] Add `SUPERADMIN_ROLE = "superadmin"` constant to `src/lib/db/schema.ts`
 - [ ] Run `rtk bun run db:push`
-- [ ] Tests: unit (audit log table columns, indexes exist)
+- [x] Tests: unit (audit log table columns, indexes exist)
 
 ### TASK 18.2 — Auth: Propagate Role to JWT + Superadmin Guards
-- [ ] File: `src/lib/auth/session-token.ts`
+- [x] File: `src/lib/auth/session-token.ts`
   - Add `role` to JWT on login: query `users.role` and set `token.role`
   - Add `role` to session from JWT: `session.user.role = token.role`
-- [ ] File: `src/lib/auth/superadmin.ts` (NEW)
+- [x] File: `src/lib/auth/superadmin.ts` (NEW)
   ```typescript
   export const SUPERADMIN_ROLE = "superadmin";
   
@@ -1609,7 +1609,7 @@ src/
     return userId;
   }
   ```
-- [ ] File: `src/lib/links/limits.ts` — add plan bypass:
+- [x] File: `src/lib/links/limits.ts` — add plan bypass:
   ```typescript
   export function resolveEffectivePlan(plan: UserPlan, role?: string | null): UserPlan {
     if (isSuperAdmin(role)) return "BUSINESS";
@@ -1617,108 +1617,108 @@ src/
   }
   ```
   Update all quota functions to accept optional `role` param and call `resolveEffectivePlan`.
-- [ ] Tests: unit (JWT role propagation), unit (isSuperAdmin), unit (plan bypass)
+- [x] Tests: unit (JWT role propagation), unit (isSuperAdmin), unit (plan bypass)
 
 ### TASK 18.3 — Seed: Promote iqooz9xmg@gmail.com to Superadmin
-- [ ] File: `scripts/seed-superadmin.ts` (NEW)
+- [x] File: `scripts/seed-superadmin.ts` (NEW)
   - Accept `--email=` CLI arg (default: `iqooz9xmg@gmail.com`)
   - Query user by email, update `role = 'superadmin'`
   - Idempotent — safe to run multiple times
   - Log result: "User {email} is now superadmin" or "User {email} already superadmin"
   - Exit code 1 if user not found (with clear error message)
-- [ ] Add npm script: `"seed:superadmin": "bun run scripts/seed-superadmin.ts"`
-- [ ] Document in `_bmad-output/planning-artifacts/` — create `SUPERADMIN.md` with setup instructions
-- [ ] Tests: unit (seed script logic, idempotency)
+- [x] Add npm script: `"seed:superadmin": "bun run scripts/seed-superadmin.ts"`
+- [x] Document in `_bmad-output/planning-artifacts/` — create `SUPERADMIN.md` with setup instructions
+- [x] Tests: unit (seed script logic, idempotency)
 - [ ] **Run the script** — promote `iqooz9xmg@gmail.com`
 
 ### TASK 18.4 — Admin API: User Management Endpoints
-- [ ] File: `src/lib/db/queries/admin.ts` (NEW)
+- [x] File: `src/lib/db/queries/admin.ts` (NEW)
   - `listAllUsers({ limit, page, search, plan?, status? })` — returns paginated user list with plan, status, link count, created date
   - `getUserDetailById(id)` — full user record minus password hash
   - `updateUserPlan({ userId, plan, adminUserId })` — change plan, log to audit
   - `suspendUser({ userId, adminUserId })` — soft delete (set `deletedAt`)
   - `unsuspendUser({ userId, adminUserId })` — clear `deletedAt`
   - `getSystemStats()` — total users, total links, total clicks, total revenue (sum transactions)
-- [ ] File: `src/lib/validations/admin.ts` (NEW)
+- [x] File: `src/lib/validations/admin.ts` (NEW)
   - `adminUpdateUserPlanSchema` — Zod: plan must be one of FREE/PRO/BUSINESS
   - `adminUserListQuerySchema` — Zod: page, limit, search, plan filter
-- [ ] File: `src/lib/admin/guard.ts` (NEW)
+- [x] File: `src/lib/admin/guard.ts` (NEW)
   - `adminRouteGuard()` — wrapper for API routes: verifies superadmin role, logs action to audit
   - Returns 403 with structured error if not superadmin
   - Returns 401 if not authenticated at all
-- [ ] File: `src/app/api/v1/admin/users/route.ts` (NEW)
+- [x] File: `src/app/api/v1/admin/users/route.ts` (NEW)
   - GET: list all users (paginated, searchable, filterable by plan)
   - Requires superadmin auth
-- [ ] File: `src/app/api/v1/admin/users/[id]/route.ts` (NEW)
+- [x] File: `src/app/api/v1/admin/users/[id]/route.ts` (NEW)
   - GET: user detail (profile, plan, link count, subscription status, recent activity)
   - PATCH: change user plan (body: `{ plan: "PRO" | "BUSINESS" | "FREE" }`)
   - POST: suspend user (body: `{ action: "suspend" | "unsuspend" }`)
   - All actions write to audit log
-- [ ] File: `src/app/api/v1/admin/analytics/route.ts` (NEW)
+- [x] File: `src/app/api/v1/admin/analytics/route.ts` (NEW)
   - GET: system-wide stats (total users, total links, total clicks, revenue, top plans distribution)
-- [ ] File: `src/app/api/v1/admin/audit-log/route.ts` (NEW)
+- [x] File: `src/app/api/v1/admin/audit-log/route.ts` (NEW)
   - GET: paginated audit log entries, filterable by action type
-- [ ] Rate limit: 30 req/min for all `/api/v1/admin/*` routes
-- [ ] Tests: integration (list users, get user detail, change plan, suspend, unsuspend, system stats, audit log)
+- [x] Rate limit: 30 req/min for all `/api/v1/admin/*` routes
+- [x] Tests: integration (list users, get user detail, change plan, suspend, unsuspend, system stats, audit log)
 
 ### TASK 18.5 — Admin Frontend: Sidebar + Dashboard Pages
-- [ ] File: `src/components/dashboard/app-sidebar.tsx`
+- [x] File: `src/components/dashboard/app-sidebar.tsx`
   - Add "Admin" nav section (only visible when `role === "superadmin"`):
     - "Admin Dashboard" → `/admin` with `Shield` icon
     - Separator line between Account and Admin sections
   - Use `usePlan()` or session to check `role`
-- [ ] File: `src/app/(dashboard)/admin/page.tsx` (NEW)
+- [x] File: `src/app/(dashboard)/admin/page.tsx` (NEW)
   - Admin overview: cards for total users, total links, total clicks, MRR estimate
   - Quick actions: "Manage Users", "View Audit Log"
   - Recent audit log entries (last 10)
-- [ ] File: `src/app/(dashboard)/admin/users/page.tsx` (NEW)
+- [x] File: `src/app/(dashboard)/admin/users/page.tsx` (NEW)
   - Searchable, filterable user table
   - Columns: email, name, plan badge, links count, status (active/suspended), joined date
   - Click row → user detail page
-- [ ] File: `src/app/(dashboard)/admin/users/[id]/page.tsx` (NEW)
+- [x] File: `src/app/(dashboard)/admin/users/[id]/page.tsx` (NEW)
   - User profile card (email, name, avatar, join date)
   - Plan section: current plan badge + "Change Plan" dropdown (FREE/PRO/BUSINESS)
   - Stats: total links, total clicks, subscription status
   - Danger zone: "Suspend User" / "Unsuspend User" button with confirmation dialog
-- [ ] File: `src/app/(dashboard)/admin/analytics/page.tsx` (NEW)
+- [x] File: `src/app/(dashboard)/admin/analytics/page.tsx` (NEW)
   - System-wide charts: users over time, links created, clicks, revenue
   - Plan distribution pie chart
   - Top users by link count
-- [ ] File: `src/app/(dashboard)/admin/audit-log/page.tsx` (NEW)
+- [x] File: `src/app/(dashboard)/admin/audit-log/page.tsx` (NEW)
   - Filterable audit log table
   - Columns: timestamp, admin, action (with badge color), target user, metadata
   - Filter by action type
-- [ ] All admin pages: loading skeletons, empty states, error boundaries
-- [ ] Tests: unit (admin nav visibility), integration (admin pages load with data)
+- [x] All admin pages: loading skeletons, empty states, error boundaries
+- [x] Tests: unit (admin nav visibility), integration (admin pages load with data)
 
 ### TASK 18.6 — Plan Bypass: Superadmin Sees Everything
-- [ ] File: `src/lib/auth/plan-context.ts`
+- [x] File: `src/lib/auth/plan-context.ts`
   - Accept optional `role` prop alongside `userPlan`
   - Resolve effective plan via `resolveEffectivePlan(plan, role)`
-- [ ] File: `src/app/(dashboard)/layout.tsx`
+- [x] File: `src/app/(dashboard)/layout.tsx`
   - Pass `role` from session to `PlanProvider`
-- [ ] File: `src/lib/links/limits.ts`
+- [x] File: `src/lib/links/limits.ts`
   - Update all functions: `getLinkQuota(plan, role?)`, `getApiEndpointRateLimit(plan, role?)`, etc.
   - Each calls `resolveEffectivePlan(plan, role)` internally
-- [ ] Verify: superadmin sees all PRO/BUSINESS features (API docs, unlimited links, etc.) regardless of actual plan in DB
-- [ ] Verify: plan badge in sidebar shows "Superadmin" instead of plan name for superadmin users
-- [ ] Tests: unit (plan bypass for each quota function), integration (superadmin sees premium features)
+- [x] Verify: superadmin sees all PRO/BUSINESS features (API docs, unlimited links, etc.) regardless of actual plan in DB
+- [x] Verify: plan badge in sidebar shows "Superadmin" instead of plan name for superadmin users
+- [x] Tests: unit (plan bypass for each quota function), integration (superadmin sees premium features)
 
 ### TASK 18.7 — Security: Stricter Admin Session + Rate Limiting
-- [ ] File: `src/lib/admin/guard.ts`
+- [x] File: `src/lib/admin/guard.ts`
   - Superadmin session re-validation: query DB for `role` on every admin API call (not just JWT trust)
   - If user was demoted (role changed since JWT issued), reject immediately
   - Return 403 with code `SUPERADMIN_REQUIRED`
-- [ ] File: `src/lib/redis/rate-limit.ts` — no changes needed, reuse `slidingWindowRateLimit`
-- [ ] File: `src/app/api/v1/admin/*` — all routes
+- [x] File: `src/lib/redis/rate-limit.ts` — no changes needed, reuse `slidingWindowRateLimit`
+- [x] File: `src/app/api/v1/admin/*` — all routes
   - Add `X-Admin-Action: true` response header for audit trail correlation
   - Rate limit key: `admin:api:{userId}` with 30 req/min window
-- [ ] File: `src/proxy.ts`
+- [x] File: `src/proxy.ts`
   - Add admin route prefix to proxy matcher: `/api/v1/admin/:path*`
-- [ ] Tests: integration (demoted superadmin gets 403), unit (rate limit enforced)
+- [x] Tests: integration (demoted superadmin gets 403), unit (rate limit enforced)
 
 ### TASK 18.8 — Audit Log: Write + Display
-- [ ] File: `src/lib/admin/audit.ts` (NEW)
+- [x] File: `src/lib/admin/audit.ts` (NEW)
   ```typescript
   export async function writeAdminAuditLog({
     action,
@@ -1734,17 +1734,17 @@ src/
   ```
   - Fire-and-forget (don't block admin action on audit log failure)
   - Log to `adminAuditLog` table
-- [ ] File: `src/lib/db/queries/admin-audit.ts` (NEW)
+- [x] File: `src/lib/db/queries/admin-audit.ts` (NEW)
   - `insertAdminAuditLog(...)` — insert single entry
   - `listAdminAuditLogs({ limit, page, action? })` — paginated, filterable
-- [ ] Wire audit logging into:
+- [x] Wire audit logging into:
   - User plan change (18.4)
   - User suspend/unsuspend (18.4)
   - Any future admin actions
-- [ ] Tests: unit (audit log write + read), integration (audit entries appear after admin action)
+- [x] Tests: unit (audit log write + read), integration (audit entries appear after admin action)
 
 ### TASK 18.9 — E2E: Superadmin Flow
-- [ ] File: `tests/e2e/admin-flow.spec.ts` (NEW)
+- [x] File: `tests/e2e/admin-flow.spec.ts` (NEW)
   - Login as superadmin → verify admin nav appears
   - Navigate to admin dashboard → verify stats cards render
   - Navigate to user management → search for a user → verify results
@@ -1802,25 +1802,25 @@ Good luck. Ship it. 👑🚀
 6. Console silent in production — only logger.error/warn
 
 ### TASK 19.1 — Extract Shared Session Helpers (DRY)
-- [ ] Create `src/lib/auth/session-helpers.ts` (NEW) — getSessionUserId, getSessionRole, getSessionString, SessionWithUserId type
-- [ ] Replace 16 inline copies across all dashboard pages + API routes
-- [ ] Tests: unit (null/undefined/valid inputs)
+- [x] Create `src/lib/auth/session-helpers.ts` (NEW) — getSessionUserId, getSessionRole, getSessionString, SessionWithUserId type
+- [x] Replace 16 inline copies across all dashboard pages + API routes
+- [x] Tests: unit (null/undefined/valid inputs)
 
 ### TASK 19.2 — Add Loading + Error Boundaries to All Admin Pages
-- [ ] 5 loading.tsx: admin, admin/users, admin/analytics, admin/audit-log, admin/users/[id]
-- [ ] 5 error.tsx: same locations — error boundary with retry button
+- [x] 5 loading.tsx: admin, admin/users, admin/analytics, admin/audit-log, admin/users/[id]
+- [x] 5 error.tsx: same locations — error boundary with retry button
 - [ ] Tests: unit (error boundary renders), integration (skeleton appears)
 
 ### TASK 19.3 — Clean Up Type Assertions
-- [ ] `src/proxy.ts`: eliminate `as unknown as MiddlewareHandler`
-- [ ] Audit all `as UserPlan`, `as string` casts — replace with type-safe narrowing
-- [ ] Tests: typecheck must pass
+- [x] `src/proxy.ts`: eliminate `as unknown as MiddlewareHandler`
+- [x] Audit all `as UserPlan`, `as string` casts — replace with type-safe narrowing
+- [x] Tests: typecheck must pass
 
 ### TASK 19.4 — Audit & Remove Dead Dependencies
-- [ ] Check: `date-fns` (0 imports) → remove if unused
-- [ ] Check: `framer-motion`, `@radix-ui/react-slot` — verify usage
-- [ ] Verify: `recharts`, `cmdk`, `qrcode`, `otpauth` — all used
-- [ ] After removal: typecheck + test + build must pass
+- [x] Check: `date-fns` (0 imports) → remove if unused
+- [x] Check: `framer-motion`, `@radix-ui/react-slot` — verify usage
+- [x] Verify: `recharts`, `cmdk`, `qrcode`, `otpauth` — all used
+- [x] After removal: typecheck + test + build must pass
 
 ### TASK 19.5 — Ensure lucide-react Tree-Shaking
 - [ ] 66 files import lucide-react — verify tree-shaking in production build
@@ -1835,15 +1835,15 @@ Good luck. Ship it. 👑🚀
 - [ ] Target: Lighthouse score ≥ 95
 
 ### TASK 19.7 — Query Optimization
-- [ ] Add composite indexes: (user_id, created_at) on links, (link_id, timestamp) on clickEvents
-- [ ] Add partial index on transactions WHERE status = 'SETTLEMENT'
-- [ ] Optimize getSystemStats(): combine 7 queries into 1-2 with CTEs
+- [x] Add composite indexes: (user_id, created_at) on links, (link_id, timestamp) on clickEvents
+- [x] Add partial index on transactions WHERE status = 'SETTLEMENT'
+- [x] Optimize getSystemStats(): combine 7 queries into 1-2 with CTEs
 - [ ] db:push + verify query plans with EXPLAIN
 
 ### TASK 19.8 — Redis TTL & Cache Strategy Review
-- [ ] Add TTL to click queue items (1h) and dead-letter entries (7d)
-- [ ] Add EXPIRE call after RPUSH in click-queue.ts
-- [ ] Verify all cache keys have explicit TTL strategy
+- [x] Add TTL to click queue items (1h) and dead-letter entries (7d)
+- [x] Add EXPIRE call after RPUSH in click-queue.ts
+- [x] Verify all cache keys have explicit TTL strategy
 
 ### TASK 19.9 — Bundle Size Optimization
 - [ ] Analyze .next build output for large chunks (>100KB)
@@ -1851,20 +1851,20 @@ Good luck. Ship it. 👑🚀
 - [ ] Verify first-load JS ≤ 200KB gzipped for landing page
 
 ### TASK 19.10 — Console Cleanup
-- [ ] Verify zero console.log in production code (only logger.ts)
-- [ ] Add CI grep assertion to prevent future console.log
+- [x] Verify zero console.log in production code (only logger.ts)
+- [x] Add CI grep assertion to prevent future console.log
 
 ### TASK 19.11 — Security Final Pass
-- [ ] Verify all /api/v1/* routes pass CSRF guard
-- [ ] Verify all admin routes have adminRouteGuard
-- [ ] All user input through Zod, all queries through Drizzle ORM
+- [x] Verify all /api/v1/* routes pass CSRF guard
+- [x] Verify all admin routes have adminRouteGuard
+- [x] All user input through Zod, all queries through Drizzle ORM
 - [ ] Run security:smoke against production — must pass
 
 ### TASK 19.12 — Code Quality Final Pass
-- [ ] lint + typecheck zero errors
-- [ ] Zero @ts-ignore, zero commented-out code
-- [ ] All imports use @/ alias (no relative ../../)
-- [ ] Consistent kebab-case files, PascalCase components
+- [x] lint + typecheck zero errors
+- [x] Zero @ts-ignore, zero commented-out code
+- [x] All imports use @/ alias (no relative ../../)
+- [x] Consistent kebab-case files, PascalCase components
 
 ---
 
@@ -2139,7 +2139,7 @@ Replace Midtrans webhook processing with PayGate webhook.
 - Handle errors: configuration (503), order not found (404), amount mismatch (400), plan invalid (500), internal (500)
 - Log all errors for observability
 
-### TASK 20.7 — Build Self-Hosted Checkout Page (VA Number Display)
+### [x] TASK 20.7 — Build Self-Hosted Checkout Page (VA Number Display)
 
 Since PayGate doesn't expose Snap UI, build a checkout success page that shows VA payment instructions.
 
@@ -2236,7 +2236,7 @@ Update all integration tests referencing Midtrans.
 - `tests/unit/api-security.test.ts`:
   - Update Midtrans webhook references to PayGate
 
-### TASK 20.12 — Verify & Finalize
+### [x] TASK 20.12 — Verify & Finalize
 
 Final validation pass.
 
@@ -2615,7 +2615,7 @@ apps/mobile_flutter/
 
 #### 21B.3 — Auth State & Navigation Guards
 - [x] `GoRouter` redirect logic based on `authProvider` state
-- [ ] Biometric unlock: prompt on app resume if enabled
+- [x] Biometric unlock: prompt on app resume if enabled
 - [x] Session timeout: auto-logout after 7 days (check token `iat`)
 - [x] SecureStorage: all tokens encrypted, never SharedPreferences
 

@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { PlanOverrideDialog } from "@/components/admin/plan-override-dialog";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Loader2, ArrowLeft, ShieldAlert } from "lucide-react";
+import { ArrowLeft, ShieldAlert } from "lucide-react";
 import { toast } from "sonner";
 import type { UserPlan } from "@/lib/links/limits";
 

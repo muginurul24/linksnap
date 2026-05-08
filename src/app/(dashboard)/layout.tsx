@@ -6,31 +6,15 @@ import { AppSidebar, type AppSidebarUser } from "@/components/dashboard/app-side
 import { AppHeader } from "@/components/dashboard/app-header";
 import { SessionTimeout } from "@/components/dashboard/session-timeout";
 import { auth } from "@/lib/auth";
-import { getSessionRole, getSessionUserId } from "@/lib/auth/session-helpers";
+import {
+  getSessionRole,
+  getSessionString,
+  getSessionUserId,
+} from "@/lib/auth/session-helpers";
 import { PlanProvider } from "@/lib/auth/plan-context";
 import type { UserPlan } from "@/lib/links/limits";
 import { logger } from "@/lib/observability/logger";
 import { getDashboardSubscriptionSnapshot } from "@/lib/payments/dashboard-subscription-cache";
-
-type SessionWithUserId = {
-  expires?: unknown;
-  user?: {
-    email?: unknown;
-    id?: unknown;
-    image?: unknown;
-    name?: unknown;
-  } | null;
-} | null;
-
-function getSessionString(
-  session: SessionWithUserId,
-  field: "email" | "expires" | "image" | "name",
-): string | null {
-  const value = field === "expires" ? session?.expires : session?.user?.[field];
-  return typeof value === "string" ? value : null;
-}
-
-
 
 export default async function DashboardLayout({
   children,

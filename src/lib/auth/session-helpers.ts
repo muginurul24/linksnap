@@ -6,6 +6,7 @@
  */
 
 export type SessionWithUserId = {
+  expires?: unknown;
   user?: {
     id?: unknown;
   } | null;
@@ -25,9 +26,10 @@ export function getSessionUserId(session: SessionWithUserId): string | null {
 
 /** Safely extract the user role from a session object (loose accessor). */
 export function getSessionRole(session: SessionWithUserId): string | null {
-  return typeof (session?.user as Record<string, unknown> | undefined)?.role === "string"
-    ? (session!.user as Record<string, unknown>).role as string
-    : null;
+  if (!session?.user) return null;
+
+  const value = Reflect.get(session.user, "role");
+  return typeof value === "string" ? value : null;
 }
 
 /** Safely extract a string field from a session object (loose accessor). */
@@ -35,7 +37,11 @@ export function getSessionString(
   session: SessionWithUserId,
   field: string,
 ): string | null {
-  if (!session?.user) return null;
-  const value = (session.user as Record<string, unknown>)[field];
-  return typeof value === "string" ? value : null;
+  if (!session) return null;
+
+  const userValue = session.user ? Reflect.get(session.user, field) : null;
+  if (typeof userValue === "string") return userValue;
+
+  const sessionValue = Reflect.get(session, field);
+  return typeof sessionValue === "string" ? sessionValue : null;
 }

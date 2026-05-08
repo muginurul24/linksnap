@@ -1,8 +1,8 @@
 import { redirect } from "next/navigation";
 import { BackNavigationLink } from "@/components/dashboard/back-navigation-link";
 import { auth } from "@/lib/auth";
-import { getSessionUserId, type SessionWithUserId } from "@/lib/auth/session-helpers";
-import { CampaignForm } from "../campaign-form";
+import { getSessionUserId } from "@/lib/auth/session-helpers";
+import { CampaignForm } from "@/app/(dashboard)/campaigns/campaign-form";
 
 export default async function NewCampaignPage() {
   const session = await auth();

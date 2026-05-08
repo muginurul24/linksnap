@@ -1,6 +1,6 @@
 import {
   auth } from "@/lib/auth";
-import { getSessionUserId, type SessionWithUserId } from "@/lib/auth/session-helpers";
+import { getSessionUserId } from "@/lib/auth/session-helpers";
 import {
   createRequestId,
   errorResponse,

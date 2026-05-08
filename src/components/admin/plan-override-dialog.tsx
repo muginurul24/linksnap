@@ -28,6 +28,12 @@ type Props = {
   onConfirm: (plan: UserPlan) => Promise<void>;
 };
 
+const USER_PLANS = new Set(["FREE", "PRO", "BUSINESS"]);
+
+function isUserPlan(value: string): value is UserPlan {
+  return USER_PLANS.has(value);
+}
+
 export function PlanOverrideDialog({
   open,
   onOpenChange,
@@ -62,7 +68,10 @@ export function PlanOverrideDialog({
           <label className="text-sm font-medium">New Plan</label>
           <Select
             value={selectedPlan}
-            onValueChange={(v) => setSelectedPlan(v as UserPlan)}
+            onValueChange={(value) => {
+              if (!value) return;
+              if (isUserPlan(value)) setSelectedPlan(value);
+            }}
           >
             <SelectTrigger>
               <SelectValue />

@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { adminRouteGuard } from "@/lib/admin/guard";
+import { adminRouteGuard, withAdminActionHeader } from "@/lib/admin/guard";
 import { listAllUsers } from "@/lib/db/queries/admin";
 import { adminUserListQuerySchema } from "@/lib/validations/admin";
 import {
@@ -18,23 +18,23 @@ export async function GET(request: NextRequest) {
     const params = Object.fromEntries(request.nextUrl.searchParams.entries());
     const parsed = adminUserListQuerySchema.safeParse(params);
     if (!parsed.success) {
-      return errorResponse(
+      return withAdminActionHeader(errorResponse(
         "VALIDATION_ERROR",
         "Invalid query parameters.",
         400,
         admin.requestId,
         parsed.error.flatten(),
-      );
+      ));
     }
 
     const { page, limit, search, plan } = parsed.data;
     const result = await listAllUsers({ limit, page, search, plan });
 
-    return successResponse(
+    return withAdminActionHeader(successResponse(
       result.users,
       200,
       { page, limit, total: result.total },
-    );
+    ));
   } catch (error) {
     logApiErrorResponse({
       code: "INTERNAL_ERROR",
@@ -42,11 +42,11 @@ export async function GET(request: NextRequest) {
       requestId: admin.requestId,
       route: "GET /api/v1/admin/users",
     });
-    return errorResponse(
+    return withAdminActionHeader(errorResponse(
       "INTERNAL_ERROR",
       "Unable to list users.",
       500,
       admin.requestId,
-    );
+    ));
   }
 }

@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { auth } from "@/lib/auth";
-import { getSessionUserId, type SessionWithUserId } from "@/lib/auth/session-helpers";
+import { getSessionUserId } from "@/lib/auth/session-helpers";
 import {
   createRequestId,
   errorResponse,

@@ -44,7 +44,7 @@ export async function listAllUsers({
   limit: number;
   page: number;
   search?: string;
-  plan?: string;
+  plan?: UserPlan;
 }): Promise<{ users: AdminUser[]; total: number }> {
   const db = getDb();
   const offset = (page - 1) * limit;
@@ -59,7 +59,7 @@ export async function listAllUsers({
     );
   }
   if (plan) {
-    conditions.push(eq(users.plan, plan as UserPlan));
+    conditions.push(eq(users.plan, plan));
   }
 
   const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
@@ -108,7 +108,7 @@ export async function listAllUsers({
     id: u.id,
     email: u.email,
     name: u.name,
-    plan: u.plan as UserPlan,
+    plan: u.plan,
     role: u.role,
     emailVerified: u.emailVerified,
     deletedAt: u.deletedAt,
@@ -131,6 +131,11 @@ export async function getUserDetailById(
     .limit(1);
 
   if (!user) return null;
+
+  const [linkCountRow] = await db
+    .select({ total: count(links.id) })
+    .from(links)
+    .where(eq(links.userId, id));
 
   const [clickCountRow] = await db
     .select({ total: count(clickEvents.id) })
@@ -162,7 +167,7 @@ export async function getUserDetailById(
     id: user.id,
     email: user.email,
     name: user.name,
-    plan: user.plan as UserPlan,
+    plan: user.plan,
     role: user.role,
     emailVerified: user.emailVerified,
     deletedAt: user.deletedAt,
@@ -171,7 +176,7 @@ export async function getUserDetailById(
     googleId: user.googleId,
     twoFactorEnabled: user.twoFactorEnabled,
     updatedAt: user.updatedAt,
-    linkCount: 0,
+    linkCount: linkCountRow?.total ?? 0,
     totalClicks: clickCountRow?.total ?? 0,
     subscriptionPlan,
     subscriptionStatus,
@@ -280,10 +285,14 @@ export async function getSystemStats(): Promise<AdminSystemStats> {
     .from(users)
     .groupBy(users.plan);
 
-  const planDistribution: Record<string, number> = { FREE: 0, PRO: 0, BUSINESS: 0 };
+  const planDistribution: Record<UserPlan, number> = {
+    BUSINESS: 0,
+    FREE: 0,
+    PRO: 0,
+  };
   for (const row of planRows) {
     if (row.plan) {
-      planDistribution[row.plan as UserPlan] = row.count;
+      planDistribution[row.plan] = row.count;
     }
   }
 
@@ -292,7 +301,7 @@ export async function getSystemStats(): Promise<AdminSystemStats> {
     totalLinks: stats?.totalLinks ?? 0,
     totalClicks: stats?.totalClicks ?? 0,
     totalRevenueIdr: stats?.totalRevenueIdr ?? 0,
-    planDistribution: planDistribution as Record<UserPlan, number>,
+    planDistribution,
     usersLast30Days: stats?.usersLast30Days ?? 0,
     linksLast30Days: stats?.linksLast30Days ?? 0,
   };

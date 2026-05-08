@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { DashboardOverviewClient } from "@/app/(dashboard)/dashboard/dashboard-overview-client";
 import { auth } from "@/lib/auth";
-import { getSessionUserId, type SessionWithUserId } from "@/lib/auth/session-helpers";
+import { getSessionUserId } from "@/lib/auth/session-helpers";
 import { getDashboardOverviewByUserId } from "@/lib/db/queries/dashboard";
 
 export default async function DashboardOverview() {

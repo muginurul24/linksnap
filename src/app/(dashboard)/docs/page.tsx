@@ -16,15 +16,6 @@ import {
 } from "@/components/ui/card";
 import { CopySnippetButton } from "@/app/(dashboard)/docs/copy-snippet-button";
 
-type SessionWithUserId = {
-  user?: {
-    id?: unknown;
-    role?: unknown;
-  } | null;
-} | null;
-
-
-
 function EndpointCard({ endpoint }: { endpoint: ApiEndpointDoc }) {
   const requestJson = endpoint.requestExample
     ? JSON.stringify(endpoint.requestExample, null, 2)

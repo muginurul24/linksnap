@@ -1,6 +1,6 @@
 import { getDb } from "@/lib/db";
 import { adminAuditLog } from "@/lib/db/schema";
-import { desc, eq, count, sql } from "drizzle-orm";
+import { desc, eq, count } from "drizzle-orm";
 
 export type AdminAuditLogEntry = {
   id: string;

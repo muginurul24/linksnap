@@ -1,4 +1,4 @@
-import { createLandingPreviewImage } from "../landing-preview-image";
+import { createLandingPreviewImage } from "@/app/(marketing)/landing-preview-image";
 
 export const dynamic = "force-static";
 

@@ -21,9 +21,9 @@ env:
   UPSTASH_REDIS_URL: ${{ secrets.UPSTASH_REDIS_URL || 'https://ci-upstash.example.com' }}
   UPSTASH_REDIS_TOKEN: ${{ secrets.UPSTASH_REDIS_TOKEN || 'ci-upstash-token' }}
   RESEND_API_KEY: ${{ secrets.RESEND_API_KEY || 're_ci_placeholder' }}
-  MIDTRANS_SERVER_KEY: ${{ secrets.MIDTRANS_SERVER_KEY || 'SB-Mid-server-ci-placeholder' }}
-  MIDTRANS_CLIENT_KEY: ${{ secrets.MIDTRANS_CLIENT_KEY || 'SB-Mid-client-ci-placeholder' }}
-  MIDTRANS_MERCHANT_ID: ${{ secrets.MIDTRANS_MERCHANT_ID || 'ci-merchant' }}
+  PAYGATE_API_BASE_URL: ${{ vars.PAYGATE_API_BASE_URL || 'https://paygate.digixsolution.net' }}
+  PAYGATE_STORE_API_TOKEN: ${{ secrets.PAYGATE_STORE_API_TOKEN || 'sk_store_ci_placeholder' }}
+  PAYGATE_WEBHOOK_SECRET: ${{ secrets.PAYGATE_WEBHOOK_SECRET || 'whsec_ci_placeholder' }}
   NEXT_PUBLIC_APP_URL: ${{ vars.NEXT_PUBLIC_APP_URL || 'http://localhost:3000' }}
   NEXT_PUBLIC_API_URL: ${{ vars.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api/v1' }}
   MAXMIND_LICENSE_KEY: ${{ secrets.MAXMIND_LICENSE_KEY || 'ci-maxmind-placeholder' }}
@@ -47,6 +47,13 @@ jobs:
 
       - name: Lint
         run: bun run lint
+
+      - name: Console guard
+        run: |
+          if grep -R "console\." src --include="*.ts" --include="*.tsx" | grep -v "src/lib/observability/logger.ts"; then
+            echo "Bare console usage is not allowed outside src/lib/observability/logger.ts"
+            exit 1
+          fi
 
       - name: Typecheck
         run: bun run typecheck

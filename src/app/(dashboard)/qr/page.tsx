@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { Download, QrCode } from "lucide-react";
 import { auth } from "@/lib/auth";
-import { getSessionUserId, type SessionWithUserId } from "@/lib/auth/session-helpers";
+import { getSessionUserId } from "@/lib/auth/session-helpers";
 import { listLinksByUserId, type ListedLink } from "@/lib/db/queries/links";
 import { findBillingUserById } from "@/lib/db/queries/payments";
 import { hydrateRedirectClickCounts } from "@/lib/links/click-count-cache";
@@ -22,7 +22,7 @@ import {
 } from "@/components/ui/card";
 import { EmptyState } from "@/components/dashboard/empty-state";
 import type { UserPlan } from "@/lib/links/limits";
-import { getQrDownloadQuotaState } from "./qr-plan-gates";
+import { getQrDownloadQuotaState } from "@/app/(dashboard)/qr/qr-plan-gates";
 
 const PAGE_LIMIT = 60;
 

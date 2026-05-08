@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { createPublicMetadata } from "@/lib/seo/metadata";
 import { auth } from "@/lib/auth";
-import { RegisterForm } from "./register-form";
+import { RegisterForm } from "@/app/(marketing)/register/register-form";
 
 const description =
   "Create a LinkSnap account to build short links, Link Pages, QR codes, campaign workflows, and analytics.";

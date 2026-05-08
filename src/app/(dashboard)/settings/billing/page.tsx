@@ -18,7 +18,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { auth } from "@/lib/auth";
-import { getSessionUserId, type SessionWithUserId } from "@/lib/auth/session-helpers";
+import { getSessionUserId } from "@/lib/auth/session-helpers";
 import {
   findBillingUserById,
   findSubscriptionByUserId,
@@ -34,7 +34,7 @@ import {
   type PlanDefinition,
 } from "@/lib/plans/definitions";
 import type { PaidPlan } from "@/lib/validations/payment";
-import { UpgradeButton } from "./upgrade-button";
+import { UpgradeButton } from "@/app/(dashboard)/settings/billing/upgrade-button";
 
 type BillingPageProps = {
   searchParams: Promise<{

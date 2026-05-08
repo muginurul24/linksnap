@@ -1,13 +1,17 @@
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:local_auth/local_auth.dart';
 
 final secureStorageProvider = Provider<SecureStorage>((ref) => SecureStorage());
 
 class SecureStorage {
   SecureStorage({
+    LocalAuthentication? localAuth,
     FlutterSecureStorage? storage,
-  }) : _storage = storage ?? const FlutterSecureStorage();
+  })  : _localAuth = localAuth ?? LocalAuthentication(),
+        _storage = storage ?? const FlutterSecureStorage();
 
+  final LocalAuthentication _localAuth;
   final FlutterSecureStorage _storage;
 
   static const _accessTokenKey = 'linksnap.access_token';
@@ -34,6 +38,10 @@ class SecureStorage {
   }
 
   Future<String?> getToken({bool biometric = false}) async {
+    if (biometric && !await _authorizeBiometricRead()) {
+      return null;
+    }
+
     return _storage.read(
       key: _accessTokenKey,
       iOptions: _iosOptions,
@@ -83,7 +91,11 @@ class SecureStorage {
     );
   }
 
-  Future<String?> getUserJson() async {
+  Future<String?> getUserJson({bool biometric = false}) async {
+    if (biometric && !await _authorizeBiometricRead()) {
+      return null;
+    }
+
     return _storage.read(
       key: _userKey,
       iOptions: _iosOptions,
@@ -105,6 +117,26 @@ class SecureStorage {
 
   Future<bool> getBiometricEnabled() async {
     return (await _storage.read(key: _biometricKey)) == 'true';
+  }
+
+  Future<bool> _authorizeBiometricRead() async {
+    if (!await getBiometricEnabled()) return true;
+
+    try {
+      final isSupported = await _localAuth.isDeviceSupported();
+      final canCheck = await _localAuth.canCheckBiometrics;
+      if (!isSupported && !canCheck) return false;
+
+      return _localAuth.authenticate(
+        localizedReason: 'Unlock LinkSnap to continue',
+        options: const AuthenticationOptions(
+          biometricOnly: false,
+          stickyAuth: true,
+        ),
+      );
+    } catch (_) {
+      return false;
+    }
   }
 
   Future<void> clearSession() async {

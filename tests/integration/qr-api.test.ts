@@ -56,8 +56,8 @@ vi.mock("@/lib/redis/rate-limit", () => ({
 
 import {
   GET,
-  getQrCodeCacheKey,
 } from "../../src/app/api/v1/qr/[slug]/route";
+import { getQrCodeCacheKey } from "../../src/lib/qr/cache";
 
 function createMockLink(overrides: Partial<MockLink> = {}): MockLink {
   return {

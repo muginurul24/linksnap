@@ -23,6 +23,7 @@ import {
 import { usePlan, useUserRole } from "@/lib/auth/plan-context";
 import { isSuperAdmin } from "@/lib/auth/superadmin-utils";
 import type { UserPlan } from "@/lib/links/limits";
+import { logger } from "@/lib/observability/logger";
 import { getPlanDefinition } from "@/lib/plans/definitions";
 
 export type AppSidebarUser = {
@@ -135,7 +136,7 @@ class DropdownErrorBoundary extends Component<
   }
 
   componentDidCatch(error: Error) {
-    console.error("[app-sidebar] dropdown menu render error", {
+    logger.error("app_sidebar_dropdown_menu_render_error", {
       name: error.name,
       message: error.message,
     });

@@ -1,5 +1,11 @@
 import { describe, it, expect } from "vitest";
-import { SUPERADMIN_ROLE } from "@/lib/db/schema";
+import { ADMIN_AUDIT_LOG_TABLE, SUPERADMIN_ROLE } from "@/lib/db/schema";
+
+describe("ADMIN_AUDIT_LOG_TABLE", () => {
+  it("should export the audit log table name constant", () => {
+    expect(ADMIN_AUDIT_LOG_TABLE).toBe("admin_audit_log");
+  });
+});
 
 describe("SUPERADMIN_ROLE", () => {
   it("should export the superadmin role constant", () => {

@@ -1,9 +1,9 @@
 import { redirect } from "next/navigation";
 import { BackNavigationLink } from "@/components/dashboard/back-navigation-link";
 import { auth } from "@/lib/auth";
-import { getSessionUserId, type SessionWithUserId } from "@/lib/auth/session-helpers";
+import { getSessionUserId } from "@/lib/auth/session-helpers";
 import { countLinkPagesByUserId } from "@/lib/db/queries/links";
-import { CreateLinkForm } from "../link-form";
+import { CreateLinkForm } from "@/app/(dashboard)/links/link-form";
 
 export default async function NewLinkPage() {
   const session = await auth();

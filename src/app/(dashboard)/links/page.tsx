@@ -9,7 +9,7 @@ import {
 } from "lucide-react";
 import { PlanGate } from "@/components/plan-gate";
 import { auth } from "@/lib/auth";
-import { getSessionUserId, type SessionWithUserId } from "@/lib/auth/session-helpers";
+import { getSessionUserId } from "@/lib/auth/session-helpers";
 import {
   countLinksByUserId,
   listLinksByUserId,
@@ -38,7 +38,7 @@ import {
   getLinksSearchQuery,
   LINKS_SEARCH_MAX_LENGTH,
 } from "@/lib/links/search";
-import { getLinkCreateQuotaState } from "./link-plan-gates";
+import { getLinkCreateQuotaState } from "@/app/(dashboard)/links/link-plan-gates";
 
 const PAGE_LIMIT = 20;
 

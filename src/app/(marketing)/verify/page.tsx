@@ -3,9 +3,9 @@ import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { createPublicMetadata } from "@/lib/seo/metadata";
 import { auth } from "@/lib/auth";
-import { getSessionUserId, type SessionWithUserId } from "@/lib/auth/session-helpers";
+import { getSessionUserId } from "@/lib/auth/session-helpers";
 import { findUserVerificationStatusById } from "@/lib/db/queries/users";
-import { VerifyEmailForm } from "./verify-email-form";
+import { VerifyEmailForm } from "@/app/(marketing)/verify/verify-email-form";
 
 const description =
   "Verify your LinkSnap account email before signing in to your workspace.";

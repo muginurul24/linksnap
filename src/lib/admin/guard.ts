@@ -5,7 +5,7 @@ import { getDb } from "@/lib/db";
 import { users, SUPERADMIN_ROLE } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import { logger } from "@/lib/observability/logger";
-import { NextResponse, type NextResponse as NextResponseType } from "next/server";
+import type { NextResponse as NextResponseType } from "next/server";
 
 type AdminRouteContext = {
   adminUserId: string;
@@ -16,7 +16,7 @@ type AdminGuardResult =
   | { ok: true; admin: AdminRouteContext }
   | { ok: false; response: NextResponseType };
 
-function withAdminHeaders(response: NextResponseType): NextResponseType {
+export function withAdminActionHeader(response: NextResponseType): NextResponseType {
   response.headers.set("X-Admin-Action", "true");
   return response;
 }
@@ -28,7 +28,7 @@ export async function adminRouteGuard(): Promise<AdminGuardResult> {
   if (!authResult.ok) {
     return {
       ok: false,
-      response: withAdminHeaders(errorResponse(
+      response: withAdminActionHeader(errorResponse(
         authResult.status === 403 ? "SUPERADMIN_REQUIRED" : "AUTHENTICATION_REQUIRED",
         authResult.message,
         authResult.status,
@@ -54,7 +54,7 @@ export async function adminRouteGuard(): Promise<AdminGuardResult> {
       });
       return {
         ok: false,
-        response: withAdminHeaders(errorResponse(
+        response: withAdminActionHeader(errorResponse(
           "SUPERADMIN_REQUIRED",
           "Superadmin access required.",
           403,
@@ -66,7 +66,7 @@ export async function adminRouteGuard(): Promise<AdminGuardResult> {
     logger.error("admin_guard_db_validation_failed", { error, userId: authResult.userId });
     return {
       ok: false,
-      response: withAdminHeaders(errorResponse(
+        response: withAdminActionHeader(errorResponse(
         "INTERNAL_ERROR",
         "Unable to verify admin access.",
         500,
@@ -85,7 +85,7 @@ export async function adminRouteGuard(): Promise<AdminGuardResult> {
   if (rateLimit.limited) {
     return {
       ok: false,
-      response: withAdminHeaders(errorResponse(
+      response: withAdminActionHeader(errorResponse(
         "RATE_LIMITED",
         "Too many admin API requests.",
         429,

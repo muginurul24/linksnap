@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { createPublicMetadata } from "@/lib/seo/metadata";
 import { auth } from "@/lib/auth";
-import { ForgotPasswordForm } from "./forgot-password-form";
+import { ForgotPasswordForm } from "@/app/(marketing)/forgot-password/forgot-password-form";
 
 const description =
   "Request a secure LinkSnap password reset link by email.";

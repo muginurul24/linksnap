@@ -311,10 +311,11 @@ export const transactions = pgTable("transactions", {
 }));
 
 // ─── Admin Audit Log ───
+export const ADMIN_AUDIT_LOG_TABLE = "admin_audit_log";
 export const SUPERADMIN_ROLE = "superadmin";
 
 export const adminAuditLog = pgTable(
-  "admin_audit_log",
+  ADMIN_AUDIT_LOG_TABLE,
   {
     id: uuid("id").defaultRandom().primaryKey(),
     adminUserId: uuid("admin_user_id")

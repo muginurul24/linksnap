@@ -18,15 +18,15 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { auth } from "@/lib/auth";
-import { getSessionUserId, type SessionWithUserId } from "@/lib/auth/session-helpers";
+import { getSessionUserId } from "@/lib/auth/session-helpers";
 import {
   listCampaignsByUserId,
   type CampaignWithLinkCount,
 } from "@/lib/db/queries/campaigns";
 import { findBillingUserById } from "@/lib/db/queries/payments";
 import type { UserPlan } from "@/lib/links/limits";
-import { CampaignActions } from "./campaign-actions";
-import { getCampaignCreateQuotaState } from "./campaign-plan-gates";
+import { CampaignActions } from "@/app/(dashboard)/campaigns/campaign-actions";
+import { getCampaignCreateQuotaState } from "@/app/(dashboard)/campaigns/campaign-plan-gates";
 
 const PAGE_LIMIT = 50;
 

@@ -1,13 +1,13 @@
 import { notFound, redirect } from "next/navigation";
 import { BackNavigationLink } from "@/components/dashboard/back-navigation-link";
 import { auth } from "@/lib/auth";
-import { getSessionUserId, type SessionWithUserId } from "@/lib/auth/session-helpers";
+import { getSessionUserId } from "@/lib/auth/session-helpers";
 import { findCampaignById } from "@/lib/db/queries/campaigns";
 import { campaignIdParamsSchema } from "@/lib/validations/campaign";
 import {
   CampaignForm,
   type EditableCampaignInitialData,
-} from "../../campaign-form";
+} from "@/app/(dashboard)/campaigns/campaign-form";
 
 type EditCampaignPageProps = {
   params: Promise<{ id: string }>;

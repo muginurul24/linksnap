@@ -398,19 +398,15 @@ function getPayloadConfigFromPayload(
 
   let configLabelKey: string = key
 
-  if (
-    key in payload &&
-    typeof payload[key as keyof typeof payload] === "string"
-  ) {
-    configLabelKey = payload[key as keyof typeof payload] as string
-  } else if (
-    payloadPayload &&
-    key in payloadPayload &&
-    typeof payloadPayload[key as keyof typeof payloadPayload] === "string"
-  ) {
-    configLabelKey = payloadPayload[
-      key as keyof typeof payloadPayload
-    ] as string
+  const payloadValue = Reflect.get(payload, key)
+  const nestedPayloadValue = payloadPayload
+    ? Reflect.get(payloadPayload, key)
+    : undefined
+
+  if (typeof payloadValue === "string") {
+    configLabelKey = payloadValue
+  } else if (typeof nestedPayloadValue === "string") {
+    configLabelKey = nestedPayloadValue
   }
 
   return configLabelKey in config ? config[configLabelKey] : config[key]

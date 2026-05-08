@@ -23,14 +23,7 @@ import {
   SecuritySettingsForm,
 } from "@/app/(dashboard)/settings/settings-forms";
 import { TwoFactorSettingsPanel } from "@/app/(dashboard)/settings/two-factor-panel";
-import { loadSettingsPageData } from "./settings-page-data";
-
-type SessionWithUserId = {
-  user?: {
-    id?: unknown;
-    role?: unknown;
-  } | null;
-} | null;
+import { loadSettingsPageData } from "@/app/(dashboard)/settings/settings-page-data";
 
 type SettingsPageProps = {
   searchParams: Promise<{

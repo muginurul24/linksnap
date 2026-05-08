@@ -1,7 +1,7 @@
 import { notFound, redirect } from "next/navigation";
 import { BackNavigationLink } from "@/components/dashboard/back-navigation-link";
 import { auth } from "@/lib/auth";
-import { getSessionUserId, type SessionWithUserId } from "@/lib/auth/session-helpers";
+import { getSessionUserId } from "@/lib/auth/session-helpers";
 import {
   countLinkPagesByUserId,
   findEditableLinkBySlugForUser,
@@ -10,7 +10,7 @@ import { linkSlugParamsSchema } from "@/lib/validations/link";
 import {
   CreateLinkForm,
   type EditableLinkInitialData,
-} from "../../link-form";
+} from "@/app/(dashboard)/links/link-form";
 
 type EditLinkPageProps = {
   params: Promise<{ slug: string }>;

@@ -10,6 +10,7 @@ import { getClientIpFromHeaders } from "@/lib/analytics/ip";
 import { findQrGenerationLinkBySlug } from "@/lib/db/queries/links";
 import { hasReachedQrQuota } from "@/lib/links/limits";
 import { isRedirectLinkAvailable } from "@/lib/links/redirect";
+import { getQrCodeCacheKey } from "@/lib/qr/cache";
 import { cacheGet, cacheSet } from "@/lib/redis";
 import { slidingWindowRateLimit } from "@/lib/redis/rate-limit";
 import {
@@ -27,14 +28,6 @@ const QR_RATE_LIMIT_PER_MINUTE = 120;
 
 function getQueryParams(request: NextRequest): Record<string, string> {
   return Object.fromEntries(request.nextUrl.searchParams.entries());
-}
-
-export function getQrCodeCacheKey({
-  format,
-  size,
-  slug,
-}: LinkSlugParams & QrCodeQuery): string {
-  return `qr:${slug}:${format}:${size}`;
 }
 
 async function parseParams(

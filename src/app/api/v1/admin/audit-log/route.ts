@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { adminRouteGuard } from "@/lib/admin/guard";
+import { adminRouteGuard, withAdminActionHeader } from "@/lib/admin/guard";
 import { listAdminAuditLogs } from "@/lib/db/queries/admin-audit";
 import { adminAuditLogQuerySchema } from "@/lib/validations/admin";
 import {
@@ -18,23 +18,23 @@ export async function GET(request: NextRequest) {
     const params = Object.fromEntries(request.nextUrl.searchParams.entries());
     const parsed = adminAuditLogQuerySchema.safeParse(params);
     if (!parsed.success) {
-      return errorResponse(
+      return withAdminActionHeader(errorResponse(
         "VALIDATION_ERROR",
         "Invalid query parameters.",
         400,
         admin.requestId,
         parsed.error.flatten(),
-      );
+      ));
     }
 
     const { page, limit, action } = parsed.data;
     const result = await listAdminAuditLogs({ limit, page, action });
 
-    return successResponse(result.entries, 200, {
+    return withAdminActionHeader(successResponse(result.entries, 200, {
       page,
       limit,
       total: result.total,
-    });
+    }));
   } catch (error) {
     logApiErrorResponse({
       code: "INTERNAL_ERROR",
@@ -42,11 +42,11 @@ export async function GET(request: NextRequest) {
       requestId: admin.requestId,
       route: "GET /api/v1/admin/audit-log",
     });
-    return errorResponse(
+    return withAdminActionHeader(errorResponse(
       "INTERNAL_ERROR",
       "Unable to list audit log entries.",
       500,
       admin.requestId,
-    );
+    ));
   }
 }

@@ -12,10 +12,10 @@ import {
 } from "@/lib/analytics/dashboard";
 import { analyticsEmptyState } from "@/lib/analytics/empty-state";
 import { auth } from "@/lib/auth";
-import { getSessionUserId, type SessionWithUserId } from "@/lib/auth/session-helpers";
+import { getSessionUserId } from "@/lib/auth/session-helpers";
 import { listClickEventsForUser } from "@/lib/db/queries/click-events";
 import { dashboardAnalyticsQuerySchema } from "@/lib/validations/analytics";
-import { AnalyticsDashboardClient } from "./analytics-dashboard-client";
+import { AnalyticsDashboardClient } from "@/app/(dashboard)/analytics/analytics-dashboard-client";
 
 type AnalyticsPageProps = {
   searchParams: Promise<{

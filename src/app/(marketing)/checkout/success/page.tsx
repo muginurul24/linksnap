@@ -13,7 +13,7 @@ import { auth } from "@/lib/auth";
 import { getSessionUserId } from "@/lib/auth/session-helpers";
 import { createPublicMetadata } from "@/lib/seo/metadata";
 import { checkoutSuccessQuerySchema } from "@/lib/validations/payment";
-import { CheckoutStatusClient } from "./checkout-status-client";
+import { CheckoutStatusClient } from "@/app/(marketing)/checkout/success/checkout-status-client";
 
 type CheckoutSuccessPageProps = {
   searchParams: Promise<Record<string, string | string[] | undefined>>;

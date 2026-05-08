@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { auth } from "@/lib/auth";
 import { createPublicMetadata } from "@/lib/seo/metadata";
-import { TwoFactorLoginForm } from "./two-factor-login-form";
+import { TwoFactorLoginForm } from "@/app/(marketing)/2fa/two-factor-login-form";
 
 const description =
   "Complete two-factor verification to access your LinkSnap workspace.";

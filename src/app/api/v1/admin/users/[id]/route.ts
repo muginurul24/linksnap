@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { adminRouteGuard } from "@/lib/admin/guard";
+import { adminRouteGuard, withAdminActionHeader } from "@/lib/admin/guard";
 import {
   getUserDetailById,
   updateUserPlan,
@@ -32,15 +32,15 @@ export async function GET(
   try {
     const user = await getUserDetailById(id);
     if (!user) {
-      return errorResponse(
+      return withAdminActionHeader(errorResponse(
         "NOT_FOUND",
         "User not found.",
         404,
         admin.requestId,
-      );
+      ));
     }
 
-    return successResponse(user);
+    return withAdminActionHeader(successResponse(user));
   } catch (error) {
     logApiErrorResponse({
       code: "INTERNAL_ERROR",
@@ -48,12 +48,12 @@ export async function GET(
       requestId: admin.requestId,
       route: `GET /api/v1/admin/users/${id}`,
     });
-    return errorResponse(
+    return withAdminActionHeader(errorResponse(
       "INTERNAL_ERROR",
       "Unable to get user details.",
       500,
       admin.requestId,
-    );
+    ));
   }
 }
 
@@ -71,34 +71,34 @@ export async function PATCH(
   try {
     body = await request.json();
   } catch {
-    return errorResponse(
+    return withAdminActionHeader(errorResponse(
       "VALIDATION_ERROR",
       "Invalid JSON body.",
       400,
       admin.requestId,
-    );
+    ));
   }
 
   const parsed = adminUpdateUserPlanSchema.safeParse(body);
   if (!parsed.success) {
-    return errorResponse(
+    return withAdminActionHeader(errorResponse(
       "VALIDATION_ERROR",
       "Invalid plan value.",
       400,
       admin.requestId,
       parsed.error.flatten(),
-    );
+    ));
   }
 
   try {
     const result = await updateUserPlan({ userId: id, plan: parsed.data.plan });
     if (!result.updated) {
-      return errorResponse(
+      return withAdminActionHeader(errorResponse(
         "NOT_FOUND",
         "User not found.",
         404,
         admin.requestId,
-      );
+      ));
     }
 
     // Audit log (fire-and-forget)
@@ -112,7 +112,10 @@ export async function PATCH(
       },
     });
 
-    return successResponse({ plan: parsed.data.plan, previousPlan: result.previousPlan });
+    return withAdminActionHeader(successResponse({
+      plan: parsed.data.plan,
+      previousPlan: result.previousPlan,
+    }));
   } catch (error) {
     logApiErrorResponse({
       code: "INTERNAL_ERROR",
@@ -120,12 +123,12 @@ export async function PATCH(
       requestId: admin.requestId,
       route: `PATCH /api/v1/admin/users/${id}`,
     });
-    return errorResponse(
+    return withAdminActionHeader(errorResponse(
       "INTERNAL_ERROR",
       "Unable to update user plan.",
       500,
       admin.requestId,
-    );
+    ));
   }
 }
 
@@ -143,23 +146,23 @@ export async function POST(
   try {
     body = await request.json();
   } catch {
-    return errorResponse(
+    return withAdminActionHeader(errorResponse(
       "VALIDATION_ERROR",
       "Invalid JSON body.",
       400,
       admin.requestId,
-    );
+    ));
   }
 
   const parsed = adminSuspendUserSchema.safeParse(body);
   if (!parsed.success) {
-    return errorResponse(
+    return withAdminActionHeader(errorResponse(
       "VALIDATION_ERROR",
       "Action must be 'suspend' or 'unsuspend'.",
       400,
       admin.requestId,
       parsed.error.flatten(),
-    );
+    ));
   }
 
   try {
@@ -169,12 +172,12 @@ export async function POST(
       : await unsuspendUser(id);
 
     if (!success) {
-      return errorResponse(
+      return withAdminActionHeader(errorResponse(
         "NOT_FOUND",
         "User not found.",
         404,
         admin.requestId,
-      );
+      ));
     }
 
     // Audit log (fire-and-forget)
@@ -184,7 +187,7 @@ export async function POST(
       targetUserId: id,
     });
 
-    return successResponse({ action: parsed.data.action });
+    return withAdminActionHeader(successResponse({ action: parsed.data.action }));
   } catch (error) {
     logApiErrorResponse({
       code: "INTERNAL_ERROR",
@@ -192,11 +195,11 @@ export async function POST(
       requestId: admin.requestId,
       route: `POST /api/v1/admin/users/${id}`,
     });
-    return errorResponse(
+    return withAdminActionHeader(errorResponse(
       "INTERNAL_ERROR",
       "Unable to process suspend/unsuspend action.",
       500,
       admin.requestId,
-    );
+    ));
   }
 }

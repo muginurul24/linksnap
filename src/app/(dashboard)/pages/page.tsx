@@ -13,7 +13,7 @@ import { Switch } from "@/components/ui/switch";
 import { ButtonLink } from "@/components/ui/button-link";
 import { EmptyState } from "@/components/dashboard/empty-state";
 import { auth } from "@/lib/auth";
-import { getSessionUserId, type SessionWithUserId } from "@/lib/auth/session-helpers";
+import { getSessionUserId } from "@/lib/auth/session-helpers";
 import {
   listLinkPagesByUserId,
   type ListedLinkPage,
