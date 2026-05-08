@@ -8021,3 +8021,40 @@ Fixed the remaining dashboard CSP runtime violations by passing the request nonc
 - ✅ No secrets committed.
 
 **Next Task:** Commit, push, wait for production deploy, then smoke-test CSP headers and dashboard runtime.
+
+### 21F.4 — Remove Client Bundle Eval Fallback
+- **Date:** 2026-05-08 21:19 GMT+7
+- **Duration:** 0h 35m
+- **Status:** ✅ Complete
+
+**What I Did:**
+Removed the remaining dashboard `unsafe-eval` CSP violation from app client chunks by replacing `es-toolkit`'s browser global object fallback with a native `globalThis` shim during the client build.
+
+**Files Changed:**
+- `next.config.ts` — Added a narrow client-only webpack replacement for the unsafe `es-toolkit` global fallback.
+- `src/lib/compat/es-toolkit-global-this.ts` — Added the CSP-safe replacement module.
+- `_bmad-output/implementation-artifacts/JOURNAL.md` — Logged the fix.
+
+**Decisions Made:**
+- Did not add production `script-src 'unsafe-eval'` because Next.js and React do not require it in production.
+- Kept the webpack override scoped to the exact dependency module instead of loosening the global CSP policy.
+- Set the client webpack global object to `globalThis` to avoid legacy global discovery fallbacks.
+
+**Tests:**
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Unit: `rtk bun test tests/unit/security-headers.test.ts` — 6 passed.
+- ✅ Full unit/integration: `rtk bun run test` — 140 files passed, 1 skipped; 637 tests passed, 2 skipped.
+- ✅ Build: `rtk bun run build` — Passed.
+- ✅ Bundle scan: `rtk proxy rg -l "Function\\(\"return this\"\\)|Function\\('return this'\\)|new Function|eval\\(" .next/static/chunks --glob '*.js'` — Only webpack runtime and polyfills remain; no app dashboard chunk remains.
+
+**Issues Encountered:**
+- Running typecheck and build in parallel caused a temporary `.next/types` race; reran typecheck after build and it passed.
+- The offending fallback came from a dependency bundled into dashboard chart chunks, not from first-party source code.
+
+**Security Checks:**
+- ✅ No production `unsafe-eval` added.
+- ✅ Script CSP remains nonce-gated with `strict-dynamic`.
+- ✅ Scope limited to client bundle compatibility; no secrets committed.
+
+**Next Task:** Commit, push, wait for production deploy, then smoke-test CSP headers and dashboard runtime.
