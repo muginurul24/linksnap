@@ -41,7 +41,7 @@ describe("security headers", () => {
     );
   });
 
-  it("should build a nonce-based CSP without unsafe inline script or style blocks", () => {
+  it("should build a nonce-based script CSP with client runtime style compatibility", () => {
     const csp = createContentSecurityPolicy({
       isDev: false,
       nonce: "test-nonce",
@@ -50,13 +50,12 @@ describe("security headers", () => {
     expect(csp).toContain("default-src 'self'");
     expect(csp).toContain("script-src 'self' 'nonce-test-nonce' 'strict-dynamic'");
     expect(csp).toContain("script-src-attr 'none'");
-    expect(csp).toContain("style-src 'self' 'nonce-test-nonce'");
+    expect(csp).toContain("style-src 'self' 'unsafe-inline'");
     expect(csp).toContain("style-src-attr 'unsafe-inline'");
     expect(csp).toContain("frame-ancestors 'none'");
     expect(csp).toContain("object-src 'none'");
     expect(csp).toContain("base-uri 'self'");
     expect(getDirective(csp, "script-src")).not.toContain("'unsafe-inline'");
-    expect(getDirective(csp, "style-src")).not.toContain("'unsafe-inline'");
   });
 
   it("should allow unsafe eval only in development CSP", () => {

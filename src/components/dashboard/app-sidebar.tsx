@@ -7,18 +7,46 @@ import { usePathname } from "next/navigation";
 import { Component, useState } from "react";
 import type { ReactNode } from "react";
 import {
-  Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent,
-  SidebarGroupLabel, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarRail,
+  Sidebar,
+  SidebarContent,
+  SidebarFooter,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarGroupLabel,
+  SidebarHeader,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarRail,
+  useSidebar,
 } from "@/components/ui/sidebar";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { signOutToLanding } from "@/components/dashboard/sign-out";
 import {
-  DropdownMenu, DropdownMenuContent, DropdownMenuItem,
-  DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
-  LayoutDashboard, Link2, Globe, Megaphone, BarChart3, Settings, QrCode, Zap,
-  LogOut, User, CreditCard, Sparkles, BookOpen, Loader2, HelpCircle, Shield,
+  BarChart3,
+  BookOpen,
+  CreditCard,
+  Globe,
+  HelpCircle,
+  LayoutDashboard,
+  Link2,
+  Loader2,
+  LogOut,
+  Megaphone,
+  QrCode,
+  Settings,
+  Shield,
+  Sparkles,
+  User,
+  Zap,
 } from "lucide-react";
 import { usePlan, useUserRole } from "@/lib/auth/plan-context";
 import { isSuperAdmin } from "@/lib/auth/superadmin-utils";
@@ -122,6 +150,10 @@ export function getSignOutMenuLabel(isSigningOut: boolean): string {
   return isSigningOut ? "Signing out..." : "Sign Out";
 }
 
+export function getSidebarAccountDropdownSide(isMobile: boolean): "right" | "top" {
+  return isMobile ? "top" : "right";
+}
+
 class DropdownErrorBoundary extends Component<
   { children: ReactNode; fallback: ReactNode },
   { hasError: boolean }
@@ -153,6 +185,7 @@ export function AppSidebar({ user }: { user: AppSidebarUser }) {
   const router = useRouter();
   const userPlan = usePlan();
   const role = useUserRole();
+  const { isMobile } = useSidebar();
   const displayUser = getSidebarDisplayUser(user, userPlan, role);
   const mainNavItems = getSidebarMainNavItems(userPlan, role);
   const [isSigningOut, setIsSigningOut] = useState(false);
@@ -304,7 +337,12 @@ export function AppSidebar({ user }: { user: AppSidebarUser }) {
                     </span>
                   </div>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent className="w-56" align="end" side="right" sideOffset={4}>
+                <DropdownMenuContent
+                  align="end"
+                  className="w-56 max-w-[calc(100vw-2rem)]"
+                  side={getSidebarAccountDropdownSide(isMobile)}
+                  sideOffset={isMobile ? 8 : 4}
+                >
                   <DropdownMenuLabel>My Account</DropdownMenuLabel>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={() => router.push("/settings")}>

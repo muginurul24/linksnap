@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  getSidebarAccountDropdownSide,
   getSidebarMainNavItems,
   getSidebarDisplayUser,
   getSignOutMenuLabel,
@@ -82,5 +83,10 @@ describe("app sidebar user display", () => {
   it("should label sign out loading state", () => {
     expect(getSignOutMenuLabel(false)).toBe("Sign Out");
     expect(getSignOutMenuLabel(true)).toBe("Signing out...");
+  });
+
+  it("should keep the account dropdown inside the mobile sidebar viewport", () => {
+    expect(getSidebarAccountDropdownSide(true)).toBe("top");
+    expect(getSidebarAccountDropdownSide(false)).toBe("right");
   });
 });

@@ -15,6 +15,7 @@ import { PlanProvider } from "@/lib/auth/plan-context";
 import type { UserPlan } from "@/lib/links/limits";
 import { logger } from "@/lib/observability/logger";
 import { getDashboardSubscriptionSnapshot } from "@/lib/payments/dashboard-subscription-cache";
+import { getCspNonce } from "@/lib/security/server-nonce";
 
 export default async function DashboardLayout({
   children,
@@ -29,6 +30,7 @@ export default async function DashboardLayout({
     image: getSessionString(session, "image"),
     name: getSessionString(session, "name"),
   };
+  const nonce = await getCspNonce();
 
   if (userId) {
     try {
@@ -45,7 +47,13 @@ export default async function DashboardLayout({
   }
 
   return (
-    <ThemeProvider attribute="class" defaultTheme="dark" enableSystem disableTransitionOnChange>
+    <ThemeProvider
+      attribute="class"
+      defaultTheme="dark"
+      disableTransitionOnChange
+      enableSystem
+      nonce={nonce}
+    >
       <TooltipProvider>
         <SidebarProvider defaultOpen defaultOpenMobile={false}>
           <PlanProvider userPlan={userPlan} role={getSessionRole(session)}>

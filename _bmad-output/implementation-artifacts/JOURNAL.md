@@ -7980,3 +7980,44 @@ Fixed dashboard runtime errors reported from production by passing the request C
 - ✅ Base UI receives the existing per-request nonce instead of broad script relaxation.
 
 **Next Task:** Deploy and smoke-test `https://www.justqiu.cloud/dashboard` after Vercel finishes building this commit.
+
+### 21F.3 — Dashboard CSP Runtime Compatibility + Mobile Dropdown
+- **Date:** 2026-05-08 21:04 GMT+7
+- **Duration:** 0h 50m
+- **Status:** ✅ Complete
+
+**What I Did:**
+Fixed the remaining dashboard CSP runtime violations by passing the request nonce into `next-themes` and allowing client-side runtime style tags while keeping scripts nonce-based. Adjusted the sidebar account dropdown so it opens above the trigger on mobile and added browser coverage to prove it stays inside the viewport.
+
+**Files Changed:**
+- `src/app/(dashboard)/layout.tsx` — Passed the CSP nonce into `ThemeProvider`.
+- `src/lib/security/headers.ts` — Kept production scripts strict while allowing runtime style tags required by client UI libraries.
+- `src/components/dashboard/app-sidebar.tsx` — Made the account dropdown mobile-aware and constrained its width to the viewport.
+- `tests/unit/security-headers.test.ts` — Updated CSP expectations for runtime style compatibility.
+- `tests/unit/app-sidebar.test.ts` — Added dropdown placement coverage.
+- `tests/e2e/admin-flow.spec.ts` — Added mobile viewport coverage for the sidebar account dropdown.
+
+**Decisions Made:**
+- Kept `script-src` nonce-based with `strict-dynamic` instead of adding `unsafe-inline` for scripts.
+- Allowed `style-src 'unsafe-inline'` because Base UI, next-themes, and animation/runtime UI code can create client-side style tags after hydration.
+- Opened the account menu on `top` for mobile sidebar mode because `right` can push the menu outside the sheet and viewport.
+
+**Tests:**
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Unit: `rtk bun test tests/unit/security-headers.test.ts tests/unit/app-sidebar.test.ts tests/unit/admin-sidebar.test.ts tests/unit/dropdown-menu-label.test.tsx` — 29 passed.
+- ✅ E2E: `rtk bun run test:e2e tests/e2e/admin-flow.spec.ts` — 6 passed.
+- ✅ Full unit/integration: `rtk bun run test` — 140 passed, 1 skipped; 637 passed, 2 skipped.
+- ✅ Build: `rtk bun run build` — Passed.
+
+**Issues Encountered:**
+- The first CSP fix covered Base UI context, but production still blocked `next-themes` and runtime-injected style tags.
+- Nonce-only `style-src` is too strict for the current client component stack, so the safer compromise is strict scripts plus runtime-compatible styles.
+
+**Security Checks:**
+- ✅ Script execution remains nonce-gated; no production `script-src 'unsafe-inline'`.
+- ✅ Inline event handlers remain blocked by `script-src-attr 'none'`.
+- ✅ Frame/object/base/form hardening remains unchanged.
+- ✅ No secrets committed.
+
+**Next Task:** Commit, push, wait for production deploy, then smoke-test CSP headers and dashboard runtime.

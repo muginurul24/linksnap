@@ -172,6 +172,34 @@ test.describe("Admin Flow — Superadmin", () => {
     );
   });
 
+  test("account dropdown stays inside the mobile sidebar viewport", async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await authenticateAsSuperadmin(page);
+    await page.goto("/links");
+
+    await page.getByRole("button", { name: "Toggle Sidebar" }).click();
+
+    const mobileSidebar = page.locator('[data-sidebar="sidebar"][data-mobile="true"]');
+    await expect(mobileSidebar).toBeVisible({ timeout: 10_000 });
+
+    await mobileSidebar.locator('[data-slot="dropdown-menu-trigger"]').last().click();
+
+    const accountMenu = page
+      .locator('[data-slot="dropdown-menu-content"]')
+      .filter({ hasText: "My Account" })
+      .last();
+    await expect(accountMenu).toBeVisible({ timeout: 10_000 });
+
+    const box = await accountMenu.boundingBox();
+    expect(box).not.toBeNull();
+    if (!box) return;
+
+    expect(box.x).toBeGreaterThanOrEqual(0);
+    expect(box.y).toBeGreaterThanOrEqual(0);
+    expect(box.x + box.width).toBeLessThanOrEqual(390);
+    expect(box.y + box.height).toBeLessThanOrEqual(844);
+  });
+
   test("admin dashboard page loads with stats cards", async ({ page }) => {
     await authenticateAsSuperadmin(page);
     await page.goto("/admin");

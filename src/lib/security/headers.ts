@@ -35,9 +35,7 @@ export function createContentSecurityPolicy({
     "default-src 'self'",
     `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${isDev ? " 'unsafe-eval'" : ""}`,
     "script-src-attr 'none'",
-    isDev
-      ? "style-src 'self' 'unsafe-inline'"
-      : `style-src 'self' 'nonce-${nonce}'`,
+    "style-src 'self' 'unsafe-inline'",
     "style-src-attr 'unsafe-inline'",
     "img-src 'self' data: blob: https:",
     "font-src 'self' data:",
