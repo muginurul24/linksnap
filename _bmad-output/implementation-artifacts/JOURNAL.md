@@ -8146,3 +8146,41 @@ Installed `@vercel/speed-insights` and mounted Vercel Speed Insights globally fr
 - ✅ Dynamic route IDs are replaced with route templates when Next exposes the route.
 
 **Next Task:** Commit, push, wait for production deploy, then smoke-test Speed Insights/CSP on `https://www.justqiu.cloud`.
+
+### 21F.7 — Fix Vercel Build Bundler Selection
+- **Date:** 2026-05-08 22:18 GMT+7
+- **Duration:** 0h 25m
+- **Status:** ✅ Complete
+
+**What I Did:**
+Fixed the Vercel production build failure where Vercel invoked plain `next build`, causing Next.js 16 to select Turbopack while the project intentionally has a `webpack` config. Added a Vercel build command so production deployments use the same `bun run build` path as CI and local verification.
+
+**Files Changed:**
+- `vercel.json` — Added `buildCommand: "bun run build"` so Vercel uses the project webpack build script.
+- `tests/unit/build-config.test.ts` — Added regression coverage for the Vercel build command and webpack shim path.
+- `_bmad-output/implementation-artifacts/JOURNAL.md` — Logged the fix.
+
+**Decisions Made:**
+- Chose explicit `--webpack` through the existing package script instead of adding a no-op Turbopack config.
+- Kept the webpack `NormalModuleReplacementPlugin` path because it removes the known `es-toolkit` global fallback that previously violated CSP.
+- Verified that plain `next build` can be made to pass with Turbopack, but Turbopack output still includes dependency `Function("return this")` fallbacks, so production should stay on webpack until those dependencies are clean under Turbopack.
+
+**Tests:**
+- ✅ Targeted unit: `rtk bun run test -- tests/unit/build-config.test.ts tests/unit/security-headers.test.ts tests/unit/vercel-speed-insights.test.ts` — 11 passed.
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Build: `rtk bun run build` — Passed.
+- ✅ Full unit/integration: `rtk bun run test` — 143 passed, 1 skipped; 645 passed, 2 skipped.
+- ✅ App chunk scan: `rtk proxy rg -o "Function\\(\"return this\"\\)|Function\\('return this'\\)|new Function|eval\\(" .next/static/chunks/app --glob '*.js'` — No matches.
+
+**Issues Encountered:**
+- A trial Turbopack build passed after adding a Turbopack config, but bundle scanning showed dependency-level `Function("return this")` fallbacks outside app chunks.
+- Kept the fix at the deployment command layer so Vercel no longer hits the Turbopack/webpack-config mismatch and production remains CSP-compatible.
+
+**Security Checks:**
+- ✅ No secrets committed.
+- ✅ No production `unsafe-eval` added.
+- ✅ Production build path remains webpack with the CSP-safe `es-toolkit` shim.
+- ✅ App chunks remain free of direct eval/global fallback matches after webpack build.
+
+**Next Task:** Commit, push, then confirm Vercel uses `bun run build` in the next deployment log.
