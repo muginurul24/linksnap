@@ -296,6 +296,32 @@ export const transactions = pgTable("transactions", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+// ─── Admin Audit Log ───
+export const SUPERADMIN_ROLE = "superadmin";
+
+export const adminAuditLog = pgTable(
+  "admin_audit_log",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    adminUserId: uuid("admin_user_id")
+      .references(() => users.id, { onDelete: "set null" })
+      .notNull(),
+    action: varchar("action", { length: 50 }).notNull(),
+    // action values: "user.plan.change", "user.suspend", "user.unsuspend",
+    //               "system.config", "admin.login", "admin.api.request"
+    targetUserId: uuid("target_user_id")
+      .references(() => users.id, { onDelete: "set null" }),
+    metadata: jsonb("metadata").$type<Record<string, unknown>>(),
+    ipAddress: varchar("ip_address", { length: 45 }),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (table) => ({
+    adminUserIdIdx: index("audit_admin_user_idx").on(table.adminUserId),
+    actionIdx: index("audit_action_idx").on(table.action),
+    createdAtIdx: index("audit_created_at_idx").on(table.createdAt),
+  }),
+);
+
 // ─── System Settings ───
 export const settings = pgTable("settings", {
   key: varchar("key", { length: 100 }).primaryKey(),

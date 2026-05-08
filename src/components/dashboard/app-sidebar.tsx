@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { signOut } from "next-auth/react";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
@@ -109,6 +110,7 @@ export function getSignOutMenuLabel(isSigningOut: boolean): string {
 
 export function AppSidebar({ user }: { user: AppSidebarUser }) {
   const pathname = usePathname();
+  const router = useRouter();
   const userPlan = usePlan();
   const displayUser = getSidebarDisplayUser(user, userPlan);
   const mainNavItems = getSidebarMainNavItems(userPlan);
@@ -225,16 +227,12 @@ export function AppSidebar({ user }: { user: AppSidebarUser }) {
               <DropdownMenuContent className="w-56" align="end" side="right" sideOffset={4}>
                 <DropdownMenuLabel>My Account</DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <Link href="/settings">
-                  <DropdownMenuItem>
-                    <User className="mr-2 size-4" /> Settings
-                  </DropdownMenuItem>
-                </Link>
-                <Link href="/settings/billing">
-                  <DropdownMenuItem>
-                    <CreditCard className="mr-2 size-4" /> Billing
-                  </DropdownMenuItem>
-                </Link>
+                <DropdownMenuItem onClick={() => router.push("/settings")}>
+                  <User className="mr-2 size-4" /> Settings
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => router.push("/settings/billing")}>
+                  <CreditCard className="mr-2 size-4" /> Billing
+                </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
                   className="text-destructive"
