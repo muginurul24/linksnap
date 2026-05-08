@@ -2502,7 +2502,7 @@ apps/mobile_flutter/
 
 #### 21A.1 — Flutter Project Init & Dependencies
 - [ ] Run `flutter create --org id.linksnap apps/mobile_flutter` from repo root
-- [ ] `pubspec.yaml` dependencies:
+- [x] `pubspec.yaml` dependencies:
   ```yaml
   dependencies:
     flutter:
@@ -2534,22 +2534,22 @@ apps/mobile_flutter/
     flutter_lints: ^4.0.0
   ```
 - [ ] `flutter pub get` — must succeed
-- [ ] Configure `analysis_options.yaml` with strict lint rules
-- [ ] Create `.env.example` with `API_BASE_URL=https://linksnap.id`
+- [x] Configure `analysis_options.yaml` with strict lint rules
+- [x] Create `.env.example` with `API_BASE_URL=https://linksnap.id`
 
 #### 21A.2 — Theme & Design System
-- [ ] `lib/core/theme/app_colors.dart` — ALL colors from palette above
-- [ ] `lib/core/theme/app_typography.dart` — Plus Jakarta Sans TextTheme
-- [ ] `lib/core/theme/app_theme.dart` — dark ThemeData with:
+- [x] `lib/core/theme/app_colors.dart` — ALL colors from palette above
+- [x] `lib/core/theme/app_typography.dart` — Plus Jakarta Sans TextTheme
+- [x] `lib/core/theme/app_theme.dart` — dark ThemeData with:
   - `scaffoldBackgroundColor: AppColors.surface`
   - `colorScheme: ColorScheme.dark(primary: AppColors.accent, ...)`
   - Custom `AppBarTheme`, `BottomNavigationBarTheme`, `InputDecorationTheme`, `CardTheme`, `ButtonTheme`
   - All surfaces use `AppColors.surface*` hierarchy
-- [ ] Load fonts via `GoogleFonts.config.allowRuntimeFetching = false` (bundled)
-- [ ] `main.dart` wraps app with `ProviderScope` (Riverpod)
+- [x] Load fonts via `GoogleFonts.config.allowRuntimeFetching = false` (bundled)
+- [x] `main.dart` wraps app with `ProviderScope` (Riverpod)
 
 #### 21A.3 — Router Setup (GoRouter)
-- [ ] `lib/core/router/app_router.dart`:
+- [x] `lib/core/router/app_router.dart`:
   ```dart
   // Auth routes (no shell): /login, /register, /verify
   // Main shell (bottom nav): /dashboard, /links, /create, /campaigns, /settings
@@ -2559,18 +2559,18 @@ apps/mobile_flutter/
   // Campaign: /campaigns/:id
   // QR: /scan
   ```
-- [ ] Auth redirect guard: if no token → `/login`
-- [ ] Deep link handler: `linksnap://verify?email=...&token=...`
+- [x] Auth redirect guard: if no token → `/login`
+- [x] Deep link handler: `linksnap://verify?email=...&token=...`
 
 #### 21A.4 — API Client (Dio + Auth)
-- [ ] `lib/core/network/api_client.dart`:
+- [x] `lib/core/network/api_client.dart`:
   - Dio instance with `BaseOptions(baseUrl: dotenv.env['API_BASE_URL'] ?? 'https://linksnap.id')`
   - `Authorization: Bearer {token}` interceptor (reads from SecureStorage)
   - 401 auto-refresh interceptor (call `/api/v1/auth/refresh`, store new token)
   - Request/response logging in debug mode
   - 30s timeout, retry on 5xx (3 attempts, exponential backoff)
-- [ ] `lib/core/network/api_endpoints.dart` — all 44 `/api/v1/*` endpoint constants
-- [ ] `lib/core/storage/secure_storage.dart` — wrapper around `FlutterSecureStorage`:
+- [x] `lib/core/network/api_endpoints.dart` — all 44 `/api/v1/*` endpoint constants
+- [x] `lib/core/storage/secure_storage.dart` — wrapper around `FlutterSecureStorage`:
   - `saveToken(String)` / `getToken()` / `deleteToken()`
   - `saveRefreshToken(String)` / `getRefreshToken()`
   - Biometric-protected read if available
@@ -2580,20 +2580,20 @@ apps/mobile_flutter/
 ### 🟡 Sub-Phase 21B: Auth (3 tasks)
 
 #### 21B.1 — Auth Repository & Provider
-- [ ] `lib/features/auth/data/auth_api.dart` — Dio calls:
+- [x] `lib/features/auth/data/auth_api.dart` — Dio calls:
   - `login(email, password)` → `POST /api/v1/auth/login`
   - `register(name, email, password)` → `POST /api/v1/auth/register`
   - `verifyEmail(email, otp)` → `POST /api/v1/auth/verify`
   - `forgotPassword(email)` → `POST /api/v1/auth/forgot-password`
   - `resetPassword(token, password)` → `POST /api/v1/auth/reset-password`
-- [ ] `lib/features/auth/data/auth_repository.dart` — wraps API + SecureStorage
-- [ ] `lib/features/auth/domain/user_model.dart` — User model with `fromJson`/`toJson`
-- [ ] `lib/features/auth/presentation/providers/auth_provider.dart` — Riverpod StateNotifier:
+- [x] `lib/features/auth/data/auth_repository.dart` — wraps API + SecureStorage
+- [x] `lib/features/auth/domain/user_model.dart` — User model with `fromJson`/`toJson`
+- [x] `lib/features/auth/presentation/providers/auth_provider.dart` — Riverpod StateNotifier:
   - State: `{ user, token, isAuthenticated, isLoading, error }`
   - Methods: `login`, `register`, `verifyEmail`, `logout`, `checkAuth`
 
 #### 21B.2 — Auth Screens
-- [ ] `login_screen.dart`:
+- [x] `login_screen.dart`:
   - Centered glass card with LinkSnap wordmark (gold gradient text)
   - Email + Password `AppInput` fields with icon prefix (mail, lock)
   - "Forgot password?" text button (right-aligned)
@@ -2602,29 +2602,29 @@ apps/mobile_flutter/
   - Bottom: "Don't have an account? Sign up" link
   - Loading state: button shows CircularProgressIndicator
   - Error state: red text below inputs with shake animation
-- [ ] `register_screen.dart`:
+- [x] `register_screen.dart`:
   - Name, Email, Password, Confirm Password fields
   - Password strength indicator (3-segment bar: red/yellow/green)
   - Password requirements checklist
   - Terms checkbox + link
   - Primary button "Create Account"
-- [ ] `verify_screen.dart`:
+- [x] `verify_screen.dart`:
   - 6-digit OTP input with auto-advance
   - 60s countdown timer for resend
   - Success: haptic + auto-navigate after 500ms
 
 #### 21B.3 — Auth State & Navigation Guards
-- [ ] `GoRouter` redirect logic based on `authProvider` state
+- [x] `GoRouter` redirect logic based on `authProvider` state
 - [ ] Biometric unlock: prompt on app resume if enabled
-- [ ] Session timeout: auto-logout after 7 days (check token `iat`)
-- [ ] SecureStorage: all tokens encrypted, never SharedPreferences
+- [x] Session timeout: auto-logout after 7 days (check token `iat`)
+- [x] SecureStorage: all tokens encrypted, never SharedPreferences
 
 ---
 
 ### 🟢 Sub-Phase 21C: Core Screens (7 tasks)
 
 #### 21C.1 — Dashboard Screen
-- [ ] `dashboard_screen.dart`:
+- [x] `dashboard_screen.dart`:
   - **Header:** Greeting "Good morning, {name} 👋" + date + avatar (tappable → settings)
   - **Stats Row:** 3 glass `StatsCard` in horizontal ListView:
     - Links count (gold accent), Clicks Today (green accent), Campaigns (blue accent)
@@ -2637,7 +2637,7 @@ apps/mobile_flutter/
   - Skeleton shimmer on first load
 
 #### 21C.2 — Links List Screen
-- [ ] `links_list_screen.dart`:
+- [x] `links_list_screen.dart`:
   - Search bar with debounce (300ms)
   - Filter chips: All, Active, With Pages, By Campaign (horizontal scroll)
   - `ListView.builder` with pagination (infinite scroll)
@@ -2648,7 +2648,7 @@ apps/mobile_flutter/
   - Skeleton shimmer rows (5 items)
 
 #### 21C.3 — Create Link Screen
-- [ ] `create_link_screen.dart`:
+- [x] `create_link_screen.dart`:
   - Large URL input with "Paste" button (reads clipboard)
   - URL validation: green check if valid URL
   - Generated slug preview: "linksnap.id/{slug}" in glass card
@@ -2659,7 +2659,7 @@ apps/mobile_flutter/
   - Recent 3 created links below
 
 #### 21C.4 — Link Detail Screen
-- [ ] `link_detail_screen.dart`:
+- [x] `link_detail_screen.dart`:
   - URL Card: big glass card, "linksnap.id/{slug}" in headlineLarge
   - Copy + Share buttons
   - Stats row: Total Clicks, Today, Unique Visitors (3 StatsCards)
@@ -2671,7 +2671,7 @@ apps/mobile_flutter/
   - QR: full-screen dialog with `QrImageView` + share
 
 #### 21C.5 — Link Edit Screen
-- [ ] `link_edit_screen.dart`:
+- [x] `link_edit_screen.dart`:
   - Basic Info: slug, destination URL, title (all AppInput)
   - Link Page section: toggle + expandable card
     - Brand name, title, description (TextArea)
@@ -2685,7 +2685,7 @@ apps/mobile_flutter/
   - Save button (sticky bottom, gold gradient)
 
 #### 21C.6 — Analytics Screen
-- [ ] `link_analytics_screen.dart`:
+- [x] `link_analytics_screen.dart`:
   - Date range chips: 7D, 30D, 90D, All Time
   - **Clicks Chart:** `fl_chart` LineChart with gradient fill (gold → transparent)
     - Touch tooltip with exact count per day
@@ -2698,11 +2698,11 @@ apps/mobile_flutter/
   - Empty state: "No clicks yet — share your link to get started"
 
 #### 21C.7 — Campaigns Screen
-- [ ] `campaigns_screen.dart`:
+- [x] `campaigns_screen.dart`:
   - Campaign cards: name (titleLarge), link count badge, total clicks
   - UTM preview chips (source/medium/campaign)
   - Create campaign: bottom sheet with name, UTM template fields
-- [ ] `campaign_detail_screen.dart`:
+- [x] `campaign_detail_screen.dart`:
   - Aggregated stats header
   - Links list in campaign
   - Add/remove links
@@ -2714,7 +2714,7 @@ apps/mobile_flutter/
 ### 🔵 Sub-Phase 21D: Billing & Settings (3 tasks)
 
 #### 21D.1 — Billing Plans Screen
-- [ ] `plans_screen.dart`:
+- [x] `plans_screen.dart`:
   - Current plan accent card: plan name (headlineLarge, gold), status badge, next billing
   - Monthly/Yearly toggle: segmented control with "-20%" label
   - 3 plan cards: FREE (glass), PRO (gold border, "Popular" badge), BUSINESS (gold border, "Best Value" badge)
@@ -2724,7 +2724,7 @@ apps/mobile_flutter/
   - Cancel subscription: text button → confirmation dialog
 
 #### 21D.2 — Checkout Screen (VA Display)
-- [ ] `checkout_screen.dart`:
+- [x] `checkout_screen.dart`:
   - Order info: order ID, status badge
   - **VA Display:** accent-bordered card with bank name (gold, uppercase) + VA number (displayLarge)
   - Copy VA button → clipboard + haptic
@@ -2732,46 +2732,46 @@ apps/mobile_flutter/
   - Instruction text: "Complete payment through your bank app"
 
 #### 21D.3 — Settings Screens
-- [ ] `settings_screen.dart`:
+- [x] `settings_screen.dart`:
   - Profile header: avatar (72px, gold ring), name, email, plan badge
   - Sections: Account (profile, password, 2FA), Preferences (notifications, haptics), Developer (API keys), Support (help, privacy, terms)
   - Danger zone: red "Delete Account" → confirmation with re-entry
-- [ ] `profile_screen.dart` — edit name, email, avatar (image picker)
-- [ ] `security_screen.dart` — change password, 2FA toggle + setup
-- [ ] `api_keys_screen.dart` — list keys (masked), create (show once), delete
+- [x] `profile_screen.dart` — edit name, email, avatar (image picker)
+- [x] `security_screen.dart` — change password, 2FA toggle + setup
+- [x] `api_keys_screen.dart` — list keys (masked), create (show once), delete
 
 ---
 
 ### 🟣 Sub-Phase 21E: Polish & Ship (4 tasks)
 
 #### 21E.1 — Loading, Empty & Error States
-- [ ] Skeleton shimmer loader matching each screen layout:
+- [x] Skeleton shimmer loader matching each screen layout:
   - Dashboard: stats row + card skeletons
   - Links list: 5 glass card skeletons with `shimmer` package
   - Analytics: chart + stats grid skeletons
   - Billing: plan card + history skeletons
-- [ ] `EmptyState` widget: centered illustration (SVG icon) + message + CTA button
-- [ ] `ErrorState` widget: error icon + message + "Retry" button
-- [ ] Every `FutureBuilder`/`AsyncValue` handles loading/error/data
+- [x] `EmptyState` widget: centered illustration (SVG icon) + message + CTA button
+- [x] `ErrorState` widget: error icon + message + "Retry" button
+- [x] Every `FutureBuilder`/`AsyncValue` handles loading/error/data
 
 #### 21E.2 — Animations & Micro-interactions
-- [ ] `flutter_animate` on every screen:
+- [x] `flutter_animate` on every screen:
   - Screen enter: `.fadeIn(duration: 300.ms)`
   - List items: `.fadeIn(duration: 300.ms, delay: (50 * index).ms).slideY(begin: 0.05)`
   - Stats numbers: `.animate().scale(duration: 400.ms, curve: Curves.easeOutBack)`
-- [ ] Button press: `InkWell` splash + `HapticFeedback.lightImpact()`
-- [ ] Copy to clipboard: animated checkmark icon
-- [ ] Page transitions: `CustomTransitionPage` with slide + fade
-- [ ] Shimmer: `shimmer` package on skeleton loaders
-- [ ] Pull-to-refresh: custom gold indicator
+- [x] Button press: `InkWell` splash + `HapticFeedback.lightImpact()`
+- [x] Copy to clipboard: animated checkmark icon
+- [x] Page transitions: `CustomTransitionPage` with slide + fade
+- [x] Shimmer: `shimmer` package on skeleton loaders
+- [x] Pull-to-refresh: custom gold indicator
 
 #### 21E.3 — Accessibility & Performance
-- [ ] All tappable targets ≥ 48×48dp
-- [ ] `Semantics` widget on all interactive elements
-- [ ] `ExcludeSemantics` on decorative elements
-- [ ] `const` constructors everywhere possible to reduce rebuilds
-- [ ] `ListView.builder` (not `ListView`) for all lists
-- [ ] Image cache via `cached_network_image` for avatars
+- [x] All tappable targets ≥ 48×48dp
+- [x] `Semantics` widget on all interactive elements
+- [x] `ExcludeSemantics` on decorative elements
+- [x] `const` constructors everywhere possible to reduce rebuilds
+- [x] `ListView.builder` (not `ListView`) for all lists
+- [x] Image cache via `cached_network_image` for avatars
 - [ ] Release build: `flutter build apk --release` must complete <10 min
 
 #### 21E.4 — Build & Ship

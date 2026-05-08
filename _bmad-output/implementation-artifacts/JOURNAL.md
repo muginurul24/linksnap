@@ -227,6 +227,197 @@ Verified the Upstash Redis connection using the application's Redis client. Conf
 
 **Next Task:** 0.4 — CI/CD Pipeline
 
+### 21A — Flutter Project Setup
+- **Date:** 2026-05-08 14:52 GMT+7
+- **Duration:** 0 hours 28 minutes
+- **Status:** ⚠️ Partial
+
+**What I Did:**
+Created the `apps/mobile_flutter` package scaffold manually because the Flutter SDK is not installed in this workspace. Added the GoPay Merch dark design system, Riverpod app entry, GoRouter route graph, Dio API client with bearer auth and refresh handling, secure token storage, strict lint config, and reusable premium widgets based on the provided template.
+
+**Files Changed:**
+- `apps/mobile_flutter/pubspec.yaml` — Added Flutter package metadata and required dependencies.
+- `apps/mobile_flutter/analysis_options.yaml` — Added strict Dart analyzer and lint rules.
+- `apps/mobile_flutter/.env.example` — Added the mobile API base URL template.
+- `apps/mobile_flutter/lib/main.dart` — Added dotenv loading, Plus Jakarta Sans runtime-fetch lockout, and `ProviderScope`.
+- `apps/mobile_flutter/lib/app.dart` — Added `MaterialApp.router`, app theme, and lifecycle auth checks.
+- `apps/mobile_flutter/lib/core/**` — Added theme, router, network, secure storage, and validation utilities.
+- `apps/mobile_flutter/lib/shared/widgets/app_widgets.dart` — Added GoPay Merch-style buttons, cards, inputs, scaffold, bottom nav, states, badges, QR, and list widgets.
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Marked completed 21A checklist items and left Flutter-SDK-dependent items unchecked.
+
+**Decisions Made:**
+- Manual scaffold → Flutter is unavailable on PATH, so source files were created directly while leaving host-project generation blocked.
+- SecureStorage only → access and refresh tokens are never stored in SharedPreferences.
+- Custom bottom shell → keeps the elevated center FAB and glass bottom navigation consistent across core routes.
+
+**Tests:**
+- ⚠️ Flutter SDK: `rtk proxy flutter --version` — blocked, `flutter: not found`.
+- ⚠️ Dart SDK: `rtk proxy dart --version` — blocked, `dart: not found`.
+- ⬜ Flutter pub get/build — blocked until Flutter is installed.
+
+**Issues Encountered:**
+- `.git/FETCH_HEAD` is read-only → initial `rtk git pull --rebase` could not complete.
+- Flutter SDK is missing → `flutter create`, `flutter pub get`, and release build cannot run in this environment.
+
+**Security Checks:**
+- ✅ Bearer auth is injected only from encrypted `FlutterSecureStorage`.
+- ✅ Refresh token rotation stores replacements in secure storage.
+- ✅ No hardcoded API keys or secrets were added.
+- ✅ API base URL is sourced from dotenv with a safe public default.
+
+**Next Task:** 21B — Auth Repository, Provider, and Screens
+
+### 21B — Auth Repository, Provider, and Screens
+- **Date:** 2026-05-08 15:05 GMT+7
+- **Duration:** 0 hours 13 minutes
+- **Status:** ⚠️ Partial
+
+**What I Did:**
+Implemented mobile auth models, Dio-backed auth API calls, repository persistence through secure storage, and a Riverpod `AuthNotifier`. Built the login, registration, and OTP verification screens with glass cards, gold accents, haptic interactions, loading/error states, password strength, terms consent, and auth-aware navigation.
+
+**Files Changed:**
+- `apps/mobile_flutter/lib/features/auth/domain/user_model.dart` — Added user and auth session models.
+- `apps/mobile_flutter/lib/features/auth/data/auth_api.dart` — Added login, register, verify, forgot/reset password, and resend OTP calls through Dio.
+- `apps/mobile_flutter/lib/features/auth/data/auth_repository.dart` — Added API and SecureStorage orchestration.
+- `apps/mobile_flutter/lib/features/auth/presentation/providers/auth_provider.dart` — Added auth state, session restore, token expiry, login/register/verify/logout methods.
+- `apps/mobile_flutter/lib/features/auth/presentation/screens/*.dart` — Added Login, Register, and Verify screens.
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Marked completed 21B items and left real biometric prompting unchecked.
+
+**Decisions Made:**
+- Dio-only API calls → every auth network path uses the shared bearer/refresh client.
+- Secure token storage → tokens and user session data are written through `FlutterSecureStorage`, never SharedPreferences.
+- Biometric resume remains partial → lifecycle checks are wired, but real OS biometric prompting needs `local_auth` plus native host config after Flutter project generation.
+
+**Tests:**
+- ⚠️ Flutter analyzer/build — blocked because Flutter/Dart are not installed.
+- ⬜ Runtime auth flow — pending device/simulator once Flutter SDK is available.
+
+**Issues Encountered:**
+- Git commit/push after 21A failed because `.git/index.lock` cannot be created on the read-only `.git` filesystem → continuing with working-tree changes.
+- Native biometric prompt cannot be fully wired without generated Android/iOS host files.
+
+**Security Checks:**
+- ✅ User input is validated client-side before auth submission.
+- ✅ Auth endpoints use the shared Dio client.
+- ✅ Tokens are encrypted through `FlutterSecureStorage`.
+- ✅ Error messages avoid exposing raw API response bodies.
+
+**Next Task:** 21C — Core Screens
+
+### 21C — Core Screens
+- **Date:** 2026-05-08 15:37 GMT+7
+- **Duration:** 0 hours 32 minutes
+- **Status:** ⚠️ Partial
+
+**What I Did:**
+Implemented dashboard, link list, create link, link detail, link edit, analytics, campaigns, campaign detail, and QR scanner screens using the GoPay Merch template system. Added shared mobile models plus repository/provider layers for links, dashboard, analytics, and campaigns; data flows attempt Dio API calls and fall back to deterministic sample data for offline UI rendering.
+
+**Files Changed:**
+- `apps/mobile_flutter/lib/shared/models/app_models.dart` — Added link, dashboard, campaign, analytics, plan, and billing models with sample data.
+- `apps/mobile_flutter/lib/features/dashboard/**` — Added dashboard provider and screen.
+- `apps/mobile_flutter/lib/features/links/**` — Added link repository, providers, list/create/detail/edit/analytics screens.
+- `apps/mobile_flutter/lib/features/campaigns/**` — Added campaigns provider and campaign screens.
+- `apps/mobile_flutter/lib/features/qr/presentation/screens/qr_scanner_screen.dart` — Added QR scanner screen with permission/error/empty UI.
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Marked completed 21C screen tasks.
+
+**Decisions Made:**
+- Dio-first repositories with sample fallback → screens are connected to real endpoints while still rendering in local/offline development.
+- AsyncValue UI pattern → loading, empty, and error branches are explicit on data-driven screens.
+- `fl_chart` line chart → analytics follows the required gradient-fill chart pattern.
+
+**Tests:**
+- ⚠️ Flutter analyzer/build — blocked because Flutter/Dart are not installed.
+- ⬜ API integration — pending real mobile runtime against `/api/v1/*`.
+
+**Issues Encountered:**
+- Commit/push remains blocked by read-only `.git`.
+- Release/device verification remains blocked by missing Flutter SDK and generated native host files.
+
+**Security Checks:**
+- ✅ All repository network calls use the shared Dio client with bearer auth.
+- ✅ No secrets or provider tokens were added.
+- ✅ Destructive UI actions use confirmation or non-destructive preview behavior.
+- ✅ No SharedPreferences usage was introduced.
+
+**Next Task:** 21D — Billing and Settings
+
+### 21D — Billing and Settings
+- **Date:** 2026-05-08 15:58 GMT+7
+- **Duration:** 0 hours 21 minutes
+- **Status:** ⚠️ Partial
+
+**What I Did:**
+Implemented billing plans, checkout VA display, billing history, and settings/profile/security/API key screens with the shared premium dark/gold UI. Added billing state providers, plan cards, monthly/yearly toggle, payment polling, avatar image picking, 2FA setup preview, masked API key management, and destructive-account confirmation UI.
+
+**Files Changed:**
+- `apps/mobile_flutter/lib/features/billing/presentation/providers/billing_provider.dart` — Added billing overview and checkout status providers.
+- `apps/mobile_flutter/lib/features/billing/presentation/screens/*.dart` — Added plans, checkout, and history screens.
+- `apps/mobile_flutter/lib/features/settings/presentation/screens/*.dart` — Added settings, profile, security, and API key screens.
+- `apps/mobile_flutter/lib/shared/models/app_models.dart` — Added billing overview sample data.
+- `apps/mobile_flutter/pubspec.yaml` — Added `image_picker` for avatar selection.
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Marked completed 21D items.
+
+**Decisions Made:**
+- VA checkout screen polls local state every 10 seconds → mirrors the planned PayGate behavior while the backend endpoint contract is still pending mobile runtime verification.
+- Avatar picker uses `image_picker` → provides native gallery selection rather than a placeholder interaction.
+- API keys are masked by default and only the newly generated key is shown once.
+
+**Tests:**
+- ⚠️ Flutter analyzer/build — blocked because Flutter/Dart are not installed.
+- ⬜ Native image picker and checkout polling — pending generated Android/iOS host project.
+
+**Issues Encountered:**
+- Git commit/push remains blocked by read-only `.git/index.lock`.
+- Native plugin verification for `image_picker`, `mobile_scanner`, secure storage, and share sheet requires Flutter SDK plus host project generation.
+
+**Security Checks:**
+- ✅ No sensitive token storage outside SecureStorage.
+- ✅ API key UI masks stored keys and only reveals newly created key once.
+- ✅ Destructive account and subscription actions require confirmation.
+- ✅ No hardcoded provider secrets or payment credentials were added.
+
+**Next Task:** 21E — Polish and Ship
+
+### 21E — Polish and Ship
+- **Date:** 2026-05-08 16:15 GMT+7
+- **Duration:** 0 hours 17 minutes
+- **Status:** ⚠️ Partial
+
+**What I Did:**
+Completed the shared shimmer, empty, and error state components; added SVG empty-state/app-icon assets; audited haptic interaction coverage; added page transitions, animated screen/list entries, QR display, cached avatars, and gold pull-to-refresh indicators. Ran the requested Flutter verification/build commands, but every Flutter command is blocked because the SDK is not installed in this workspace.
+
+**Files Changed:**
+- `apps/mobile_flutter/lib/shared/widgets/app_widgets.dart` — Added SVG-backed empty states, haptic/semantic controls, shimmer loaders, bottom nav, cards, inputs, badges, QR, and interaction widgets.
+- `apps/mobile_flutter/assets/images/app_icon.svg` — Added gold-on-black LinkSnap app icon artwork.
+- `apps/mobile_flutter/assets/images/empty_links.svg` — Added reusable empty-state illustration.
+- `apps/mobile_flutter/lib/features/**` — Patched interaction haptics and state handling across screens.
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Marked completed 21E code-polish items and left Flutter-SDK-dependent build/ship items unchecked.
+
+**Decisions Made:**
+- Left APK, appbundle, APK size, device install, adaptive native icon, and IPA items unchecked → they require Flutter SDK plus generated Android/iOS host projects.
+- Kept the Android `encryptedSharedPreferences` option only as a FlutterSecureStorage backend, not as direct app storage.
+- Added SVG icon artwork now, with adaptive-icon wiring deferred until `flutter create` can generate native host files.
+
+**Tests:**
+- ✅ Static security scan: no hardcoded `sk-`, `api_key`, or real TOTP/payment secrets in `apps/mobile_flutter`.
+- ✅ SharedPreferences scan: no direct SharedPreferences usage; only `FlutterSecureStorage` encrypted Android backend option appears.
+- ⚠️ `rtk proxy flutter pub get` — blocked, `flutter: not found`.
+- ⚠️ `rtk proxy flutter analyze` — blocked, `flutter: not found`.
+- ⚠️ `rtk proxy flutter build apk --release` — blocked, `flutter: not found`.
+- ⚠️ `rtk proxy flutter build appbundle --release` — blocked, `flutter: not found`.
+
+**Issues Encountered:**
+- Flutter and Dart are not installed on PATH → `flutter create`, dependency resolution, analyzer, APK, appbundle, device install, and IPA build cannot run.
+- `.git` is mounted read-only for writes → `rtk git add -A` fails with `.git/index.lock` creation error, so per-sub-phase commits/pushes cannot be created from this workspace.
+
+**Security Checks:**
+- ✅ All API calls are routed through Dio providers.
+- ✅ Tokens remain in FlutterSecureStorage only.
+- ✅ No app secrets or API keys are committed.
+- ✅ Destructive actions use confirmation flows.
+
+**Next Task:** Install Flutter SDK, regenerate host files with `flutter create --org id.linksnap apps/mobile_flutter`, run `flutter pub get`, analyze, build APK/appbundle, then commit and push each prepared sub-phase.
+
 ### 14.1 — Stripe Configuration & Client
 - **Date:** 2026-05-07 19:08 GMT+7
 - **Duration:** 0 hours 18 minutes
