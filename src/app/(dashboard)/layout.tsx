@@ -7,10 +7,9 @@ import { AppHeader } from "@/components/dashboard/app-header";
 import { SessionTimeout } from "@/components/dashboard/session-timeout";
 import { auth } from "@/lib/auth";
 import { PlanProvider } from "@/lib/auth/plan-context";
-import { findBillingUserById } from "@/lib/db/queries/payments";
 import type { UserPlan } from "@/lib/links/limits";
 import { logger } from "@/lib/observability/logger";
-import { syncSubscriptionStatusForUser } from "@/lib/payments/subscription";
+import { getDashboardSubscriptionSnapshot } from "@/lib/payments/dashboard-subscription-cache";
 
 type SessionWithUserId = {
   expires?: unknown;
@@ -50,13 +49,7 @@ export default async function DashboardLayout({
 
   if (userId) {
     try {
-      await syncSubscriptionStatusForUser(userId);
-    } catch (error) {
-      logger.error("dashboard_subscription_sync_failed", { error, userId });
-    }
-
-    try {
-      const billingUser = await findBillingUserById(userId);
+      const billingUser = await getDashboardSubscriptionSnapshot(userId);
       sidebarUser = {
         email: billingUser?.email ?? sidebarUser.email,
         image: sidebarUser.image,
@@ -64,7 +57,7 @@ export default async function DashboardLayout({
       };
       userPlan = billingUser?.plan ?? "FREE";
     } catch (error) {
-      logger.error("dashboard_billing_user_load_failed", { error, userId });
+      logger.error("dashboard_subscription_snapshot_load_failed", { error, userId });
     }
   }
 

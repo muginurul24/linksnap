@@ -6045,3 +6045,38 @@ Separated destination URL protocol validation from hostname safety validation. `
 - ✅ No secrets, raw SQL, or `dangerouslySetInnerHTML` introduced.
 
 **Next Task:** 17.11 — Cache Subscription Status in Dashboard Layout
+
+### 17.11 — Cache Subscription Status in Dashboard Layout
+- **Date:** 2026-05-08 07:41 GMT+7
+- **Duration:** 0h 25m
+- **Status:** ✅ Complete
+
+**What I Did:**
+Added a Redis-backed dashboard subscription snapshot cache with a 60-second TTL. Dashboard layout now reads a cached snapshot containing plan, email, and name, so cache hits avoid both `syncSubscriptionStatusForUser()` and `findBillingUserById()` during frequent dashboard navigation.
+
+**Files Changed:**
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Checked off Task 17.11.
+- `src/lib/payments/dashboard-subscription-cache.ts` — Added dashboard subscription snapshot cache helper and key/TTL exports.
+- `src/app/(dashboard)/layout.tsx` — Replaced direct subscription sync and billing user query with cached snapshot lookup.
+- `tests/unit/dashboard-subscription-cache.test.ts` — Covered cache hit and cache miss behavior.
+
+**Decisions Made:**
+- Cached the combined layout snapshot instead of only the subscription sync result because the layout also needs billing user identity fields.
+- Kept TTL at 60 seconds to reduce navigation DB load while limiting plan-display staleness after payment changes.
+
+**Tests:**
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Targeted Unit: `rtk bun run test -- tests/unit/dashboard-subscription-cache.test.ts` — 1 file passed, 2 tests passed.
+- ✅ Unit/Integration: `rtk bun run test` — 127 files passed, 563 tests passed.
+- ✅ Build: `rtk bun run build` — Passed.
+
+**Issues Encountered:**
+- None.
+
+**Security Checks:**
+- ✅ Cache key uses internal user ID only and stores no secrets.
+- ✅ Existing dashboard auth gate remains unchanged.
+- ✅ No raw SQL, public inputs, or `dangerouslySetInnerHTML` introduced.
+
+**Next Task:** 17.15 — Add Playwright E2E Tests for Critical Flows

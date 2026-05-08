@@ -1455,11 +1455,11 @@ rtk bun run db:studio    # Open Drizzle Studio (in another terminal)
 - [x] Tests: unit (reject dangerous protocols)
 
 ### TASK 17.11 — Cache Subscription Status in Dashboard Layout
-- [ ] File: `src/app/(dashboard)/layout.tsx`
-- [ ] `syncSubscriptionStatusForUser()` runs on every dashboard page navigation — adds DB load
-- [ ] Cache subscription snapshot in Redis with 60s TTL
-- [ ] Only query DB on cache miss
-- [ ] Tests: unit (cache hit returns correct plan)
+- [x] File: `src/app/(dashboard)/layout.tsx`
+- [x] `syncSubscriptionStatusForUser()` runs on every dashboard page navigation — adds DB load
+- [x] Cache subscription snapshot in Redis with 60s TTL
+- [x] Only query DB on cache miss
+- [x] Tests: unit (cache hit returns correct plan)
 
 ### TASK 17.12 — Add Settings Loading Skeleton
 - [x] ✅ Already created by Claw Kun (see `src/app/(dashboard)/settings/loading.tsx`)
