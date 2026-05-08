@@ -2,10 +2,8 @@
 
 ## Technology Stack & Versions
 - **Web:** Next.js 16 (App Router), React 19, TypeScript 5.9
-- **Mobile:** React Native 0.78 (Expo SDK 54), Expo Router, TypeScript
-- **Shared:** TypeScript types + Zod schemas (monorepo package)
-- **Runtime:** Bun (web), Node.js (mobile tooling)
-- **Styling:** Tailwind CSS 4 + shadcn/ui (web), NativeWind (mobile)
+- **Runtime:** Bun
+- **Styling:** Tailwind CSS 4 + shadcn/ui
 - **Database:** PostgreSQL 16 (Neon.tech serverless)
 - **ORM:** Drizzle ORM — no raw SQL
 - **Cache:** Redis 7 (Upstash serverless)
@@ -24,12 +22,6 @@
 - `src/lib/` — Business logic (no JSX in lib)
 - `src/components/ui/` — shadcn primitives
 - `src/components/dashboard/` — Dashboard-specific components
-
-### Mobile
-- `apps/mobile/app/` — Expo Router file-based routing
-- `apps/mobile/src/lib/api/` — API client
-- `apps/mobile/src/lib/stores/` — Zustand stores
-- `apps/mobile/src/components/ui/` — Mobile UI components
 
 ### Shared
 - `packages/shared/` — Zod schemas, TypeScript types, constants

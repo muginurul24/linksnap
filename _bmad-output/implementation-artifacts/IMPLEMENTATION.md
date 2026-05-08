@@ -4,7 +4,6 @@
 
 > **🔒 SECURITY MANDATE:** Before marking ANY task complete, verify the SECURITY.md checklist for that area. Every API route, every component, every query must pass security review. See `_bmad-output/planning-artifacts/SECURITY.md`.
 
-> **📱 MOBILE APP:** See `_bmad-output/planning-artifacts/IMPLEMENTATION-MOBILE.md` for React Native implementation (24 tasks across 5 phases).
 
 > **📓 JOURNAL:** After EVERY task, append an entry to `_bmad-output/implementation-artifacts/JOURNAL.md` following the format specified there. Claw Kun reviews the journal for quality control.
 
