@@ -1785,3 +1785,90 @@ rtk bun run seed:superadmin
 5. ❌ NEVER trust client-side role checks — re-verify on every admin API call
 
 Good luck. Ship it. 👑🚀
+
+---
+
+## 🟢 Phase 19: Production-Grade Polish — Optimization, Quality & DX
+
+> **Source:** Rafi + Claw Kun final audit — 2026-05-08. Comprehensive optimization pass: code quality, query performance, Redis strategy, security hardening, client UX polish, and maintainability.
+
+> **Philosophy:** Every line earns its place. Every query has an index. Every cache has a TTL. Every page has loading + error states. Every component is accessible.
+
+### 🔴 Rules
+1. No duplicated logic — extract shared helpers (16 copies of getSessionUserId)
+2. No bare type assertions — `as unknown as` must be eliminated
+3. Every page has loading.tsx + error.tsx — 5 admin pages currently have none
+4. Zero dead dependencies — if unused, remove from package.json
+5. Redis: every key has explicit TTL — no eternal keys
+6. Console silent in production — only logger.error/warn
+
+### TASK 19.1 — Extract Shared Session Helpers (DRY)
+- [ ] Create `src/lib/auth/session-helpers.ts` (NEW) — getSessionUserId, getSessionRole, getSessionString, SessionWithUserId type
+- [ ] Replace 16 inline copies across all dashboard pages + API routes
+- [ ] Tests: unit (null/undefined/valid inputs)
+
+### TASK 19.2 — Add Loading + Error Boundaries to All Admin Pages
+- [ ] 5 loading.tsx: admin, admin/users, admin/analytics, admin/audit-log, admin/users/[id]
+- [ ] 5 error.tsx: same locations — error boundary with retry button
+- [ ] Tests: unit (error boundary renders), integration (skeleton appears)
+
+### TASK 19.3 — Clean Up Type Assertions
+- [ ] `src/proxy.ts`: eliminate `as unknown as MiddlewareHandler`
+- [ ] Audit all `as UserPlan`, `as string` casts — replace with type-safe narrowing
+- [ ] Tests: typecheck must pass
+
+### TASK 19.4 — Audit & Remove Dead Dependencies
+- [ ] Check: `date-fns` (0 imports) → remove if unused
+- [ ] Check: `framer-motion`, `@radix-ui/react-slot` — verify usage
+- [ ] Verify: `recharts`, `cmdk`, `qrcode`, `otpauth` — all used
+- [ ] After removal: typecheck + test + build must pass
+
+### TASK 19.5 — Ensure lucide-react Tree-Shaking
+- [ ] 66 files import lucide-react — verify tree-shaking in production build
+- [ ] If bundle >50KB for icons, use `lucide-react/dynamic` for admin-only icons
+- [ ] Tests: bundle size comparison
+
+### TASK 19.6 — Accessibility Audit
+- [ ] aria-label on icon-only buttons
+- [ ] alt text on AvatarImage components
+- [ ] Keyboard navigation Tab order + focus visible
+- [ ] Headings hierarchy (h1→h2→h3), landmarks (nav, main, aside)
+- [ ] Target: Lighthouse score ≥ 95
+
+### TASK 19.7 — Query Optimization
+- [ ] Add composite indexes: (user_id, created_at) on links, (link_id, timestamp) on clickEvents
+- [ ] Add partial index on transactions WHERE status = 'SETTLEMENT'
+- [ ] Optimize getSystemStats(): combine 7 queries into 1-2 with CTEs
+- [ ] db:push + verify query plans with EXPLAIN
+
+### TASK 19.8 — Redis TTL & Cache Strategy Review
+- [ ] Add TTL to click queue items (1h) and dead-letter entries (7d)
+- [ ] Add EXPIRE call after RPUSH in click-queue.ts
+- [ ] Verify all cache keys have explicit TTL strategy
+
+### TASK 19.9 — Bundle Size Optimization
+- [ ] Analyze .next build output for large chunks (>100KB)
+- [ ] Dynamic import recharts/framer-motion for admin-only pages
+- [ ] Verify first-load JS ≤ 200KB gzipped for landing page
+
+### TASK 19.10 — Console Cleanup
+- [ ] Verify zero console.log in production code (only logger.ts)
+- [ ] Add CI grep assertion to prevent future console.log
+
+### TASK 19.11 — Security Final Pass
+- [ ] Verify all /api/v1/* routes pass CSRF guard
+- [ ] Verify all admin routes have adminRouteGuard
+- [ ] All user input through Zod, all queries through Drizzle ORM
+- [ ] Run security:smoke against production — must pass
+
+### TASK 19.12 — Code Quality Final Pass
+- [ ] lint + typecheck zero errors
+- [ ] Zero @ts-ignore, zero commented-out code
+- [ ] All imports use @/ alias (no relative ../../)
+- [ ] Consistent kebab-case files, PascalCase components
+
+---
+
+**Estimated total:** 135 + 12 = 147 tasks | **Timeline:** 2-3 days
+
+Final boss. 🟢
