@@ -8214,3 +8214,39 @@ Reviewed the PRD, SECURITY checklist, Superadmin planning notes, implementation 
 - ✅ Phase requires Zod, auth, ownership, rate limiting, requestId, and no raw SQL for all future implementation tasks.
 
 **Next Task:** Await Rafi approval for Phase 22 before implementation.
+
+### 22.1 — Shared Browser API Client & Friendly Error Contract
+- **Date:** 2026-05-09 00:33 GMT+7
+- **Duration:** 0h 25m
+- **Status:** ✅ Complete
+
+**What I Did:**
+Created a shared browser API client for dashboard/admin components that automatically includes the required browser mutation security header, parses LinkSnap's standard API response format, and exposes structured error details for user-friendly UI. Added a reusable API error notice component that displays actionable copy and copyable request IDs.
+
+**Files Changed:**
+- `src/lib/api/client.ts` — Added `apiFetch`, mutation header injection, `ApiClientError`, and friendly error message mapping.
+- `src/components/dashboard/api-error-notice.tsx` — Added reusable error notice with request ID display and retry support.
+- `tests/unit/api-client.test.ts` — Added API client coverage.
+- `tests/unit/api-error-notice.test.tsx` — Added static render coverage for friendly error copy.
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Marked 22.1 in progress/complete.
+- `_bmad-output/implementation-artifacts/JOURNAL.md` — Logged 22.1.
+
+**Decisions Made:**
+- Reused the existing CSRF header constants from `src/lib/security/api-request.ts` so client and proxy stay aligned.
+- Kept the helper small and fetch-based instead of introducing a new request dependency.
+- Modeled expected API failures as structured values for UI handling instead of uncaught promise errors.
+
+**Tests:**
+- ✅ Targeted unit: `rtk bun run test -- tests/unit/api-client.test.ts tests/unit/api-error-notice.test.tsx` — 6 passed.
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+
+**Issues Encountered:**
+- TypeScript/oxc rejected mixed `??` and `||` without parentheses; fixed expression grouping.
+
+**Security Checks:**
+- ✅ Mutating browser requests now get `X-Requested-With: XMLHttpRequest` through the shared helper.
+- ✅ No secrets added.
+- ✅ Request IDs can be surfaced to users without exposing stack traces.
+
+**Next Task:** 22.2 — Admin User Actions Reliability.

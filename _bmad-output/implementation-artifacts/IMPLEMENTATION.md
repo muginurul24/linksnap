@@ -2895,7 +2895,7 @@ Premium Flutter experience. 🟢
 - `/admin/analytics` is a basic client fetch page with generic errors and no trend charts, no retry button, no stale/last-updated state, and no cache strategy.
 - Redis usage exists but is ad hoc; the project needs a documented cache matrix, typed cache keys, TTL ownership, and invalidation coverage before more dashboard data is cached.
 
-### TASK 22.1 — Shared Browser API Client & Friendly Error Contract
+### [x] TASK 22.1 — Shared Browser API Client & Friendly Error Contract
 
 - [ ] Add a small dashboard-safe API helper for browser components:
   - auto-add `X-Requested-With: XMLHttpRequest` for `POST`, `PATCH`, `PUT`, `DELETE`
