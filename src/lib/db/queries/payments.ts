@@ -1,5 +1,6 @@
 import { and, count, desc, eq, inArray, lte } from "drizzle-orm";
 import { db } from "@/lib/db";
+import { retryTransientDbQuery } from "@/lib/db/retry";
 import { subscriptions, transactions, users } from "@/lib/db/schema";
 import type { UserPlan } from "@/lib/links/limits";
 import type { PaidPlan, PaymentDuration } from "@/lib/validations/payment";
@@ -316,9 +317,11 @@ export async function updateUserPlanForPayment({
 export async function findSubscriptionByUserId(
   userId: string,
 ): Promise<SubscriptionRecord | null> {
-  const subscription = await db.query.subscriptions.findFirst({
-    where: eq(subscriptions.userId, userId),
-  });
+  const subscription = await retryTransientDbQuery(() =>
+    db.query.subscriptions.findFirst({
+      where: eq(subscriptions.userId, userId),
+    }),
+  );
 
   return subscription ?? null;
 }

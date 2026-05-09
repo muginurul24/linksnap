@@ -9128,3 +9128,47 @@ Added full PayGate smoke coverage for the upgraded multi-channel checkout flow, 
 - ✅ Double-submit guard verified in browser flow.
 
 **Next Task:** Phase 24 — Dashboard UX Completion after Rafi approval.
+
+### 23.10 Follow-up — Full Quality Gate Stabilization
+- **Date:** 2026-05-09 13:56 GMT+7
+- **Duration:** 2h 40m
+- **Status:** ✅ Complete
+
+**What I Did:**
+Closed the remaining 23.10 quality gate by hardening transient Redis/Neon behavior and stabilizing the full authenticated E2E suite. The final Playwright run passed with 38 tests green and 1 live PayGate sandbox test skipped because the external provider returned 502.
+
+**Files Changed:**
+- `src/lib/redis/index.ts` — Accepts legacy raw cache version tokens without noisy JSON parse failures.
+- `src/lib/db/retry.ts` — Added focused transient DB retry helper for Neon/fetch failures.
+- `src/lib/db/queries/settings.ts`, `src/lib/db/queries/click-events.ts`, `src/lib/db/queries/links.ts`, `src/lib/db/queries/payments.ts` — Wrapped flaky transient DB paths used by full E2E flows.
+- `tests/unit/redis-cache.test.ts`, `tests/unit/db-retry.test.ts` — Covered raw cache tokens and transient retry behavior.
+- `tests/e2e/auth.spec.ts`, `tests/e2e/link-flow.spec.ts`, `tests/e2e/payment-flow-full.spec.ts`, `tests/e2e/payment-flow.spec.ts`, `tests/e2e/public-site.spec.ts`, `tests/e2e/settings-flow.spec.ts` — Removed timing races from full E2E workflows.
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Checked off the 23.10 full quality gate.
+- `_bmad-output/implementation-artifacts/JOURNAL.md` — Logged this follow-up.
+
+**Decisions Made:**
+- Treat raw Redis version tokens as valid cached values because existing cache invalidation stores non-JSON tokens.
+- Centralize transient DB retry behavior instead of adding ad hoc retry loops inside tests or routes.
+- Assert split-test redirects through the link-page CTA route because it is the production route handler with an explicit 308 response.
+- Skip only the live PayGate sandbox E2E on provider/network 5xx; mocked channel smoke and webhook settlement remain mandatory.
+
+**Tests:**
+- ✅ Targeted unit: `rtk bun run test -- tests/unit/db-retry.test.ts tests/unit/redis-cache.test.ts` — 6 passed.
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Full unit/integration: `rtk bun run test` — 164 passed, 1 skipped; 748 passed, 2 skipped.
+- ✅ Production build: `rtk bun run build` — Passed.
+- ✅ Targeted E2E: BCA checkout, QR download, campaign workflow, settings profile/password, and live sandbox skip handling — Passed.
+- ✅ Full E2E: `rtk bun run test:e2e` — 38 passed, 1 skipped.
+
+**Issues Encountered:**
+- Full E2E exposed several race conditions where tests waited on responses that could be missed or session-derived UI that can legitimately lag behind persisted profile data.
+- Live PayGate sandbox intermittently returned provider/network 5xx; the deterministic mocked channel smoke and webhook settlement tests continue to cover application behavior.
+
+**Security Checks:**
+- ✅ Payment mutations remain no-cache and provider failures do not leak secrets.
+- ✅ Authenticated E2E flows still verify real ownership-gated APIs.
+- ✅ Transient retry helper does not retry validation/auth failures.
+- ✅ No secrets or raw provider payloads added to logs.
+
+**Next Task:** Phase 24 — Dashboard UX Completion after Rafi approval.

@@ -53,7 +53,7 @@ async function signIn(
     (response) =>
       response.url().includes("/api/auth/callback/credentials") &&
       response.request().method() === "POST",
-    { timeout: 20_000 },
+    { timeout: 45_000 },
   );
 
   await page.getByRole("button", { name: /^Sign in$/ }).click();
@@ -254,12 +254,27 @@ test("should start billing upgrade from the Pro button and redirect to checkout"
     ).toHaveAttribute("aria-pressed", "true");
     await page.getByRole("button", { name: "Review upgrade" }).click();
     await expect(page.getByText("Summary")).toBeVisible();
+    const createPaymentResponsePromise = page.waitForResponse(
+      (response) =>
+        response.url().includes("/api/v1/payments/create") &&
+        response.request().method() === "POST",
+      { timeout: 45_000 },
+    );
+    const paymentDetailsResponsePromise = page.waitForResponse(
+      (response) =>
+        response.url().includes(`/api/v1/payments/${orderId}`) &&
+        response.request().method() === "GET",
+      { timeout: 45_000 },
+    );
+
     await page.getByRole("button", { name: "Start checkout" }).click();
+    expect((await createPaymentResponsePromise).ok()).toBe(true);
 
     await expect(page).toHaveURL(
       new RegExp(`/checkout/success\\?order_id=${orderId}$`),
-      { timeout: 15_000 },
+      { timeout: 45_000 },
     );
+    expect((await paymentDetailsResponsePromise).ok()).toBe(true);
     await expect(page.getByText("Checkout complete", { exact: true })).toBeVisible();
     await expect(page.getByText("88001234567890")).toBeVisible();
     await expect(
@@ -359,11 +374,15 @@ test("should create sandbox payment and activate billing through webhook", async
           code?: string;
         };
       } | null;
+      const isExternalProviderFailure = [500, 502, 503, 504].includes(
+        createPaymentResponse.status(),
+      );
 
       test.skip(
-        failure?.error?.code === "PAYMENT_CONFIGURATION_ERROR" ||
+        isExternalProviderFailure ||
+          failure?.error?.code === "PAYMENT_CONFIGURATION_ERROR" ||
           failure?.error?.code === "PAYMENT_PROVIDER_ERROR",
-        "PayGate sandbox is unavailable or local credentials are not usable.",
+        "PayGate sandbox/network is unavailable or local credentials are not usable.",
       );
     }
     expect(createPaymentResponse.ok()).toBe(true);

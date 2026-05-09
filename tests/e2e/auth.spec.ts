@@ -125,7 +125,7 @@ test("should register verify login access dashboard and logout", async ({ page }
     await expect(page).toHaveURL(/\/login\?callbackUrl=%2Flinks$/);
 
     await page.getByRole("link", { name: "Create one" }).click();
-    await expect(page).toHaveURL(/\/register$/);
+    await expect(page).toHaveURL(/\/register$/, { timeout: 15_000 });
     await page.getByLabel("Email").fill(email);
     await page.getByLabel("Password", { exact: true }).fill(password);
     await page.getByLabel("Confirm password").fill(password);
@@ -136,9 +136,17 @@ test("should register verify login access dashboard and logout", async ({ page }
     });
 
     const otp = await waitForOtp(email);
+    const verifyResponsePromise = page.waitForResponse(
+      (response) =>
+        response.url().includes("/api/v1/auth/verify") &&
+        response.request().method() === "POST",
+      { timeout: 30_000 },
+    );
     await page.getByLabel("Verification code").fill(otp);
+    const verifyResponse = await verifyResponsePromise;
+    expect(verifyResponse.ok()).toBe(true);
 
-    await expect(page).toHaveURL(/\/login\?verified=true$/);
+    await expect(page).toHaveURL(/\/login\?verified=true$/, { timeout: 15_000 });
     await expect(
       page.getByRole("main").getByText("Email verified. You can sign in now."),
     ).toBeVisible();
@@ -149,7 +157,7 @@ test("should register verify login access dashboard and logout", async ({ page }
       (response) =>
         response.url().includes("/api/auth/callback/credentials") &&
         response.request().method() === "POST",
-      { timeout: 20_000 },
+      { timeout: 45_000 },
     );
 
     await page.getByRole("button", { name: /^Sign in$/ }).click();

@@ -1,4 +1,5 @@
 import { db } from "@/lib/db";
+import { retryTransientDbQuery } from "@/lib/db/retry";
 import { clickEvents, links } from "@/lib/db/schema";
 import {
   and,
@@ -116,17 +117,19 @@ export async function countRedirectClicksByLinkIds(
   const uniqueLinkIds = [...new Set(linkIds)];
   if (uniqueLinkIds.length === 0) return new Map();
 
-  const rows = await db
-    .select({
-      linkId: clickEvents.linkId,
-      value: count(),
-    })
-    .from(clickEvents)
-    .where(and(
-      inArray(clickEvents.linkId, uniqueLinkIds),
-      inArray(clickEvents.eventType, REDIRECT_CLICK_COUNT_EVENT_TYPES),
-    ))
-    .groupBy(clickEvents.linkId);
+  const rows = await retryTransientDbQuery(() =>
+    db
+      .select({
+        linkId: clickEvents.linkId,
+        value: count(),
+      })
+      .from(clickEvents)
+      .where(and(
+        inArray(clickEvents.linkId, uniqueLinkIds),
+        inArray(clickEvents.eventType, REDIRECT_CLICK_COUNT_EVENT_TYPES),
+      ))
+      .groupBy(clickEvents.linkId),
+  );
 
   return new Map(rows.map((row) => [row.linkId, Number(row.value)]));
 }

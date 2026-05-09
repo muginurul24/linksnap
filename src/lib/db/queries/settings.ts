@@ -1,5 +1,6 @@
 import { eq } from "drizzle-orm";
 import { db } from "@/lib/db";
+import { retryTransientDbQuery } from "@/lib/db/retry";
 import {
   DEFAULT_NOTIFICATION_PREFERENCES,
   users,
@@ -54,16 +55,18 @@ export async function updateSettingsUserProfile({
   name: string | null;
   userId: string;
 }): Promise<SettingsUser | null> {
-  const [user] = await db
-    .update(users)
-    .set({ name, updatedAt: new Date() })
-    .where(eq(users.id, userId))
-    .returning({
-      email: users.email,
-      name: users.name,
-      notifications: users.notifications,
-      twoFactorEnabled: users.twoFactorEnabled,
-    });
+  const [user] = await retryTransientDbQuery(() =>
+    db
+      .update(users)
+      .set({ name, updatedAt: new Date() })
+      .where(eq(users.id, userId))
+      .returning({
+        email: users.email,
+        name: users.name,
+        notifications: users.notifications,
+        twoFactorEnabled: users.twoFactorEnabled,
+      }),
+  );
 
   if (!user) return null;
 
@@ -82,11 +85,13 @@ export async function updateSettingsUserNotifications({
   notifications: UserNotificationPreferences;
   userId: string;
 }): Promise<UserNotificationPreferences | null> {
-  const [user] = await db
-    .update(users)
-    .set({ notifications, updatedAt: new Date() })
-    .where(eq(users.id, userId))
-    .returning({ notifications: users.notifications });
+  const [user] = await retryTransientDbQuery(() =>
+    db
+      .update(users)
+      .set({ notifications, updatedAt: new Date() })
+      .where(eq(users.id, userId))
+      .returning({ notifications: users.notifications }),
+  );
 
   return user ? normalizeNotificationPreferences(user.notifications) : null;
 }
@@ -112,15 +117,17 @@ export async function updateUserPasswordHash({
   passwordHash: string;
   userId: string;
 }): Promise<boolean> {
-  const [user] = await db
-    .update(users)
-    .set({
-      passwordHash,
-      refreshTokenHash: null,
-      updatedAt: new Date(),
-    })
-    .where(eq(users.id, userId))
-    .returning({ id: users.id });
+  const [user] = await retryTransientDbQuery(() =>
+    db
+      .update(users)
+      .set({
+        passwordHash,
+        refreshTokenHash: null,
+        updatedAt: new Date(),
+      })
+      .where(eq(users.id, userId))
+      .returning({ id: users.id }),
+  );
 
   return Boolean(user);
 }

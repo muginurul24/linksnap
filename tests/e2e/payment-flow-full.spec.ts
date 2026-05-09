@@ -10,7 +10,7 @@ import { retryTransientDb } from "./db-retry";
 
 loadEnvConfig(process.cwd());
 
-test.setTimeout(90_000);
+test.setTimeout(180_000);
 
 const testIp = "198.51.100.31";
 
@@ -106,7 +106,7 @@ async function signIn(page: Page, email: string, password: string): Promise<void
     (response) =>
       response.url().includes("/api/auth/callback/credentials") &&
       response.request().method() === "POST",
-    { timeout: 30_000 },
+    { timeout: 45_000 },
   );
 
   await page.getByRole("button", { name: /^Sign in$/ }).click();
@@ -246,7 +246,9 @@ async function mockCheckoutRoutes({
   caseData: ChannelSmokeCase;
   orderId: string;
   page: Page;
-}) {
+}): Promise<{ getPaymentDetailRequestCount: () => number }> {
+  let paymentDetailRequestCount = 0;
+
   await page.route("**/api/v1/payments/create", async (route) => {
     const request = route.request();
     const payload = request.postDataJSON() as {
@@ -273,12 +275,18 @@ async function mockCheckoutRoutes({
   });
 
   await page.route(`**/api/v1/payments/${orderId}`, async (route) => {
+    paymentDetailRequestCount += 1;
+
     await route.fulfill({
       body: JSON.stringify(createPaymentDetailResponse(caseData, orderId)),
       contentType: "application/json",
       status: 200,
     });
   });
+
+  return {
+    getPaymentDetailRequestCount: () => paymentDetailRequestCount,
+  };
 }
 
 async function startCheckoutFromBilling(page: Page, caseData: ChannelSmokeCase) {
@@ -295,6 +303,20 @@ async function startCheckoutFromBilling(page: Page, caseData: ChannelSmokeCase) 
   await expect(dialog.getByText("Summary")).toBeVisible();
   await expect(dialog.getByText(caseData.name).last()).toBeVisible();
   await page.getByRole("button", { name: "Start checkout" }).click();
+}
+
+async function expectCheckoutSuccessUrl(
+  page: Page,
+  orderId: string,
+  timeout = 60_000,
+): Promise<void> {
+  const successUrl = new RegExp(`/checkout/success\\?order_id=${orderId}$`);
+
+  await page.waitForURL(successUrl, {
+    timeout,
+    waitUntil: "domcontentloaded",
+  });
+  expect(page.url()).toMatch(successUrl);
 }
 
 async function createPendingPaymentTransaction({
@@ -345,16 +367,31 @@ for (const caseData of channelSmokeCases) {
     try {
       userId = await createVerifiedUser({ email, password });
       await signIn(page, email, password);
-      await mockCheckoutRoutes({ baseURL, caseData, orderId, page });
+      const checkoutRoutes = await mockCheckoutRoutes({
+        baseURL,
+        caseData,
+        orderId,
+        page,
+      });
+
+      const createPaymentResponsePromise = page.waitForResponse(
+        (response) =>
+          response.url().includes("/api/v1/payments/create") &&
+          response.request().method() === "POST",
+        { timeout: 60_000 },
+      );
 
       await startCheckoutFromBilling(page, caseData);
+      expect((await createPaymentResponsePromise).ok()).toBe(true);
 
-      await expect(page).toHaveURL(
-        new RegExp(`/checkout/success\\?order_id=${orderId}$`),
-        { timeout: 30_000 },
-      );
-      await expect(page.getByText("Checkout complete", { exact: true })).toBeVisible();
-      await expect(page.getByText(caseData.expectedText).first()).toBeVisible();
+      await expectCheckoutSuccessUrl(page, orderId);
+      await expect(page.getByText("Checkout complete", { exact: true })).toBeVisible({
+        timeout: 60_000,
+      });
+      await expect(page.getByText(caseData.expectedText).first()).toBeVisible({
+        timeout: 60_000,
+      });
+      expect(checkoutRoutes.getPaymentDetailRequestCount()).toBeGreaterThan(0);
     } finally {
       await cleanupPaymentSmokeState(email, userId);
     }
@@ -417,10 +454,7 @@ test("should keep selector grouping search mobile layout back navigation and dou
 
     const startButton = page.getByRole("button", { name: "Start checkout" });
     await Promise.all([startButton.click(), startButton.click()]);
-    await expect(page).toHaveURL(
-      new RegExp(`/checkout/success\\?order_id=${orderId}$`),
-      { timeout: 30_000 },
-    );
+    await expectCheckoutSuccessUrl(page, orderId, 30_000);
     expect(createCalls).toBe(1);
   } finally {
     await cleanupPaymentSmokeState(email, userId);

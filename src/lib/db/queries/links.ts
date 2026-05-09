@@ -13,6 +13,7 @@ import {
   type SQL,
 } from "drizzle-orm";
 import { db } from "@/lib/db";
+import { retryTransientDbQuery } from "@/lib/db/retry";
 import {
   clickEvents,
   linkPages,
@@ -233,10 +234,12 @@ export async function getUserPlanById(userId: string): Promise<UserPlan | null> 
 }
 
 export async function countLinksByUserId(userId: string): Promise<number> {
-  const [row] = await db
-    .select({ value: count() })
-    .from(links)
-    .where(eq(links.userId, userId));
+  const [row] = await retryTransientDbQuery(() =>
+    db
+      .select({ value: count() })
+      .from(links)
+      .where(eq(links.userId, userId)),
+  );
 
   return row?.value ?? 0;
 }

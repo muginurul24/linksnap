@@ -3189,7 +3189,7 @@ Premium Flutter experience. 🟢
 - [x] Update `CACHE_POLICY.md`, `SECURITY.md` — payment mutations remain do-not-cache
 - [x] Add `payment_method` index to DB for query performance
 - [x] Handle all PayGate error codes with friendly messages per channel
-- [ ] Run full quality gate: `rtk bun run typecheck && lint && test && test:e2e && build`
+- [x] Run full quality gate: `rtk bun run typecheck && lint && test && test:e2e && build`
 
 ### TASK 23.11 — End-to-End Payment Smoke Tests
 

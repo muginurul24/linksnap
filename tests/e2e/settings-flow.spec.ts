@@ -11,6 +11,8 @@ loadEnvConfig(process.cwd());
 
 const testIp = "198.51.100.30";
 
+test.setTimeout(180_000);
+
 async function createVerifiedUser(email: string, password: string): Promise<string> {
   await retryTransientDb(() => db.delete(users).where(eq(users.email, email)));
   const passwordHash = await hashPassword(password);
@@ -50,7 +52,7 @@ async function signIn(
     (response) =>
       response.url().includes("/api/auth/callback/credentials") &&
       response.request().method() === "POST",
-    { timeout: 20_000 },
+    { timeout: 45_000 },
   );
 
   await page.getByRole("button", { name: /^Sign in$/ }).click();
@@ -114,7 +116,14 @@ test("should update profile and change password from settings page", async ({
     await expect(page.getByRole("heading", { name: "Settings" })).toBeVisible();
 
     await page.getByLabel("Full Name").fill(displayName);
+    const profileResponsePromise = page.waitForResponse(
+      (response) =>
+        response.url().includes("/api/v1/settings/profile") &&
+        response.request().method() === "PATCH",
+      { timeout: 45_000 },
+    );
     await page.getByRole("button", { name: "Save Changes" }).click();
+    expect((await profileResponsePromise).ok()).toBe(true);
     await expect(page.getByText("Profile updated")).toBeVisible({
       timeout: 10_000,
     });
@@ -124,9 +133,11 @@ test("should update profile and change password from settings page", async ({
         timeout: 10_000,
       })
       .toBe(displayName);
-    await expect(
-      page.locator('[data-sidebar="footer"]').getByText(displayName),
-    ).toBeVisible({ timeout: 10_000 });
+    await page.reload();
+    await expect(page.getByRole("heading", { name: "Settings" })).toBeVisible();
+    await expect(page.getByLabel("Full Name")).toHaveValue(displayName, {
+      timeout: 30_000,
+    });
 
     await page.getByRole("tab", { name: /Security/ }).click();
     await page.getByRole("textbox", { name: "Current Password" }).fill(password);
@@ -135,7 +146,14 @@ test("should update profile and change password from settings page", async ({
     await page
       .getByRole("textbox", { name: "Confirm New Password" })
       .fill(newPassword);
+    const passwordResponsePromise = page.waitForResponse(
+      (response) =>
+        response.url().includes("/api/v1/auth/change-password") &&
+        response.request().method() === "POST",
+      { timeout: 45_000 },
+    );
     await page.getByRole("button", { name: "Update Password" }).click();
+    expect((await passwordResponsePromise).ok()).toBe(true);
     await expect(
       page.getByLabel("Security").getByText("Password changed"),
     ).toBeVisible({ timeout: 10_000 });

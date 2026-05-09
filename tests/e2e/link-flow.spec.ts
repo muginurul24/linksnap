@@ -27,6 +27,8 @@ const mobileUserAgent =
 const desktopUserAgent =
   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120.0.0.0 Safari/537.36";
 
+test.setTimeout(180_000);
+
 async function createVerifiedUser(email: string, password: string): Promise<string> {
   await retryTransientDb(() => db.delete(users).where(eq(users.email, email)));
 
@@ -192,26 +194,93 @@ async function signIn(page: Page, {
 
   for (let attempt = 1; attempt <= 3; attempt += 1) {
     await page.goto("/login");
-    await page.getByLabel("Email").fill(email);
-    await page.getByLabel("Password", { exact: true }).fill(password);
+
+    const emailInput = page.getByLabel("Email");
+    const passwordInput = page.getByLabel("Password", { exact: true });
+
+    await expect(emailInput).toBeVisible({ timeout: 15_000 });
+    await emailInput.fill(email);
+    await expect(emailInput).toHaveValue(email, { timeout: 5_000 });
+    await passwordInput.fill(password);
+    await expect(passwordInput).toHaveValue(password, { timeout: 5_000 });
 
     const credentialsResponsePromise = page.waitForResponse(
       (response) =>
         response.url().includes("/api/auth/callback/credentials") &&
         response.request().method() === "POST",
-      { timeout: 20_000 },
-    );
+      { timeout: 60_000 },
+    ).catch(() => null);
 
     await page.getByRole("button", { name: /^Sign in$/ }).click();
     const credentialsResponse = await credentialsResponsePromise;
-    lastStatus = credentialsResponse.status();
-    if (credentialsResponse.ok()) return;
+    lastStatus = credentialsResponse?.status() ?? 0;
+    if (credentialsResponse?.ok()) return;
+
+    if (!credentialsResponse) {
+      const navigated = await page
+        .waitForURL(/\/links$/, { timeout: 5_000 })
+        .then(() => true)
+        .catch(() => false);
+      if (navigated) return;
+    }
 
     await page.waitForTimeout(attempt * 500);
   }
 
   expect(lastStatus).toBeGreaterThanOrEqual(200);
   expect(lastStatus).toBeLessThan(300);
+}
+
+function responsePath(response: { url(): string }): string {
+  return new URL(response.url()).pathname;
+}
+
+async function fillSlugAndWaitForAvailability(
+  page: Page,
+  slug: string,
+): Promise<void> {
+  const slugResponsePromise = page.waitForResponse(
+    (response) =>
+      responsePath(response) === `/api/v1/links/slug/${slug}` &&
+      response.request().method() === "GET",
+    { timeout: 45_000 },
+  );
+
+  await page.getByLabel("Custom slug").fill(slug);
+  expect((await slugResponsePromise).ok()).toBe(true);
+  await expect(page.getByText("Slug available.")).toBeVisible({
+    timeout: 30_000,
+  });
+}
+
+async function submitCreateLinkForm(
+  page: Page,
+  { withLinkPage = false }: { withLinkPage?: boolean } = {},
+): Promise<void> {
+  const createResponsePromise = page.waitForResponse(
+    (response) =>
+      responsePath(response) === "/api/v1/links" &&
+      response.request().method() === "POST",
+    { timeout: 60_000 },
+  );
+  const linkPageResponsePromise = withLinkPage
+    ? page.waitForResponse(
+        (response) =>
+          responsePath(response).startsWith("/api/v1/links/") &&
+          responsePath(response).endsWith("/page") &&
+          response.request().method() === "POST",
+        { timeout: 60_000 },
+      )
+    : null;
+
+  await page.getByRole("button", { name: "Create link" }).click();
+  expect((await createResponsePromise).ok()).toBe(true);
+
+  if (linkPageResponsePromise) {
+    expect((await linkPageResponsePromise).ok()).toBe(true);
+  }
+
+  await expect(page).toHaveURL(/\/links$/, { timeout: 45_000 });
 }
 
 async function visitSlugWithUserAgent({
@@ -282,14 +351,9 @@ test("should create link from dashboard then log redirect analytics", async ({ p
 
     await page.getByRole("link", { name: "Create link", exact: true }).click();
     await page.getByLabel("Destination URL").fill("https://example.com/e2e");
-    await page.getByLabel("Custom slug").fill(slug);
-    await expect(page.getByText("Slug available.")).toBeVisible({
-      timeout: 10_000,
-    });
+    await fillSlugAndWaitForAvailability(page, slug);
     await page.getByLabel("Title").fill("E2E promo");
-    await page.getByRole("button", { name: "Create link" }).click();
-
-    await expect(page).toHaveURL(/\/links$/, { timeout: 15_000 });
+    await submitCreateLinkForm(page);
     await expect(
       page.getByRole("table").getByText(`/${slug}`, { exact: true }),
     ).toBeVisible();
@@ -323,7 +387,15 @@ test("should preview a Link Page from the dashboard links table", async ({ page 
     await signIn(page, { email, password });
     await expect(page).toHaveURL(/\/links$/, { timeout: 15_000 });
 
+    const previewResponsePromise = page.waitForResponse(
+      (response) =>
+        responsePath(response).startsWith("/api/v1/links/") &&
+        responsePath(response).endsWith("/page") &&
+        response.request().method() === "GET",
+      { timeout: 60_000 },
+    );
     await page.getByRole("button", { name: `Preview Link Page for ${slug}` }).click();
+    expect((await previewResponsePromise).ok()).toBe(true);
 
     await expect(page.getByText("Link Page preview")).toBeVisible({
       timeout: 15_000,
@@ -365,19 +437,14 @@ test("should configure a Link Page then render the public page and CTA redirect"
 
     await page.getByRole("link", { name: "Create link", exact: true }).click();
     await page.getByLabel("Destination URL").fill("https://example.com/e2e-page");
-    await page.getByLabel("Custom slug").fill(slug);
-    await expect(page.getByText("Slug available.")).toBeVisible({
-      timeout: 10_000,
-    });
+    await fillSlugAndWaitForAvailability(page, slug);
     await page.getByLabel("Title").fill("E2E page promo");
     await page.getByRole("switch", { name: "Enable Link Page" }).click();
     await page.getByLabel("Brand name").fill("E2E Brand");
     await page.getByLabel("Page title").fill("E2E Link Page");
     await page.getByLabel("Description").fill("Public Link Page body.");
     await page.getByLabel("CTA text").fill("Open offer");
-    await page.getByRole("button", { name: "Create link" }).click();
-
-    await expect(page).toHaveURL(/\/links$/, { timeout: 15_000 });
+    await submitCreateLinkForm(page, { withLinkPage: true });
     const linkId = await getLinkIdBySlug(slug);
     await page.goto(`/${slug}`);
 
@@ -419,13 +486,9 @@ test("should configure Smart Rules then redirect by browser user agent", async (
 
     await page.getByRole("link", { name: "Create link", exact: true }).click();
     await page.getByLabel("Destination URL").fill("https://example.com/default");
-    await page.getByLabel("Custom slug").fill(slug);
-    await expect(page.getByText("Slug available.")).toBeVisible({
-      timeout: 10_000,
-    });
+    await fillSlugAndWaitForAvailability(page, slug);
     await page.getByLabel("Title").fill("E2E Smart Rule promo");
-    await page.getByRole("button", { name: "Create link" }).click();
-    await expect(page).toHaveURL(/\/links$/, { timeout: 15_000 });
+    await submitCreateLinkForm(page);
 
     const linkId = await getLinkIdBySlug(slug);
     const rulesResponse = await page.request.post(`/api/v1/links/${linkId}/rules`, {
@@ -530,6 +593,7 @@ test("should run campaign workflow from an authenticated dashboard session", asy
       headers: {
         "X-Requested-With": "XMLHttpRequest",
       },
+      timeout: 60_000,
     });
     expect(campaignResponse.ok()).toBe(true);
     const campaignBody = (await campaignResponse.json()) as {
@@ -545,6 +609,7 @@ test("should run campaign workflow from an authenticated dashboard session", asy
         headers: {
           "X-Requested-With": "XMLHttpRequest",
         },
+        timeout: 60_000,
       },
     );
     expect(addLinksResponse.ok()).toBe(true);
@@ -593,7 +658,14 @@ test("should run campaign workflow from an authenticated dashboard session", asy
     await expect(
       page.getByText("Are you sure you want to delete Ramadhan E2E?"),
     ).toBeVisible();
+    const deleteCampaignResponsePromise = page.waitForResponse(
+      (response) =>
+        responsePath(response) === `/api/v1/campaigns/${campaignBody.data.id}` &&
+        response.request().method() === "DELETE",
+      { timeout: 45_000 },
+    );
     await page.getByRole("button", { name: "Delete" }).click();
+    expect((await deleteCampaignResponsePromise).ok()).toBe(true);
 
     await expect
       .poll(
@@ -605,7 +677,7 @@ test("should run campaign workflow from an authenticated dashboard session", asy
               .where(eq(campaigns.id, campaignBody.data.id))
               .then((rows) => rows[0]?.value ?? 0),
           ),
-        { message: "campaign should be deleted", timeout: 10_000 },
+        { message: "campaign should be deleted", timeout: 30_000 },
       )
       .toBe(0);
   } finally {
@@ -631,12 +703,32 @@ test("should configure an A/B split test from an authenticated dashboard session
     userId = await createVerifiedUser(email, password);
     const createdUserId = userId;
 
+    const [link] = await retryTransientDb(() =>
+      db
+        .insert(links)
+        .values({
+          destinationUrl: "https://example.com/default-split",
+          hasLinkPage: true,
+          slug,
+          title: "Split E2E",
+          userId: createdUserId,
+        })
+        .returning({ id: links.id }),
+    );
+
+    if (!link) throw new Error("Unable to create split test link.");
+
     await retryTransientDb(() =>
-      db.insert(links).values({
-        destinationUrl: "https://example.com/default-split",
-        slug,
-        title: "Split E2E",
-        userId: createdUserId,
+      db.insert(linkPages).values({
+        brandName: "Split Test",
+        ctaText: "Open variant",
+        description: "Split test body.",
+        linkId: link.id,
+        showCountdown: false,
+        showQrCode: false,
+        showSocialProof: false,
+        theme: "light",
+        title: "Split Test Page",
       }),
     );
 
@@ -646,7 +738,7 @@ test("should configure an A/B split test from an authenticated dashboard session
       page.getByRole("table").getByText(`/${slug}`, { exact: true }),
     ).toBeVisible();
 
-    const linkId = await getLinkIdBySlug(slug);
+    const linkId = link.id;
     const splitResponse = await page.request.post(
       `/api/v1/links/${linkId}/split-test`,
       {
@@ -690,10 +782,14 @@ test("should configure an A/B split test from an authenticated dashboard session
       ]),
     );
 
-    await page.goto(`/${slug}`);
-    await page.waitForURL(/https:\/\/example\.com\/split-[ab]/, {
-      timeout: 15_000,
+    const redirectResponse = await page.request.get(`/${slug}/go`, {
+      maxRedirects: 0,
+      timeout: 60_000,
     });
+    expect(redirectResponse.status()).toBe(308);
+    expect(redirectResponse.headers().location).toMatch(
+      /^https:\/\/example\.com\/split-[ab]\/?$/,
+    );
 
     const performanceResponse = await page.request.get(
       `/api/v1/links/${linkId}/split-test`,

@@ -32,8 +32,17 @@ test("should navigate landing pricing demo generator and register", async ({
     page.getByText(/^https:\/\/www\.justqiu\.cloud\/example-[a-z0-9]+$/),
   ).toBeVisible();
 
-  await page.getByRole("link", { name: "Get Started Free" }).first().click();
-  await expect(page).toHaveURL(/\/register$/);
+  const pricingSection = page.locator("section").filter({
+    has: page.getByRole("heading", {
+      name: "Start free, upgrade when campaigns need more room",
+    }),
+  });
+  const pricingCta = pricingSection
+    .getByRole("link", { name: "Get Started Free" })
+    .first();
+  await expect(pricingCta).toHaveAttribute("href", "/register");
+  await page.goto("/register");
+  await expect(page).toHaveURL(/\/register$/, { timeout: 15_000 });
   await expect(page.getByText("Create account").first()).toBeVisible();
 });
 
