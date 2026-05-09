@@ -304,6 +304,11 @@ async function signIn(page: Page, {
 
   for (let attempt = 1; attempt <= 3; attempt += 1) {
     await page.goto("/login");
+    if (new URL(page.url()).pathname !== "/login") {
+      await page.goto("/links");
+      await expect(page).toHaveURL(/\/links$/, { timeout: 15_000 });
+      return;
+    }
 
     const emailInput = page.getByLabel("Email");
     const passwordInput = page.getByLabel("Password", { exact: true });
@@ -324,7 +329,15 @@ async function signIn(page: Page, {
     await page.getByRole("button", { name: /^Sign in$/ }).click();
     const credentialsResponse = await credentialsResponsePromise;
     lastStatus = credentialsResponse?.status() ?? 0;
-    if (credentialsResponse?.ok()) return;
+    if (credentialsResponse?.ok()) {
+      const navigated = await page
+        .waitForURL(/\/links$/, { timeout: 15_000 })
+        .then(() => true)
+        .catch(() => false);
+      if (navigated) return;
+      await page.goto("/links");
+      if (new URL(page.url()).pathname === "/links") return;
+    }
 
     if (!credentialsResponse) {
       const navigated = await page

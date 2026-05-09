@@ -277,5 +277,5 @@ describe("two-factor auth flow", () => {
         new Request("http://localhost/login"),
       ),
     ).resolves.toBeNull();
-  });
+  }, 10_000);
 });

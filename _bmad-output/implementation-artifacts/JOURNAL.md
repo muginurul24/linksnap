@@ -9224,15 +9224,18 @@ Added a guarded Artillery load-test harness for redirect, analytics, payment cre
 - **Status:** ✅ Complete
 
 **What I Did:**
-Documented LinkSnap disaster recovery around Neon instant restore/PITR and supplemental `pg_dump` backups. Added a guarded manual backup script, ignored local backup artifacts, generated the initial Drizzle migration baseline from the current schema, and documented Neon-safe restore flags.
+Documented LinkSnap disaster recovery around Neon instant restore/PITR and supplemental `pg_dump` backups. Added a guarded manual backup script, ignored local backup artifacts, and generated the initial Drizzle migration baseline from the current schema.
 
 **Files Changed:**
-- `scripts/db-backup-manual.sh` — Added unpooled-connection `pg_dump` backup helper with dry-run validation, lock timeout, and low compression.
+- `scripts/db-backup-manual.sh` — Added unpooled-connection `pg_dump` backup helper with dry-run validation.
 - `_bmad-output/planning-artifacts/disaster-recovery.md` — Added Neon backup strategy, restore, redeploy, contact, and `DATABASE_URL` rotation procedures.
+- `_bmad-output/planning-artifacts/load-test-results.md` — Corrected rtk env invocation discovered during backup dry-run validation.
 - `src/lib/db/migrations/0000_omniscient_tomorrow_man.sql` — Added generated Drizzle schema baseline.
 - `src/lib/db/migrations/meta/_journal.json` — Added Drizzle migration journal metadata.
 - `src/lib/db/migrations/meta/0000_snapshot.json` — Added Drizzle schema snapshot metadata.
 - `.gitignore` — Ignored local backup dump output.
+- `tests/integration/two-factor-auth-flow.test.ts` — Increased the backup-code integration test timeout for bcrypt/TOTP work under full-suite load.
+- `tests/e2e/link-flow.spec.ts` — Stabilized sign-in helper to wait for `/links` navigation before continuing.
 - `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Checked off 25.6.
 - `_bmad-output/implementation-artifacts/JOURNAL.md` — Logged 25.6.
 
@@ -9240,19 +9243,23 @@ Documented LinkSnap disaster recovery around Neon instant restore/PITR and suppl
 - Used Neon PITR as the primary recovery mechanism and `pg_dump -Fc` as supplemental long-retention/export backup.
 - Rejected pooled `-pooler` connection strings in the backup script because Neon recommends unpooled connections for `pg_dump`.
 - Generated a baseline Drizzle migration because the repo previously had a schema but no migration directory.
-- Documented `pg_restore --no-owner --no-tablespaces --single-transaction` for safer restores into Neon targets.
 
 **Tests:**
 - ✅ Drizzle generate: `rtk bun run db:generate` — Created initial migration baseline.
-- ✅ Backup dry-run: `rtk proxy env BACKUP_DATABASE_URL=... bash scripts/db-backup-manual.sh --dry-run`.
-- ✅ Typecheck: `rtk bun run typecheck`.
-- ✅ Lint: `rtk bun run lint`.
-- ✅ Unit/integration: `rtk bun run test` — 175 passed, 1 skipped; 781 tests passed, 2 skipped.
-- ✅ Build: `rtk bun run build`.
+- ✅ Drizzle sync check: `rtk bun run db:generate` — No schema changes, nothing to migrate.
+- ✅ Backup dry-run: `rtk proxy env BACKUP_DATABASE_URL='postgresql://backup-user:backup-password@ep-example.us-east-1.aws.neon.tech/neondb?sslmode=require' bash scripts/db-backup-manual.sh --dry-run` — Passed.
+- ✅ Targeted integration: `rtk bun run test -- tests/integration/two-factor-auth-flow.test.ts` — 2 passed.
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Full unit/integration: `rtk bun run test` — 176 passed, 1 skipped; 782 passed, 2 skipped.
+- ✅ Targeted E2E: `rtk bun run test:e2e -- tests/e2e/link-flow.spec.ts -g "should create link from dashboard then log redirect analytics"` — 1 passed.
+- ✅ Production build: `rtk bun run build` — Passed.
 
 **Issues Encountered:**
 - No existing migration directory was present, so 25.6 created the initial baseline instead of comparing against prior migration history.
 - `rtk` did not accept inline env assignment in this shell, so new operator docs use `rtk proxy env ...` for backup and load-test examples.
+- Full Vitest exposed a 2FA backup-code timeout under suite load; increased only that test's timeout.
+- Targeted E2E exposed a sign-in helper race where a successful credentials callback did not guarantee browser navigation to `/links`; helper now waits for the route.
 
 **Security Checks:**
 - ✅ Backup script refuses pooled URLs and does not echo connection strings.
