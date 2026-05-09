@@ -5,6 +5,10 @@
     {
       "path": "/api/v1/payments/subscriptions/renew",
       "schedule": "0 0 * * *"
+    },
+    {
+      "path": "/api/v1/analytics/click-queue/process",
+      "schedule": "* * * * *"
     }
   ]
 }
