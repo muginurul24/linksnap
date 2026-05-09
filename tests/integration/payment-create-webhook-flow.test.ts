@@ -319,5 +319,11 @@ describe("payment create to webhook flow", () => {
     expect(mockState.subscriptions).toEqual([{ plan: "PRO", userId: "user-1" }]);
     expect(mockState.user.plan).toBe("PRO");
     expect(mockState.invoiceEmails).toHaveLength(1);
+    expect(mockState.invoiceEmails[0]).toMatchObject({
+      orderId: createBody.data.orderId,
+      paymentMethod: "bank_transfer",
+      providerTransactionId: "paygate-transaction-1",
+      to: "buyer@example.com",
+    });
   });
 });

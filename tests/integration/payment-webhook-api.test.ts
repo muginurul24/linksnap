@@ -41,7 +41,12 @@ type InvoiceInput = {
   grossAmountIdr: number;
   grossAmountUsd: number;
   orderId: string;
+  paidAt: Date | null;
+  paymentMethod: string | null;
+  periodEnd: Date;
+  periodStart: Date;
   plan: PaidPlan;
+  providerTransactionId: string | null;
   to: string;
 };
 
@@ -222,16 +227,27 @@ describe("payment webhook API", () => {
     );
     expect(mockState.subscriptions[0]?.plan).toBe("PRO");
     expect(mockState.userPlanUpdates).toEqual([{ plan: "PRO", userId: "user-1" }]);
-    expect(mockState.invoiceInputs).toEqual([
+    expect(mockState.invoiceInputs).toMatchObject([
       {
         duration: "MONTHLY",
         grossAmountIdr: 128000,
         grossAmountUsd: 8,
         orderId: "LS-123",
+        paymentMethod: "bank_transfer",
         plan: "PRO",
+        providerTransactionId: "paygate-transaction-1",
         to: "buyer@example.com",
       },
     ]);
+    expect(mockState.invoiceInputs[0]?.paidAt?.toISOString()).toBe(
+      "2026-05-07T01:00:00.000Z",
+    );
+    expect(mockState.invoiceInputs[0]?.periodStart.toISOString()).toBe(
+      "2026-05-07T01:00:00.000Z",
+    );
+    expect(mockState.invoiceInputs[0]?.periodEnd.toISOString()).toBe(
+      "2026-06-07T01:00:00.000Z",
+    );
   });
 
   it("should update pending notifications without activating subscription", async () => {

@@ -1,7 +1,16 @@
 import { appendFile, mkdir } from "node:fs/promises";
 import { dirname } from "node:path";
+import { createElement } from "react";
 import { Resend } from "resend";
-import type { PaidPlan, PaymentDuration } from "@/lib/validations/payment";
+import {
+  PaymentInvoiceEmail,
+  buildPaymentInvoiceEmailProps,
+  buildPaymentInvoiceEmailText,
+} from "@/lib/email/invoice-email";
+import type {
+  PaidPlan,
+  PaymentDuration,
+} from "@/lib/validations/payment";
 
 let resend: Resend | null = null;
 
@@ -10,21 +19,18 @@ type SendPaymentInvoiceEmailInput = {
   grossAmountIdr: number;
   grossAmountUsd: number;
   orderId: string;
+  paidAt: Date | null;
+  paymentMethod: string | null;
+  periodEnd: Date;
+  periodStart: Date;
   plan: PaidPlan;
+  providerTransactionId: string | null;
   to: string;
 };
 
 function getResend(): Resend {
   resend ??= new Resend(process.env.RESEND_API_KEY);
   return resend;
-}
-
-function formatCurrencyIdr(amount: number): string {
-  return new Intl.NumberFormat("id-ID", {
-    currency: "IDR",
-    maximumFractionDigits: 0,
-    style: "currency",
-  }).format(amount);
 }
 
 async function writeInvoiceEmailToFile(
@@ -55,17 +61,12 @@ export async function sendPaymentInvoiceEmail(
     return;
   }
 
-  const amountIdr = formatCurrencyIdr(input.grossAmountIdr);
+  const invoice = buildPaymentInvoiceEmailProps(input);
   const { error } = await getResend().emails.send({
     from: process.env.RESEND_FROM_EMAIL ?? "LinkSnap <onboarding@resend.dev>",
+    react: createElement(PaymentInvoiceEmail, invoice),
     subject: `LinkSnap invoice ${input.orderId}`,
-    text: [
-      "Your LinkSnap payment has been settled.",
-      `Order ID: ${input.orderId}`,
-      `Plan: ${input.plan}`,
-      `Duration: ${input.duration}`,
-      `Amount: ${amountIdr} (${input.grossAmountUsd} USD)`,
-    ].join("\n"),
+    text: buildPaymentInvoiceEmailText(invoice),
     to: input.to,
   });
 

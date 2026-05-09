@@ -36,6 +36,11 @@ export type ExpireDueSubscriptionsResult = {
   userIds: string[];
 };
 
+export type SubscriptionInvoiceMetadata = {
+  paymentMethod?: string | null;
+  providerTransactionId?: string | null;
+};
+
 export class InvalidSubscriptionPaymentError extends Error {
   constructor(orderId: string) {
     super(`Payment order ${orderId} has invalid subscription data.`);
@@ -73,6 +78,7 @@ export function calculateSubscriptionPeriodEnd(
 
 export async function createOrRenewSubscriptionForPayment(
   transaction: PaymentTransactionForWebhook,
+  invoiceMetadata: SubscriptionInvoiceMetadata = {},
 ): Promise<void> {
   const plan = parsePaidPlan(transaction.plan, transaction.orderId);
   const duration = parsePaymentDuration(transaction.duration, transaction.orderId);
@@ -96,7 +102,13 @@ export async function createOrRenewSubscriptionForPayment(
       grossAmountIdr: transaction.grossAmountIdr,
       grossAmountUsd: transaction.grossAmountUsd,
       orderId: transaction.orderId,
+      paidAt: transaction.paidAt ?? currentPeriodStart,
+      paymentMethod:
+        invoiceMetadata.paymentMethod ?? transaction.paymentMethod ?? null,
+      periodEnd: currentPeriodEnd,
+      periodStart: currentPeriodStart,
       plan,
+      providerTransactionId: invoiceMetadata.providerTransactionId ?? null,
       to: transaction.userEmail,
     });
   } catch (error) {

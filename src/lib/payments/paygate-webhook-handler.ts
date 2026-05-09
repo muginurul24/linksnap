@@ -26,10 +26,15 @@ const TERMINAL_PAYMENT_STATUSES = new Set<PaymentStatus>([
 
 type PayGateWebhookPayload = {
   amount: number;
+  metadata?: Record<string, unknown>;
+  midtrans?: {
+    transaction_id?: string;
+  };
   order_id: string;
   paid_at?: string;
   payment_type?: string;
   status: PayGateWebhookStatus;
+  transaction_id: string;
 };
 
 export type PayGateWebhookResult = {
@@ -76,6 +81,24 @@ function assertWebhookAmountMatches(
   }
 }
 
+function getWebhookMetadataString(
+  payload: PayGateWebhookPayload,
+  key: string,
+): string | null {
+  const value = payload.metadata?.[key];
+  return typeof value === "string" && value.trim() ? value.trim() : null;
+}
+
+function getWebhookPaymentMethod(payload: PayGateWebhookPayload): string | null {
+  return getWebhookMetadataString(payload, "paymentMethod") ?? payload.payment_type ?? null;
+}
+
+function getWebhookProviderTransactionId(
+  payload: PayGateWebhookPayload,
+): string | null {
+  return payload.transaction_id || payload.midtrans?.transaction_id || null;
+}
+
 export async function handlePayGatePaymentWebhook(
   payload: PayGateWebhookPayload,
 ): Promise<PayGateWebhookResult> {
@@ -111,7 +134,7 @@ export async function handlePayGatePaymentWebhook(
     expectedStatus: transaction.status,
     orderId: payload.order_id,
     paidAt,
-    paymentMethod: payload.payment_type ?? null,
+    paymentMethod: getWebhookPaymentMethod(payload),
     status: statusAction.status,
   });
 
@@ -126,7 +149,10 @@ export async function handlePayGatePaymentWebhook(
 
   if (statusAction.activateSubscription) {
     try {
-      await createOrRenewSubscriptionForPayment(updatedTransaction);
+      await createOrRenewSubscriptionForPayment(updatedTransaction, {
+        paymentMethod: getWebhookPaymentMethod(payload),
+        providerTransactionId: getWebhookProviderTransactionId(payload),
+      });
       await invalidateSubscriptionCaches({
         reason: "payment_subscription_activation",
         userId: updatedTransaction.userId,

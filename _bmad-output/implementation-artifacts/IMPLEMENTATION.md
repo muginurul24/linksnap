@@ -3177,10 +3177,10 @@ Premium Flutter experience. 🟢
 
 ### TASK 23.9 — Invoice Email After Payment
 
-- [ ] Create `src/lib/email/invoice-email.tsx` — React Email template
-- [ ] Include: plan, amount (IDR), payment method, transaction ID, order ID, date, period
-- [ ] Trigger in webhook handler on SETTLEMENT (non-blocking — log + continue if email fails)
-- [ ] Add unit tests
+- [x] Create `src/lib/email/invoice-email.tsx` — React Email template
+- [x] Include: plan, amount (IDR), payment method, transaction ID, order ID, date, period
+- [x] Trigger in webhook handler on SETTLEMENT (non-blocking — log + continue if email fails)
+- [x] Add unit tests
 
 ### TASK 23.10 — Security, Validation & Final Polish
 

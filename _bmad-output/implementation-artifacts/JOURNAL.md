@@ -8997,3 +8997,46 @@ Rebuilt billing settings as a plan management hub. The page now has a current pl
 - ✅ No payment mutation result caching or provider secrets added.
 
 **Next Task:** 23.9 — Invoice Email After Payment.
+
+### 23.9 — Invoice Email After Payment
+- **Date:** 2026-05-09 10:16 GMT+7
+- **Duration:** 0h 14m
+- **Status:** ✅ Complete
+
+**What I Did:**
+Added a React invoice email template and wired settled payment webhooks to send a complete invoice with plan, IDR amount, payment method, provider transaction ID, order ID, payment date, and subscription period. Email failures remain non-blocking and are logged without failing subscription activation.
+
+**Files Changed:**
+- `src/lib/email/invoice-email.tsx` — Added invoice React template, formatting helpers, and plain-text builder.
+- `src/lib/email/payment-emails.ts` — Sends invoice text plus Resend React template and persists full invoice metadata for file delivery.
+- `src/lib/payments/subscription.ts` — Passes period and invoice metadata to payment email delivery.
+- `src/lib/payments/paygate-webhook-handler.ts` — Passes webhook provider transaction ID and payment method into subscription invoice processing.
+- `tests/unit/invoice-email.test.tsx` — Added template and text coverage for invoice fields.
+- `tests/unit/subscription.test.ts` — Covered invoice metadata from subscription activation.
+- `tests/integration/payment-webhook-api.test.ts` — Verified settlement webhook invoice payload.
+- `tests/integration/payment-create-webhook-flow.test.ts` — Verified end-to-end create-to-webhook invoice metadata.
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Checked off 23.9.
+- `_bmad-output/implementation-artifacts/JOURNAL.md` — Logged 23.9.
+
+**Decisions Made:**
+- Used Resend's `react` payload instead of importing `react-dom/server` in app code because Next.js blocks that import inside route bundles.
+- Kept invoice email non-blocking inside subscription activation to protect payment settlement reliability.
+- Preferred exact channel labels from the payment channel registry, with readable fallbacks for provider payment types.
+
+**Tests:**
+- ✅ Targeted unit/integration: `rtk bun run test -- tests/unit/invoice-email.test.tsx tests/unit/subscription.test.ts tests/integration/payment-webhook-api.test.ts tests/integration/payment-create-webhook-flow.test.ts` — 13 passed.
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Full unit/integration: `rtk bun run test` — 161 passed, 1 skipped; 738 passed, 2 skipped.
+- ✅ Production build: `rtk bun run build` — Passed.
+
+**Issues Encountered:**
+- The first build failed because `payment-emails.ts` imported `react-dom/server`. I switched to Resend's native React payload and reran the full quality gate successfully.
+
+**Security Checks:**
+- ✅ Webhook signature and amount validation remain unchanged before activation.
+- ✅ Invoice send failures are logged but do not expose secrets or raw provider payloads.
+- ✅ No payment mutation response caching added.
+- ✅ No provider tokens or customer-sensitive values added to logs.
+
+**Next Task:** 23.10 — Security, Validation & Final Polish.

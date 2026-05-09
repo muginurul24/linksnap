@@ -177,7 +177,9 @@ describe("subscription management", () => {
       {
         duration: "MONTHLY",
         orderId: "LS-123",
+        paymentMethod: "bank_transfer",
         plan: "PRO",
+        providerTransactionId: null,
         to: "buyer@example.com",
       },
     ]);
