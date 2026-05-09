@@ -51,6 +51,32 @@ LinkSnap turns every short link into a conversion tool:
 | `DEPLOY.md` | Production deployment checklist. |
 | `ROADMAP.md` | Known limitations and launch roadmap. |
 
+## Architecture
+
+```text
+Browser / API client
+        |
+        v
+Next.js App Router + Proxy
+        |
+        +--> Route handlers in src/app/api/v1
+        |       |
+        |       +--> Auth/session guards
+        |       +--> Zod validation
+        |       +--> Drizzle query helpers
+        |
+        +--> Dashboard and public pages
+                |
+                +--> Components in src/components
+
+Core services:
+  Neon Postgres  <-->  Drizzle schema + migrations
+  Upstash Redis  <-->  rate limits, cache, click queue, health metrics
+  Resend         <-->  OTP, account, and invoice email
+  PayGate        <-->  checkout, webhook settlement, subscription state
+  Vercel Cron    <-->  click queue processing and subscription renewal
+```
+
 ## Local Setup
 
 Prerequisites:
@@ -158,6 +184,24 @@ rtk bun run test
 rtk bun run build
 ```
 
+## Available Scripts
+
+| Script | Purpose |
+| --- | --- |
+| `rtk bun run dev` | Start local Next.js dev server. |
+| `rtk bun run build` | Build production app. |
+| `rtk bun run start` | Serve production build locally. |
+| `rtk bun run lint` | Run ESLint. |
+| `rtk bun run typecheck` | Run TypeScript without emitting files. |
+| `rtk bun run test` | Run Vitest unit and integration tests. |
+| `rtk bun run test:e2e` | Run Playwright browser tests. |
+| `rtk bun run db:generate` | Generate Drizzle migrations from schema. |
+| `rtk bun run db:migrate` | Apply Drizzle migrations. |
+| `rtk bun run db:studio` | Open Drizzle Studio. |
+| `rtk bun run verify:production-env` | Validate production env shape. |
+| `rtk bun run smoke:production` | Run production smoke checks. |
+| `rtk bun run security:smoke` | Run basic penetration smoke checks. |
+
 Targeted checks:
 
 ```bash
@@ -187,6 +231,18 @@ Before deploying:
 7. Verify PayGate checkout/webhook and Google OAuth.
 
 See `DEPLOY.md` for the full deployment checklist.
+
+## Contributing
+
+- Pull latest `main` before starting: `rtk git pull --rebase`.
+- Follow `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` task order.
+- Keep commits scoped to one task or logical change.
+- Use Conventional Commit messages.
+- Run typecheck, lint, full tests, targeted E2E, and build before pushing.
+- Update `_bmad-output/implementation-artifacts/JOURNAL.md` for every task.
+- Do not add new ORMs, CSS frameworks, auth libraries, or raw SQL paths.
+- Do not commit secrets, `.env` files, generated backup dumps, or provider
+  dashboard exports.
 
 ## Operations
 
