@@ -48,10 +48,25 @@ describe("production deployment environment", () => {
     }
 
     expect(deployGuide).toContain("rtk bun run smoke:production");
+    expect(deployGuide).toContain("rtk bun run smoke:google-oauth");
     expect(deployGuide).toContain("rtk bun run security:smoke");
     expect(deployGuide).toContain("Vercel Cron");
     expect(deployGuide).toContain("Google OAuth");
     expect(deployGuide).toContain("PayGate webhook");
+  });
+
+  it("should document Google OAuth production smoke and canonical callback", () => {
+    const oauthGuide = readFileSync(
+      "_bmad-output/planning-artifacts/google-oauth-production.md",
+      "utf8",
+    );
+    const smokeScript = readFileSync("scripts/smoke-google-oauth.sh", "utf8");
+
+    expect(oauthGuide).toContain("https://www.justqiu.cloud/api/auth/callback/google");
+    expect(oauthGuide).toContain("rtk bun run smoke:google-oauth");
+    expect(oauthGuide).toContain("accounts.google.com");
+    expect(smokeScript).toContain("/api/auth/providers");
+    expect(smokeScript).toContain("EXPECTED_CALLBACK_URL");
   });
 
   it("should pass the production env verifier with valid placeholder values", () => {

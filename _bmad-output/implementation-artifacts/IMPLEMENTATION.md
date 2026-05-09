@@ -3426,9 +3426,9 @@ Premium Flutter experience. 🟢
 
 ### TASK 25.9 — Google OAuth End-to-End Test
 
-- [ ] Configure Google Cloud Console for production
+- [x] Configure Google Cloud Console for production
 - [ ] Test OAuth flow end-to-end in production
-- [ ] Document OAuth setup procedure
+- [x] Document OAuth setup procedure
 
 ### TASK 25.10 — Flutter Mobile App Build
 

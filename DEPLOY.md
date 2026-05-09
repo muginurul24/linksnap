@@ -109,6 +109,17 @@ After saving, set `AUTH_GOOGLE_ID` and `AUTH_GOOGLE_SECRET` in Vercel
 Production. Rotate the secret if it was ever shared outside the Google Console
 or Vercel.
 
+Run the dedicated OAuth smoke after every auth env change:
+
+```bash
+rtk bun run smoke:google-oauth
+```
+
+The smoke must show the canonical `www.justqiu.cloud` sign-in and callback
+URLs before doing a real Google account login walkthrough. See
+`_bmad-output/planning-artifacts/google-oauth-production.md` for the full
+procedure and the current production verification result.
+
 ## 5. PayGate Webhook
 
 In the PayGate store dashboard, configure:
