@@ -3362,13 +3362,13 @@ Premium Flutter experience. 🟢
 
 ### TASK 25.1 — Production Environment & Deployment
 
-- [ ] Audit `.env.example` — all vars documented with descriptions
-- [ ] Create `DEPLOY.md` — complete deployment guide
-- [ ] Verify Vercel: env vars, domain, cron jobs, CRON_SECRET, NEXTAUTH_URL
-- [ ] Verify Google OAuth callback URL matches production
-- [ ] Verify PayGate webhook URL is production
-- [ ] Create `scripts/verify-production-env.sh`
-- [ ] Production build must succeed
+- [x] Audit `.env.example` — all vars documented with descriptions
+- [x] Create `DEPLOY.md` — complete deployment guide
+- [x] Verify Vercel: env vars, domain, cron jobs, CRON_SECRET, NEXTAUTH_URL
+- [x] Verify Google OAuth callback URL matches production
+- [x] Verify PayGate webhook URL is production
+- [x] Create `scripts/verify-production-env.sh`
+- [x] Production build must succeed
 
 ### TASK 25.2 — Security Final Audit
 

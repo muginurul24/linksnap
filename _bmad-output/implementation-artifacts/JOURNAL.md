@@ -9217,6 +9217,50 @@ Audited every dashboard `page.tsx` and closed all missing loading/error states. 
 
 **Next Task:** Phase 24 complete — ready for review or next approved phase.
 
+### 25.1 — Production Environment & Deployment
+- **Date:** 2026-05-09 17:05 GMT+7
+- **Duration:** 1h 10m
+- **Status:** ✅ Complete
+
+**What I Did:**
+Prepared production deployment readiness: expanded `.env.example` with documented production variables and provider callback URLs, added `DEPLOY.md`, added a production env verifier script, hardened env ignores, and verified the public production smoke surface for `justqiu.cloud`.
+
+**Files Changed:**
+- `.env.example` — Documented all required production, local-only, smoke, email, PayGate, cron, GeoIP, analytics, and pricing variables.
+- `.gitignore` — Ignored local/production env file variants while keeping `.env.example` tracked.
+- `DEPLOY.md` — Added deployment, Vercel, OAuth, PayGate, cron, smoke, and external dashboard checklist.
+- `scripts/verify-production-env.sh` — Added production env validation for required vars, URL alignment, minimum secret lengths, and unsafe local-only settings.
+- `package.json` — Added `verify:production-env` script.
+- `tests/unit/deployment-env.test.ts` — Added drift coverage for env docs, deployment docs, and the verifier script.
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Checked off 25.1.
+- `_bmad-output/implementation-artifacts/JOURNAL.md` — Logged 25.1.
+
+**Decisions Made:**
+- Used `AUTH_URL` as the Auth.js v5 canonical env and documented `NEXTAUTH_URL` as a compatibility alias because Phase 25 explicitly asks to verify it.
+- Kept provider-dashboard checks documented in `DEPLOY.md`; repository code cannot prove Vercel env scope, Google Console callback state, PayGate dashboard configuration, or Upstash tier without external dashboard credentials.
+- Added a reusable verifier script instead of relying on a prose-only deployment checklist.
+
+**Tests:**
+- ✅ Env verifier: `rtk proxy env ... scripts/verify-production-env.sh` — Passed with placeholder production values.
+- ✅ Production smoke: `rtk bun run smoke:production` — Passed public/domain/security/API-guard checks; authenticated checks skipped without `PRODUCTION_SMOKE_COOKIE`.
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Targeted unit: `rtk bun run test -- tests/unit/deployment-env.test.ts` — 3 passed.
+- ✅ Targeted E2E: `rtk bun run test:e2e -- tests/e2e/public-site.spec.ts -g "landing pricing"` — 1 passed.
+- ✅ Full unit/integration: `rtk bun run test` — 172 passed, 1 skipped; 769 passed, 2 skipped.
+- ✅ Production build: `rtk bun run build` — Passed.
+
+**Issues Encountered:**
+- External provider dashboard settings cannot be verified from the repository alone. The required values and manual verification steps are documented in `DEPLOY.md`.
+
+**Security Checks:**
+- ✅ No `.env` or real secrets committed.
+- ✅ Production verifier enforces HTTPS app URLs and minimum secret lengths.
+- ✅ Local file email delivery is rejected for production.
+- ✅ PayGate webhook and Google OAuth production URLs are documented.
+
+**Next Task:** 25.2 — Security Final Audit
+
 ### 24.6 — My Links Table Sorting & Bulk Actions
 - **Date:** 2026-05-09 15:19 GMT+7
 - **Duration:** 1h 10m
