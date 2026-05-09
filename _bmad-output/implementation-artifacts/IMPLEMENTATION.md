@@ -3110,15 +3110,15 @@ Premium Flutter experience. 🟢
 
 ### TASK 23.3 — Payment Method Selector UI Component
 
-- [ ] Create `src/components/payments/payment-method-selector.tsx`
-- [ ] Display channels grouped by category with section headers (🏦 Bank Transfer, 📱 E-Wallet, 📷 QRIS, 🏪 C-Store)
-- [ ] Grid: 3-col desktop, 2-col mobile. Each channel: icon + name, selectable card with checkmark
-- [ ] BCA pre-selected by default
-- [ ] Animated selection transitions, hover states
-- [ ] "Continue" button disabled until a channel is selected
-- [ ] Search/filter input for quick channel find
-- [ ] Estimated processing time per category
-- [ ] Add unit tests
+- [x] Create `src/components/payments/payment-method-selector.tsx`
+- [x] Display channels grouped by category with section headers (🏦 Bank Transfer, 📱 E-Wallet, 📷 QRIS, 🏪 C-Store)
+- [x] Grid: 3-col desktop, 2-col mobile. Each channel: icon + name, selectable card with checkmark
+- [x] BCA pre-selected by default
+- [x] Animated selection transitions, hover states
+- [x] "Continue" button disabled until a channel is selected
+- [x] Search/filter input for quick channel find
+- [x] Estimated processing time per category
+- [x] Add unit tests
 
 ### TASK 23.4 — Upgrade Flow with Payment Selection Dialog
 

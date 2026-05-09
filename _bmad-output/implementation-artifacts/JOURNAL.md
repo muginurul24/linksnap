@@ -8740,3 +8740,40 @@ Added a central payment channel registry for all PayGate-supported payment metho
 - ✅ No secrets or provider tokens added.
 
 **Next Task:** 23.3 — Payment Method Selector UI Component.
+
+### 23.3 — Payment Method Selector UI Component
+- **Date:** 2026-05-09 09:03 GMT+7
+- **Duration:** 0h 27m
+- **Status:** ✅ Complete
+
+**What I Did:**
+Built the reusable payment method selector UI and channel chip components for the multi-channel PayGate flow. The selector groups methods by category, preselects BCA, supports search/filtering, shows processing-time context, uses accessible `aria-pressed` chip buttons, and guards the continue action when no method is selected.
+
+**Files Changed:**
+- `src/components/payments/payment-channel-chip.tsx` — Added selectable channel chip with lucide icon, selected checkmark, and category-aware styling.
+- `src/components/payments/payment-method-selector.tsx` — Added grouped selector, search filter, BCA default selection, controlled/uncontrolled state support, and continue callback.
+- `tests/unit/payment-method-selector.test.tsx` — Added rendering, default selection, controlled selection, disabled continue, filtering, subset rendering, and state-wiring coverage.
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Checked off 23.3.
+- `_bmad-output/implementation-artifacts/JOURNAL.md` — Logged 23.3.
+
+**Decisions Made:**
+- Used semantic buttons with `aria-pressed` instead of radio inputs so the selector can behave as a compact payment tile grid while remaining accessible.
+- Kept UI icons in the component layer and left the registry framework-neutral.
+- Exposed a pure `filterPaymentChannels()` helper so search behavior can be tested without browser event tooling.
+
+**Tests:**
+- ✅ Targeted unit: `rtk bun run test -- tests/unit/payment-method-selector.test.tsx tests/unit/payment-channels.test.ts` — 13 passed.
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Full unit/integration: `rtk bun run test` — 156 passed, 1 skipped; 714 passed, 2 skipped.
+- ✅ Production build: `rtk bun run build` — Passed.
+
+**Issues Encountered:**
+- Initial filter test used the broad term `wallet`, which correctly matched QRIS because QRIS description mentions wallet apps. Tightened the test query to `E-Wallet`.
+
+**Security Checks:**
+- ✅ UI only selects a known registry channel; server-side validation remains the enforcement layer for later API work.
+- ✅ No payment mutation or provider token handling added.
+- ✅ No raw HTML or secret logging added.
+
+**Next Task:** 23.4 — Upgrade Flow with Payment Selection Dialog.
