@@ -1,0 +1,50 @@
+config:
+  target: "{{ $processEnvironment.LOAD_TEST_TARGET }}"
+  phases:
+    - name: analytics sustained baseline
+      duration: 300
+      arrivalRate: 10
+    - name: payment create protected baseline
+      duration: 60
+      arrivalRate: 2
+  ensure:
+    thresholds:
+      - http.response_time.p99: 1000
+      - http.codes.200: 80
+      - http.codes.201: 1
+  plugins:
+    expect: {}
+scenarios:
+  - name: dashboard analytics API
+    weight: 8
+    flow:
+      - get:
+          url: "/api/v1/analytics?range=7d"
+          headers:
+            Cookie: "{{ $processEnvironment.LOAD_TEST_SESSION_COOKIE }}"
+          expect:
+            - statusCode: 200
+  - name: link analytics API
+    weight: 2
+    flow:
+      - get:
+          url: "/api/v1/links/{{ $processEnvironment.LOAD_TEST_LINK_ID }}/analytics?range=7d"
+          headers:
+            Cookie: "{{ $processEnvironment.LOAD_TEST_SESSION_COOKIE }}"
+          expect:
+            - statusCode: 200
+  - name: payment create API
+    weight: 1
+    flow:
+      - post:
+          url: "/api/v1/payments/create"
+          headers:
+            Content-Type: "application/json"
+            Cookie: "{{ $processEnvironment.LOAD_TEST_SESSION_COOKIE }}"
+            X-Requested-With: "XMLHttpRequest"
+          json:
+            plan: "PRO"
+            duration: "MONTHLY"
+            paymentMethod: "bca"
+          expect:
+            - statusCode: 201

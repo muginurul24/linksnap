@@ -9176,6 +9176,48 @@ Added launch observability primitives: a dependency health endpoint, Redis-backe
 
 **Next Task:** 25.5 — Load Testing & Performance Baseline
 
+### 25.5 — Load Testing & Performance Baseline
+- **Date:** 2026-05-09 18:32 GMT+7
+- **Duration:** 35m
+- **Status:** ✅ Complete
+
+**What I Did:**
+Added a guarded Artillery load-test harness for redirect, analytics, payment creation, and rate-limit probing. Documented the launch performance baseline, required production/staging variables, target thresholds, and the approval requirement for high-concurrency traffic.
+
+**Files Changed:**
+- `scripts/load-test-redirect.sh` — Added dry-run and guarded run wrapper.
+- `scripts/load-test-redirect.yml` — Added redirect cache-hit and rate-limit Artillery profile.
+- `scripts/load-test-api.yml` — Added analytics and payment create Artillery profile.
+- `_bmad-output/planning-artifacts/load-test-results.md` — Documented baseline scope, commands, and gated execution results.
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Checked off 25.5.
+- `_bmad-output/implementation-artifacts/JOURNAL.md` — Logged 25.5.
+
+**Decisions Made:**
+- Chose Artillery YAML because it keeps launch traffic profiles declarative and easy to run from CI or a controlled operator machine.
+- Guarded high-concurrency runs behind explicit env vars to prevent accidental production traffic.
+- Recorded unexecuted high-load runs as ready-for-approved-window because they require a production/staging target, cached slug, authenticated session, and PayGate test approval.
+
+**Tests:**
+- ✅ Dry-run validation: `rtk proxy bash scripts/load-test-redirect.sh --dry-run redirect` — Passed.
+- ✅ Dry-run validation: `rtk proxy bash scripts/load-test-redirect.sh --dry-run api` — Passed.
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Full unit/integration: `rtk bun run test` — 175 passed, 1 skipped; 781 passed, 2 skipped.
+- ✅ Targeted E2E: `rtk bun run test:e2e -- tests/e2e/link-flow.spec.ts -g "should create link from dashboard then log redirect analytics"` — 1 passed.
+- ✅ Production build: `rtk bun run build` — Passed.
+
+**Issues Encountered:**
+- Full 5000-concurrent traffic was not executed locally because it would require an approved external target and could affect production systems.
+- Targeted E2E emitted one transient Neon fetch warning while loading dashboard chrome, but the tested redirect flow completed and passed.
+
+**Security Checks:**
+- ✅ Load-test wrapper refuses run mode without explicit target and credentials.
+- ✅ Session cookies are supplied via environment variables only and are not committed.
+- ✅ Payment load profile is low-rate and requires an approved PayGate test window.
+- ✅ No new application runtime endpoint was added.
+
+**Next Task:** 25.6 — Database Backup & Recovery
+
 ### 24.9 — Global Cross-Navigation Polish
 - **Date:** 2026-05-09 15:45 GMT+7
 - **Duration:** 45m
