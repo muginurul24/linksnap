@@ -11,6 +11,9 @@ const mockState = vi.hoisted(() => ({
   linkQueries: [] as unknown[][],
   ruleQueries: [] as unknown[][],
   smartRules: [] as EditableSmartRule[],
+  userPlan: null as { plan: "FREE" | "PRO" | "BUSINESS" } | null,
+  userPlanFailures: 0,
+  userQueries: [] as unknown[][],
 }));
 
 vi.mock("@/lib/db/schema", () => ({
@@ -26,6 +29,7 @@ vi.mock("@/lib/db/schema", () => ({
   },
   users: {
     id: "users.id",
+    plan: "users.plan",
   },
 }));
 
@@ -50,6 +54,17 @@ vi.mock("@/lib/db", () => ({
           return mockState.smartRules;
         },
       },
+      users: {
+        findFirst: async (query: unknown) => {
+          mockState.userQueries.push(["users.findFirst", query]);
+          if (mockState.userPlanFailures > 0) {
+            mockState.userPlanFailures -= 1;
+            throw new Error("fetch failed");
+          }
+
+          return mockState.userPlan;
+        },
+      },
     },
   },
 }));
@@ -67,7 +82,10 @@ vi.mock("drizzle-orm", () => ({
   or: (...conditions: unknown[]) => ({ conditions, operator: "or" }),
 }));
 
-import { findEditableLinkBySlugForUser } from "../../src/lib/db/queries/links";
+import {
+  findEditableLinkBySlugForUser,
+  getUserPlanById,
+} from "../../src/lib/db/queries/links";
 
 function createEditableLink(overrides: Partial<EditableLink> = {}): EditableLink {
   return {
@@ -97,6 +115,9 @@ describe("link queries", () => {
     mockState.linkQueries = [];
     mockState.ruleQueries = [];
     mockState.smartRules = [];
+    mockState.userPlan = null;
+    mockState.userPlanFailures = 0;
+    mockState.userQueries = [];
   });
 
   it("should return null when editable link is not found for the owner", async () => {
@@ -142,6 +163,17 @@ describe("link queries", () => {
     ]);
     expect(mockState.ruleQueries.map(([name]) => name)).toEqual([
       "smartRules.findMany",
+    ]);
+  });
+
+  it("should retry transient failures when loading a user plan", async () => {
+    mockState.userPlan = { plan: "PRO" };
+    mockState.userPlanFailures = 1;
+
+    await expect(getUserPlanById("user-1")).resolves.toBe("PRO");
+    expect(mockState.userQueries.map(([name]) => name)).toEqual([
+      "users.findFirst",
+      "users.findFirst",
     ]);
   });
 });

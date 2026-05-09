@@ -9308,6 +9308,52 @@ Closed the final security audit gate for launch readiness. Replaced the stale SE
 
 **Next Task:** 25.3 — Accessibility & Lighthouse
 
+### 25.3 — Accessibility & Lighthouse
+- **Date:** 2026-05-09 17:41 GMT+7
+- **Duration:** 1h 15m
+- **Status:** ✅ Complete
+
+**What I Did:**
+Closed the launch accessibility and Lighthouse gate. Added authenticated dashboard Axe coverage for `/dashboard`, `/links`, `/campaigns`, and `/analytics`, documented Lighthouse scores and SEO posture, ignored local Lighthouse artifacts, fixed a Base UI accessibility warning in the shared dashboard error state, and added transient DB retry around `getUserPlanById` after `/analytics` exposed a Neon fetch failure during E2E.
+
+**Files Changed:**
+- `.gitignore` — Ignored local `.tmp` Lighthouse output.
+- `tests/e2e/dashboard-accessibility.spec.ts` — Added authenticated WCAG 2.1 A/AA Axe checks for key dashboard pages.
+- `_bmad-output/planning-artifacts/accessibility-lighthouse-2026-05-09.md` — Added Lighthouse, Axe, SEO, and performance audit report.
+- `src/components/dashboard/route-error-state.tsx` — Fixed Base UI link-button semantics and marked decorative icons as hidden.
+- `src/lib/db/queries/links.ts` — Wrapped `getUserPlanById` with transient DB retry.
+- `tests/unit/link-queries.test.ts` — Covered retry behavior for user plan lookup.
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Checked off 25.3.
+- `_bmad-output/implementation-artifacts/JOURNAL.md` — Logged 25.3.
+
+**Decisions Made:**
+- Treated dashboard SEO as N/A because protected dashboard routes are intentionally private/noindex; public SEO remains covered by metadata, robots, sitemap, and Lighthouse.
+- Used Playwright + Axe for authenticated dashboard accessibility because Lighthouse CLI header auth could not reliably preserve every private route.
+- Did not refactor below-fold landing demo JS because mobile and desktop Lighthouse scores already met the launch target after production-build reruns.
+
+**Tests:**
+- ✅ Lighthouse: `/` mobile 95/100/96/100, `/` desktop 100/100/96/100, `/pricing` desktop 100/100/96/100, dashboard desktop performance/accessibility/best-practices ≥96 with private SEO marked N/A.
+- ✅ Targeted unit: `rtk bun run test -- tests/unit/link-queries.test.ts tests/unit/dashboard-route-states.test.tsx tests/unit/seo-metadata.test.ts` — 12 passed.
+- ✅ Public + dashboard Axe E2E: `rtk bun run test:e2e -- tests/e2e/dashboard-accessibility.spec.ts tests/e2e/public-site.spec.ts` — 9 passed.
+- ✅ Targeted E2E after fixes: `rtk bun run test:e2e -- tests/e2e/dashboard-accessibility.spec.ts` — 4 passed.
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Full unit/integration: `rtk bun run test` — 173 passed, 1 skipped; 776 passed, 2 skipped.
+- ✅ Production build: `rtk bun run build` — Passed.
+
+**Issues Encountered:**
+- Lighthouse CLI could not keep `/analytics` as the final displayed URL with header-based auth; authenticated Axe E2E covers the route and final manual walkthrough remains in 25.11.
+- `/analytics` E2E surfaced a transient Neon `fetch failed` on user plan lookup; fixed by using the existing retry helper.
+- Shared dashboard error state produced a Base UI warning for a Link rendered through `Button`; fixed with `nativeButton={false}`.
+
+**Security Checks:**
+- ✅ No secrets or real cookies committed; Lighthouse JSON output remains local-only under ignored `.tmp`.
+- ✅ Authenticated E2E user is generated and deleted during test lifecycle.
+- ✅ Retry helper only retries transient DB/network failures, not validation or auth failures.
+- ✅ Error UI continues to avoid raw stack traces.
+
+**Next Task:** 25.4 — Error Tracking & Observability
+
 ### 24.6 — My Links Table Sorting & Bulk Actions
 - **Date:** 2026-05-09 15:19 GMT+7
 - **Duration:** 1h 10m

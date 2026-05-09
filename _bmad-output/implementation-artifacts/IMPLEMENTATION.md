@@ -3381,11 +3381,11 @@ Premium Flutter experience. 🟢
 
 ### TASK 25.3 — Accessibility & Lighthouse
 
-- [ ] Lighthouse audit on all key pages → target score ≥ 95
-- [ ] Fix: aria-label on icon-only buttons, keyboard navigation, heading hierarchy
-- [ ] Fix: color contrast WCAG AA, form labels, landmarks
-- [ ] Performance: image optimization, bundle size audit
-- [ ] SEO: meta descriptions, OG tags, sitemap, robots.txt
+- [x] Lighthouse audit on all key pages → target score ≥ 95
+- [x] Fix: aria-label on icon-only buttons, keyboard navigation, heading hierarchy
+- [x] Fix: color contrast WCAG AA, form labels, landmarks
+- [x] Performance: image optimization, bundle size audit
+- [x] SEO: meta descriptions, OG tags, sitemap, robots.txt
 
 ### TASK 25.4 — Error Tracking & Observability
 

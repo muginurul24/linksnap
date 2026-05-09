@@ -73,15 +73,18 @@ export function DashboardRouteErrorState({
         </div>
         <div className="flex flex-wrap justify-center gap-3">
           <Button onClick={() => reset()} size="sm" type="button" variant="outline">
-            <RotateCcw className="size-4" />
+            <RotateCcw aria-hidden="true" className="size-4" />
             Try again
           </Button>
           <Button
+            nativeButton={false}
             render={<Link href={action.href} />}
             size="sm"
             variant={action.variant ?? "outline"}
           >
-            {action.showBackIcon === false ? null : <ArrowLeft className="size-4" />}
+            {action.showBackIcon === false ? null : (
+              <ArrowLeft aria-hidden="true" className="size-4" />
+            )}
             {action.label}
           </Button>
         </div>

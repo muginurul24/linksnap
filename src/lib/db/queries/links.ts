@@ -319,10 +319,12 @@ function getClickThroughRate(ctaClicks: number, pageViews: number): number {
 }
 
 export async function getUserPlanById(userId: string): Promise<UserPlan | null> {
-  const user = await db.query.users.findFirst({
-    columns: { plan: true },
-    where: eq(users.id, userId),
-  });
+  const user = await retryTransientDbQuery(() =>
+    db.query.users.findFirst({
+      columns: { plan: true },
+      where: eq(users.id, userId),
+    }),
+  );
 
   return user?.plan ?? null;
 }
