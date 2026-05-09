@@ -20,10 +20,29 @@ describe("payment validation and pricing", () => {
   it("should accept paid plans and supported durations", () => {
     const parsed = createPaymentSchema.safeParse({
       duration: "YEARLY",
+      paymentMethod: "gopay",
       plan: "BUSINESS",
     });
 
     expect(parsed.success).toBe(true);
+  });
+
+  it("should validate payment channel field format", () => {
+    expect(
+      createPaymentSchema.safeParse({
+        duration: "MONTHLY",
+        paymentMethod: "bca",
+        plan: "PRO",
+      }).success,
+    ).toBe(true);
+
+    expect(
+      createPaymentSchema.safeParse({
+        duration: "MONTHLY",
+        paymentMethod: "<script>",
+        plan: "PRO",
+      }).success,
+    ).toBe(false);
   });
 
   it("should reject free plan and unsupported durations", () => {

@@ -7,7 +7,7 @@ import {
   type EwalletCode,
   type PayGatePaymentType,
   type PaymentChannelCode,
-} from "@/lib/payments/paygate";
+} from "@/lib/payments/payment-channel-codes";
 
 export type PaymentChannelCategory =
   | "bank_transfer"

@@ -16,6 +16,8 @@ import {
   createPayGateCharge,
   PayGateApiError,
   PayGateConfigurationError,
+  PayGateUnsupportedChannelError,
+  type PaymentChannelCode,
 } from "@/lib/payments/paygate";
 import {
   calculateGrossAmountIdr,
@@ -114,6 +116,15 @@ function buildPaymentWebhookUrl(baseUrl: string): string {
   return `${normalizePaymentBaseUrl(baseUrl)}/api/v1/payments/webhook`;
 }
 
+function getRequestedPaymentMethod(
+  input: CreatePaymentInput,
+): PaymentChannelCode | undefined {
+  const requestedMethod =
+    input.paymentMethod ?? input.bank ?? input.ewallet ?? input.store;
+
+  return requestedMethod as PaymentChannelCode | undefined;
+}
+
 export async function POST(request: NextRequest) {
   const requestId = createRequestId();
 
@@ -137,6 +148,7 @@ export async function POST(request: NextRequest) {
 
     const { grossAmountIdr, grossAmountUsd } = calculatePaymentAmount(parsedBody.data);
     const orderId = generatePaymentOrderId();
+    const paymentMethod = getRequestedPaymentMethod(parsedBody.data);
     const paymentBaseUrl = getConfiguredPaymentBaseUrl() ?? request.nextUrl.origin;
     const callbackUrls = buildPaymentRedirectUrls({
       baseUrl: paymentBaseUrl,
@@ -153,7 +165,6 @@ export async function POST(request: NextRequest) {
     });
 
     const payGateCharge = await createPayGateCharge({
-      bank: "bca",
       callbackUrl: buildPaymentWebhookUrl(paymentBaseUrl),
       customer: {
         email: authResult.email,
@@ -162,9 +173,11 @@ export async function POST(request: NextRequest) {
       duration: parsedBody.data.duration,
       grossAmountIdr,
       orderId,
+      ...(paymentMethod ? { paymentMethod } : { bank: "bca" }),
       plan: parsedBody.data.plan,
       metadata: {
         duration: parsedBody.data.duration,
+        paymentMethod: paymentMethod ?? "bca",
         plan: parsedBody.data.plan,
         source: "linksnap",
       },
@@ -175,6 +188,7 @@ export async function POST(request: NextRequest) {
     return successResponse(
       {
         orderId,
+        paymentMethod: payGateTransaction.payment_method ?? paymentMethod ?? "bca",
         paymentType: payGateTransaction.payment_type,
         redirectUrl: callbackUrls.finish,
         status: payGateTransaction.status,
@@ -193,6 +207,16 @@ export async function POST(request: NextRequest) {
         "Payment provider is not configured.",
         503,
         requestId,
+      );
+    }
+
+    if (error instanceof PayGateUnsupportedChannelError) {
+      return errorResponse(
+        "VALIDATION_ERROR",
+        "Unsupported payment method.",
+        400,
+        requestId,
+        { paymentMethod: error.paymentMethod },
       );
     }
 

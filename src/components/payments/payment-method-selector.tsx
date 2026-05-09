@@ -11,7 +11,7 @@ import {
   type PaymentChannel,
   type PaymentChannelCategory,
 } from "@/lib/payments/payment-channels";
-import type { PaymentChannelCode } from "@/lib/payments/paygate";
+import type { PaymentChannelCode } from "@/lib/payments/payment-channel-codes";
 import { cn } from "@/lib/utils";
 
 const CATEGORY_ORDER: PaymentChannelCategory[] = [

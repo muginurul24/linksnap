@@ -3122,16 +3122,16 @@ Premium Flutter experience. 🟢
 
 ### TASK 23.4 — Upgrade Flow with Payment Selection Dialog
 
-- [ ] Create `src/components/payments/upgrade-dialog.tsx` — Multi-step upgrade dialog:
+- [x] Create `src/components/payments/upgrade-dialog.tsx` — Multi-step upgrade dialog:
   - Step 1: Plan confirmation (what you're buying + price)
   - Step 2: Payment method selection (using component from 23.3)
   - Step 3: Summary confirmation (plan + method + amount)
   - Step 4: Processing spinner → redirect to checkout
-- [ ] Rewrite `upgrade-button.tsx` to open dialog instead of direct API call
-- [ ] Animated step transitions, back button, close with confirmation
-- [ ] POST `/api/v1/payments/create` with `{ plan, duration, paymentMethod, bank? }`
-- [ ] Prevent double-submit, full-screen on mobile
-- [ ] Add unit + E2E tests
+- [x] Rewrite `upgrade-button.tsx` to open dialog instead of direct API call
+- [x] Animated step transitions, back button, close with confirmation
+- [x] POST `/api/v1/payments/create` with `{ plan, duration, paymentMethod, bank? }`
+- [x] Prevent double-submit, full-screen on mobile
+- [x] Add unit + E2E tests
 
 ### TASK 23.5 — Payment Create API with Channel Support
 

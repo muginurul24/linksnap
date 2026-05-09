@@ -8777,3 +8777,49 @@ Built the reusable payment method selector UI and channel chip components for th
 - ✅ No raw HTML or secret logging added.
 
 **Next Task:** 23.4 — Upgrade Flow with Payment Selection Dialog.
+
+### 23.4 — Upgrade Flow with Payment Selection Dialog
+- **Date:** 2026-05-09 09:23 GMT+7
+- **Duration:** 0h 20m
+- **Status:** ✅ Complete
+
+**What I Did:**
+Reworked billing upgrades from direct checkout creation into a multi-step dialog. The new flow confirms the plan, selects a payment method, reviews the summary, prevents duplicate checkout submissions, and redirects after creating the PayGate transaction. I also added create-payment compatibility for `paymentMethod` payloads and fixed the client/server import boundary for payment channel constants.
+
+**Files Changed:**
+- `src/components/payments/upgrade-dialog.tsx` — Added full-screen mobile multi-step upgrade dialog with plan confirmation, selector step, summary, processing state, close confirmation, and guarded checkout creation.
+- `src/app/(dashboard)/settings/billing/upgrade-button.tsx` — Rewired upgrade CTA to open the dialog instead of calling the API directly.
+- `src/lib/payments/checkout-client.ts` — Added client-safe checkout endpoint and redirect helpers.
+- `src/lib/payments/payment-channel-codes.ts` — Added browser-safe PayGate channel constants and types.
+- `src/lib/payments/paygate.ts` — Re-exported channel constants from the shared client-safe module.
+- `src/lib/payments/payment-channels.ts` and `src/components/payments/payment-method-selector.tsx` — Switched channel imports away from the server PayGate client.
+- `src/lib/validations/payment.ts` and `src/app/api/v1/payments/create/route.ts` — Accepted channel fields and forwarded the selected channel to PayGate.
+- `tests/unit/upgrade-dialog.test.tsx`, `tests/unit/*`, `tests/integration/create-payment-api.test.ts`, `tests/e2e/payment-flow.spec.ts` — Added and updated coverage for the dialog, channel payload, loading guards, and E2E checkout flow.
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Checked off 23.4.
+- `_bmad-output/implementation-artifacts/JOURNAL.md` — Logged 23.4.
+
+**Decisions Made:**
+- Kept PayGate network code server-only by moving shared payment channel constants into `payment-channel-codes.ts`.
+- Used `apiFetch` so checkout creation automatically carries the required browser mutation header.
+- Kept the create-payment API backward compatible: no channel still defaults to BCA, selected channels are passed through for PayGate resolution.
+
+**Tests:**
+- ✅ Targeted unit/integration: `rtk bun run test -- tests/unit/upgrade-dialog.test.tsx tests/unit/billing-upgrade-button.test.tsx tests/unit/payment-pricing-validation.test.ts tests/integration/create-payment-api.test.ts` — Passed.
+- ✅ Full unit/integration: `rtk bun run test` — 157 passed, 1 skipped; 719 passed, 2 skipped.
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Production build: `rtk bun run build` — Passed.
+- ✅ Targeted E2E: `rtk bun run test:e2e -- tests/e2e/payment-flow.spec.ts -g "should start billing upgrade"` — Passed.
+
+**Issues Encountered:**
+- Build initially failed because a client component indirectly imported `paygate.ts`, which imports `node:http` and `node:https`. Fixed by extracting shared channel constants/types into a client-safe module.
+- The E2E fixture order ID used an old invalid format. Updated it to the current checkout validation format.
+
+**Security Checks:**
+- ✅ Input validated with Zod, including channel field format.
+- ✅ Checkout mutation uses browser mutation headers through `apiFetch`.
+- ✅ Double submit prevented with `tryStartSingleFlight`.
+- ✅ Store API token remains server-only; no provider secrets or raw SQL added.
+- ✅ Payment detail and checkout APIs remain no-store/no-cache flows.
+
+**Next Task:** 23.5 — Payment Create API with Channel Support.

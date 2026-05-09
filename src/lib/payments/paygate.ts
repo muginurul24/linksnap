@@ -2,6 +2,36 @@ import { request as httpRequest } from "node:http";
 import { request as httpsRequest } from "node:https";
 import type { PaidPlan, PaymentDuration } from "@/lib/validations/payment";
 import { formatPaymentItemName } from "@/lib/payments/pricing";
+import {
+  PAYGATE_BANK_CODES,
+  PAYGATE_CSTORE_CODES,
+  PAYGATE_EWALLET_CODES,
+  type BankCode,
+  type CstoreCode,
+  type EwalletCode,
+  type PaymentChannelCode,
+  type PayGateResolvedPaymentChannel,
+} from "@/lib/payments/payment-channel-codes";
+
+export {
+  PAYGATE_BANK_CODES,
+  PAYGATE_CSTORE_CODES,
+  PAYGATE_EWALLET_CODES,
+};
+export type {
+  BankCode,
+  BankTransfer,
+  ConvenienceStore,
+  CstoreCode,
+  Ewallet,
+  EwalletCode,
+  PayGatePaymentType,
+  PayGateResolvedPaymentChannel as PaymentChannel,
+  PaymentChannelCode,
+  Qris,
+} from "@/lib/payments/payment-channel-codes";
+
+type PaymentChannel = PayGateResolvedPaymentChannel;
 
 const DEFAULT_PAYGATE_API_BASE_URL = "https://paygate.digixsolution.net";
 
@@ -20,63 +50,6 @@ type PayGateChargeItem = {
   price: number;
   quantity: number;
 };
-
-export const PAYGATE_BANK_CODES = [
-  "bca",
-  "bni",
-  "bri",
-  "mandiri",
-  "permata",
-  "cimb",
-  "danamon",
-] as const;
-export const PAYGATE_EWALLET_CODES = [
-  "gopay",
-  "ovo",
-  "dana",
-  "shopeepay",
-  "linkaja",
-] as const;
-export const PAYGATE_CSTORE_CODES = ["indomaret", "alfamart"] as const;
-
-export type BankCode = (typeof PAYGATE_BANK_CODES)[number];
-export type EwalletCode = (typeof PAYGATE_EWALLET_CODES)[number];
-export type CstoreCode = (typeof PAYGATE_CSTORE_CODES)[number];
-export type PayGatePaymentType =
-  | "bank_transfer"
-  | "cstore"
-  | "ewallet"
-  | "qris";
-export type PaymentChannelCode =
-  | BankCode
-  | CstoreCode
-  | EwalletCode
-  | "qris";
-
-export type BankTransfer = {
-  bank: BankCode;
-  paymentMethod: BankCode;
-  paymentType: "bank_transfer";
-};
-export type Ewallet = {
-  ewallet: EwalletCode;
-  paymentMethod: EwalletCode;
-  paymentType: "ewallet";
-};
-export type Qris = {
-  paymentMethod: "qris";
-  paymentType: "qris";
-};
-export type ConvenienceStore = {
-  paymentMethod: CstoreCode;
-  paymentType: "cstore";
-  store: CstoreCode;
-};
-export type PaymentChannel =
-  | BankTransfer
-  | ConvenienceStore
-  | Ewallet
-  | Qris;
 
 type PayGateBaseChargePayload = {
   amount: number;

@@ -6,7 +6,7 @@ function readSource(path: string): string {
 }
 
 const guardedActionFiles = [
-  "src/app/(dashboard)/settings/billing/upgrade-button.tsx",
+  "src/components/payments/upgrade-dialog.tsx",
   "src/components/admin/plan-override-dialog.tsx",
   "src/app/(dashboard)/admin/users/[id]/page.tsx",
   "src/app/(dashboard)/links/link-actions.tsx",
@@ -39,16 +39,14 @@ describe("dashboard action consistency", () => {
 
   it("should keep high-risk success toasts after successful server responses", () => {
     const linkForm = readSource("src/app/(dashboard)/links/link-form.tsx");
-    const billingButton = readSource(
-      "src/app/(dashboard)/settings/billing/upgrade-button.tsx",
-    );
+    const upgradeDialog = readSource("src/components/payments/upgrade-dialog.tsx");
 
     expect(linkForm.indexOf("if (!body.success)")).toBeLessThan(
       linkForm.indexOf("toast.success(feedback.message"),
     );
-    expect(billingButton).not.toContain("toast.success");
-    expect(billingButton.indexOf("if (!body.success)")).toBeLessThan(
-      billingButton.indexOf("window.location.assign(redirectUrl)"),
+    expect(upgradeDialog).not.toContain("toast.success");
+    expect(upgradeDialog.indexOf("getPaymentRedirectUrl(payment)")).toBeLessThan(
+      upgradeDialog.indexOf("window.location.assign(redirectUrl)"),
     );
   });
 });

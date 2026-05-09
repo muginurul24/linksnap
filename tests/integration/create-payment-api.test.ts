@@ -47,6 +47,7 @@ type PayGateInput = {
   grossAmountIdr: number;
   metadata?: Record<string, unknown>;
   orderId: string;
+  paymentMethod?: string;
   plan: PaymentPlan;
 };
 
@@ -122,6 +123,14 @@ vi.mock("@/lib/db/queries/payments", () => ({
 
 vi.mock("@/lib/payments/paygate", () => {
   class PayGateConfigurationError extends Error {}
+  class PayGateUnsupportedChannelError extends Error {
+    readonly paymentMethod: string;
+
+    constructor(paymentMethod: string) {
+      super(`Unsupported PayGate payment channel: ${paymentMethod}.`);
+      this.paymentMethod = paymentMethod;
+    }
+  }
   class PayGateApiError extends Error {
     readonly status: number;
 
@@ -134,6 +143,7 @@ vi.mock("@/lib/payments/paygate", () => {
   return {
     PayGateApiError,
     PayGateConfigurationError,
+    PayGateUnsupportedChannelError,
     assertPayGateConfigured: () => {
       if (!mockState.payGateConfigured) {
         throw new PayGateConfigurationError("missing store token");
@@ -268,12 +278,42 @@ describe("create payment API", () => {
         grossAmountIdr: 128000,
         metadata: {
           duration: "MONTHLY",
+          paymentMethod: "bca",
           plan: "PRO",
           source: "linksnap",
         },
         orderId: body.data.orderId,
         plan: "PRO",
       },
+    ]);
+  });
+
+  it("should create a PayGate transaction with a selected payment method", async () => {
+    const response = await POST(
+      createRequest({
+        duration: "MONTHLY",
+        paymentMethod: "gopay",
+        plan: "PRO",
+      }),
+    );
+    const body = await readJson<{
+      orderId: string;
+      paymentMethod: string;
+      paymentType: string;
+    }>(response);
+
+    expect(response.status).toBe(201);
+    expect(body.success).toBe(true);
+    if (!body.success) return;
+
+    expect(body.data.paymentMethod).toBe("gopay");
+    expect(mockState.payGateInputs).toEqual([
+      expect.objectContaining({
+        paymentMethod: "gopay",
+        metadata: expect.objectContaining({
+          paymentMethod: "gopay",
+        }),
+      }),
     ]);
   });
 

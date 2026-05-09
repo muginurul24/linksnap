@@ -48,13 +48,11 @@ describe("form loading states", () => {
     expect(settingsForms).toContain("<Switch");
   });
 
-  it("should keep billing upgrade button busy and disabled while checkout starts", () => {
-    const upgradeButton = readSource(
-      "src/app/(dashboard)/settings/billing/upgrade-button.tsx",
-    );
+  it("should keep billing upgrade checkout busy and disabled while checkout starts", () => {
+    const upgradeDialog = readSource("src/components/payments/upgrade-dialog.tsx");
 
-    expect(upgradeButton).toContain("aria-busy={isLoading}");
-    expect(upgradeButton).toContain("disabled={current || isLoading}");
-    expect(upgradeButton).toContain("Loader2");
+    expect(upgradeDialog).toContain("aria-busy={isSubmitting}");
+    expect(upgradeDialog).toContain("disabled={isSubmitting}");
+    expect(upgradeDialog).toContain("Loader2");
   });
 });

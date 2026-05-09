@@ -2,11 +2,21 @@ import { z } from "@/lib/validations/zod";
 
 export const paidPlanSchema = z.enum(["PRO", "BUSINESS"]);
 export const paymentDurationSchema = z.enum(["MONTHLY", "YEARLY"]);
+export const paymentChannelCodeSchema = z
+  .string()
+  .trim()
+  .min(1)
+  .max(32)
+  .regex(/^[a-z0-9_-]+$/);
 
 export const createPaymentSchema = z
   .object({
+    bank: paymentChannelCodeSchema.optional(),
     duration: paymentDurationSchema,
+    ewallet: paymentChannelCodeSchema.optional(),
     plan: paidPlanSchema,
+    paymentMethod: paymentChannelCodeSchema.optional(),
+    store: paymentChannelCodeSchema.optional(),
   })
   .strict();
 

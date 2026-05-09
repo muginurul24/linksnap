@@ -159,7 +159,7 @@ test("should start billing upgrade from the Pro button and redirect to checkout"
 
   const email = `e2e-billing-click-${Date.now()}@example.com`;
   const password = "Password1";
-  const orderId = "LS-E2E-UPGRADE";
+  const orderId = `LS-${Date.now()}-abc123def456`;
   let userId: string | undefined;
 
   try {
@@ -170,11 +170,16 @@ test("should start billing upgrade from the Pro button and redirect to checkout"
       const request = route.request();
       const payload = request.postDataJSON() as {
         duration?: string;
+        paymentMethod?: string;
         plan?: string;
       };
 
       expect(request.headers()["x-requested-with"]).toBe("XMLHttpRequest");
-      expect(payload).toMatchObject({ duration: "MONTHLY", plan: "PRO" });
+      expect(payload).toMatchObject({
+        duration: "MONTHLY",
+        paymentMethod: "bca",
+        plan: "PRO",
+      });
 
       await route.fulfill({
         body: JSON.stringify({
@@ -216,6 +221,18 @@ test("should start billing upgrade from the Pro button and redirect to checkout"
     await page.goto("/settings/billing");
     await expect(page.getByRole("heading", { name: "Billing" })).toBeVisible();
     await page.getByRole("button", { name: "Upgrade to Pro" }).click();
+    await expect(page.getByRole("dialog")).toBeVisible();
+    await expect(page.getByText("LinkSnap Pro")).toBeVisible();
+    await page.getByRole("button", { name: "Choose payment method" }).click();
+    await expect(
+      page.getByRole("region", { name: "Payment method" }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: "Select BCA Virtual Account" }),
+    ).toHaveAttribute("aria-pressed", "true");
+    await page.getByRole("button", { name: "Review upgrade" }).click();
+    await expect(page.getByText("Summary")).toBeVisible();
+    await page.getByRole("button", { name: "Start checkout" }).click();
 
     await expect(page).toHaveURL(
       new RegExp(`/checkout/success\\?order_id=${orderId}$`),
