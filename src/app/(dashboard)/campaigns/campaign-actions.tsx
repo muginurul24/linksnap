@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { BarChart3, Edit, MoreHorizontal, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { DeleteConfirmationDialog } from "@/components/dashboard/delete-confirmation-dialog";
@@ -14,6 +14,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { finishSingleFlight, tryStartSingleFlight } from "@/lib/actions/single-flight";
 
 type CampaignActionsProps = {
   id: string;
@@ -61,10 +62,13 @@ function apiErrorMessage(
 
 export function CampaignActions({ id, name }: CampaignActionsProps) {
   const router = useRouter();
+  const deleteGuard = useRef(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
 
   const handleDelete = async () => {
+    if (!tryStartSingleFlight(deleteGuard)) return;
+
     setIsDeleting(true);
 
     try {
@@ -92,6 +96,7 @@ export function CampaignActions({ id, name }: CampaignActionsProps) {
     } catch {
       toast.error("Unable to reach the campaign service.");
     } finally {
+      finishSingleFlight(deleteGuard);
       setIsDeleting(false);
     }
   };

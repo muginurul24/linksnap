@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useEffect, useId, useMemo, useState } from "react";
+import { FormEvent, useEffect, useId, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   AlertCircle,
@@ -28,6 +28,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { buildShortUrlPreview } from "@/lib/links/preview";
+import { finishSingleFlight, tryStartSingleFlight } from "@/lib/actions/single-flight";
 import { usePlan } from "@/lib/auth/plan-context";
 import {
   clearFieldError as clearFieldErrorValue,
@@ -319,6 +320,8 @@ export function CreateLinkForm({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+  const deleteGuard = useRef(false);
+  const submitGuard = useRef(false);
   const [slugState, setSlugState] = useState<SlugState>(initialSlugState);
 
   const previewUrl = useMemo(
@@ -477,6 +480,8 @@ export function CreateLinkForm({
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
+    if (!tryStartSingleFlight(submitGuard)) return;
+
     const rawInput = {
       destinationUrl,
       slug,
@@ -488,10 +493,14 @@ export function CreateLinkForm({
 
     if (!parsed.success) {
       setFieldErrors(firstFieldErrors(parsed.error.flatten().fieldErrors));
+      finishSingleFlight(submitGuard);
       return;
     }
 
-    if (!assertSlugCanSubmit()) return;
+    if (!assertSlugCanSubmit()) {
+      finishSingleFlight(submitGuard);
+      return;
+    }
 
     const parsedLinkPage = enableLinkPage
       ? upsertLinkPageSchema.safeParse({
@@ -509,6 +518,7 @@ export function CreateLinkForm({
 
     if (parsedLinkPage && !parsedLinkPage.success) {
       setFormError("Check the Link Page fields and try again.");
+      finishSingleFlight(submitGuard);
       return;
     }
 
@@ -517,6 +527,7 @@ export function CreateLinkForm({
       : null;
     if (parsedSmartRules && !parsedSmartRules.success) {
       setFormError(parsedSmartRules.errors[0] ?? "Check Smart Rules and try again.");
+      finishSingleFlight(submitGuard);
       return;
     }
 
@@ -619,12 +630,14 @@ export function CreateLinkForm({
     } catch {
       setFormError("Unable to reach the link service.");
     } finally {
+      finishSingleFlight(submitGuard);
       setIsSubmitting(false);
     }
   };
 
   const handleDelete = async () => {
     if (!initialLink) return;
+    if (!tryStartSingleFlight(deleteGuard)) return;
 
     setIsDeleting(true);
     setFormError(null);
@@ -655,6 +668,7 @@ export function CreateLinkForm({
     } catch {
       setFormError("Unable to reach the link service.");
     } finally {
+      finishSingleFlight(deleteGuard);
       setIsDeleting(false);
     }
   };

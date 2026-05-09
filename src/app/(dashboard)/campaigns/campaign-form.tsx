@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2, Save } from "lucide-react";
 import { toast } from "sonner";
@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { finishSingleFlight, tryStartSingleFlight } from "@/lib/actions/single-flight";
 import {
   clearFieldError as clearFieldErrorValue,
   fieldErrorFromParseResult,
@@ -127,6 +128,7 @@ export function CampaignForm({ initialCampaign }: CampaignFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [name, setName] = useState(initialCampaign?.name ?? "");
   const [slug, setSlug] = useState(initialCampaign?.slug ?? "");
+  const submitGuard = useRef(false);
   const [utmCampaign, setUtmCampaign] = useState(
     valueOrEmpty(initialCampaign?.utmCampaign),
   );
@@ -165,6 +167,8 @@ export function CampaignForm({ initialCampaign }: CampaignFormProps) {
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
+    if (!tryStartSingleFlight(submitGuard)) return;
+
     const rawInput = {
       description,
       name,
@@ -181,6 +185,7 @@ export function CampaignForm({ initialCampaign }: CampaignFormProps) {
 
     if (!parsed.success) {
       setFieldErrors(firstFieldErrors(parsed.error.flatten().fieldErrors));
+      finishSingleFlight(submitGuard);
       return;
     }
 
@@ -231,6 +236,7 @@ export function CampaignForm({ initialCampaign }: CampaignFormProps) {
     } catch {
       setFormError("Unable to reach the campaign service.");
     } finally {
+      finishSingleFlight(submitGuard);
       setIsSubmitting(false);
     }
   };

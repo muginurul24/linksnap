@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { CheckCircle2, Copy, Key, Loader2, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { PlanGate } from "@/components/plan-gate";
@@ -18,6 +18,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { usePlan, useUserRole } from "@/lib/auth/plan-context";
+import { finishSingleFlight, tryStartSingleFlight } from "@/lib/actions/single-flight";
 import type { UserPlan } from "@/lib/links/limits";
 
 export type ApiKeyPanelItem = {
@@ -93,11 +94,15 @@ export function ApiKeysPanel({ initialApiKeys }: ApiKeysPanelProps) {
   const [keyName, setKeyName] = useState("");
   const [isCreating, setIsCreating] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const createGuard = useRef(false);
+  const deleteGuard = useRef(false);
   const [apiKeyToDelete, setApiKeyToDelete] = useState<ApiKeyPanelItem | null>(
     null,
   );
 
   async function createApiKey() {
+    if (!tryStartSingleFlight(createGuard)) return;
+
     setIsCreating(true);
 
     try {
@@ -126,11 +131,14 @@ export function ApiKeysPanel({ initialApiKeys }: ApiKeysPanelProps) {
     } catch {
       toast.error("Unable to create API key.");
     } finally {
+      finishSingleFlight(createGuard);
       setIsCreating(false);
     }
   }
 
   async function deleteApiKey(id: string) {
+    if (!tryStartSingleFlight(deleteGuard)) return;
+
     setDeletingId(id);
 
     try {
@@ -153,6 +161,7 @@ export function ApiKeysPanel({ initialApiKeys }: ApiKeysPanelProps) {
     } catch {
       toast.error("Unable to revoke API key.");
     } finally {
+      finishSingleFlight(deleteGuard);
       setDeletingId(null);
     }
   }

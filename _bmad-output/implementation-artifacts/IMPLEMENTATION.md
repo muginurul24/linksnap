@@ -3020,12 +3020,12 @@ Premium Flutter experience. 🟢
 
 ### TASK 22.9 — Form & Action UX Consistency Pass
 
-- [ ] Standardize button busy states across dashboard/admin actions.
-- [ ] Prevent double-submit for all create/update/delete/checkout/admin actions.
-- [ ] Show toast success only after the server confirms success.
-- [ ] Show inline validation errors near the field/action that caused them.
-- [ ] Use accessible labels and focus management for dialogs and destructive actions.
-- [ ] Add tests for duplicate-click prevention on high-risk actions.
+- [x] Standardize button busy states across dashboard/admin actions.
+- [x] Prevent double-submit for all create/update/delete/checkout/admin actions.
+- [x] Show toast success only after the server confirms success.
+- [x] Show inline validation errors near the field/action that caused them.
+- [x] Use accessible labels and focus management for dialogs and destructive actions.
+- [x] Add tests for duplicate-click prevention on high-risk actions.
 
 ### TASK 22.10 — Security, Observability & Production Smoke
 

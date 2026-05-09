@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Building2, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { finishSingleFlight, tryStartSingleFlight } from "@/lib/actions/single-flight";
 import type { PaidPlan, PaymentDuration } from "@/lib/validations/payment";
 
 type PaymentResponseData = {
@@ -44,9 +45,12 @@ export function UpgradeButton({
   duration = "MONTHLY",
   plan,
 }: UpgradeButtonProps) {
+  const paymentGuard = useRef(false);
   const [isLoading, setIsLoading] = useState(false);
 
   async function createPayment() {
+    if (!tryStartSingleFlight(paymentGuard)) return;
+
     setIsLoading(true);
 
     try {
@@ -75,6 +79,7 @@ export function UpgradeButton({
     } catch {
       toast.error("Unable to start checkout.");
     } finally {
+      finishSingleFlight(paymentGuard);
       setIsLoading(false);
     }
   }

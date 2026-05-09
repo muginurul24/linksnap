@@ -38,6 +38,7 @@ export function DeleteConfirmationDialogContent({
           Cancel
         </DialogClose>
         <Button
+          aria-busy={isDeleting}
           disabled={isDeleting}
           onClick={onConfirm}
           type="button"

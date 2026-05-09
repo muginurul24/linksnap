@@ -31,6 +31,7 @@ import {
   firstFieldErrors,
   type FieldErrors,
 } from "@/lib/forms/field-errors";
+import { finishSingleFlight, tryStartSingleFlight } from "@/lib/actions/single-flight";
 import { settingsProfileSchema } from "@/lib/validations/settings";
 
 type ApiEnvelope<T> =
@@ -97,6 +98,7 @@ export function ProfileSettingsForm({
   initialName,
 }: ProfileSettingsFormProps) {
   const router = useRouter();
+  const saveGuard = useRef(false);
   const [name, setName] = useState(initialName);
   const [errors, setErrors] = useState<FieldErrors<ProfileField>>({});
   const [isSaving, setIsSaving] = useState(false);
@@ -116,9 +118,12 @@ export function ProfileSettingsForm({
 
   async function submitProfile(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (!tryStartSingleFlight(saveGuard)) return;
+
     const parsed = settingsProfileSchema.safeParse({ name });
     if (!parsed.success) {
       setErrors(firstFieldErrors(parsed.error.flatten().fieldErrors));
+      finishSingleFlight(saveGuard);
       return;
     }
 
@@ -149,6 +154,7 @@ export function ProfileSettingsForm({
     } catch {
       toast.error("Unable to save profile.");
     } finally {
+      finishSingleFlight(saveGuard);
       setIsSaving(false);
     }
   }
@@ -194,6 +200,8 @@ export function ProfileSettingsForm({
 
 export function ChangeEmailForm({ currentEmail }: ChangeEmailFormProps) {
   const router = useRouter();
+  const requestGuard = useRef(false);
+  const verifyGuard = useRef(false);
   const [newEmail, setNewEmail] = useState("");
   const [password, setPassword] = useState("");
   const [otp, setOtp] = useState("");
@@ -204,9 +212,12 @@ export function ChangeEmailForm({ currentEmail }: ChangeEmailFormProps) {
 
   async function requestEmailChange(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (!tryStartSingleFlight(requestGuard)) return;
+
     const parsed = changeEmailSchema.safeParse({ email: newEmail, password });
     if (!parsed.success) {
       setFormError(parsed.error.issues[0]?.message ?? "Invalid email change input.");
+      finishSingleFlight(requestGuard);
       return;
     }
 
@@ -235,18 +246,22 @@ export function ChangeEmailForm({ currentEmail }: ChangeEmailFormProps) {
     } catch {
       setFormError("Unable to send verification code.");
     } finally {
+      finishSingleFlight(requestGuard);
       setIsRequestingOtp(false);
     }
   }
 
   async function verifyEmailChange(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (!tryStartSingleFlight(verifyGuard)) return;
+
     const parsed = verifyNewEmailSchema.safeParse({
       email: pendingEmail ?? newEmail,
       otp,
     });
     if (!parsed.success) {
       setFormError(parsed.error.issues[0]?.message ?? "Invalid verification code.");
+      finishSingleFlight(verifyGuard);
       return;
     }
 
@@ -278,6 +293,7 @@ export function ChangeEmailForm({ currentEmail }: ChangeEmailFormProps) {
     } catch {
       setFormError("Unable to verify new email.");
     } finally {
+      finishSingleFlight(verifyGuard);
       setIsVerifyingOtp(false);
     }
   }
@@ -384,6 +400,7 @@ export function ChangeEmailForm({ currentEmail }: ChangeEmailFormProps) {
 export function NotificationsSettingsForm({
   initialPreferences,
 }: NotificationsSettingsFormProps) {
+  const saveGuard = useRef(false);
   const [preferences, setPreferences] = useState(initialPreferences);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -398,6 +415,8 @@ export function NotificationsSettingsForm({
   }
 
   async function savePreferences() {
+    if (!tryStartSingleFlight(saveGuard)) return;
+
     setIsSaving(true);
 
     try {
@@ -423,6 +442,7 @@ export function NotificationsSettingsForm({
     } catch {
       toast.error("Unable to save preferences.");
     } finally {
+      finishSingleFlight(saveGuard);
       setIsSaving(false);
     }
   }
@@ -462,6 +482,7 @@ export function NotificationsSettingsForm({
 }
 
 export function SecuritySettingsForm() {
+  const saveGuard = useRef(false);
   const [currentPassword, setCurrentPassword] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -523,9 +544,12 @@ export function SecuritySettingsForm() {
 
   async function submitPassword(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (!tryStartSingleFlight(saveGuard)) return;
+
     const parsed = changePasswordSchema.safeParse(formValue);
     if (!parsed.success) {
       setErrors(firstFieldErrors(parsed.error.flatten().fieldErrors));
+      finishSingleFlight(saveGuard);
       return;
     }
 
@@ -561,6 +585,7 @@ export function SecuritySettingsForm() {
     } catch {
       toast.error("Unable to update password.");
     } finally {
+      finishSingleFlight(saveGuard);
       setIsSaving(false);
     }
   }
@@ -721,6 +746,7 @@ export function SecuritySettingsForm() {
 }
 
 export function DeleteAccountPanel() {
+  const deleteGuard = useRef(false);
   const [open, setOpen] = useState(false);
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -728,6 +754,8 @@ export function DeleteAccountPanel() {
 
   async function deleteAccount(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (!tryStartSingleFlight(deleteGuard)) return;
+
     setError(null);
     setIsDeleting(true);
 
@@ -752,6 +780,7 @@ export function DeleteAccountPanel() {
     } catch {
       setError("Unable to delete account.");
     } finally {
+      finishSingleFlight(deleteGuard);
       setIsDeleting(false);
     }
   }

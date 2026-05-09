@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState, use } from "react";
+import { use, useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -17,6 +17,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { apiFetch, getFriendlyApiErrorMessage } from "@/lib/api/client";
+import { finishSingleFlight, tryStartSingleFlight } from "@/lib/actions/single-flight";
 import { ArrowLeft, Loader2, ShieldAlert } from "lucide-react";
 import { toast } from "sonner";
 import type { UserPlan } from "@/lib/links/limits";
@@ -45,6 +46,7 @@ export default function AdminUserDetailPage({
 }) {
   const { id } = use(params);
   const router = useRouter();
+  const suspendGuard = useRef(false);
   const [user, setUser] = useState<UserDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<unknown | null>(null);
@@ -127,6 +129,8 @@ export default function AdminUserDetailPage({
   }
 
   async function handleSuspend(action: "suspend" | "unsuspend") {
+    if (!tryStartSingleFlight(suspendGuard)) return;
+
     setActionError(null);
     setPendingSuspendAction(action);
 
@@ -143,6 +147,7 @@ export default function AdminUserDetailPage({
       setActionError(err);
       toast.error(getFriendlyApiErrorMessage(err));
     } finally {
+      finishSingleFlight(suspendGuard);
       setPendingSuspendAction(null);
     }
   }

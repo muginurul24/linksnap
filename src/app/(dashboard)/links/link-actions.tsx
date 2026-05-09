@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import {
   BarChart3,
   Copy,
@@ -26,6 +26,7 @@ import {
   getQrDownloadFilename,
   getQrDownloadHref,
 } from "@/lib/qr/downloads";
+import { finishSingleFlight, tryStartSingleFlight } from "@/lib/actions/single-flight";
 
 type LinkActionsProps = {
   id: string;
@@ -79,10 +80,13 @@ async function copyToClipboard(value: string): Promise<void> {
 
 export function LinkActions({ id, shortUrl, slug }: LinkActionsProps) {
   const router = useRouter();
+  const deleteGuard = useRef(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
 
   const handleDelete = async () => {
+    if (!tryStartSingleFlight(deleteGuard)) return;
+
     setIsDeleting(true);
 
     try {
@@ -110,6 +114,7 @@ export function LinkActions({ id, shortUrl, slug }: LinkActionsProps) {
     } catch {
       toast.error("Unable to reach the link service.");
     } finally {
+      finishSingleFlight(deleteGuard);
       setIsDeleting(false);
     }
   };
@@ -118,7 +123,14 @@ export function LinkActions({ id, shortUrl, slug }: LinkActionsProps) {
     <>
       <DropdownMenu>
         <DropdownMenuTrigger
-          render={<Button variant="ghost" size="icon" className="size-8" />}
+          render={
+            <Button
+              aria-label={`Open actions for /${slug}`}
+              className="size-8"
+              size="icon"
+              variant="ghost"
+            />
+          }
         >
           <MoreHorizontal className="size-4" />
         </DropdownMenuTrigger>

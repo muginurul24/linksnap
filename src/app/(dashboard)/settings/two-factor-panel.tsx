@@ -1,9 +1,10 @@
 "use client";
 
 import Image from "next/image";
-import { type FormEvent, useState } from "react";
+import { type FormEvent, useRef, useState } from "react";
 import { CheckCircle2, Copy, KeyRound, Loader2, RefreshCw, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
+import { finishSingleFlight, tryStartSingleFlight } from "@/lib/actions/single-flight";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -63,6 +64,10 @@ async function postJson<T>(url: string, body?: unknown): Promise<ApiEnvelope<T>>
 export function TwoFactorSettingsPanel({
   initialEnabled,
 }: TwoFactorSettingsPanelProps) {
+  const disableGuard = useRef(false);
+  const regenerateGuard = useRef(false);
+  const setupGuard = useRef(false);
+  const verifyGuard = useRef(false);
   const [enabled, setEnabled] = useState(initialEnabled);
   const [setupOpen, setSetupOpen] = useState(false);
   const [setupData, setSetupData] = useState<TwoFactorSetupData | null>(null);
@@ -75,6 +80,8 @@ export function TwoFactorSettingsPanel({
   const [isRegenerating, setIsRegenerating] = useState(false);
 
   async function startSetup() {
+    if (!tryStartSingleFlight(setupGuard)) return;
+
     setIsStartingSetup(true);
     setBackupCodes([]);
 
@@ -90,12 +97,15 @@ export function TwoFactorSettingsPanel({
     } catch {
       toast.error("Unable to start two-factor setup.");
     } finally {
+      finishSingleFlight(setupGuard);
       setIsStartingSetup(false);
     }
   }
 
   async function verifySetup(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (!tryStartSingleFlight(verifyGuard)) return;
+
     setIsVerifying(true);
 
     try {
@@ -115,11 +125,14 @@ export function TwoFactorSettingsPanel({
     } catch {
       toast.error("Unable to verify two-factor setup.");
     } finally {
+      finishSingleFlight(verifyGuard);
       setIsVerifying(false);
     }
   }
 
   async function disableTwoFactor() {
+    if (!tryStartSingleFlight(disableGuard)) return;
+
     setIsDisabling(true);
 
     try {
@@ -138,11 +151,14 @@ export function TwoFactorSettingsPanel({
     } catch {
       toast.error("Unable to disable two-factor authentication.");
     } finally {
+      finishSingleFlight(disableGuard);
       setIsDisabling(false);
     }
   }
 
   async function regenerateBackupCodes() {
+    if (!tryStartSingleFlight(regenerateGuard)) return;
+
     setIsRegenerating(true);
 
     try {
@@ -161,6 +177,7 @@ export function TwoFactorSettingsPanel({
     } catch {
       toast.error("Unable to regenerate backup codes.");
     } finally {
+      finishSingleFlight(regenerateGuard);
       setIsRegenerating(false);
     }
   }

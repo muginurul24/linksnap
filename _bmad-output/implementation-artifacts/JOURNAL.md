@@ -8565,3 +8565,53 @@ Audited prioritized dashboard/admin routes for route-level loading and error bou
 - ✅ No secrets added.
 
 **Next Task:** 22.9 — Form & Action UX Consistency Pass.
+
+### 22.9 — Form & Action UX Consistency Pass
+- **Date:** 2026-05-09 08:24 GMT+7
+- **Duration:** 0h 36m
+- **Status:** ✅ Complete
+
+**What I Did:**
+Standardized high-risk dashboard/admin action handling with a reusable single-flight guard so fast double-clicks cannot start duplicate create/update/delete/checkout/admin requests before React disabled states render. Applied the guard to checkout, link/campaign forms and deletes, API key create/revoke, settings profile/email/password/notifications/delete-account, 2FA actions, admin suspend/unsuspend, and admin plan override. Added source and utility regression tests for duplicate-submit prevention and success-toast ordering.
+
+**Files Changed:**
+- `src/lib/actions/single-flight.ts` — Added reusable single-flight action guard.
+- `src/app/(dashboard)/settings/billing/upgrade-button.tsx` — Guarded checkout creation against duplicate clicks.
+- `src/components/admin/plan-override-dialog.tsx` — Guarded admin plan override confirms.
+- `src/app/(dashboard)/admin/users/[id]/page.tsx` — Guarded suspend/unsuspend requests.
+- `src/app/(dashboard)/links/link-form.tsx` — Guarded link create/update/delete submissions.
+- `src/app/(dashboard)/links/link-actions.tsx` — Guarded link delete action and added an accessible action-menu label.
+- `src/app/(dashboard)/campaigns/campaign-form.tsx` — Guarded campaign create/update submissions.
+- `src/app/(dashboard)/campaigns/campaign-actions.tsx` — Guarded campaign delete action.
+- `src/app/(dashboard)/settings/api-keys-panel.tsx` — Guarded API key create/revoke actions.
+- `src/app/(dashboard)/settings/settings-forms.tsx` — Guarded settings profile, email change, notification, password, and account deletion actions.
+- `src/app/(dashboard)/settings/two-factor-panel.tsx` — Guarded 2FA setup, verify, disable, and backup-code regeneration actions.
+- `src/components/dashboard/delete-confirmation-dialog.tsx` — Added `aria-busy` for destructive confirmation state.
+- `tests/unit/single-flight.test.ts` — Added direct guard behavior coverage.
+- `tests/unit/dashboard-action-consistency.test.ts` — Added source contract coverage for guarded high-risk actions and toast ordering.
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Checked off 22.9.
+- `_bmad-output/implementation-artifacts/JOURNAL.md` — Logged 22.9.
+
+**Decisions Made:**
+- Used a tiny ref-based guard instead of relying only on disabled button state, because double-clicks can happen before React re-renders.
+- Kept existing inline validation patterns and added guards around validation failures so users can immediately resubmit after fixing input.
+- Left copy-to-clipboard actions outside the guard because they are local convenience actions with no server mutation.
+
+**Tests:**
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Targeted unit: `rtk bun run test -- tests/unit/single-flight.test.ts tests/unit/dashboard-action-consistency.test.ts tests/unit/admin-user-actions.test.ts tests/unit/billing-upgrade-button.test.tsx tests/unit/link-form-plan-gates.test.tsx` — 24 passed.
+- ✅ Full unit/integration: `rtk bun run test` — 152 passed, 1 skipped; 690 passed, 2 skipped.
+- ✅ Production build: `rtk bun run build` — Passed.
+
+**Issues Encountered:**
+- No blockers. Existing actions already showed server-confirmed success toasts; the main gap was duplicate-click protection before UI disabled states render.
+
+**Security Checks:**
+- ✅ High-risk mutation requests are guarded against accidental duplicate submission.
+- ✅ Destructive dialogs keep accessible labels/descriptions and busy states.
+- ✅ Success toasts remain after successful server responses only.
+- ✅ Inline validation remains near affected fields/actions.
+- ✅ No secrets added.
+
+**Next Task:** 22.10 — Security, Observability & Production Smoke.

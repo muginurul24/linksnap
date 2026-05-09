@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -18,6 +18,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { ApiErrorNotice } from "@/components/dashboard/api-error-notice";
+import { finishSingleFlight, tryStartSingleFlight } from "@/lib/actions/single-flight";
 import { Loader2 } from "lucide-react";
 import type { UserPlan } from "@/lib/links/limits";
 
@@ -42,6 +43,7 @@ export function PlanOverrideDialog({
   userEmail,
   onConfirm,
 }: Props) {
+  const submitGuard = useRef(false);
   const [selectedPlan, setSelectedPlan] = useState<UserPlan | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<unknown | null>(null);
@@ -56,6 +58,8 @@ export function PlanOverrideDialog({
   }
 
   async function handleConfirm() {
+    if (!tryStartSingleFlight(submitGuard)) return;
+
     setIsSubmitting(true);
     setSubmitError(null);
     try {
@@ -64,6 +68,7 @@ export function PlanOverrideDialog({
     } catch (err) {
       setSubmitError(err);
     } finally {
+      finishSingleFlight(submitGuard);
       setIsSubmitting(false);
     }
   }
