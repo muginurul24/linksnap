@@ -2982,13 +2982,15 @@ Premium Flutter experience. 🟢
 
 ### TASK 22.6 — Redis Cache Policy Matrix
 
-- [ ] Add a cache policy document to planning artifacts and keep it linked from this phase.
-- [ ] Classify cache use by domain:
+- [x] Add a cache policy document to planning artifacts and keep it linked from this phase.
+  - Policy: `_bmad-output/planning-artifacts/CACHE_POLICY.md`
+  - Code contract: `src/lib/cache/policy.ts`
+- [x] Classify cache use by domain:
   - **Cache:** redirect metadata, smart rules, QR render payloads, GeoIP lookup results, dashboard subscription snapshot, short-lived analytics aggregates, short-lived admin analytics aggregates, public static marketing content via HTTP caching.
   - **Use Redis as ephemeral state, not cache:** rate limits, 2FA challenges, pending email changes, click queue.
   - **Do not cache:** auth sessions, superadmin authorization checks, CSRF/origin decisions, password/reset secrets, API key plaintext, payment create/mutation results, webhook verification outcomes, admin mutation results, raw PII-heavy analytics event lists.
-- [ ] Define TTLs, key naming, tenant scoping, invalidation triggers, and stale-data tolerance for every approved cache.
-- [ ] Add tests that assert sensitive domains have no cache helpers and approved domains use expected TTLs.
+- [x] Define TTLs, key naming, tenant scoping, invalidation triggers, and stale-data tolerance for every approved cache.
+- [x] Add tests that assert sensitive domains have no cache helpers and approved domains use expected TTLs.
 
 ### TASK 22.7 — Typed Cache Keys & Invalidation Helpers
 

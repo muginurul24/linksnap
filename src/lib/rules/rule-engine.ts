@@ -31,7 +31,7 @@ type EvaluateSmartRulesInput = {
   smartRulesEnabled?: boolean;
 };
 
-const SMART_RULES_CACHE_TTL_SECONDS = 300;
+export const SMART_RULES_CACHE_TTL_SECONDS = 300;
 const PREDEFINED_BOT_PATTERNS = [
   "Googlebot",
   "Bingbot",

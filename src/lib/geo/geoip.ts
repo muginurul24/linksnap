@@ -13,7 +13,7 @@ export type GeoIpLocation = {
   region: string | null;
 };
 
-const GEO_IP_CACHE_TTL_SECONDS = 60 * 60 * 24;
+export const GEO_IP_CACHE_TTL_SECONDS = 60 * 60 * 24;
 
 let readerPath: string | null = null;
 let readerPromise: Promise<ReaderModel | null> | null = null;

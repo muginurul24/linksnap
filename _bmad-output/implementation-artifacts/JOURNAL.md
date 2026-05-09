@@ -8425,3 +8425,46 @@ Upgraded `/admin/analytics` from a basic client stats page into a read-only supe
 - ✅ API errors show friendly copy and request IDs only.
 
 **Next Task:** 22.6 — Redis Cache Policy Matrix.
+
+### 22.6 — Redis Cache Policy Matrix
+- **Date:** 2026-05-09 07:53 GMT+7
+- **Duration:** 0h 28m
+- **Status:** ✅ Complete
+
+**What I Did:**
+Documented the Redis cache policy matrix and added a typed cache policy contract that separates approved cache entries, ephemeral Redis state, and domains that must never be cached. Aligned existing QR, GeoIP, smart-rule, dashboard subscription, and analytics TTLs with the documented contract.
+
+**Files Changed:**
+- `_bmad-output/planning-artifacts/CACHE_POLICY.md` — Added cache principles, allowed cache matrix, ephemeral Redis state, do-not-cache matrix, and implementation rules.
+- `src/lib/cache/policy.ts` — Added the typed cache policy catalog, TTL constants, ephemeral state rules, and forbidden cache-helper terms.
+- `src/lib/rules/rule-engine.ts` — Exported the smart-rules TTL for policy verification.
+- `src/lib/geo/geoip.ts` — Exported the GeoIP lookup TTL for policy verification.
+- `src/lib/qr/cache.ts` — Exported the QR render cache TTL.
+- `src/app/api/v1/qr/[slug]/route.ts` — Reused the QR cache TTL constant in Redis and HTTP cache headers.
+- `tests/unit/cache-policy.test.ts` — Added policy alignment, do-not-cache, ephemeral state, and forbidden-helper coverage.
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Checked off 22.6.
+- `_bmad-output/implementation-artifacts/JOURNAL.md` — Logged 22.6.
+
+**Decisions Made:**
+- Classified admin analytics as `no-store` by default; future caching must use short-lived aggregates only, never mutation or authorization results.
+- Kept redirect metadata and click-count snapshots short-lived to reduce stale routing and analytics risk.
+- Treated rate limits, click queues, OTP/2FA, and pending-email-change records as ephemeral Redis state, not reusable response cache.
+
+**Tests:**
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Targeted unit: `rtk bun run test -- tests/unit/cache-policy.test.ts` — 6 passed.
+- ✅ Targeted QR integration: `rtk bun run test -- tests/integration/qr-api.test.ts` — 7 passed.
+- ✅ Full unit/integration: `rtk bun run test` — 148 passed, 1 skipped; 665 passed, 2 skipped.
+- ✅ Production build: `rtk bun run build` — Passed.
+
+**Issues Encountered:**
+- Local `.next/dev/types` contained a corrupted generated `routes.d.ts`; cleaned the generated dev types and reran typecheck successfully.
+
+**Security Checks:**
+- ✅ Superadmin authorization, auth sessions, payment/webhook mutations, CSRF/origin checks, API key plaintext, and raw analytics event lists are explicitly marked do-not-cache.
+- ✅ Cache keys are documented without secrets.
+- ✅ TTLs are bounded and tied to existing source constants where already implemented.
+- ✅ No secrets added.
+
+**Next Task:** 22.7 — Friendly Admin Mutation Failure UX.

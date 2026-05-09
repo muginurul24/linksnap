@@ -10,7 +10,7 @@ import { getClientIpFromHeaders } from "@/lib/analytics/ip";
 import { findQrGenerationLinkBySlug } from "@/lib/db/queries/links";
 import { hasReachedQrQuota } from "@/lib/links/limits";
 import { isRedirectLinkAvailable } from "@/lib/links/redirect";
-import { getQrCodeCacheKey } from "@/lib/qr/cache";
+import { getQrCodeCacheKey, QR_RENDER_CACHE_TTL_SECONDS } from "@/lib/qr/cache";
 import { cacheGet, cacheSet } from "@/lib/redis";
 import { slidingWindowRateLimit } from "@/lib/redis/rate-limit";
 import {
@@ -23,7 +23,6 @@ type QrRouteContext = {
   params: Promise<{ slug: string }>;
 };
 
-const QR_CACHE_TTL_SECONDS = 60 * 60 * 24;
 const QR_RATE_LIMIT_PER_MINUTE = 120;
 
 function getQueryParams(request: NextRequest): Record<string, string> {
@@ -118,7 +117,7 @@ function createQrResponse(base64: string, format: QrCodeQuery["format"]): Respon
   return new Response(Buffer.from(base64, "base64"), {
     headers: {
       "cache-control":
-        `public, max-age=${QR_CACHE_TTL_SECONDS}, s-maxage=${QR_CACHE_TTL_SECONDS}`,
+        `public, max-age=${QR_RENDER_CACHE_TTL_SECONDS}, s-maxage=${QR_RENDER_CACHE_TTL_SECONDS}`,
       "content-type": format === "svg" ? "image/svg+xml" : "image/png",
     },
   });
@@ -162,7 +161,7 @@ export async function GET(request: NextRequest, context: QrRouteContext) {
       ...parsedQuery.query,
       value: buildShortUrl(request, link.slug),
     });
-    await cacheSet(cacheKey, base64, QR_CACHE_TTL_SECONDS);
+    await cacheSet(cacheKey, base64, QR_RENDER_CACHE_TTL_SECONDS);
 
     return createQrResponse(base64, parsedQuery.query.format);
   } catch (error) {
