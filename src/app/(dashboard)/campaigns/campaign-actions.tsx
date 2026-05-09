@@ -121,7 +121,7 @@ export function CampaignActions({ id, name }: CampaignActionsProps) {
             <Edit className="mr-2 size-4" />
             Edit
           </DropdownMenuItem>
-          <DropdownMenuItem render={<Link href="/analytics" />}>
+          <DropdownMenuItem render={<Link href={`/campaigns/${id}`} />}>
             <BarChart3 className="mr-2 size-4" />
             Analytics
           </DropdownMenuItem>

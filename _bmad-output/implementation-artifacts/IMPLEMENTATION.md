@@ -3250,13 +3250,13 @@ Premium Flutter experience. 🟢
 
 ### TASK 24.2 — Campaign Cards with Performance Metrics
 
-- [ ] Enrich campaign list query with click aggregates (total, 7-day)
-- [ ] Add mini KPI row per card: Total Clicks, Links, 7-Day Clicks
-- [ ] Add sparkline chart per card (tiny 7-day trend)
-- [ ] Make card clickable → `/campaigns/[id]`
-- [ ] Add sort: Most Clicks, Most Links, Newest
-- [ ] Add search/filter campaigns
-- [ ] Add unit tests
+- [x] Enrich campaign list query with click aggregates (total, 7-day)
+- [x] Add mini KPI row per card: Total Clicks, Links, 7-Day Clicks
+- [x] Add sparkline chart per card (tiny 7-day trend)
+- [x] Make card clickable → `/campaigns/[id]`
+- [x] Add sort: Most Clicks, Most Links, Newest
+- [x] Add search/filter campaigns
+- [x] Add unit tests
 
 ### TASK 24.3 — Campaign Links Cross-Navigation
 

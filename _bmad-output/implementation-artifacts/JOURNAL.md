@@ -9170,6 +9170,50 @@ Built the authenticated `/campaigns/[id]` detail dashboard with campaign ownersh
 
 **Next Task:** 24.2 — Campaign Cards with Performance Metrics
 
+### 24.2 — Campaign Cards with Performance Metrics
+- **Date:** 2026-05-09 14:32 GMT+7
+- **Duration:** 55m
+- **Status:** ✅ Complete
+
+**What I Did:**
+Redesigned the `/campaigns` card grid to show real performance metrics per campaign: total clicks, link count, 7-day clicks, and a compact 7-day sparkline. Added server-side search and sort controls, made each campaign card navigate to the campaign detail analytics page, and pointed the card action menu analytics item to the new detail route.
+
+**Files Changed:**
+- `src/lib/db/queries/campaigns.ts` — Added batched campaign click aggregate and trend enrichment plus card sorting helpers.
+- `src/app/(dashboard)/campaigns/page.tsx` — Added search/sort controls, clickable metric cards, sparkline, and View Analytics CTA.
+- `src/app/(dashboard)/campaigns/loading.tsx` — Updated card skeletons for the new metric/sparkline layout.
+- `src/app/(dashboard)/campaigns/campaign-actions.tsx` — Pointed Analytics menu action to `/campaigns/[id]`.
+- `src/components/campaigns/campaign-performance-summary.tsx` — Added reusable mini KPI row.
+- `src/components/campaigns/campaign-sparkline.tsx` — Added tiny Recharts sparkline with empty state.
+- `tests/unit/campaign-cards.test.tsx` — Added unit coverage for sorting, metrics rendering, and sparkline states.
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Checked off 24.2.
+- `_bmad-output/implementation-artifacts/JOURNAL.md` — Logged 24.2.
+
+**Decisions Made:**
+- Enriched campaign cards in one batched query path instead of querying clicks per card, preventing N+1 behavior.
+- Treated CTA click events consistently with analytics summaries by excluding `LINK_PAGE_CTA_CLICK` from click totals.
+- Used a transparent card overlay for full-card navigation while keeping dropdown and CTA controls above it.
+
+**Tests:**
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Targeted unit: `rtk bun run test -- tests/unit/campaign-cards.test.tsx` — 3 passed.
+- ✅ Targeted E2E: `rtk bun run test:e2e -- tests/e2e/link-flow.spec.ts -g "should run campaign workflow"` — 1 passed.
+- ✅ Full unit/integration: `rtk bun run test` — 165 passed, 1 skipped; 751 passed, 2 skipped.
+- ✅ Production build: `rtk bun run build` — Passed.
+
+**Issues Encountered:**
+- The first card overlay stack made full-card click behavior less reliable on text areas; I moved the overlay above content and kept interactive controls above the overlay.
+- Type tests caught duplicate fixture fields in the unit helper; I destructured required values before applying overrides.
+
+**Security Checks:**
+- ✅ Campaign card metrics are loaded through authenticated server rendering.
+- ✅ No new state-changing browser API calls were added.
+- ✅ Click aggregate queries are batched and scoped to the authenticated user’s campaigns.
+- ✅ No secrets or sensitive analytics payloads logged.
+
+**Next Task:** 24.3 — Campaign Links Cross-Navigation
+
 ### 23.10 Follow-up — Full Quality Gate Stabilization
 - **Date:** 2026-05-09 13:56 GMT+7
 - **Duration:** 2h 40m
