@@ -1,6 +1,6 @@
 # Flutter Mobile Build Runbook
 
-- **Date:** 2026-05-09 20:05 GMT+7
+- **Date:** 2026-05-09 19:53 GMT+7
 - **Project:** `apps/mobile_flutter`
 - **Target:** Android APK and Play Store app bundle.
 - **Status:** blocked by local Flutter SDK bootstrap and missing Android platform directory.

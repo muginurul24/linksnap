@@ -9406,7 +9406,7 @@ Added a dedicated production Google OAuth smoke test and full setup procedure. R
 **Next Task:** 25.10 — Flutter Mobile App Build
 
 ### 25.10 — Flutter Mobile App Build
-- **Date:** 2026-05-09 20:05 GMT+7
+- **Date:** 2026-05-09 19:53 GMT+7
 - **Duration:** 20m
 - **Status:** ⚠️ Partial
 
@@ -9439,6 +9439,40 @@ Audited `apps/mobile_flutter`, verified Flutter/Dart commands exist through snap
 - ✅ No generated Android signing config was added.
 
 **Next Task:** 25.11 — Final Quality Gate & Go-Live
+
+### 25.11 — Final Quality Gate & Go-Live
+- **Date:** 2026-05-09 19:53 GMT+7
+- **Duration:** 15m
+- **Status:** ❌ Blocked
+
+**What I Did:**
+Reviewed Phase 25 readiness after 25.8, 25.9, and 25.10. Created a no-go readiness report instead of marking go-live complete while production OAuth and mobile build blockers remain.
+
+**Files Changed:**
+- `_bmad-output/planning-artifacts/go-live-readiness-2026-05-09.md` — Added final go-live decision, gate evidence, blockers, and recheck criteria.
+- `_bmad-output/planning-artifacts/flutter-mobile-build.md` — Corrected the timestamp to the actual session time.
+- `_bmad-output/implementation-artifacts/JOURNAL.md` — Logged 25.11 blocked status.
+
+**Decisions Made:**
+- Did not mark Phase 25.11 complete because Google OAuth production smoke is failing on canonical URL mismatch.
+- Did not mark go-live because manual full dashboard/public walkthrough should happen after the final production auth env redeploy.
+- Treated Flutter Android release as blocked until SDK bootstrap completes and Android platform files/artifacts exist.
+
+**Tests:**
+- ✅ Latest web gate from 25.8: typecheck, lint, full unit/integration, targeted E2E, and production build passed.
+- ❌ Production OAuth smoke from 25.9: failed on non-`www` Auth.js provider URLs.
+- ⚠️ Flutter APK/AAB from 25.10: not run because SDK bootstrap and `android/` platform files are missing.
+
+**Issues Encountered:**
+- The final launch gate depends on external Vercel/Google Console corrections that cannot be safely made from repository code alone.
+- Full go-live should wait for the canonical OAuth smoke, a manual Google login walkthrough, and the final production redeploy.
+
+**Security Checks:**
+- ✅ No secrets, provider credentials, cookies, signing keys, or production env values were read or committed.
+- ✅ No go-live claim was made while an auth provider is misconfigured.
+- ✅ Follow-up criteria require rerunning quality gates after final production env changes.
+
+**Next Task:** Resolve production OAuth env, finish Flutter toolchain if mobile remains in launch scope, then rerun 25.11.
 
 ### 24.9 — Global Cross-Navigation Polish
 - **Date:** 2026-05-09 15:45 GMT+7
