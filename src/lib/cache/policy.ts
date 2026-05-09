@@ -47,7 +47,7 @@ export const APPROVED_CACHE_POLICIES = {
     classification: "cache",
     invalidation:
       "Delete on admin plan override, subscription/payment settlement, and click queue processing; otherwise TTL bounds staleness.",
-    keyPattern: "linksnap:analytics:admin:{window}:{version}",
+    keyPattern: "linksnap:analytics:admin:window-{days}:{utcDay}:v{version}:v1",
     owner: "admin analytics",
     staleTolerance: "<=30 seconds; control center can be briefly stale.",
     storage: "redis",
@@ -58,7 +58,7 @@ export const APPROVED_CACHE_POLICIES = {
     classification: "cache",
     invalidation:
       "Delete on link/page/rule mutations and click queue processing; otherwise TTL bounds staleness.",
-    keyPattern: "linksnap:analytics:dashboard:{userId}:{from}:{to}:{version}",
+    keyPattern: "linksnap:analytics:dashboard:{userId}:{from}:{to}:u{userVersion}:g{globalVersion}:v1",
     owner: "dashboard analytics",
     staleTolerance: "<=60 seconds; user charts can lag briefly.",
     storage: "redis",

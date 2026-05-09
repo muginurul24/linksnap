@@ -13,9 +13,8 @@ import {
   upsertSplitTestForLink,
   type SplitTestRecord,
 } from "@/lib/db/queries/split-tests";
+import { invalidateLinkMutationCaches } from "@/lib/cache/invalidation";
 import { getApiEndpointRateLimit, type UserPlan } from "@/lib/links/limits";
-import { getRedirectCacheKey } from "@/lib/links/redirect";
-import { cacheDelete } from "@/lib/redis";
 import { slidingWindowRateLimit } from "@/lib/redis/rate-limit";
 import { linkIdParamsSchema, type LinkIdParams } from "@/lib/validations/link";
 import { upsertSplitTestSchema } from "@/lib/validations/split-test";
@@ -140,10 +139,6 @@ function handleKnownError(error: unknown, requestId: string): Response | null {
   return null;
 }
 
-async function invalidateRedirectCache(slug: string): Promise<void> {
-  await cacheDelete(getRedirectCacheKey(slug));
-}
-
 export async function GET(
   request: NextRequest,
   context: SplitTestRouteContext,
@@ -209,7 +204,12 @@ export async function POST(
       variants: parsedBody.data.variants,
     });
 
-    await invalidateRedirectCache(link.slug);
+    await invalidateLinkMutationCaches({
+      reason: "split_test_update",
+      requestId,
+      slugs: [link.slug],
+      userId: authResult.userId,
+    });
 
     return successResponse(formatSplitTest(splitTest));
   } catch (error) {
@@ -242,7 +242,12 @@ export async function DELETE(
     const link = await getAuthorizedLink(parsedParams.params.id, authResult.userId);
     const deleted = await deleteSplitTestForLink(link.id);
 
-    await invalidateRedirectCache(link.slug);
+    await invalidateLinkMutationCaches({
+      reason: "split_test_delete",
+      requestId,
+      slugs: [link.slug],
+      userId: authResult.userId,
+    });
 
     return successResponse({
       deleted: Boolean(deleted),

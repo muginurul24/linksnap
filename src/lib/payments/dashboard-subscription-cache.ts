@@ -1,4 +1,5 @@
 import { findBillingUserById } from "@/lib/db/queries/payments";
+import { buildDashboardSubscriptionCacheKey } from "@/lib/cache/keys";
 import type { UserPlan } from "@/lib/links/limits";
 import { cacheDelete, cacheGet, cacheSet } from "@/lib/redis";
 import { syncSubscriptionStatusForUser } from "@/lib/payments/subscription";
@@ -12,7 +13,7 @@ export type DashboardSubscriptionSnapshot = {
 };
 
 export function getDashboardSubscriptionCacheKey(userId: string): string {
-  return `dashboard:subscription:${userId}`;
+  return buildDashboardSubscriptionCacheKey(userId);
 }
 
 export async function getDashboardSubscriptionSnapshot(

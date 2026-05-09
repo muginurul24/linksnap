@@ -9,6 +9,7 @@ import {
   processRedirectClickQueue,
   REDIRECT_CLICK_QUEUE_PROCESS_LIMIT,
 } from "@/lib/analytics/click-queue";
+import { invalidateClickQueueProcessingCaches } from "@/lib/cache/invalidation";
 
 export const runtime = "nodejs";
 
@@ -53,6 +54,11 @@ export async function GET(request: NextRequest) {
 
     const result = await processRedirectClickQueue({
       limit: getProcessLimit(request),
+    });
+    await invalidateClickQueueProcessingCaches({
+      processed: result.processed,
+      reason: "click_queue_processing",
+      requestId,
     });
 
     return successResponse(result, 200);

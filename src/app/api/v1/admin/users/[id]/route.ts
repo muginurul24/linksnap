@@ -6,6 +6,7 @@ import {
   suspendUser,
   unsuspendUser,
 } from "@/lib/db/queries/admin";
+import { invalidateAdminPlanOverrideCaches } from "@/lib/cache/invalidation";
 import {
   adminUpdateUserPlanSchema,
   adminSuspendUserSchema,
@@ -100,6 +101,11 @@ export async function PATCH(
         admin.requestId,
       ));
     }
+    await invalidateAdminPlanOverrideCaches({
+      reason: "admin_plan_override",
+      requestId: admin.requestId,
+      userId: id,
+    });
 
     // Audit log (fire-and-forget)
     void writeAdminAuditLog({

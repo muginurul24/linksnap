@@ -10,6 +10,7 @@ import {
   InvalidSubscriptionPaymentError,
   createOrRenewSubscriptionForPayment,
 } from "@/lib/payments/subscription";
+import { invalidateSubscriptionCaches } from "@/lib/cache/invalidation";
 import {
   mapPayGateStatus,
   parsePayGateTimestamp,
@@ -126,6 +127,10 @@ export async function handlePayGatePaymentWebhook(
   if (statusAction.activateSubscription) {
     try {
       await createOrRenewSubscriptionForPayment(updatedTransaction);
+      await invalidateSubscriptionCaches({
+        reason: "payment_subscription_activation",
+        userId: updatedTransaction.userId,
+      });
     } catch (error) {
       if (error instanceof InvalidSubscriptionPaymentError) {
         throw new InvalidPaymentPlanError(updatedTransaction.orderId);

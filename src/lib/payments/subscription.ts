@@ -33,6 +33,7 @@ export type SubscriptionSnapshot = {
 export type ExpireDueSubscriptionsResult = {
   expiredSubscriptions: number;
   downgradedUsers: number;
+  userIds: string[];
 };
 
 export class InvalidSubscriptionPaymentError extends Error {
@@ -155,6 +156,7 @@ export async function expireDueSubscriptions({
     return {
       downgradedUsers: 0,
       expiredSubscriptions: 0,
+      userIds: [],
     };
   }
 
@@ -169,5 +171,6 @@ export async function expireDueSubscriptions({
   return {
     downgradedUsers,
     expiredSubscriptions: expiredCount,
+    userIds: expiredSubscriptions.map((subscription) => subscription.userId),
   };
 }

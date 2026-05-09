@@ -15,14 +15,13 @@ import {
   updateLinkRecordForUser,
   type LinkDetail,
 } from "@/lib/db/queries/links";
+import { invalidateLinkMutationCaches } from "@/lib/cache/invalidation";
 import {
   canUseCustomSlug,
   getApiEndpointRateLimit,
   type UserPlan,
 } from "@/lib/links/limits";
 import { hydrateRedirectClickCounts } from "@/lib/links/click-count-cache";
-import { getRedirectCacheKey } from "@/lib/links/redirect";
-import { cacheDelete } from "@/lib/redis";
 import { slidingWindowRateLimit } from "@/lib/redis/rate-limit";
 import {
   linkIdParamsSchema,
@@ -201,13 +200,6 @@ function handleKnownError(error: unknown, requestId: string): Response | null {
   return null;
 }
 
-async function invalidateRedirectCaches(...slugs: string[]): Promise<void> {
-  const uniqueSlugs = [...new Set(slugs)];
-  await Promise.all(
-    uniqueSlugs.map((slug) => cacheDelete(getRedirectCacheKey(slug))),
-  );
-}
-
 export async function GET(request: NextRequest, context: LinkRouteContext) {
   const requestId = createRequestId();
 
@@ -263,7 +255,12 @@ export async function PATCH(request: NextRequest, context: LinkRouteContext) {
     const updated = await updateLink(parsedParams.params.id, authResult.userId, parsedBody.data);
     if (!updated) throw new LinkNotFoundError();
 
-    await invalidateRedirectCaches(existingSlug, updated.slug);
+    await invalidateLinkMutationCaches({
+      reason: "link_update",
+      requestId,
+      slugs: [existingSlug, updated.slug],
+      userId: authResult.userId,
+    });
 
     return successResponse(formatLinkDetail(request, await withFreshClickCount(updated)));
   } catch (error) {
@@ -299,7 +296,12 @@ export async function DELETE(request: NextRequest, context: LinkRouteContext) {
     const deleted = await softDeleteLinkForUser(parsedParams.params.id, authResult.userId);
     if (!deleted) throw new LinkNotFoundError();
 
-    await invalidateRedirectCaches(existingLink.slug);
+    await invalidateLinkMutationCaches({
+      reason: "link_delete",
+      requestId,
+      slugs: [existingLink.slug],
+      userId: authResult.userId,
+    });
 
     return successResponse({ deleted: true, id: deleted.id });
   } catch (error) {

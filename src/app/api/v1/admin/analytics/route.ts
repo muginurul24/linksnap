@@ -1,5 +1,5 @@
 import { adminRouteGuard, withAdminActionHeader } from "@/lib/admin/guard";
-import { getSystemStats } from "@/lib/db/queries/admin";
+import { getCachedAdminSystemStats } from "@/lib/cache/analytics";
 import {
   errorResponse,
   logApiErrorResponse,
@@ -13,7 +13,7 @@ export async function GET() {
   const { admin } = guard;
 
   try {
-    const stats = await getSystemStats();
+    const stats = await getCachedAdminSystemStats();
     const response = withAdminActionHeader(successResponse(stats));
     response.headers.set("Cache-Control", "no-store");
 

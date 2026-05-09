@@ -5,6 +5,7 @@ import {
   logApiErrorResponse,
   successResponse,
 } from "@/lib/api/response";
+import { invalidateSubscriptionCaches } from "@/lib/cache/invalidation";
 import { expireDueSubscriptions } from "@/lib/payments/subscription";
 
 export const runtime = "nodejs";
@@ -39,6 +40,16 @@ export async function GET(request: NextRequest) {
     }
 
     const result = await expireDueSubscriptions();
+    const userIds = result.userIds ?? [];
+    await Promise.all(
+      userIds.map((userId) =>
+        invalidateSubscriptionCaches({
+          reason: "subscription_expiry",
+          requestId,
+          userId,
+        }),
+      ),
+    );
 
     return successResponse(
       {

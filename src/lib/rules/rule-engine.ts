@@ -1,5 +1,6 @@
 import { getClientIpFromHeaders } from "@/lib/analytics/ip";
 import { parseUserAgent } from "@/lib/analytics/user-agent";
+import { buildSmartRulesCacheKey } from "@/lib/cache/keys";
 import type { SmartRuleRecord } from "@/lib/db/queries/smart-rules";
 import { listSmartRulesByLinkId } from "@/lib/db/queries/smart-rules";
 import {
@@ -63,7 +64,7 @@ type SmartRuleV2Payload = {
 };
 
 export function getSmartRulesCacheKey(slug: string): string {
-  return `smart-rules:${slug}`;
+  return buildSmartRulesCacheKey(slug);
 }
 
 export function buildRuleEvaluationContext(

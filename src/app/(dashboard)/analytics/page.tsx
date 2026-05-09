@@ -15,7 +15,7 @@ import {
 import { analyticsEmptyState } from "@/lib/analytics/empty-state";
 import { auth } from "@/lib/auth";
 import { getSessionUserId } from "@/lib/auth/session-helpers";
-import { getDashboardAnalyticsAggregatesForUser } from "@/lib/db/queries/click-events";
+import { getCachedDashboardAnalyticsAggregates } from "@/lib/cache/analytics";
 import { getUserPlanById } from "@/lib/db/queries/links";
 import { dashboardAnalyticsQuerySchema } from "@/lib/validations/analytics";
 import { AnalyticsDashboardClient } from "@/app/(dashboard)/analytics/analytics-dashboard-client";
@@ -248,7 +248,7 @@ export default async function AnalyticsPage({ searchParams }: AnalyticsPageProps
     params,
     getDashboardAnalyticsRetentionDays(userPlan),
   );
-  const aggregates = await getDashboardAnalyticsAggregatesForUser({
+  const aggregates = await getCachedDashboardAnalyticsAggregates({
     from: range.from,
     to: range.to,
     userId,

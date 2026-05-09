@@ -15,13 +15,12 @@ import {
   type LinkDetail,
   type LinkPageRecord,
 } from "@/lib/db/queries/links";
+import { invalidateLinkPageCaches } from "@/lib/cache/invalidation";
 import {
   getApiEndpointRateLimit,
   hasReachedLinkPageQuota,
   type UserPlan,
 } from "@/lib/links/limits";
-import { getRedirectCacheKey } from "@/lib/links/redirect";
-import { cacheDelete } from "@/lib/redis";
 import { slidingWindowRateLimit } from "@/lib/redis/rate-limit";
 import { linkIdParamsSchema, type LinkIdParams } from "@/lib/validations/link";
 import {
@@ -269,7 +268,12 @@ export async function POST(request: NextRequest, context: LinkPageRouteContext) 
       id: link.id,
       userId: authResult.userId,
     });
-    await cacheDelete(getRedirectCacheKey(link.slug));
+    await invalidateLinkPageCaches({
+      reason: "link_page_update",
+      requestId,
+      slugs: [link.slug],
+      userId: authResult.userId,
+    });
 
     return successResponse(
       {

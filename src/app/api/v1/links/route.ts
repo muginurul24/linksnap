@@ -8,6 +8,7 @@ import {
   successResponse,
 } from "@/lib/api/response";
 import { buildShortUrl } from "@/lib/api/base-url";
+import { invalidateLinkCreateCaches } from "@/lib/cache/invalidation";
 import {
   createListMeta,
   parseCreatedAtCursorParam,
@@ -194,6 +195,11 @@ export async function POST(request: NextRequest) {
       authResult.userId,
       authResult.userPlan,
     );
+    await invalidateLinkCreateCaches({
+      reason: "link_create",
+      requestId,
+      userId: authResult.userId,
+    });
 
     return successResponse(
       {

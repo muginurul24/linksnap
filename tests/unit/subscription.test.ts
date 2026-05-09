@@ -210,6 +210,7 @@ describe("subscription management", () => {
     await expect(expireDueSubscriptions()).resolves.toEqual({
       downgradedUsers: 2,
       expiredSubscriptions: 2,
+      userIds: ["user-1", "user-2"],
     });
     expect(mockState.expiredIds).toEqual(["subscription-1", "subscription-2"]);
     expect(mockState.userPlanUpdates).toEqual([

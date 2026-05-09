@@ -297,7 +297,7 @@ export async function unsuspendUser(
 }
 
 const DAY_MS = 24 * 60 * 60 * 1000;
-const ADMIN_ANALYTICS_WINDOW_DAYS = 30;
+export const ADMIN_ANALYTICS_WINDOW_DAYS = 30;
 
 function dateKey(date: Date): string {
   return date.toISOString().slice(0, 10);

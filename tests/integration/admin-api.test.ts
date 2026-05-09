@@ -85,12 +85,19 @@ vi.mock("@/lib/admin/audit", () => ({
 }));
 
 vi.mock("@/lib/db/queries/admin", () => ({
+  ADMIN_ANALYTICS_WINDOW_DAYS: 30,
   getSystemStats: async () => mockState.stats,
   getUserDetailById: async () => mockState.userDetail,
   listAllUsers: async () => ({ total: mockState.listedUsers.length, users: mockState.listedUsers }),
   suspendUser: async () => true,
   unsuspendUser: async () => true,
   updateUserPlan: async () => ({ previousPlan: "FREE", updated: true }),
+}));
+
+vi.mock("@/lib/redis", () => ({
+  cacheDelete: async () => {},
+  cacheGet: async () => null,
+  cacheSet: async () => {},
 }));
 
 vi.mock("@/lib/db/queries/admin-audit", () => ({

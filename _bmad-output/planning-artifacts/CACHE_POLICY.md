@@ -22,8 +22,8 @@
 | QR render payload | Redis + HTTP | `linksnap:qr:{slug}:{format}:{size}` | 86400s | Public slug and render params | Link destination/availability changes, otherwise TTL | Up to 24h when link availability is unchanged |
 | GeoIP lookup | Redis | `linksnap:geo:{publicIpAddress}` | 86400s | Public IP lookup result only | TTL only; MaxMind refresh ages out old values | Up to 24h for analytics enrichment |
 | Dashboard subscription snapshot | Redis | `linksnap:dashboard:subscription:{userId}` | 60s | Single authenticated user | Profile update, subscription renewal, payment settlement, admin plan override | Up to 60s; not used for payment mutation authorization |
-| Dashboard analytics aggregates | Redis | `linksnap:analytics:dashboard:{userId}:{from}:{to}:{version}` | 60s | Single authenticated user | Link/Page/Rule mutations and click queue processing | Up to 60s |
-| Admin analytics aggregates | Redis | `linksnap:analytics:admin:{window}:{version}` | 30s | Superadmin aggregate data only | Admin plan override, subscription/payment settlement, click queue processing | Up to 30s |
+| Dashboard analytics aggregates | Redis | `linksnap:analytics:dashboard:{userId}:{from}:{to}:u{userVersion}:g{globalVersion}:v1` | 60s | Single authenticated user | Link/Page/Rule mutations bump user version; click queue processing bumps global version | Up to 60s |
+| Admin analytics aggregates | Redis | `linksnap:analytics:admin:window-{days}:{utcDay}:v{version}:v1` | 30s | Superadmin aggregate data only | Admin plan override, subscription/payment settlement, click queue processing | Up to 30s |
 | Public marketing content | HTTP/CDN | `HTTP:{path}:{locale}` | 3600s | Public, no user data | Redeploy or path revalidation | Up to 1h |
 
 ## Redis As Ephemeral State, Not Cache

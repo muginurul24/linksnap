@@ -13,7 +13,7 @@ import {
   logApiErrorResponse,
   successResponse,
 } from "@/lib/api/response";
-import { getDashboardAnalyticsAggregatesForUser } from "@/lib/db/queries/click-events";
+import { getCachedDashboardAnalyticsAggregates } from "@/lib/cache/analytics";
 import { getUserPlanById } from "@/lib/db/queries/links";
 import { getApiEndpointRateLimit, type UserPlan } from "@/lib/links/limits";
 import { slidingWindowRateLimit } from "@/lib/redis/rate-limit";
@@ -96,7 +96,7 @@ export async function GET(request: NextRequest) {
     const range = normalizeDashboardAnalyticsRange(parsedQuery.data, new Date(), {
       retentionDays: getDashboardAnalyticsRetentionDays(authResult.userPlan),
     });
-    const aggregates = await getDashboardAnalyticsAggregatesForUser({
+    const aggregates = await getCachedDashboardAnalyticsAggregates({
       from: range.from,
       to: range.to,
       userId: authResult.userId,

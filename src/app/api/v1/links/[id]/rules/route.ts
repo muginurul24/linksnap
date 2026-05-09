@@ -18,8 +18,7 @@ import {
   getSmartRuleQuota,
   type UserPlan,
 } from "@/lib/links/limits";
-import { getRedirectCacheKey } from "@/lib/links/redirect";
-import { cacheDelete } from "@/lib/redis";
+import { invalidateSmartRuleCaches } from "@/lib/cache/invalidation";
 import { slidingWindowRateLimit } from "@/lib/redis/rate-limit";
 import { linkIdParamsSchema, type LinkIdParams } from "@/lib/validations/link";
 import {
@@ -31,7 +30,6 @@ import {
   type DeleteSmartRuleQuery,
   type SmartRuleV2Input,
 } from "@/lib/validations/smart-rule";
-import { getSmartRulesCacheKey } from "@/lib/rules/rule-engine";
 
 type SmartRulesRouteContext = {
   params: Promise<{ id: string }>;
@@ -324,13 +322,6 @@ function handleKnownError(error: unknown, requestId: string): Response | null {
   return null;
 }
 
-async function invalidateSmartRuleCaches(slug: string): Promise<void> {
-  await Promise.all([
-    cacheDelete(getRedirectCacheKey(slug)),
-    cacheDelete(getSmartRulesCacheKey(slug)),
-  ]);
-}
-
 export async function GET(request: NextRequest, context: SmartRulesRouteContext) {
   const requestId = createRequestId();
 
@@ -391,7 +382,12 @@ async function upsertRules(
       linkId: link.id,
       rules: parsedBody.data.rules,
     });
-    await invalidateSmartRuleCaches(link.slug);
+    await invalidateSmartRuleCaches({
+      reason: "smart_rules_update",
+      requestId,
+      slugs: [link.slug],
+      userId: authResult.userId,
+    });
 
     return successResponse({ linkId: link.id, ...serializeRulesForResponse(rules) });
   } catch (error) {
@@ -436,7 +432,12 @@ export async function DELETE(request: NextRequest, context: SmartRulesRouteConte
     });
     if (!deleted) throw new SmartRuleNotFoundError();
 
-    await invalidateSmartRuleCaches(link.slug);
+    await invalidateSmartRuleCaches({
+      reason: "smart_rules_delete",
+      requestId,
+      slugs: [link.slug],
+      userId: authResult.userId,
+    });
 
     return successResponse({ deleted: true, ruleId: deleted.id });
   } catch (error) {

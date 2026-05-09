@@ -78,6 +78,11 @@ vi.mock("@/lib/redis/rate-limit", () => ({
   },
 }));
 
+vi.mock("@/lib/redis", () => ({
+  cacheGet: async () => null,
+  cacheSet: async () => {},
+}));
+
 vi.mock("@/lib/db/queries/click-events", () => ({
   getDashboardAnalyticsAggregatesForUser: async (
     input: ListClickEventsForUserInput,

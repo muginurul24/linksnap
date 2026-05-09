@@ -13,9 +13,13 @@ describe("dashboard analytics contract wiring", () => {
     ]) {
       const source = readSource(file);
 
-      expect(source).toContain("getDashboardAnalyticsAggregatesForUser");
+      expect(source).toContain("getCachedDashboardAnalyticsAggregates");
       expect(source).not.toContain("listClickEventsForUser");
     }
+
+    const cacheSource = readSource("src/lib/cache/analytics.ts");
+    expect(cacheSource).toContain("getDashboardAnalyticsAggregatesForUser");
+    expect(cacheSource).not.toContain("listClickEventsForUser");
   });
 
   it("should expose the final dashboard analytics contract fields", () => {

@@ -2994,17 +2994,17 @@ Premium Flutter experience. 🟢
 
 ### TASK 22.7 — Typed Cache Keys & Invalidation Helpers
 
-- [ ] Introduce typed cache key builders for dashboard/admin analytics aggregates.
-- [ ] Keep keys scoped by user/admin/range and never by unsanitized free-form input.
-- [ ] Add invalidation helpers for:
+- [x] Introduce typed cache key builders for dashboard/admin analytics aggregates.
+- [x] Keep keys scoped by user/admin/range and never by unsanitized free-form input.
+- [x] Add invalidation helpers for:
   - link create/update/delete
   - Link Page changes
   - Smart Rules changes
   - click queue processing
   - subscription/plan changes
   - admin plan overrides
-- [ ] Keep Redis failures non-fatal but logged through the project logger.
-- [ ] Add tests for cache hit, miss, invalidation, and Redis failure fallback.
+- [x] Keep Redis failures non-fatal but logged through the project logger.
+- [x] Add tests for cache hit, miss, invalidation, and Redis failure fallback.
 
 ### TASK 22.8 — Dashboard & Admin Error Boundaries Pass
 

@@ -8467,4 +8467,56 @@ Documented the Redis cache policy matrix and added a typed cache policy contract
 - ✅ TTLs are bounded and tied to existing source constants where already implemented.
 - ✅ No secrets added.
 
-**Next Task:** 22.7 — Friendly Admin Mutation Failure UX.
+**Next Task:** 22.7 — Typed Cache Keys & Invalidation Helpers.
+
+### 22.7 — Typed Cache Keys & Invalidation Helpers
+- **Date:** 2026-05-09 08:09 GMT+7
+- **Duration:** 1h 8m
+- **Status:** ✅ Complete
+
+**What I Did:**
+Added typed cache key builders and cache wrappers for dashboard/admin analytics aggregates, then wired invalidation into link mutations, Link Page changes, Smart Rules changes, split-test redirect behavior changes, click queue processing, subscription changes, payment settlement, and admin plan overrides. Redis cache failures now remain non-fatal while being logged through the project logger.
+
+**Files Changed:**
+- `src/lib/cache/keys.ts` — Added sanitized typed key builders for analytics versions, analytics cache payloads, dashboard subscription snapshots, and Smart Rules cache keys.
+- `src/lib/cache/analytics.ts` — Added cache hit/miss wrappers for dashboard analytics aggregates and admin system analytics.
+- `src/lib/cache/invalidation.ts` — Added centralized invalidation helpers and version-bump helpers for user/global/admin analytics caches.
+- `src/lib/redis/index.ts` — Logged cache get/set/delete failures while keeping cache best-effort.
+- `src/app/api/v1/analytics/route.ts` and `src/app/(dashboard)/analytics/page.tsx` — Switched dashboard analytics reads to the typed cache wrapper.
+- `src/app/api/v1/admin/analytics/route.ts` — Switched admin analytics reads to the typed cache wrapper while preserving `no-store` response headers.
+- `src/app/api/v1/links/**` — Replaced local cache deletion with centralized invalidation for link, Link Page, Smart Rules, and split-test mutations.
+- `src/app/api/v1/analytics/click-queue/process/route.ts` — Invalidated analytics versions after queued click processing.
+- `src/app/api/v1/admin/users/[id]/route.ts` — Invalidated subscription/dashboard/admin caches after admin plan overrides.
+- `src/lib/payments/paygate-webhook-handler.ts`, `src/lib/payments/subscription.ts`, and `src/app/api/v1/payments/subscriptions/renew/route.ts` — Invalidated subscription-related caches after payment activation and scheduled expiry.
+- `src/lib/cache/policy.ts` and `_bmad-output/planning-artifacts/CACHE_POLICY.md` — Updated analytics key patterns to reflect versioned typed keys.
+- `tests/unit/cache-helpers.test.ts` — Added cache key, hit, miss, invalidation, and Redis failure fallback coverage.
+- Existing analytics/admin/subscription tests — Updated mocks and contract expectations for cached aggregate wiring.
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Checked off 22.7.
+- `_bmad-output/implementation-artifacts/JOURNAL.md` — Logged 22.7.
+
+**Decisions Made:**
+- Used short-lived version keys instead of broad Redis scans, so invalidation is cheap and old aggregate keys age out by TTL.
+- Added both per-user and global dashboard analytics versions; user mutations bump only that user, while click queue processing bumps the global analytics version.
+- Kept HTTP responses for authenticated/admin analytics uncached even when server-side aggregate reads use Redis.
+
+**Tests:**
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Targeted unit/integration: `rtk bun run test -- tests/integration/dashboard-analytics-api.test.ts tests/integration/admin-api.test.ts tests/integration/create-link-api.test.ts tests/integration/link-item-api.test.ts tests/integration/link-page-api.test.ts tests/integration/smart-rules-api.test.ts tests/integration/split-test-api.test.ts tests/integration/click-queue-cron-api.test.ts tests/integration/subscription-renew-cron-api.test.ts tests/integration/payment-webhook-api.test.ts tests/integration/payment-create-webhook-flow.test.ts tests/unit/cache-helpers.test.ts tests/unit/cache-policy.test.ts` — 80 passed.
+- ✅ Additional targeted flows: `rtk bun run test -- tests/integration/create-redirect-click-flow.test.ts tests/integration/smart-rule-redirect-flow.test.ts` — 7 passed.
+- ✅ Full unit/integration: `rtk bun run test` — 149 passed, 1 skipped; 671 passed, 2 skipped.
+- ✅ Production build: `rtk bun run build` — Passed.
+
+**Issues Encountered:**
+- Existing analytics/admin tests did not mock the new Redis cache wrapper and initially touched Upstash with missing test credentials; added local Redis mocks for those route tests.
+- Existing dashboard analytics contract expected direct DB aggregate imports in route/page files; updated it to assert cached aggregate wiring and direct DB aggregate use inside the cache wrapper.
+- Subscription expiry tests expected only counts; updated them to include affected `userIds` used for cache invalidation.
+
+**Security Checks:**
+- ✅ Cache keys are built from sanitized user/admin/range segments, not free-form request input.
+- ✅ Auth sessions, authorization checks, payment mutation outcomes, and webhook verification remain uncached.
+- ✅ Redis failures do not break user/admin/payment mutations.
+- ✅ Cache logs include keys and request IDs where available, with no payload values or secrets.
+- ✅ Analytics responses remain scoped by authenticated user or superadmin guard.
+
+**Next Task:** 22.8 — Dashboard & Admin Error Boundaries Pass.
