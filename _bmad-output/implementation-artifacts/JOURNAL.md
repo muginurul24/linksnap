@@ -9261,6 +9261,49 @@ Added a campaign links management section to `/campaigns/[id]` with an attached-
 
 **Next Task:** 24.4 — Link Pages → Analytics Cross-Navigation
 
+### 24.4 — Link Pages → Analytics Cross-Navigation
+- **Date:** 2026-05-09 14:53 GMT+7
+- **Duration:** 45m
+- **Status:** ✅ Complete
+
+**What I Did:**
+Enhanced `/pages` cards with real Link Page performance data: all-time page views, CTA clicks, 7-day page views, CTR badge, and a compact page-view sparkline. Made cards and "View Analytics" actions navigate toward analytics context, and added a route error state plus updated skeletons for the richer card layout.
+
+**Files Changed:**
+- `src/lib/db/queries/links.ts` — Added Link Page CTR, 7-day trend, and 7-day page-view enrichment.
+- `src/app/(dashboard)/pages/page.tsx` — Added clickable analytics cards, CTR badge, sparkline, and View Analytics CTA.
+- `src/app/(dashboard)/pages/loading.tsx` — Updated loading skeleton for the richer card layout.
+- `src/app/(dashboard)/pages/error.tsx` — Added friendly retry/create error state.
+- `src/components/link-pages/link-page-performance-summary.tsx` — Added reusable Link Page mini KPI row and CTR formatter.
+- `src/components/link-pages/link-page-sparkline.tsx` — Added tiny page-view sparkline with empty state.
+- `tests/unit/link-pages-list.test.tsx` — Added unit coverage for Link Page metrics and sparkline states.
+- `tests/integration/list-link-pages-api.test.ts` — Updated Link Page API fixture for new analytics fields.
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Checked off 24.4.
+- `_bmad-output/implementation-artifacts/JOURNAL.md` — Logged 24.4.
+
+**Decisions Made:**
+- Kept Link Page analytics enrichment batched in the existing link query hydrator to avoid per-card queries.
+- Used CTR as CTA clicks divided by Link Page views, matching the analytics model already used elsewhere.
+- Pointed analytics navigation at the existing analytics route with `linkId` context in the URL so future per-link filtering has a stable entry point.
+
+**Tests:**
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Targeted unit/integration: `rtk bun run test -- tests/unit/link-pages-list.test.tsx tests/integration/list-link-pages-api.test.ts` — 7 passed.
+- ✅ Full unit/integration: `rtk bun run test` — 166 passed, 1 skipped; 753 passed, 2 skipped.
+- ✅ Production build: `rtk bun run build` — Passed.
+
+**Issues Encountered:**
+- Existing Link Page API fixtures needed the new analytics fields added to satisfy the expanded `ListedLinkPage` contract.
+
+**Security Checks:**
+- ✅ Query remains scoped to authenticated user-owned links.
+- ✅ No new state-changing browser API calls were added.
+- ✅ No raw user-owned URLs or analytics payloads are logged.
+- ✅ No new cache layer added for live Link Page analytics.
+
+**Next Task:** 24.5 — QR Codes Page Enhancement
+
 ### 23.10 Follow-up — Full Quality Gate Stabilization
 - **Date:** 2026-05-09 13:56 GMT+7
 - **Duration:** 2h 40m

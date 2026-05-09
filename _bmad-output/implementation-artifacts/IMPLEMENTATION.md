@@ -3269,11 +3269,11 @@ Premium Flutter experience. 🟢
 
 ### TASK 24.4 — Link Pages → Analytics Cross-Navigation
 
-- [ ] Add per-page analytics: 7-day sparkline, CTR badge
-- [ ] Make cards clickable → link analytics
-- [ ] "View Analytics" button per card
-- [ ] Loading skeleton, error state
-- [ ] Add unit tests
+- [x] Add per-page analytics: 7-day sparkline, CTR badge
+- [x] Make cards clickable → link analytics
+- [x] "View Analytics" button per card
+- [x] Loading skeleton, error state
+- [x] Add unit tests
 
 ### TASK 24.5 — QR Codes Page Enhancement
 

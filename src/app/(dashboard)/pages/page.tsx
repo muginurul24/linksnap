@@ -12,6 +12,11 @@ import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { ButtonLink } from "@/components/ui/button-link";
 import { EmptyState } from "@/components/dashboard/empty-state";
+import {
+  formatCtr,
+  LinkPagePerformanceSummary,
+} from "@/components/link-pages/link-page-performance-summary";
+import { LinkPageSparkline } from "@/components/link-pages/link-page-sparkline";
 import { auth } from "@/lib/auth";
 import { getSessionUserId } from "@/lib/auth/session-helpers";
 import {
@@ -37,11 +42,21 @@ import {
 
 function LinkPageCard({ page }: { page: ListedLinkPage }) {
   const editHref = `/links/${page.slug}/edit`;
+  const analyticsHref = `/analytics?range=30&linkId=${encodeURIComponent(page.linkId)}`;
   const previewHref = `/${page.slug}`;
 
   return (
-    <Card className={!page.isActive ? "opacity-60" : ""}>
-      <CardHeader className="pb-3">
+    <Card
+      className={`group relative overflow-hidden transition-colors hover:border-primary/40 hover:bg-muted/20 ${
+        !page.isActive ? "opacity-60" : ""
+      }`}
+    >
+      <Link
+        aria-label={`View analytics for ${page.brandName}`}
+        className="absolute inset-0 z-10"
+        href={analyticsHref}
+      />
+      <CardHeader className="relative pb-3">
         <div className="flex items-start justify-between">
           <div className="flex min-w-0 items-center gap-2">
             <div className="flex aspect-square size-10 shrink-0 items-center justify-center rounded-lg bg-primary/10">
@@ -54,7 +69,7 @@ function LinkPageCard({ page }: { page: ListedLinkPage }) {
               </CardDescription>
             </div>
           </div>
-          <div className="flex items-center gap-1">
+          <div className="relative z-20 flex items-center gap-1">
             <Switch
               aria-label={`Link Page status for ${page.slug}`}
               checked={page.isActive}
@@ -79,7 +94,7 @@ function LinkPageCard({ page }: { page: ListedLinkPage }) {
                   <ExternalLink className="mr-2 size-4" />
                   Preview
                 </DropdownMenuItem>
-                <DropdownMenuItem render={<Link href="/analytics" />}>
+                <DropdownMenuItem render={<Link href={analyticsHref} />}>
                   <Eye className="mr-2 size-4" />
                   View Analytics
                 </DropdownMenuItem>
@@ -88,7 +103,7 @@ function LinkPageCard({ page }: { page: ListedLinkPage }) {
           </div>
         </div>
       </CardHeader>
-      <CardContent>
+      <CardContent className="relative">
         <p className="mb-4 line-clamp-2 min-h-10 text-sm">{page.title}</p>
         <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
           <span className="flex items-center gap-1">
@@ -108,24 +123,38 @@ function LinkPageCard({ page }: { page: ListedLinkPage }) {
             </span>
           )}
         </div>
-        <div className="mt-4 grid grid-cols-2 gap-3 rounded-lg border bg-muted/50 p-3">
-          <div>
-            <p className="text-xs text-muted-foreground">Page Views</p>
-            <p className="text-lg font-bold tabular-nums">
-              {page.pageViews.toLocaleString()}
-            </p>
-          </div>
-          <div>
-            <p className="text-xs text-muted-foreground">CTA Clicks</p>
-            <p className="text-lg font-bold tabular-nums">
-              {page.ctaClicks.toLocaleString()}
-            </p>
-          </div>
+        <div className="mt-4">
+          <LinkPagePerformanceSummary
+            ctaClicks={page.ctaClicks}
+            pageViews={page.pageViews}
+            pageViewsLast7Days={page.pageViewsLast7Days}
+          />
         </div>
-        <div className="mt-2 flex gap-1">
-          <Badge variant={page.isActive ? "default" : "secondary"}>
-            {page.isActive ? "Active" : "Paused"}
-          </Badge>
+        <div className="mt-3">
+          <div className="mb-1 flex items-center justify-between gap-2 text-xs">
+            <span className="text-muted-foreground">7-day page views</span>
+            <span className="font-medium tabular-nums">
+              {page.pageViewsLast7Days.toLocaleString()} views
+            </span>
+          </div>
+          <LinkPageSparkline data={page.clickTrend} />
+        </div>
+        <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-wrap gap-1">
+            <Badge variant="outline">CTR {formatCtr(page.ctaClickThroughRate)}</Badge>
+            <Badge variant={page.isActive ? "default" : "secondary"}>
+              {page.isActive ? "Active" : "Paused"}
+            </Badge>
+          </div>
+          <ButtonLink
+            className="relative z-20"
+            href={analyticsHref}
+            size="sm"
+            variant="outline"
+          >
+            <Eye className="size-4" />
+            View Analytics
+          </ButtonLink>
         </div>
       </CardContent>
     </Card>
@@ -158,7 +187,7 @@ export default async function LinkPagesPage() {
         <EmptyState
           actionHref="/links/new"
           actionLabel="Create Link Page"
-          description="Create a short link and enable its Link Page section to publish your first branded page."
+          description="Create a short link and enable its Link Page section."
           icon={<Globe className="size-5" />}
           title="No Link Pages yet."
         />

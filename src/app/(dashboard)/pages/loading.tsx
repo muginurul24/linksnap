@@ -33,11 +33,16 @@ export default function LinkPagesLoading() {
                 <Skeleton className="h-4 w-2/3" />
               </div>
               <Skeleton className="h-4 w-56 max-w-full" />
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-3 gap-3">
+                <Skeleton className="h-16" />
                 <Skeleton className="h-16" />
                 <Skeleton className="h-16" />
               </div>
-              <Skeleton className="h-5 w-16" />
+              <Skeleton className="h-10" />
+              <div className="flex items-center justify-between">
+                <Skeleton className="h-5 w-24" />
+                <Skeleton className="h-8 w-28" />
+              </div>
             </CardContent>
           </Card>
         ))}

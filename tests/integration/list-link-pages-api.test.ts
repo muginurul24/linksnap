@@ -106,7 +106,17 @@ async function readJson<T>(response: Response): Promise<ApiEnvelope<T>> {
 function createMockPage(overrides: Partial<ListedLinkPage> = {}): ListedLinkPage {
   return {
     brandName: "Brand",
+    clickTrend: [
+      { date: "2026-05-01", pageViews: 0 },
+      { date: "2026-05-02", pageViews: 0 },
+      { date: "2026-05-03", pageViews: 0 },
+      { date: "2026-05-04", pageViews: 0 },
+      { date: "2026-05-05", pageViews: 0 },
+      { date: "2026-05-06", pageViews: 0 },
+      { date: "2026-05-07", pageViews: 0 },
+    ],
     createdAt: new Date("2026-05-06T10:00:00.000Z"),
+    ctaClickThroughRate: 0.1417,
     ctaClicks: 17,
     ctaText: "Shop now",
     hasCountdown: true,
@@ -114,6 +124,7 @@ function createMockPage(overrides: Partial<ListedLinkPage> = {}): ListedLinkPage
     isActive: true,
     linkId: "link-1",
     pageViews: 120,
+    pageViewsLast7Days: 0,
     showQrCode: true,
     slug: "promo",
     title: "Promo page",

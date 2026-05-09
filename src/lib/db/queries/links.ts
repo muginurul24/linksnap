@@ -3,6 +3,7 @@ import {
   count,
   desc,
   eq,
+  gte,
   gt,
   ilike,
   inArray,
@@ -10,6 +11,7 @@ import {
   lt,
   lte,
   or,
+  sql,
   type SQL,
 } from "drizzle-orm";
 import { db } from "@/lib/db";
@@ -62,17 +64,25 @@ export type ListedLink = {
 export type ListedLinkPage = {
   brandName: string;
   createdAt: Date;
+  ctaClickThroughRate: number;
   ctaClicks: number;
+  clickTrend: LinkPageTrendPoint[];
   ctaText: string;
   hasCountdown: boolean;
   id: string;
   isActive: boolean;
   linkId: string;
   pageViews: number;
+  pageViewsLast7Days: number;
   showQrCode: boolean;
   slug: string;
   title: string;
   updatedAt: Date;
+};
+
+export type LinkPageTrendPoint = {
+  date: string;
+  pageViews: number;
 };
 
 export type LinkDetail = ListedLink & {
@@ -224,6 +234,43 @@ const linkDetailColumns = {
   updatedAt: true,
   userId: true,
 } as const;
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+const LINK_PAGE_TREND_DAYS = 7;
+
+function startOfUtcDay(date: Date): Date {
+  return new Date(Date.UTC(
+    date.getUTCFullYear(),
+    date.getUTCMonth(),
+    date.getUTCDate(),
+  ));
+}
+
+function formatUtcDate(date: Date): string {
+  return date.toISOString().slice(0, 10);
+}
+
+function getLinkPageTrendRange(now = new Date()): {
+  dates: string[];
+  from: Date;
+  to: Date;
+} {
+  const to = now;
+  const from = new Date(
+    startOfUtcDay(now).getTime() - (LINK_PAGE_TREND_DAYS - 1) * DAY_MS,
+  );
+  const dates = Array.from({ length: LINK_PAGE_TREND_DAYS }, (_, index) =>
+    formatUtcDate(new Date(from.getTime() + index * DAY_MS)),
+  );
+
+  return { dates, from, to };
+}
+
+function getClickThroughRate(ctaClicks: number, pageViews: number): number {
+  if (pageViews === 0) return 0;
+
+  return Number((ctaClicks / pageViews).toFixed(4));
+}
 
 export async function getUserPlanById(userId: string): Promise<UserPlan | null> {
   const user = await db.query.users.findFirst({
@@ -911,26 +958,44 @@ async function hydrateListedLinkPages(
 ): Promise<ListedLinkPage[]> {
   if (pages.length === 0) return [];
 
-  const eventCounts = await db
-    .select({
-      eventType: clickEvents.eventType,
-      linkId: clickEvents.linkId,
-      value: count(),
-    })
-    .from(clickEvents)
-    .where(
-      and(
-        inArray(
-          clickEvents.eventType,
-          ["LINK_PAGE_VIEW", "LINK_PAGE_CTA_CLICK"],
+  const linkIds = pages.map((page) => page.linkId);
+  const range = getLinkPageTrendRange();
+  const clickDate = sql<string>`to_char(date_trunc('day', ${clickEvents.timestamp}), 'YYYY-MM-DD')`;
+  const [eventCounts, trendRows] = await Promise.all([
+    db
+      .select({
+        eventType: clickEvents.eventType,
+        linkId: clickEvents.linkId,
+        value: count(),
+      })
+      .from(clickEvents)
+      .where(
+        and(
+          inArray(
+            clickEvents.eventType,
+            ["LINK_PAGE_VIEW", "LINK_PAGE_CTA_CLICK"],
+          ),
+          inArray(clickEvents.linkId, linkIds),
         ),
-        inArray(
-          clickEvents.linkId,
-          pages.map((page) => page.linkId),
+      )
+      .groupBy(clickEvents.linkId, clickEvents.eventType),
+    db
+      .select({
+        date: clickDate,
+        linkId: clickEvents.linkId,
+        pageViews: count(),
+      })
+      .from(clickEvents)
+      .where(
+        and(
+          eq(clickEvents.eventType, "LINK_PAGE_VIEW"),
+          inArray(clickEvents.linkId, linkIds),
+          gte(clickEvents.timestamp, range.from),
+          lte(clickEvents.timestamp, range.to),
         ),
-      ),
-    )
-    .groupBy(clickEvents.linkId, clickEvents.eventType);
+      )
+      .groupBy(clickEvents.linkId, clickDate),
+  ]);
 
   const countsByLinkId = new Map<
     string,
@@ -954,15 +1019,34 @@ async function hydrateListedLinkPages(
     countsByLinkId.set(eventCount.linkId, counts);
   }
 
+  const trendsByLinkId = new Map<string, Map<string, number>>();
+
+  for (const row of trendRows) {
+    const trend = trendsByLinkId.get(row.linkId) ?? new Map<string, number>();
+    trend.set(row.date, Number(row.pageViews));
+    trendsByLinkId.set(row.linkId, trend);
+  }
+
   return pages.map((page) => {
     const counts = countsByLinkId.get(page.linkId) ?? {
       ctaClicks: 0,
       pageViews: 0,
     };
+    const trend = trendsByLinkId.get(page.linkId);
+    const clickTrend = range.dates.map((date) => ({
+      date,
+      pageViews: trend?.get(date) ?? 0,
+    }));
+    const pageViewsLast7Days = clickTrend.reduce(
+      (total, point) => total + point.pageViews,
+      0,
+    );
 
     return {
       brandName: page.brandName,
+      clickTrend,
       createdAt: page.createdAt,
+      ctaClickThroughRate: getClickThroughRate(counts.ctaClicks, counts.pageViews),
       ctaClicks: counts.ctaClicks,
       ctaText: page.ctaText,
       hasCountdown: page.showCountdown === true && page.countdownTarget !== null,
@@ -970,6 +1054,7 @@ async function hydrateListedLinkPages(
       isActive: page.hasLinkPage && page.isLinkActive,
       linkId: page.linkId,
       pageViews: counts.pageViews,
+      pageViewsLast7Days,
       showQrCode: page.showQrCode ?? true,
       slug: page.slug,
       title: page.title,
