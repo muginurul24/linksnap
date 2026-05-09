@@ -9129,6 +9129,45 @@ Added full PayGate smoke coverage for the upgraded multi-channel checkout flow, 
 
 **Next Task:** Phase 24 — Dashboard UX Completion after Rafi approval.
 
+### 24.5 — QR Codes Page Enhancement
+- **Date:** 2026-05-09 15:02 GMT+7
+- **Duration:** 45m
+- **Status:** ✅ Complete
+
+**What I Did:**
+Upgraded the QR Codes dashboard from a download list into performance cards with QR-specific scan metrics, 30-day scan counts, last scan date, SVG preview thumbnails, sort controls, and analytics navigation per QR code.
+
+**Files Changed:**
+- `src/lib/db/queries/links.ts` — Added batched QR scan enrichment and QR card sorting helpers.
+- `src/app/(dashboard)/qr/page.tsx` — Added QR preview thumbnails, metrics, sort controls, and View Analytics links.
+- `tests/unit/qr-list.test.ts` — Added unit coverage for QR sorting behavior.
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Checked off 24.5.
+- `_bmad-output/implementation-artifacts/JOURNAL.md` — Logged 24.5.
+
+**Decisions Made:**
+- Counted QR scans from existing click events with `referrer = "qr"` so metrics stay aligned with redirect analytics.
+- Kept QR analytics as live DB aggregates scoped to the current user's links, then hydrated total redirect counts through the existing click-count cache.
+- Used `next/image` with `unoptimized` for local SVG QR previews because they are small dynamic vector assets.
+
+**Tests:**
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Targeted unit: `rtk bun run test -- tests/unit/qr-list.test.ts tests/unit/qr-downloads.test.ts` — 4 passed.
+- ✅ Full unit/integration: `rtk bun run test` — 167 passed, 1 skipped; 756 passed, 2 skipped.
+- ✅ Production build: `rtk bun run build` — Passed.
+
+**Issues Encountered:**
+- Initial QR preview used a plain image tag, which triggered lint; replaced it with `next/image` using explicit dimensions.
+- The first QR list test factory duplicated `id` and `slug`; refactored the fixture builder so required fields are set once.
+
+**Security Checks:**
+- ✅ QR metrics query remains scoped to authenticated user-owned links.
+- ✅ No untrusted script/style injection or unsafe HTML added.
+- ✅ No secrets or raw analytics payloads are logged.
+- ✅ No new mutation endpoint or cache invalidation path added.
+
+**Next Task:** 24.6 — My Links Table Sorting & Bulk Actions
+
 ### 24.1 — Campaign Detail Analytics Page
 - **Date:** 2026-05-09 14:21 GMT+7
 - **Duration:** 1h 25m

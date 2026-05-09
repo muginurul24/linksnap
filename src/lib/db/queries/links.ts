@@ -61,6 +61,14 @@ export type ListedLink = {
   updatedAt: Date;
 };
 
+export type QrCodeSort = "most-scanned" | "recently-created";
+
+export type ListedQrCodeLink = ListedLink & {
+  lastScanAt: Date | null;
+  qrScanCount: number;
+  qrScansLast30Days: number;
+};
+
 export type ListedLinkPage = {
   brandName: string;
   createdAt: Date;
@@ -166,6 +174,11 @@ type ListLinkPagesInput = {
   userId: string;
 };
 
+type ListQrCodeLinksInput = ListLinksInput & {
+  now?: Date;
+  sort?: QrCodeSort;
+};
+
 type UpdateLinkRecordInput = {
   destinationUrl?: string;
   id: string;
@@ -237,6 +250,8 @@ const linkDetailColumns = {
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const LINK_PAGE_TREND_DAYS = 7;
+const QR_SCAN_REFERRER = "qr";
+const QR_SCAN_WINDOW_DAYS = 30;
 
 function startOfUtcDay(date: Date): Date {
   return new Date(Date.UTC(
@@ -929,6 +944,95 @@ export async function listLinksByUserId({
     items: cursorPage?.items ?? items,
     nextCursor: cursorPage?.nextCursor ?? null,
     total: totalRows[0]?.value ?? 0,
+  };
+}
+
+export function sortQrCodeLinks(
+  items: ListedQrCodeLink[],
+  sort: QrCodeSort = "recently-created",
+): ListedQrCodeLink[] {
+  return [...items].sort((a, b) => {
+    if (sort === "most-scanned") {
+      return (
+        b.qrScanCount - a.qrScanCount ||
+        b.qrScansLast30Days - a.qrScansLast30Days ||
+        b.createdAt.getTime() - a.createdAt.getTime()
+      );
+    }
+
+    return b.createdAt.getTime() - a.createdAt.getTime() || b.id.localeCompare(a.id);
+  });
+}
+
+export async function listQrCodeLinksByUserId({
+  cursor,
+  limit,
+  now = new Date(),
+  page,
+  search,
+  sort = "recently-created",
+  userId,
+}: ListQrCodeLinksInput): Promise<{
+  items: ListedQrCodeLink[];
+  nextCursor: string | null;
+  total: number;
+}> {
+  const linkResult = await listLinksByUserId({
+    cursor,
+    limit,
+    page,
+    search,
+    userId,
+  });
+  const linkIds = linkResult.items.map((link) => link.id);
+
+  if (linkIds.length === 0) return { ...linkResult, items: [] };
+
+  const from = new Date(
+    startOfUtcDay(now).getTime() - (QR_SCAN_WINDOW_DAYS - 1) * DAY_MS,
+  );
+  const scansLast30Days =
+    sql<number>`count(*) filter (where ${clickEvents.timestamp} >= ${from})`.mapWith(
+      Number,
+    );
+  const scanRows = await db
+    .select({
+      lastScanAt: sql<Date | null>`max(${clickEvents.timestamp})`,
+      linkId: clickEvents.linkId,
+      qrScanCount: count(clickEvents.id),
+      qrScansLast30Days: scansLast30Days,
+    })
+    .from(clickEvents)
+    .where(and(
+      inArray(clickEvents.linkId, linkIds),
+      eq(clickEvents.referrer, QR_SCAN_REFERRER),
+      lte(clickEvents.timestamp, now),
+    ))
+    .groupBy(clickEvents.linkId);
+  const scansByLinkId = new Map(
+    scanRows.map((row) => [
+      row.linkId,
+      {
+        lastScanAt: row.lastScanAt ? new Date(row.lastScanAt) : null,
+        qrScanCount: Number(row.qrScanCount),
+        qrScansLast30Days: Number(row.qrScansLast30Days),
+      },
+    ]),
+  );
+  const items = linkResult.items.map((link) => {
+    const scans = scansByLinkId.get(link.id);
+
+    return {
+      ...link,
+      lastScanAt: scans?.lastScanAt ?? null,
+      qrScanCount: scans?.qrScanCount ?? 0,
+      qrScansLast30Days: scans?.qrScansLast30Days ?? 0,
+    };
+  });
+
+  return {
+    ...linkResult,
+    items: sortQrCodeLinks(items, sort),
   };
 }
 

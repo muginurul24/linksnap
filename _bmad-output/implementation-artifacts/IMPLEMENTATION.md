@@ -3277,11 +3277,11 @@ Premium Flutter experience. 🟢
 
 ### TASK 24.5 — QR Codes Page Enhancement
 
-- [ ] Add QR analytics: scan count, 30-day scans, last scan date
-- [ ] QR preview thumbnail per card
-- [ ] Filter: Most Scanned, Recently Created
-- [ ] "View Analytics" link per QR
-- [ ] Add unit tests
+- [x] Add QR analytics: scan count, 30-day scans, last scan date
+- [x] QR preview thumbnail per card
+- [x] Filter: Most Scanned, Recently Created
+- [x] "View Analytics" link per QR
+- [x] Add unit tests
 
 ### TASK 24.6 — My Links Table Sorting & Bulk Actions
 
