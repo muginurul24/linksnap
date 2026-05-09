@@ -32,7 +32,7 @@ export default function AdminUsersError({
           An error occurred while loading user data. Please try again.
         </p>
       </div>
-      <div className="flex gap-3">
+      <div className="flex flex-wrap justify-center gap-3">
         <Button type="button" variant="outline" size="sm" onClick={() => reset()}>
           <RotateCcw className="size-4" />
           Try again

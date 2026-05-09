@@ -38,7 +38,7 @@ export default function SettingsError({
             An error occurred while loading settings. This might be a temporary database issue.
           </p>
         </div>
-        <div className="flex gap-3">
+        <div className="flex flex-wrap justify-center gap-3">
           <Button type="button" variant="outline" size="sm" onClick={() => reset()}>
             <RotateCcw className="size-4" />
             Try again

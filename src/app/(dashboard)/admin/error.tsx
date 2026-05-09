@@ -32,7 +32,7 @@ export default function AdminError({
           An error occurred while loading the admin panel. This might be a temporary issue.
         </p>
       </div>
-      <div className="flex gap-3">
+      <div className="flex flex-wrap justify-center gap-3">
         <Button type="button" variant="outline" size="sm" onClick={() => reset()}>
           <RotateCcw className="size-4" />
           Try again

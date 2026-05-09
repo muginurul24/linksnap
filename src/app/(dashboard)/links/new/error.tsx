@@ -6,7 +6,7 @@ import { AlertTriangle, ArrowLeft, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { logger } from "@/lib/observability/logger";
 
-export default function AdminAnalyticsError({
+export default function NewLinkError({
   error,
   reset,
 }: {
@@ -14,10 +14,10 @@ export default function AdminAnalyticsError({
   reset: () => void;
 }) {
   useEffect(() => {
-    logger.error("admin_analytics_error_boundary", {
+    logger.error("new_link_error_boundary", {
       digest: error.digest,
-      name: error.name,
       message: error.message,
+      name: error.name,
     });
   }, [error]);
 
@@ -27,24 +27,20 @@ export default function AdminAnalyticsError({
         <AlertTriangle className="size-6" />
       </div>
       <div>
-        <p className="text-sm font-medium">System analytics are temporarily unavailable</p>
-        <p className="mt-1 text-sm text-muted-foreground">
-          An error occurred while loading analytics data. Please try again.
+        <p className="text-sm font-medium">Link creation is temporarily unavailable</p>
+        <p className="mt-1 max-w-md text-sm text-muted-foreground">
+          The form could not load right now. Try again, or return to your links
+          while we recover this view.
         </p>
-        {error.digest ? (
-          <p className="mt-2 text-xs text-muted-foreground">
-            Request ID: {error.digest}
-          </p>
-        ) : null}
       </div>
       <div className="flex flex-wrap justify-center gap-3">
-        <Button type="button" variant="outline" size="sm" onClick={() => reset()}>
+        <Button onClick={() => reset()} size="sm" type="button" variant="outline">
           <RotateCcw className="size-4" />
           Try again
         </Button>
-        <Button variant="outline" size="sm" render={<Link href="/admin" />}>
+        <Button render={<Link href="/links" />} size="sm" variant="outline">
           <ArrowLeft className="size-4" />
-          Back to admin
+          Back to links
         </Button>
       </div>
     </div>

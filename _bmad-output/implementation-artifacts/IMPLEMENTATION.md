@@ -3008,15 +3008,15 @@ Premium Flutter experience. 🟢
 
 ### TASK 22.8 — Dashboard & Admin Error Boundaries Pass
 
-- [ ] Audit dashboard routes for missing `loading.tsx` and `error.tsx`.
-- [ ] Ensure each route has:
+- [x] Audit dashboard routes for missing `loading.tsx` and `error.tsx`.
+- [x] Ensure each route has:
   - skeleton loading state
   - friendly error state
   - retry/reload action
   - navigation fallback
   - no stack traces or raw technical errors in UI
-- [ ] Prioritize `/analytics`, `/admin/users`, `/admin/users/[id]`, `/admin/analytics`, `/links/new`, `/settings/billing`.
-- [ ] Add regression tests for each route-level error boundary.
+- [x] Prioritize `/analytics`, `/admin/users`, `/admin/users/[id]`, `/admin/analytics`, `/links/new`, `/settings/billing`.
+- [x] Add regression tests for each route-level error boundary.
 
 ### TASK 22.9 — Form & Action UX Consistency Pass
 

@@ -8520,3 +8520,48 @@ Added typed cache key builders and cache wrappers for dashboard/admin analytics 
 - ✅ Analytics responses remain scoped by authenticated user or superadmin guard.
 
 **Next Task:** 22.8 — Dashboard & Admin Error Boundaries Pass.
+
+### 22.8 — Dashboard & Admin Error Boundaries Pass
+- **Date:** 2026-05-09 08:15 GMT+7
+- **Duration:** 0h 24m
+- **Status:** ✅ Complete
+
+**What I Did:**
+Audited prioritized dashboard/admin routes for route-level loading and error boundaries. Added missing `/links/new` loading/error boundaries and `/settings/billing` error boundary, tightened existing admin/settings error action rows for mobile wrapping, and added regression coverage to ensure friendly recovery copy, retry actions, navigation fallbacks, and no raw error messages.
+
+**Files Changed:**
+- `src/app/(dashboard)/links/new/loading.tsx` — Added form skeleton loading state.
+- `src/app/(dashboard)/links/new/error.tsx` — Added friendly link-creation route error boundary with retry and back-to-links fallback.
+- `src/app/(dashboard)/settings/billing/error.tsx` — Added friendly billing route error boundary with retry and back-to-settings fallback.
+- `src/app/(dashboard)/admin/error.tsx` — Made recovery buttons wrap on narrow screens.
+- `src/app/(dashboard)/admin/audit-log/error.tsx` — Made recovery buttons wrap on narrow screens.
+- `src/app/(dashboard)/admin/analytics/error.tsx` — Made recovery buttons wrap on narrow screens.
+- `src/app/(dashboard)/admin/users/error.tsx` — Made recovery buttons wrap on narrow screens.
+- `src/app/(dashboard)/admin/users/[id]/error.tsx` — Made recovery buttons wrap on narrow screens.
+- `src/app/(dashboard)/settings/error.tsx` — Made recovery buttons wrap on narrow screens.
+- `tests/unit/dashboard-route-boundaries.test.tsx` — Added prioritized route-boundary regression tests.
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Checked off 22.8.
+- `_bmad-output/implementation-artifacts/JOURNAL.md` — Logged 22.8.
+
+**Decisions Made:**
+- Kept route error boundaries local to each prioritized route so fallback navigation matches the user's current task.
+- Reused existing dashboard skeleton primitives rather than introducing new loading UI.
+- Tested server-rendered markup to catch accidental raw error rendering without coupling tests to browser behavior.
+
+**Tests:**
+- ✅ Targeted unit: `rtk bun run test -- tests/unit/dashboard-route-boundaries.test.tsx tests/unit/admin-error-boundaries.test.tsx` — 11 passed.
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Full unit/integration: `rtk bun run test` — 150 passed, 1 skipped; 677 passed, 2 skipped.
+- ✅ Production build: `rtk bun run build` — Passed.
+
+**Issues Encountered:**
+- No source blockers. The audit found `/links/new` missing both route boundary files and `/settings/billing` missing only `error.tsx`.
+
+**Security Checks:**
+- ✅ Error UI does not render raw exception messages, stacks, or secrets.
+- ✅ Errors are logged through the project logger with digest/name/message only.
+- ✅ Navigation fallbacks keep users inside authenticated dashboard/admin flows.
+- ✅ No secrets added.
+
+**Next Task:** 22.9 — Form & Action UX Consistency Pass.
