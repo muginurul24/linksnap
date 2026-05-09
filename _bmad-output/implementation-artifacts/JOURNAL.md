@@ -9269,6 +9269,45 @@ Documented LinkSnap disaster recovery around Neon instant restore/PITR and suppl
 
 **Next Task:** 25.7 — Documentation & README
 
+### 25.7 — Documentation & README
+- **Date:** 2026-05-09 18:52 GMT+7
+- **Duration:** 55m
+- **Status:** ✅ Complete
+
+**What I Did:**
+Replaced the template README with LinkSnap-specific setup, architecture, API, testing, deployment, and operations documentation. Added a roadmap and known-limitations document, expanded API docs to cover every implemented `/api/v1` route, and added a guard test that compares route handlers against the OpenAPI source.
+
+**Files Changed:**
+- `README.md` — Replaced create-next-app template with comprehensive LinkSnap developer and operations documentation.
+- `ROADMAP.md` — Added launch limitations, MVP status, V2/V3 roadmap, and review cadence.
+- `src/lib/api-docs/spec.ts` — Added missing auth, 2FA, payment, operations, admin, and PUT smart-rule docs; added small comments around OpenAPI generation.
+- `tests/unit/api-docs-completeness.test.ts` — Added filesystem-backed test that ensures every implemented v1 route is documented.
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Checked off 25.7.
+- `_bmad-output/implementation-artifacts/JOURNAL.md` — Logged 25.7.
+
+**Decisions Made:**
+- Kept API docs generated from `src/lib/api-docs/spec.ts` as the single source of truth for both dashboard docs and `/api/v1/docs`.
+- Added an automated completeness test instead of relying on manual route inspection for future API changes.
+- Documented current launch limitations in `ROADMAP.md` instead of hiding incomplete V2/V3 scope in README prose.
+
+**Tests:**
+- ✅ Targeted API docs: `rtk bun run test -- tests/unit/api-docs-completeness.test.ts tests/integration/api-docs-route.test.ts` — 5 passed.
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Full unit/integration: `rtk bun run test` — 176 passed, 1 skipped; 782 passed, 2 skipped.
+- ✅ Production build: `rtk bun run build` — Passed.
+
+**Issues Encountered:**
+- The first build attempt detected another active `next build` process and exited. I waited for the active process to finish, then reran `rtk bun run build` successfully.
+
+**Security Checks:**
+- ✅ No secrets, provider credentials, or database URLs were added to docs.
+- ✅ API docs still require paid session/API-key access through existing route guards.
+- ✅ OpenAPI completeness test reads local route files only and does not execute route handlers.
+- ✅ No new public mutation endpoint was added.
+
+**Next Task:** 25.8 — Final PRD Gap Analysis
+
 ### 24.9 — Global Cross-Navigation Polish
 - **Date:** 2026-05-09 15:45 GMT+7
 - **Duration:** 45m

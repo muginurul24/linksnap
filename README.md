@@ -1,36 +1,221 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# LinkSnap
 
-## Getting Started
+Smart short links, micro landing pages, campaign analytics, and paid API access
+for marketers, UMKM owners, creators, and developers.
 
-First, run the development server:
+Production URL: https://www.justqiu.cloud
+
+## What LinkSnap Does
+
+LinkSnap turns every short link into a conversion tool:
+
+- Short links with random or custom slugs.
+- Optional Link Pages with branded copy, CTA buttons, countdowns, social proof,
+  QR display, and analytics.
+- Smart redirect rules for geo, device, time, and language targeting.
+- Campaign workbench with UTM templates, grouped analytics, and split testing.
+- Dashboard analytics for clicks, unique visitors, devices, referrers, locations,
+  campaign performance, and Link Page conversion.
+- PayGate-backed subscriptions for Free, Pro, and Business plans.
+- API keys and OpenAPI docs for paid users.
+- Superadmin dashboard for user plan overrides, account suspension, system
+  analytics, and audit logs.
+
+## Stack
+
+- Next.js 16 App Router, React 19, TypeScript strict.
+- Bun runtime and package manager.
+- Tailwind CSS 4 and shadcn/ui.
+- Drizzle ORM with Neon Postgres.
+- Upstash Redis for rate limiting, cache, and queues.
+- NextAuth.js v5 for web sessions.
+- Resend for transactional email.
+- PayGate payment middleware.
+- Vitest and Playwright for tests.
+- Vercel for production hosting.
+
+## Repository Map
+
+| Path | Purpose |
+| --- | --- |
+| `src/app` | App Router pages, layouts, route groups, and API routes. |
+| `src/app/api/v1` | Versioned REST route handlers. |
+| `src/components` | UI primitives and dashboard components. |
+| `src/lib` | Auth, database queries, cache, billing, observability, validation, and domain logic. |
+| `src/lib/db/schema.ts` | Drizzle schema source of truth. |
+| `src/lib/db/migrations` | Generated Drizzle migration baseline. |
+| `tests/unit` | Unit tests for domain logic and components. |
+| `tests/integration` | Route and flow-level integration tests. |
+| `tests/e2e` | Playwright browser tests. |
+| `_bmad-output` | Product, security, architecture, launch, and implementation artifacts. |
+| `DEPLOY.md` | Production deployment checklist. |
+| `ROADMAP.md` | Known limitations and launch roadmap. |
+
+## Local Setup
+
+Prerequisites:
+
+- Bun.
+- PostgreSQL-compatible Neon database URL.
+- Upstash Redis REST URL and token.
+- Resend and PayGate credentials for full payment/email flows.
+
+Install dependencies:
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+rtk bun install
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Create local env files from `.env.example`. Do not commit `.env`,
+`.env.local`, `.env.production`, Vercel env pulls, database URLs, API tokens, or
+provider secrets.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Run development server:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+rtk bun run dev
+```
 
-## Learn More
+Open http://localhost:3000.
 
-To learn more about Next.js, take a look at the following resources:
+## Environment
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Use `.env.example` as the required variable inventory. Important production
+groups:
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- App URLs: `NEXT_PUBLIC_APP_URL`, `NEXT_PUBLIC_API_URL`, `APP_URL`,
+  `AUTH_URL`, `NEXTAUTH_URL`.
+- Auth: `AUTH_SECRET`, Google OAuth credentials, `AUTH_TRUST_HOST`.
+- Data: `DATABASE_URL`, optional `MAXMIND_DB_PATH`.
+- Cache: `UPSTASH_REDIS_URL`, `UPSTASH_REDIS_TOKEN`.
+- Email: `RESEND_API_KEY`, `RESEND_FROM_EMAIL`.
+- Payment: `PAYGATE_API_BASE_URL`, `PAYGATE_STORE_API_TOKEN`,
+  `PAYGATE_WEBHOOK_SECRET`.
+- Operations: `CRON_SECRET`, `IP_HASH_SALT`, `USD_IDR_RATE`.
 
-## Deploy on Vercel
+Verify production env shape:
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```bash
+rtk bun run verify:production-env
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Database
+
+Generate migrations from `src/lib/db/schema.ts`:
+
+```bash
+rtk bun run db:generate
+```
+
+Apply migrations:
+
+```bash
+rtk bun run db:migrate
+```
+
+Open Drizzle Studio:
+
+```bash
+rtk bun run db:studio
+```
+
+Manual backup dry-run:
+
+```bash
+rtk proxy env BACKUP_DATABASE_URL='postgresql://...' bash scripts/db-backup-manual.sh --dry-run
+```
+
+See `_bmad-output/planning-artifacts/disaster-recovery.md` for restore and
+redeploy procedures.
+
+## API
+
+API base URL:
+
+```text
+https://www.justqiu.cloud/api/v1
+```
+
+Paid users can access the dashboard API docs at `/docs`. Programmatic OpenAPI
+JSON is available at `/api/v1/docs` using a paid session or API key.
+
+API keys are sent as bearer tokens:
+
+```http
+Authorization: Bearer lsnap_sk_...
+```
+
+Every API error response includes a `requestId` for support tracing.
+
+## Quality Gate
+
+Run before every commit:
+
+```bash
+rtk bun run typecheck
+rtk bun run lint
+rtk bun run test
+rtk bun run build
+```
+
+Targeted checks:
+
+```bash
+rtk bun run test:e2e
+rtk bun run smoke:production
+rtk bun run security:smoke
+```
+
+Production smoke with a session cookie:
+
+```bash
+rtk proxy env PRODUCTION_SMOKE_COOKIE='next-auth.session-token=...' bun run smoke:production
+```
+
+## Deployment
+
+Production deploys to Vercel from `main`.
+
+Before deploying:
+
+1. Pull latest `main`.
+2. Run the quality gate.
+3. Verify production env.
+4. Push to `main`.
+5. Watch Vercel deployment logs.
+6. Run production smoke and security smoke.
+7. Verify PayGate checkout/webhook and Google OAuth.
+
+See `DEPLOY.md` for the full deployment checklist.
+
+## Operations
+
+Key launch artifacts:
+
+- `_bmad-output/planning-artifacts/monitoring-observability.md`
+- `_bmad-output/planning-artifacts/load-test-results.md`
+- `_bmad-output/planning-artifacts/security-audit-2026-05-09.md`
+- `_bmad-output/planning-artifacts/accessibility-lighthouse-2026-05-09.md`
+- `_bmad-output/planning-artifacts/disaster-recovery.md`
+
+Health endpoint:
+
+```text
+GET /api/v1/health
+```
+
+Scheduled jobs are configured in `vercel.json` and require
+`Authorization: Bearer ${CRON_SECRET}`.
+
+## Known Limitations
+
+- Custom domains, team workspaces, password-protected links, enterprise SSO,
+  white-label reseller flows, and affiliate/referral programs are planned after
+  MVP.
+- Google OAuth and PayGate production verification require provider dashboard
+  access and live credentials.
+- Load-test scripts are guarded and should only run against production after
+  explicit operator approval.
+- Manual `pg_dump` backups require an unpooled Neon connection string.
+
+See `ROADMAP.md` for the detailed roadmap and launch limitations.

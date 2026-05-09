@@ -3,11 +3,12 @@ export type ApiAuthKind =
   | "Cron secret"
   | "PayGate signature"
   | "Public"
-  | "Session";
+  | "Session"
+  | "Superadmin session";
 
 export type ApiEndpointDoc = {
   auth: ApiAuthKind;
-  method: "DELETE" | "GET" | "PATCH" | "POST";
+  method: "DELETE" | "GET" | "PATCH" | "POST" | "PUT";
   path: string;
   rateLimit: string;
   requestExample?: Record<string, unknown>;
@@ -26,6 +27,7 @@ const AUTH_RATE_LIMIT = "Endpoint-specific auth limit";
 const PUBLIC_QR_RATE_LIMIT = "120/min per IP";
 const WEBHOOK_RATE_LIMIT = "Provider controlled";
 const CRON_RATE_LIMIT = "Operational cron only";
+const ADMIN_RATE_LIMIT = "Superadmin dashboard guard";
 
 export const API_DOC_SECTIONS: ApiDocSection[] = [
   {
@@ -43,11 +45,29 @@ export const API_DOC_SECTIONS: ApiDocSection[] = [
       {
         auth: "Public",
         method: "POST",
+        path: "/api/v1/auth/login",
+        rateLimit: "5/IP/15min",
+        requestExample: { email: "user@example.com", password: "••••••••" },
+        responseExample: { data: { requiresTwoFactor: false }, success: true },
+        summary: "Authenticate with email and password.",
+      },
+      {
+        auth: "Public",
+        method: "POST",
         path: "/api/v1/auth/verify",
         rateLimit: AUTH_RATE_LIMIT,
         requestExample: { code: "123456", email: "user@example.com" },
         responseExample: { success: true },
         summary: "Verify a pending account email address.",
+      },
+      {
+        auth: "Public",
+        method: "POST",
+        path: "/api/v1/auth/verify-new-email",
+        rateLimit: AUTH_RATE_LIMIT,
+        requestExample: { code: "123456", token: "email-change-token" },
+        responseExample: { success: true },
+        summary: "Verify a requested account email change.",
       },
       {
         auth: "Public",
@@ -78,12 +98,54 @@ export const API_DOC_SECTIONS: ApiDocSection[] = [
       },
       {
         auth: "Session",
+        method: "GET",
+        path: "/api/v1/auth/me",
+        rateLimit: PLAN_RATE_LIMIT,
+        responseExample: { data: { email: "user@example.com", id: "user-id", plan: "PRO" }, success: true },
+        summary: "Return the authenticated session user.",
+      },
+      {
+        auth: "Session",
+        method: "POST",
+        path: "/api/v1/auth/refresh",
+        rateLimit: PLAN_RATE_LIMIT,
+        responseExample: { success: true },
+        summary: "Refresh the authenticated session state.",
+      },
+      {
+        auth: "Session",
+        method: "POST",
+        path: "/api/v1/auth/logout",
+        rateLimit: PLAN_RATE_LIMIT,
+        responseExample: { success: true },
+        summary: "Clear the authenticated session.",
+      },
+      {
+        auth: "Session",
         method: "POST",
         path: "/api/v1/auth/change-password",
         rateLimit: "5/user/15min",
         requestExample: { confirmPassword: "••••••••", currentPassword: "••••••••", password: "••••••••" },
         responseExample: { success: true },
         summary: "Change the authenticated user's password.",
+      },
+      {
+        auth: "Session",
+        method: "POST",
+        path: "/api/v1/auth/change-email",
+        rateLimit: AUTH_RATE_LIMIT,
+        requestExample: { email: "new@example.com", password: "••••••••" },
+        responseExample: { success: true },
+        summary: "Request an email address change for the authenticated user.",
+      },
+      {
+        auth: "Session",
+        method: "POST",
+        path: "/api/v1/auth/delete-account",
+        rateLimit: AUTH_RATE_LIMIT,
+        requestExample: { confirm: "DELETE", password: "••••••••" },
+        responseExample: { success: true },
+        summary: "Permanently delete the authenticated account and owned data.",
       },
       {
         auth: "API key",
@@ -138,6 +200,56 @@ export const API_DOC_SECTIONS: ApiDocSection[] = [
       },
     ],
     title: "Authentication",
+  },
+  {
+    description: "Enroll, challenge, verify, and disable two-factor authentication.",
+    endpoints: [
+      {
+        auth: "Session",
+        method: "POST",
+        path: "/api/v1/auth/2fa/setup",
+        rateLimit: AUTH_RATE_LIMIT,
+        responseExample: { data: { otpauthUrl: "otpauth://totp/LinkSnap:user@example.com" }, success: true },
+        summary: "Start TOTP enrollment for the authenticated user.",
+      },
+      {
+        auth: "Session",
+        method: "POST",
+        path: "/api/v1/auth/2fa/challenge",
+        rateLimit: AUTH_RATE_LIMIT,
+        requestExample: { email: "user@example.com", password: "••••••••" },
+        responseExample: { data: { challengeId: "challenge-id" }, success: true },
+        summary: "Create a 2FA login challenge after password verification.",
+      },
+      {
+        auth: "Session",
+        method: "POST",
+        path: "/api/v1/auth/2fa/verify",
+        rateLimit: AUTH_RATE_LIMIT,
+        requestExample: { code: "123456" },
+        responseExample: { data: { backupCodes: ["ABCD-EFGH"] }, success: true },
+        summary: "Verify a TOTP code and enable 2FA.",
+      },
+      {
+        auth: "Session",
+        method: "POST",
+        path: "/api/v1/auth/2fa/backup-codes",
+        rateLimit: AUTH_RATE_LIMIT,
+        requestExample: { code: "123456" },
+        responseExample: { data: { backupCodes: ["ABCD-EFGH"] }, success: true },
+        summary: "Regenerate backup codes for an enrolled user.",
+      },
+      {
+        auth: "Session",
+        method: "POST",
+        path: "/api/v1/auth/2fa/disable",
+        rateLimit: AUTH_RATE_LIMIT,
+        requestExample: { code: "123456", password: "••••••••" },
+        responseExample: { success: true },
+        summary: "Disable 2FA after password and code verification.",
+      },
+    ],
+    title: "Two-Factor Authentication",
   },
   {
     description: "Create, list, update, and inspect short links.",
@@ -393,6 +505,15 @@ export const API_DOC_SECTIONS: ApiDocSection[] = [
       },
       {
         auth: "API key",
+        method: "PUT",
+        path: "/api/v1/links/{id}/rules",
+        rateLimit: PLAN_RATE_LIMIT,
+        requestExample: { rules: [{ condition: { country: "ID" }, destinationUrl: "https://example.com/id", type: "GEO" }] },
+        responseExample: { data: [{ type: "GEO" }], success: true },
+        summary: "Replace smart rules within plan quota using the PUT alias.",
+      },
+      {
+        auth: "API key",
         method: "DELETE",
         path: "/api/v1/links/{id}/rules",
         rateLimit: PLAN_RATE_LIMIT,
@@ -449,6 +570,31 @@ export const API_DOC_SECTIONS: ApiDocSection[] = [
         summary: "List billing transactions.",
       },
       {
+        auth: "API key",
+        method: "GET",
+        path: "/api/v1/payments/{orderId}",
+        rateLimit: PLAN_RATE_LIMIT,
+        responseExample: { data: { orderId: "order-id", status: "SETTLEMENT" }, success: true },
+        summary: "Read one owned payment transaction.",
+      },
+      {
+        auth: "API key",
+        method: "POST",
+        path: "/api/v1/payments/subscriptions/cancel",
+        rateLimit: PLAN_RATE_LIMIT,
+        requestExample: { reason: "Switching plans" },
+        responseExample: { data: { canceled: true }, success: true },
+        summary: "Cancel the authenticated user's active subscription.",
+      },
+      {
+        auth: "API key",
+        method: "POST",
+        path: "/api/v1/payments/subscriptions/reactivate",
+        rateLimit: PLAN_RATE_LIMIT,
+        responseExample: { data: { reactivated: true }, success: true },
+        summary: "Reactivate a canceled subscription before the period ends.",
+      },
+      {
         auth: "Cron secret",
         method: "GET",
         path: "/api/v1/payments/subscriptions/renew",
@@ -468,6 +614,84 @@ export const API_DOC_SECTIONS: ApiDocSection[] = [
     ],
     title: "Payments API",
   },
+  {
+    description: "Operational endpoints for health checks and background jobs.",
+    endpoints: [
+      {
+        auth: "Public",
+        method: "GET",
+        path: "/api/v1/health",
+        rateLimit: "Public health probe",
+        responseExample: { data: { database: "ok", redis: "ok", status: "ok" }, success: true },
+        summary: "Return production readiness signals for the app, database, and Redis.",
+      },
+      {
+        auth: "Cron secret",
+        method: "GET",
+        path: "/api/v1/analytics/click-queue/process",
+        rateLimit: CRON_RATE_LIMIT,
+        responseExample: { data: { processed: 10 }, success: true },
+        summary: "Process queued click analytics from the trusted scheduler.",
+      },
+    ],
+    title: "Operations API",
+  },
+  {
+    description: "Superadmin-only user, billing, analytics, and audit operations.",
+    endpoints: [
+      {
+        auth: "Superadmin session",
+        method: "GET",
+        path: "/api/v1/admin/analytics",
+        rateLimit: ADMIN_RATE_LIMIT,
+        responseExample: { data: { totalUsers: 100 }, success: true },
+        summary: "Read cached platform analytics for superadmin dashboards.",
+      },
+      {
+        auth: "Superadmin session",
+        method: "GET",
+        path: "/api/v1/admin/audit-log",
+        rateLimit: ADMIN_RATE_LIMIT,
+        responseExample: { data: [{ action: "user.plan.change", id: "audit-id" }], success: true },
+        summary: "List admin audit log entries with pagination.",
+      },
+      {
+        auth: "Superadmin session",
+        method: "GET",
+        path: "/api/v1/admin/users",
+        rateLimit: ADMIN_RATE_LIMIT,
+        responseExample: { data: [{ email: "user@example.com", id: "user-id", plan: "PRO" }], success: true },
+        summary: "List users with search, plan filters, and pagination.",
+      },
+      {
+        auth: "Superadmin session",
+        method: "GET",
+        path: "/api/v1/admin/users/{id}",
+        rateLimit: ADMIN_RATE_LIMIT,
+        responseExample: { data: { email: "user@example.com", id: "user-id", plan: "PRO" }, success: true },
+        summary: "Read one user's admin detail view.",
+      },
+      {
+        auth: "Superadmin session",
+        method: "PATCH",
+        path: "/api/v1/admin/users/{id}",
+        rateLimit: ADMIN_RATE_LIMIT,
+        requestExample: { plan: "BUSINESS" },
+        responseExample: { data: { plan: "BUSINESS", previousPlan: "FREE" }, success: true },
+        summary: "Override a user's plan after superadmin confirmation.",
+      },
+      {
+        auth: "Superadmin session",
+        method: "POST",
+        path: "/api/v1/admin/users/{id}",
+        rateLimit: ADMIN_RATE_LIMIT,
+        requestExample: { action: "suspend" },
+        responseExample: { data: { action: "suspend" }, success: true },
+        summary: "Suspend or unsuspend a user account.",
+      },
+    ],
+    title: "Admin API",
+  },
 ];
 
 export function getAllApiEndpoints(): ApiEndpointDoc[] {
@@ -475,6 +699,7 @@ export function getAllApiEndpoints(): ApiEndpointDoc[] {
 }
 
 function getOperationId(endpoint: ApiEndpointDoc): string {
+  // Keep generated operation IDs deterministic so docs diffs stay reviewable.
   const suffix = endpoint.path
     .replace(/^\/api\/v1\//, "")
     .replace(/[{}]/g, "")
@@ -490,6 +715,7 @@ function getOperationId(endpoint: ApiEndpointDoc): string {
 }
 
 export function createOpenApiSpec() {
+  // The dashboard docs and JSON route share this single source of truth.
   const paths = getAllApiEndpoints().reduce<Record<string, Record<string, unknown>>>(
     (accumulator, endpoint) => {
       const pathItem = accumulator[endpoint.path] ?? {};
@@ -518,7 +744,7 @@ export function createOpenApiSpec() {
             ? [{ bearerAuth: [] }]
             : endpoint.auth === "Cron secret"
               ? [{ cronSecret: [] }]
-              : endpoint.auth === "Session"
+              : endpoint.auth === "Session" || endpoint.auth === "Superadmin session"
                 ? [{ sessionCookie: [] }]
               : [],
         summary: endpoint.summary,
