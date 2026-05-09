@@ -27,6 +27,6 @@ describe("mobile navigation polish", () => {
       "src/app/(dashboard)/settings/billing/page.tsx",
     );
 
-    expect(billingPage).toContain("grid grid-cols-1 gap-4 md:grid-cols-3");
+    expect(billingPage).toContain("grid grid-cols-1 gap-4 md:grid-cols-2");
   });
 });

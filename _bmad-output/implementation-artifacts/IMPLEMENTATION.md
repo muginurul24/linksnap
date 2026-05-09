@@ -3166,14 +3166,14 @@ Premium Flutter experience. 🟢
 
 ### TASK 23.8 — Billing Settings Page
 
-- [ ] Rewrite billing page as plan management hub
-- [ ] Current plan card: name, status badge, limits summary, period
-- [ ] Available upgrades section with UpgradeDialog trigger (from 23.4)
-- [ ] Payment history table: date, order ID, plan, amount, payment method icon + name, status badge
-- [ ] Cancel/reactivate subscription flows with confirmation dialogs
-- [ ] Empty state for no history, loading skeleton, error state with retry
-- [ ] FAQ section
-- [ ] Add E2E tests
+- [x] Rewrite billing page as plan management hub
+- [x] Current plan card: name, status badge, limits summary, period
+- [x] Available upgrades section with UpgradeDialog trigger (from 23.4)
+- [x] Payment history table: date, order ID, plan, amount, payment method icon + name, status badge
+- [x] Cancel/reactivate subscription flows with confirmation dialogs
+- [x] Empty state for no history, loading skeleton, error state with retry
+- [x] FAQ section
+- [x] Add E2E tests
 
 ### TASK 23.9 — Invoice Email After Payment
 
@@ -3221,3 +3221,125 @@ Premium Flutter experience. 🟢
 | 23.11 | E2E smoke tests | P0 |
 
 **Estimated total:** 190 + 11 = 201 tasks | **Implementation gate:** ✅ Rafi approved 2026-05-09.
+
+---
+
+## 🔴 Phase 24: Dashboard UX Completion — User-Friendly Across All Pages
+
+> **Status:** Draft for Rafi review. Implement after Phase 23.
+> **Spec:** `_bmad-output/planning-artifacts/spec-phase-24-dashboard-ux-completion.md`
+> **Goal:** Every dashboard page must be self-explanatory, actionable, and show real meaningful data. No dead-ends, no bare static text, no missing cross-navigation.
+
+### 🔴 Phase Rules
+
+- [ ] Read the full spec at `spec-phase-24-dashboard-ux-completion.md` before starting.
+- [ ] One commit per task.
+- [ ] Every page must have: loading state, empty state, error state, data state.
+- [ ] Cross-navigation: every entity page links to its analytics/detail page.
+- [ ] Mobile-first: all pages work on phone screens.
+
+### TASK 24.1 — Campaign Detail Analytics Page
+
+- [ ] Create `/campaigns/[id]` — Full analytics dashboard for one campaign
+- [ ] KPI cards: Total Clicks, Unique Visitors, Links, CTR
+- [ ] Click trend chart (Recharts area), device/geo/referrer breakdown
+- [ ] Top links table, link page funnel, campaign comparison selector
+- [ ] Date range: 7D/30D/custom, CSV export
+- [ ] Empty state, loading skeleton, error boundary with retry
+- [ ] Add E2E tests
+
+### TASK 24.2 — Campaign Cards with Performance Metrics
+
+- [ ] Enrich campaign list query with click aggregates (total, 7-day)
+- [ ] Add mini KPI row per card: Total Clicks, Links, 7-Day Clicks
+- [ ] Add sparkline chart per card (tiny 7-day trend)
+- [ ] Make card clickable → `/campaigns/[id]`
+- [ ] Add sort: Most Clicks, Most Links, Newest
+- [ ] Add search/filter campaigns
+- [ ] Add unit tests
+
+### TASK 24.3 — Campaign Links Cross-Navigation
+
+- [ ] Add links table to campaign detail page
+- [ ] Quick actions: edit link, remove from campaign
+- [ ] "Add Links" button → uncampaigned links picker dialog
+- [ ] UTM preview before adding
+- [ ] Refresh analytics after link changes
+- [ ] Add E2E tests
+
+### TASK 24.4 — Link Pages → Analytics Cross-Navigation
+
+- [ ] Add per-page analytics: 7-day sparkline, CTR badge
+- [ ] Make cards clickable → link analytics
+- [ ] "View Analytics" button per card
+- [ ] Loading skeleton, error state
+- [ ] Add unit tests
+
+### TASK 24.5 — QR Codes Page Enhancement
+
+- [ ] Add QR analytics: scan count, 30-day scans, last scan date
+- [ ] QR preview thumbnail per card
+- [ ] Filter: Most Scanned, Recently Created
+- [ ] "View Analytics" link per QR
+- [ ] Add unit tests
+
+### TASK 24.6 — My Links Table Sorting & Bulk Actions
+
+- [ ] Sortable columns: Slug, Destination, Clicks, Created, Status
+- [ ] Bulk actions: Select All → Add to Campaign, Delete, Export CSV
+- [ ] Add "Last 7 Days" mini trend indicator
+- [ ] Keep existing search, pagination, per-row actions
+- [ ] Add E2E tests
+
+### TASK 24.7 — Admin Dashboard Real Data
+
+- [ ] Replace static dashes with real DB queries
+- [ ] Load: total users, links, clicks, revenue
+- [ ] Show recent audit log entries
+- [ ] Loading skeleton, error state
+- [ ] Add unit tests
+
+### TASK 24.8 — Dashboard Onboarding for New Users
+
+- [ ] Zero-link user: show onboarding checklist (3-step guidance)
+- [ ] Zero-click user: show share link CTA with copy
+- [ ] Normal user: show existing dashboard
+- [ ] Checklist tracks completion, dismissable
+- [ ] Add unit tests
+
+### TASK 24.9 — Global Cross-Navigation Polish
+
+- [ ] Audit all pages: every entity links to related pages
+- [ ] My Links → View Analytics per row
+- [ ] Link Pages → card click → edit page
+- [ ] QR Codes → View Link
+- [ ] Campaigns → card click → detail
+- [ ] Analytics → Manage Links
+- [ ] Add breadcrumbs on deep pages (edit, detail)
+- [ ] Add E2E tests
+
+### TASK 24.10 — Loading, Empty, Error States Pass
+
+- [ ] Audit every dashboard page for missing states
+- [ ] Ensure loading.tsx exists everywhere (skeleton)
+- [ ] Ensure error.tsx exists everywhere (friendly + retry + requestId)
+- [ ] Ensure empty state everywhere (guidance + CTA)
+- [ ] Standardize skeleton components
+- [ ] No bare pages anywhere
+
+### 📊 Phase 24 Task Summary
+
+| Task | Area | Priority |
+|---|---|---|
+| 24.1 | Campaign detail analytics page | P0 |
+| 24.2 | Campaign cards with metrics | P0 |
+| 24.3 | Campaign links cross-navigation | P0 |
+| 24.4 | Link Pages → analytics | P1 |
+| 24.5 | QR Codes enhancement | P1 |
+| 24.6 | Links table sorting & bulk | P2 |
+| 24.7 | Admin dashboard real data | P0 |
+| 24.8 | Dashboard onboarding | P1 |
+| 24.9 | Global cross-navigation | P1 |
+| 24.10 | Loading/empty/error pass | P0 |
+
+**Estimated total:** 201 + 10 = 211 tasks | **Implementation gate:** Awaiting Rafi approval.

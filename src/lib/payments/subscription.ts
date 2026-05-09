@@ -121,7 +121,10 @@ export async function syncSubscriptionStatusForUser(
     };
   }
 
-  if (subscription.status === "ACTIVE" && subscription.currentPeriodEnd <= now) {
+  const keepsPaidAccess =
+    subscription.status === "ACTIVE" || subscription.status === "CANCELED";
+
+  if (keepsPaidAccess && subscription.currentPeriodEnd <= now) {
     await expireSubscriptionForUser({ expiredAt: now, userId });
     await updateUserPlanForSubscription({ plan: "FREE", userId });
 
@@ -139,7 +142,7 @@ export async function syncSubscriptionStatusForUser(
 
   return {
     expired: false,
-    plan: subscription.status === "ACTIVE" ? subscription.plan : "FREE",
+    plan: keepsPaidAccess ? subscription.plan : "FREE",
     subscription,
   };
 }

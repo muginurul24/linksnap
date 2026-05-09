@@ -7,6 +7,7 @@ function readSource(path: string): string {
 
 const guardedActionFiles = [
   "src/components/payments/upgrade-dialog.tsx",
+  "src/app/(dashboard)/settings/billing/subscription-actions.tsx",
   "src/components/admin/plan-override-dialog.tsx",
   "src/app/(dashboard)/admin/users/[id]/page.tsx",
   "src/app/(dashboard)/links/link-actions.tsx",

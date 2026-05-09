@@ -1,7 +1,20 @@
 import { redirect } from "next/navigation";
-import { Building, Check, CreditCard, Sparkles, Zap } from "lucide-react";
+import {
+  Building,
+  Building2,
+  Check,
+  Clock3,
+  CreditCard,
+  QrCode,
+  Sparkles,
+  Smartphone,
+  Store,
+  Zap,
+  type LucideIcon,
+} from "lucide-react";
+import { SubscriptionActions } from "@/app/(dashboard)/settings/billing/subscription-actions";
+import { UpgradeButton } from "@/app/(dashboard)/settings/billing/upgrade-button";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -25,8 +38,9 @@ import {
   listPaymentTransactionsByUserId,
   type BillingTransaction,
 } from "@/lib/db/queries/payments";
-import { syncSubscriptionStatusForUser } from "@/lib/payments/subscription";
 import type { UserPlan } from "@/lib/links/limits";
+import { getChannelById } from "@/lib/payments/payment-channels";
+import { syncSubscriptionStatusForUser } from "@/lib/payments/subscription";
 import {
   PLANS,
   formatUsdPrice,
@@ -34,7 +48,6 @@ import {
   type PlanDefinition,
 } from "@/lib/plans/definitions";
 import type { PaidPlan } from "@/lib/validations/payment";
-import { UpgradeButton } from "@/app/(dashboard)/settings/billing/upgrade-button";
 
 type BillingPageProps = {
   searchParams: Promise<{
@@ -49,11 +62,41 @@ type PlanCard = PlanDefinition & {
   price: string;
 };
 
+type MethodDisplay = {
+  Icon: LucideIcon;
+  label: string;
+};
+
 const planIcons: Record<UserPlan, typeof Zap> = {
   FREE: Zap,
   PRO: Sparkles,
   BUSINESS: Building,
 };
+
+const methodIcons = {
+  bank_transfer: Building2,
+  convenience_store: Store,
+  ewallet: Smartphone,
+  qris: QrCode,
+} as const;
+
+const billingFaqs = [
+  {
+    answer:
+      "Paid access activates after the payment provider confirms settlement. The checkout page refreshes status automatically.",
+    question: "When does my plan activate?",
+  },
+  {
+    answer:
+      "Canceling stops renewal. Your paid access remains available until the current period ends.",
+    question: "What happens when I cancel renewal?",
+  },
+  {
+    answer:
+      "Payment history is never cached as a mutation result. The billing page always reads the latest transaction state.",
+    question: "Why is payment history sometimes still pending?",
+  },
+];
 
 function toPlanCard(plan: PlanDefinition): PlanCard {
   return {
@@ -129,13 +172,6 @@ function formatPaymentMethodName(value: string): string {
     .join(" ");
 }
 
-function formatPaymentMethod(transaction: BillingTransaction): string {
-  const method = transaction.paymentMethod?.trim();
-  if (!method) return "Pending";
-
-  return formatPaymentMethodName(method);
-}
-
 function getStatusVariant(
   status: BillingTransaction["status"],
 ): "default" | "destructive" | "outline" | "secondary" {
@@ -150,6 +186,32 @@ function getStatusVariant(
 
 function getCurrentPlanConfig(plan: UserPlan): PlanCard {
   return toPlanCard(getPlanDefinition(plan));
+}
+
+function getPaymentMethodDisplay(transaction: BillingTransaction): MethodDisplay {
+  const method = transaction.paymentMethod?.trim();
+  if (!method) return { Icon: Clock3, label: "Pending" };
+
+  const channel = getChannelById(method);
+  if (!channel) {
+    return { Icon: CreditCard, label: formatPaymentMethodName(method) };
+  }
+
+  return {
+    Icon: methodIcons[channel.category],
+    label: channel.shortName,
+  };
+}
+
+function getSubscriptionStatusLabel(status: string | null | undefined): string {
+  if (!status) return "Free";
+  if (status === "CANCELED") return "Canceling";
+
+  return status.charAt(0).toUpperCase() + status.slice(1).toLowerCase();
+}
+
+function hasSubscriptionAction(status: string | null | undefined): boolean {
+  return status === "ACTIVE" || status === "CANCELED";
 }
 
 export default async function BillingPage({ searchParams }: BillingPageProps) {
@@ -172,15 +234,17 @@ export default async function BillingPage({ searchParams }: BillingPageProps) {
 
   const currentPlan = getCurrentPlanConfig(billingUser.plan);
   const upgradePrompt = getUpgradePrompt(upgradeReason);
-  const isActivePaidSubscription =
-    subscription?.status === "ACTIVE" && billingUser.plan !== "FREE";
+  const paidAccess = billingUser.plan !== "FREE" && subscription !== null;
+  const availableUpgrades = plans.filter(
+    (plan) => plan.plan !== "FREE" && plan.plan !== billingUser.plan,
+  );
 
   return (
     <>
       <div>
         <h1 className="text-2xl font-bold tracking-tight">Billing</h1>
         <p className="text-sm text-muted-foreground">
-          Manage your subscription and billing details.
+          Manage your plan, checkout status, and payment history.
         </p>
       </div>
 
@@ -200,87 +264,125 @@ export default async function BillingPage({ searchParams }: BillingPageProps) {
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Current Plan</CardTitle>
-          <CardDescription>
-            {isActivePaidSubscription
-              ? `Renews on ${formatDate(subscription.currentPeriodEnd)}.`
-              : "You are currently on the Free plan."}
-          </CardDescription>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <CardTitle className="text-base">Current Plan</CardTitle>
+              <CardDescription>
+                {paidAccess
+                  ? `Access through ${formatDate(subscription.currentPeriodEnd)}.`
+                  : "You are currently on the Free plan."}
+              </CardDescription>
+            </div>
+            <Badge variant={paidAccess ? "default" : "secondary"}>
+              {getSubscriptionStatusLabel(subscription?.status)}
+            </Badge>
+          </div>
         </CardHeader>
-        <CardContent>
-          <div className="flex flex-col gap-4 rounded-lg border bg-muted/50 p-4 sm:flex-row sm:items-center sm:justify-between">
+        <CardContent className="space-y-4">
+          <div className="flex flex-col gap-4 rounded-lg border bg-muted/50 p-4 lg:flex-row lg:items-center lg:justify-between">
             <div className="flex items-center gap-3">
-              <div className="flex aspect-square size-10 items-center justify-center rounded-lg bg-primary/10">
-                <currentPlan.icon className="size-5 text-primary" />
+              <div className="flex aspect-square size-12 items-center justify-center rounded-lg bg-primary/10">
+                <currentPlan.icon className="size-6 text-primary" />
               </div>
               <div>
                 <p className="font-medium">{currentPlan.name} Plan</p>
                 <p className="text-xs text-muted-foreground">
-                  Next billing date:{" "}
-                  {isActivePaidSubscription
-                    ? formatDate(subscription.currentPeriodEnd)
+                  Period:{" "}
+                  {paidAccess
+                    ? `${formatDate(subscription.currentPeriodStart)} - ${formatDate(subscription.currentPeriodEnd)}`
                     : "Not scheduled"}
                 </p>
               </div>
             </div>
-            <Badge variant={isActivePaidSubscription ? "default" : "secondary"}>
-              {subscription?.status === "ACTIVE" ? "Active" : "Free"}
-            </Badge>
+            {hasSubscriptionAction(subscription?.status) ? (
+              <SubscriptionActions
+                currentPeriodEnd={subscription?.currentPeriodEnd.toISOString() ?? null}
+                status={subscription?.status ?? null}
+              />
+            ) : null}
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="rounded-lg border p-3">
+              <p className="text-xs text-muted-foreground">Short links</p>
+              <p className="mt-1 font-semibold">
+                {Number.isFinite(currentPlan.limits.links)
+                  ? currentPlan.limits.links
+                  : "Unlimited"}
+              </p>
+            </div>
+            <div className="rounded-lg border p-3">
+              <p className="text-xs text-muted-foreground">Link Pages</p>
+              <p className="mt-1 font-semibold">
+                {Number.isFinite(currentPlan.limits.linkPages)
+                  ? currentPlan.limits.linkPages
+                  : "Unlimited"}
+              </p>
+            </div>
+            <div className="rounded-lg border p-3">
+              <p className="text-xs text-muted-foreground">Analytics retention</p>
+              <p className="mt-1 font-semibold">
+                {currentPlan.limits.analyticsRetentionDays} days
+              </p>
+            </div>
+            <div className="rounded-lg border p-3">
+              <p className="text-xs text-muted-foreground">API requests</p>
+              <p className="mt-1 font-semibold">
+                {currentPlan.limits.apiRequestsPerMinute}/min
+              </p>
+            </div>
           </div>
         </CardContent>
       </Card>
 
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-        {plans.map((plan) => {
-          const isCurrent = plan.plan === billingUser.plan;
-
-          return (
-            <Card
-              key={plan.name}
-              className={isCurrent ? "border-primary ring-1 ring-primary" : ""}
-            >
-              <CardHeader>
-                <div className="mb-2 flex items-center gap-2">
-                  <plan.icon className="size-5 text-primary" />
-                  <CardTitle>{plan.name}</CardTitle>
-                </div>
-                <div className="flex items-baseline gap-1">
-                  <span className="text-3xl font-bold">{plan.price}</span>
-                  <span className="text-sm text-muted-foreground">
-                    /{plan.period}
-                  </span>
-                </div>
-                <CardDescription>{plan.description}</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <ul className="mb-6 space-y-2">
-                  {plan.features.map((feature) => (
-                    <li key={feature} className="flex items-start gap-2 text-sm">
-                      <Check className="mt-0.5 size-4 shrink-0 text-emerald-500" />
-                      {feature}
-                    </li>
-                  ))}
-                </ul>
-                {plan.plan === "FREE" ? (
-                  <Button className="w-full" disabled variant="secondary">
-                    <CreditCard className="size-4" />
-                    {isCurrent ? "Current Plan" : "Included"}
-                  </Button>
-                ) : (
-                  <UpgradeButton
-                    current={isCurrent}
-                    plan={plan.plan as PaidPlan}
-                  />
-                )}
-              </CardContent>
-            </Card>
-          );
-        })}
-      </div>
+      <section className="space-y-3">
+        <div>
+          <h2 className="text-lg font-semibold">Available upgrades</h2>
+          <p className="text-sm text-muted-foreground">
+            Upgrade when campaigns need more limits, retention, or automation.
+          </p>
+        </div>
+        {availableUpgrades.length === 0 ? (
+          <div className="rounded-lg border border-dashed p-6 text-sm text-muted-foreground">
+            You are already on the highest plan.
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            {availableUpgrades.map((plan) => (
+              <Card key={plan.name}>
+                <CardHeader>
+                  <div className="mb-2 flex items-center gap-2">
+                    <plan.icon className="size-5 text-primary" />
+                    <CardTitle>{plan.name}</CardTitle>
+                  </div>
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-3xl font-bold">{plan.price}</span>
+                    <span className="text-sm text-muted-foreground">
+                      /{plan.period}
+                    </span>
+                  </div>
+                  <CardDescription>{plan.description}</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <ul className="mb-6 space-y-2">
+                    {plan.features.slice(0, 6).map((feature) => (
+                      <li key={feature} className="flex items-start gap-2 text-sm">
+                        <Check className="mt-0.5 size-4 shrink-0 text-emerald-500" />
+                        {feature}
+                      </li>
+                    ))}
+                  </ul>
+                  <UpgradeButton current={false} plan={plan.plan as PaidPlan} />
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
+      </section>
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Billing History</CardTitle>
+          <CardTitle className="text-base">Payment History</CardTitle>
           <CardDescription>
             Latest {history.items.length} of {history.total} payment transactions.
           </CardDescription>
@@ -288,50 +390,74 @@ export default async function BillingPage({ searchParams }: BillingPageProps) {
         <CardContent>
           {history.items.length === 0 ? (
             <div className="rounded-lg border border-dashed p-6 text-sm text-muted-foreground">
-              No payments yet.
+              No payments yet. Paid checkout attempts will appear here.
             </div>
           ) : (
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Order</TableHead>
+                    <TableHead>Date</TableHead>
+                    <TableHead>Order ID</TableHead>
                     <TableHead>Plan</TableHead>
-                    <TableHead>Status</TableHead>
                     <TableHead>Method</TableHead>
+                    <TableHead>Status</TableHead>
                     <TableHead className="text-right">Amount</TableHead>
-                    <TableHead className="text-right">Paid</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {history.items.map((transaction) => (
-                    <TableRow key={transaction.id}>
-                      <TableCell className="font-mono text-xs">
-                        {transaction.orderId}
-                      </TableCell>
-                      <TableCell>
-                        {transaction.plan} / {transaction.duration}
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant={getStatusVariant(transaction.status)}>
-                          {formatPaymentStatus(transaction.status)}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-muted-foreground">
-                        {formatPaymentMethod(transaction)}
-                      </TableCell>
-                      <TableCell className="text-right font-medium tabular-nums">
-                        {formatCurrencyIdr(transaction.grossAmountIdr)}
-                      </TableCell>
-                      <TableCell className="text-right text-muted-foreground">
-                        {formatDate(transaction.paidAt)}
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                  {history.items.map((transaction) => {
+                    const method = getPaymentMethodDisplay(transaction);
+
+                    return (
+                      <TableRow key={transaction.id}>
+                        <TableCell className="text-muted-foreground">
+                          {formatDate(transaction.paidAt ?? transaction.createdAt)}
+                        </TableCell>
+                        <TableCell className="font-mono text-xs">
+                          {transaction.orderId}
+                        </TableCell>
+                        <TableCell>
+                          {transaction.plan} / {transaction.duration}
+                        </TableCell>
+                        <TableCell>
+                          <span className="inline-flex items-center gap-2 text-muted-foreground">
+                            <method.Icon className="size-4" />
+                            {method.label}
+                          </span>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant={getStatusVariant(transaction.status)}>
+                            {formatPaymentStatus(transaction.status)}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-right font-medium tabular-nums">
+                          {formatCurrencyIdr(transaction.grossAmountIdr)}
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
                 </TableBody>
               </Table>
             </div>
           )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Billing FAQ</CardTitle>
+          <CardDescription>
+            Operational details for plan changes and payment status.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="grid gap-3 md:grid-cols-3">
+          {billingFaqs.map((faq) => (
+            <div key={faq.question} className="rounded-lg border p-4">
+              <p className="text-sm font-medium">{faq.question}</p>
+              <p className="mt-2 text-sm text-muted-foreground">{faq.answer}</p>
+            </div>
+          ))}
         </CardContent>
       </Card>
     </>

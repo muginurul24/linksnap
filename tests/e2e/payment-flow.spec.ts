@@ -71,11 +71,32 @@ async function cleanupPaymentFlowState(
     `rate-limit:auth:login:${testIp}`,
     "rate-limit:auth:login:unknown",
     ...(userId
-      ? [
-          `rate-limit:api:payments:create:${userId}`,
-          `rate-limit:api:payments:history:${userId}`,
-        ]
-      : []),
+        ? [
+            `rate-limit:api:payments:create:${userId}`,
+            `rate-limit:api:payments:history:${userId}`,
+            `rate-limit:api:payments:subscriptions:cancel:${userId}`,
+            `rate-limit:api:payments:subscriptions:reactivate:${userId}`,
+          ]
+        : []),
+  );
+}
+
+async function createActiveSubscription(userId: string): Promise<void> {
+  const now = new Date();
+  const currentPeriodEnd = new Date(now);
+  currentPeriodEnd.setMonth(currentPeriodEnd.getMonth() + 1);
+
+  await retryTransientDb(() =>
+    db.update(users).set({ plan: "PRO" }).where(eq(users.id, userId)),
+  );
+  await retryTransientDb(() =>
+    db.insert(subscriptions).values({
+      currentPeriodEnd,
+      currentPeriodStart: now,
+      plan: "PRO",
+      status: "ACTIVE",
+      userId,
+    }),
   );
 }
 
@@ -243,6 +264,51 @@ test("should start billing upgrade from the Pro button and redirect to checkout"
     await expect(page.getByText("88001234567890")).toBeVisible();
     await expect(
       page.getByText("Payment status refreshes every 10 seconds after payment."),
+    ).toBeVisible();
+  } finally {
+    await cleanupPaymentFlowState(email, userId);
+  }
+});
+
+test("should cancel and reactivate subscription renewal from billing", async ({
+  page,
+}) => {
+  const email = `e2e-billing-actions-${Date.now()}@example.com`;
+  const password = "Password1";
+  let userId: string | undefined;
+
+  try {
+    userId = await createVerifiedUser(email, password);
+    await createActiveSubscription(userId);
+    await signIn(page, { email, password });
+
+    await page.goto("/settings/billing");
+    await expect(page.getByRole("heading", { name: "Billing" })).toBeVisible();
+    await expect(page.getByRole("main").getByText("Pro Plan").first()).toBeVisible();
+    await page.getByRole("button", { name: "Cancel renewal" }).click();
+    await expect(page.getByRole("dialog")).toContainText("Cancel renewal?");
+    const cancelResponsePromise = page.waitForResponse(
+      (response) =>
+        response.url().includes("/api/v1/payments/subscriptions/cancel") &&
+        response.request().method() === "POST",
+    );
+    await page.getByRole("button", { name: "Confirm" }).click();
+    expect((await cancelResponsePromise).ok()).toBe(true);
+    await page.reload();
+    await expect(page.getByRole("button", { name: "Reactivate" })).toBeVisible();
+
+    await page.getByRole("button", { name: "Reactivate" }).click();
+    await expect(page.getByRole("dialog")).toContainText("Reactivate subscription?");
+    const reactivateResponsePromise = page.waitForResponse(
+      (response) =>
+        response.url().includes("/api/v1/payments/subscriptions/reactivate") &&
+        response.request().method() === "POST",
+    );
+    await page.getByRole("button", { name: "Confirm" }).click();
+    expect((await reactivateResponsePromise).ok()).toBe(true);
+    await page.reload();
+    await expect(
+      page.getByRole("button", { name: "Cancel renewal" }),
     ).toBeVisible();
   } finally {
     await cleanupPaymentFlowState(email, userId);

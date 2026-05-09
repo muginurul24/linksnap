@@ -340,6 +340,46 @@ export async function expireSubscriptionForUser({
   return subscription ?? null;
 }
 
+export async function cancelActiveSubscriptionForUser({
+  canceledAt,
+  userId,
+}: {
+  canceledAt: Date;
+  userId: string;
+}): Promise<SubscriptionRecord | null> {
+  const [subscription] = await db
+    .update(subscriptions)
+    .set({
+      canceledAt,
+      status: "CANCELED",
+      updatedAt: new Date(),
+    })
+    .where(and(eq(subscriptions.userId, userId), eq(subscriptions.status, "ACTIVE")))
+    .returning();
+
+  return subscription ?? null;
+}
+
+export async function reactivateCanceledSubscriptionForUser({
+  userId,
+}: {
+  userId: string;
+}): Promise<SubscriptionRecord | null> {
+  const [subscription] = await db
+    .update(subscriptions)
+    .set({
+      canceledAt: null,
+      status: "ACTIVE",
+      updatedAt: new Date(),
+    })
+    .where(
+      and(eq(subscriptions.userId, userId), eq(subscriptions.status, "CANCELED")),
+    )
+    .returning();
+
+  return subscription ?? null;
+}
+
 export async function listExpiredActiveSubscriptions({
   limit,
   now,
