@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
 import { JsonLdScript } from "@/components/seo/json-ld-script";
 import PricingPage from "@/components/landing/pricing-page";
+import { auth } from "@/lib/auth";
+import { getSessionUserId } from "@/lib/auth/session-helpers";
+import { findBillingUserById } from "@/lib/db/queries/payments";
 import {
   buildPricingJsonLd,
   createPublicMetadata,
@@ -20,11 +23,14 @@ export const metadata: Metadata = {
 
 export default async function PricingRoute() {
   const nonce = await getCspNonce();
+  const session = await auth();
+  const userId = getSessionUserId(session);
+  const billingUser = userId ? await findBillingUserById(userId) : null;
 
   return (
     <>
       <JsonLdScript nonce={nonce} value={buildPricingJsonLd()} />
-      <PricingPage />
+      <PricingPage currentPlan={billingUser?.plan ?? null} />
     </>
   );
 }

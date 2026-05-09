@@ -175,6 +175,12 @@ function Hero() {
               <Link2 className="size-4" />
               Try Demo
             </Link>
+            <Link
+              href="/pricing"
+              className="inline-flex h-11 items-center justify-center rounded-lg px-5 text-sm font-semibold text-white transition hover:bg-white/10"
+            >
+              Pricing
+            </Link>
           </div>
         </div>
         <div className="mt-14 grid max-w-3xl grid-cols-2 gap-3 sm:grid-cols-4">

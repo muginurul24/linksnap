@@ -3156,13 +3156,13 @@ Premium Flutter experience. 🟢
 
 ### TASK 23.7 — Pricing Page Redesign
 
-- [ ] Rewrite `pricing-page.tsx` with plan cards, monthly/yearly toggle, feature comparison table
-- [ ] Payment method trust section: "All payments securely processed" + bank/e-wallet logos row
-- [ ] FAQ: "What payment methods do you accept?" (list all 15), "When does my subscription activate?", etc.
-- [ ] Replace "PayGate" user-facing text with "Midtrans" (payment processor branding)
-- [ ] Current plan badge, recommended highlight on Pro
-- [ ] Mobile responsive: stack cards, sticky first column on comparison table
-- [ ] Add tests
+- [x] Rewrite `pricing-page.tsx` with plan cards, monthly/yearly toggle, feature comparison table
+- [x] Payment method trust section: "All payments securely processed" + bank/e-wallet logos row
+- [x] FAQ: "What payment methods do you accept?" (list all 15), "When does my subscription activate?", etc.
+- [x] Replace "PayGate" user-facing text with "Midtrans" (payment processor branding)
+- [x] Current plan badge, recommended highlight on Pro
+- [x] Mobile responsive: stack cards, sticky first column on comparison table
+- [x] Add tests
 
 ### TASK 23.8 — Billing Settings Page
 

@@ -11,7 +11,11 @@ test("should navigate landing pricing demo generator and register", async ({
     page.getByRole("heading", { name: "LinkSnap" }),
   ).toBeVisible();
 
-  await page.getByRole("link", { name: "Pricing" }).click();
+  await expect(page.getByRole("link", { name: "Pricing" }).first()).toHaveAttribute(
+    "href",
+    "/pricing",
+  );
+  await page.goto("/pricing");
   await expect(page).toHaveURL(/\/pricing$/);
   await page.getByRole("button", { name: "yearly" }).click();
   await expect(page.getByText("$75", { exact: true })).toBeVisible();

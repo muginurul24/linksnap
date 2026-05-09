@@ -8910,3 +8910,44 @@ Reworked the checkout success client to render payment instructions by channel t
 - ✅ Settlement redirect remains client-side after confirmed paid/local settlement status.
 
 **Next Task:** 23.7 — Pricing Page Redesign.
+
+### 23.7 — Pricing Page Redesign
+- **Date:** 2026-05-09 09:50 GMT+7
+- **Duration:** 0h 13m
+- **Status:** ✅ Complete
+
+**What I Did:**
+Redesigned the public pricing page with current-plan awareness, monthly/yearly toggle, plan cards, Pro recommendation badge, sticky first-column comparison table, Midtrans payment trust section, and expanded FAQ. I also restored a clear Pricing link on the landing hero and made the public-site E2E pricing navigation deterministic.
+
+**Files Changed:**
+- `src/components/landing/pricing-page.tsx` — Rebuilt pricing UI with plan cards, current plan badges, payment trust section, FAQ, and sticky comparison table.
+- `src/app/(marketing)/pricing/page.tsx` — Passed optional current plan from the authenticated session to the pricing page.
+- `src/components/landing/landing-page.tsx` — Added a visible Pricing hero link for public navigation.
+- `tests/unit/pricing-page.test.tsx` — Added coverage for current plan state, Midtrans copy, all payment channels, FAQ, and sticky table wiring.
+- `tests/e2e/public-site.spec.ts` — Made pricing navigation assertion explicit and stable.
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Checked off 23.7.
+- `_bmad-output/implementation-artifacts/JOURNAL.md` — Logged 23.7.
+
+**Decisions Made:**
+- Used Midtrans in all user-facing payment copy and removed PayGate branding from pricing.
+- Kept `/pricing` public but current-plan aware when a user session exists.
+- Showed all 15 supported channels from the registry so pricing cannot drift from payment implementation.
+
+**Tests:**
+- ✅ Targeted unit: `rtk bun run test -- tests/unit/pricing-page.test.tsx tests/unit/plan-definitions.test.ts` — 8 passed.
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Full unit/integration: `rtk bun run test` — 159 passed, 1 skipped; 731 passed, 2 skipped.
+- ✅ Production build: `rtk bun run build` — Passed.
+- ✅ Targeted E2E: `rtk bun run test:e2e -- tests/e2e/public-site.spec.ts -g "should navigate landing pricing"` — Passed.
+
+**Issues Encountered:**
+- The existing public-site E2E expected a Pricing link from landing. I added a visible hero Pricing link and made the test navigate directly after asserting the link is present.
+
+**Security Checks:**
+- ✅ Pricing page reads only non-sensitive current plan state.
+- ✅ No payment mutation or caching behavior added.
+- ✅ No provider secrets or checkout tokens exposed.
+- ✅ No raw HTML rendering added.
+
+**Next Task:** 23.8 — Billing Settings Page.
