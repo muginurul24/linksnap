@@ -44,11 +44,13 @@ type PayGateInput = {
     name: string | null;
   };
   duration: PaymentDuration;
+  ewallet?: string;
   grossAmountIdr: number;
   metadata?: Record<string, unknown>;
   orderId: string;
   paymentMethod?: string;
   plan: PaymentPlan;
+  store?: string;
 };
 
 type ApiEnvelope<T> =
@@ -122,6 +124,24 @@ vi.mock("@/lib/db/queries/payments", () => ({
 }));
 
 vi.mock("@/lib/payments/paygate", () => {
+  const bankMethods = new Set([
+    "bca",
+    "bni",
+    "bri",
+    "cimb",
+    "danamon",
+    "mandiri",
+    "permata",
+  ]);
+  const ewalletMethods = new Set([
+    "dana",
+    "gopay",
+    "linkaja",
+    "ovo",
+    "shopeepay",
+  ]);
+  const cstoreMethods = new Set(["alfamart", "indomaret"]);
+
   class PayGateConfigurationError extends Error {}
   class PayGateUnsupportedChannelError extends Error {
     readonly paymentMethod: string;
@@ -140,6 +160,69 @@ vi.mock("@/lib/payments/paygate", () => {
     }
   }
 
+  function getMockPaymentMethod(input: PayGateInput): string {
+    return input.paymentMethod ?? input.bank ?? input.ewallet ?? input.store ?? "bca";
+  }
+
+  function getMockPaymentType(method: string): string {
+    if (bankMethods.has(method)) return "bank_transfer";
+    if (ewalletMethods.has(method)) return "ewallet";
+    if (cstoreMethods.has(method)) return "cstore";
+    if (method === "qris") return "qris";
+
+    throw new PayGateUnsupportedChannelError(method);
+  }
+
+  function buildMockPaymentDetails(method: string) {
+    if (bankMethods.has(method)) {
+      return {
+        midtrans: {
+          va_numbers: [{ bank: method, va_number: "88001234567890" }],
+        },
+      };
+    }
+
+    if (ewalletMethods.has(method)) {
+      return {
+        actions: [
+          {
+            name: "Open wallet",
+            type: "deeplink",
+            url: `https://wallet.example/${method}`,
+          },
+        ],
+        midtrans: {
+          actions: [
+            {
+              name: "Open wallet",
+              type: "deeplink",
+              url: `https://wallet.example/${method}`,
+            },
+          ],
+        },
+      };
+    }
+
+    if (method === "qris") {
+      return {
+        midtrans: {
+          qr_string: "000201010212",
+          qr_url: "https://pay.example/qris.png",
+        },
+        qr_string: "000201010212",
+        qr_url: "https://pay.example/qris.png",
+      };
+    }
+
+    return {
+      midtrans: {
+        cstore: method,
+        payment_code: "1234567890",
+      },
+      payment_code: "1234567890",
+    };
+  }
+
   return {
     PayGateApiError,
     PayGateConfigurationError,
@@ -152,12 +235,18 @@ vi.mock("@/lib/payments/paygate", () => {
     createPayGateCharge: async (input: PayGateInput) => {
       mockState.payGateInputs.push(input);
       if (mockState.payGateError) throw mockState.payGateError;
+      const paymentMethod = getMockPaymentMethod(input);
+      const paymentType = getMockPaymentType(paymentMethod);
+      const paymentDetails = buildMockPaymentDetails(paymentMethod);
 
       return {
         ...mockState.payGateResponse,
         data: {
           ...mockState.payGateResponse.data,
+          ...paymentDetails,
           order_id: input.orderId,
+          payment_method: paymentMethod,
+          payment_type: paymentType,
         },
       };
     },
@@ -234,7 +323,13 @@ describe("create payment API", () => {
       }),
     );
     const body = await readJson<{
+      channel: {
+        id: string;
+        instructions: string;
+        name: string;
+      };
       orderId: string;
+      paymentMethod: string;
       redirectUrl: string;
       status: string;
       transactionId: string;
@@ -246,6 +341,11 @@ describe("create payment API", () => {
     if (!body.success) return;
 
     expect(body.data).toMatchObject({
+      channel: {
+        id: "bca",
+        name: "BCA Virtual Account",
+      },
+      paymentMethod: "bca",
       paymentType: "bank_transfer",
       redirectUrl: expect.stringContaining("/checkout/success?order_id="),
       status: "pending",
@@ -279,42 +379,135 @@ describe("create payment API", () => {
         metadata: {
           duration: "MONTHLY",
           paymentMethod: "bca",
+          paymentType: "bank_transfer",
           plan: "PRO",
           source: "linksnap",
         },
         orderId: body.data.orderId,
+        paymentMethod: "bca",
         plan: "PRO",
       },
     ]);
   });
 
-  it("should create a PayGate transaction with a selected payment method", async () => {
+  it.each([
+    {
+      channelName: "BNI Virtual Account",
+      extraInput: { bank: "bni", paymentMethod: "bni" },
+      method: "bni",
+      paymentType: "bank_transfer",
+      responseFields: {
+        paymentCode: null,
+        qrUrl: null,
+        vaNumbers: [{ bank: "bni", va_number: "88001234567890" }],
+      },
+    },
+    {
+      channelName: "GoPay",
+      extraInput: { ewallet: "gopay", paymentMethod: "gopay" },
+      method: "gopay",
+      paymentType: "ewallet",
+      responseFields: {
+        actions: [
+          {
+            name: "Open wallet",
+            type: "deeplink",
+            url: "https://wallet.example/gopay",
+          },
+        ],
+        paymentCode: null,
+        qrUrl: null,
+      },
+    },
+    {
+      channelName: "QRIS",
+      extraInput: { paymentMethod: "qris" },
+      method: "qris",
+      paymentType: "qris",
+      responseFields: {
+        paymentCode: null,
+        qrString: "000201010212",
+        qrUrl: "https://pay.example/qris.png",
+      },
+    },
+    {
+      channelName: "Indomaret",
+      extraInput: { paymentMethod: "indomaret", store: "indomaret" },
+      method: "indomaret",
+      paymentType: "cstore",
+      responseFields: {
+        paymentCode: "1234567890",
+        qrUrl: null,
+      },
+    },
+  ])(
+    "should create a PayGate transaction for $method",
+    async ({ channelName, extraInput, method, paymentType, responseFields }) => {
+      const response = await POST(
+        createRequest({
+          duration: "MONTHLY",
+          paymentMethod: method,
+          plan: "PRO",
+        }),
+      );
+      const body = await readJson<{
+        actions?: unknown[];
+        channel: {
+          id: string;
+          instructions: string;
+          name: string;
+        };
+        orderId: string;
+        paymentCode: string | null;
+        paymentMethod: string;
+        paymentType: string;
+        qrString?: string | null;
+        qrUrl: string | null;
+        vaNumbers: Array<{ bank: string; va_number: string }>;
+      }>(response);
+
+      expect(response.status).toBe(201);
+      expect(body.success).toBe(true);
+      if (!body.success) return;
+
+      expect(body.data).toMatchObject({
+        channel: {
+          id: method,
+          name: channelName,
+        },
+        paymentMethod: method,
+        paymentType,
+        ...responseFields,
+      });
+      expect(body.data.channel.instructions).toEqual(expect.any(String));
+      expect(mockState.payGateInputs).toEqual([
+        expect.objectContaining({
+          ...extraInput,
+          metadata: expect.objectContaining({
+            paymentMethod: method,
+            paymentType,
+          }),
+        }),
+      ]);
+    },
+  );
+
+  it("should reject unsupported payment methods before creating a transaction", async () => {
     const response = await POST(
       createRequest({
         duration: "MONTHLY",
-        paymentMethod: "gopay",
+        paymentMethod: "dragonpay",
         plan: "PRO",
       }),
     );
-    const body = await readJson<{
-      orderId: string;
-      paymentMethod: string;
-      paymentType: string;
-    }>(response);
+    const body = await readJson<unknown>(response);
 
-    expect(response.status).toBe(201);
-    expect(body.success).toBe(true);
-    if (!body.success) return;
-
-    expect(body.data.paymentMethod).toBe("gopay");
-    expect(mockState.payGateInputs).toEqual([
-      expect.objectContaining({
-        paymentMethod: "gopay",
-        metadata: expect.objectContaining({
-          paymentMethod: "gopay",
-        }),
-      }),
-    ]);
+    expect(response.status).toBe(400);
+    expect(body.success).toBe(false);
+    if (body.success) return;
+    expect(body.error.code).toBe("VALIDATION_ERROR");
+    expect(mockState.pendingInputs).toEqual([]);
+    expect(mockState.payGateInputs).toEqual([]);
   });
 
   it("should reject invalid payment input", async () => {

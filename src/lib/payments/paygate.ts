@@ -234,7 +234,8 @@ function isCstoreCode(value: string): value is CstoreCode {
 export function resolvePayGatePaymentChannel(
   input: Pick<PayGateChargeInput, "bank" | "ewallet" | "paymentMethod" | "store">,
 ): PaymentChannel {
-  const paymentMethod = input.paymentMethod ?? input.bank ?? "bca";
+  const paymentMethod =
+    input.paymentMethod ?? input.bank ?? input.ewallet ?? input.store ?? "bca";
 
   if (isBankCode(paymentMethod)) {
     return {

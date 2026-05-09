@@ -17,8 +17,19 @@ import {
   PayGateApiError,
   PayGateConfigurationError,
   PayGateUnsupportedChannelError,
-  type PaymentChannelCode,
+  type PayGateChargeInput,
+  type PayGatePaymentAction,
 } from "@/lib/payments/paygate";
+import type {
+  BankCode,
+  CstoreCode,
+  EwalletCode,
+  PaymentChannelCode,
+} from "@/lib/payments/payment-channel-codes";
+import {
+  getChannelById,
+  type PaymentChannel as PaymentChannelDefinition,
+} from "@/lib/payments/payment-channels";
 import {
   calculateGrossAmountIdr,
   calculatePlanAmountUsd,
@@ -43,6 +54,21 @@ type AuthenticatedPaymentUser = {
   name: string | null;
   userId: string;
 };
+
+type PaymentChannelResponse = {
+  category: PaymentChannelDefinition["category"];
+  categoryLabel: string;
+  estimatedProcessingTime: string;
+  id: PaymentChannelCode;
+  instructions: string;
+  name: string;
+  shortName: string;
+};
+
+type PayGateChannelInput = Pick<
+  PayGateChargeInput,
+  "bank" | "ewallet" | "paymentMethod" | "store"
+>;
 
 function generatePaymentOrderId(): string {
   const entropy = crypto.randomUUID().replaceAll("-", "").slice(0, 12);
@@ -116,13 +142,91 @@ function buildPaymentWebhookUrl(baseUrl: string): string {
   return `${normalizePaymentBaseUrl(baseUrl)}/api/v1/payments/webhook`;
 }
 
-function getRequestedPaymentMethod(
-  input: CreatePaymentInput,
-): PaymentChannelCode | undefined {
+function getRequestedPaymentMethod(input: CreatePaymentInput): string {
   const requestedMethod =
-    input.paymentMethod ?? input.bank ?? input.ewallet ?? input.store;
+    input.paymentMethod ?? input.bank ?? input.ewallet ?? input.store ?? "bca";
 
-  return requestedMethod as PaymentChannelCode | undefined;
+  return requestedMethod;
+}
+
+function validateRequestedPaymentChannel(
+  input: CreatePaymentInput,
+): PaymentChannelDefinition | null {
+  const requestedMethod = getRequestedPaymentMethod(input);
+  const channel = getChannelById(requestedMethod);
+
+  return channel?.enabled ? channel : null;
+}
+
+function buildPayGateChannelInput(
+  channel: PaymentChannelDefinition,
+): PayGateChannelInput {
+  if (channel.category === "bank_transfer") {
+    return {
+      bank: channel.id as BankCode,
+      paymentMethod: channel.id,
+    };
+  }
+
+  if (channel.category === "ewallet") {
+    return {
+      ewallet: channel.id as EwalletCode,
+      paymentMethod: channel.id,
+    };
+  }
+
+  if (channel.category === "convenience_store") {
+    return {
+      paymentMethod: channel.id,
+      store: channel.id as CstoreCode,
+    };
+  }
+
+  return {
+    paymentMethod: "qris",
+  };
+}
+
+function buildPaymentChannelResponse(
+  channel: PaymentChannelDefinition,
+): PaymentChannelResponse {
+  return {
+    category: channel.category,
+    categoryLabel: channel.categoryLabel,
+    estimatedProcessingTime: channel.estimatedProcessingTime,
+    id: channel.id,
+    instructions: channel.instructions,
+    name: channel.name,
+    shortName: channel.shortName,
+  };
+}
+
+function getPayGateQrUrl(transaction: {
+  midtrans?: { qr_url?: string };
+  qr_url?: string;
+}): string | null {
+  return transaction.qr_url ?? transaction.midtrans?.qr_url ?? null;
+}
+
+function getPayGateQrString(transaction: {
+  midtrans?: { qr_string?: string };
+  qr_string?: string;
+}): string | null {
+  return transaction.qr_string ?? transaction.midtrans?.qr_string ?? null;
+}
+
+function getPayGatePaymentCode(transaction: {
+  midtrans?: { payment_code?: string };
+  payment_code?: string;
+}): string | null {
+  return transaction.payment_code ?? transaction.midtrans?.payment_code ?? null;
+}
+
+function getPayGatePaymentActions(transaction: {
+  actions?: PayGatePaymentAction[];
+  midtrans?: { actions?: PayGatePaymentAction[] };
+}): PayGatePaymentAction[] {
+  return transaction.actions ?? transaction.midtrans?.actions ?? [];
 }
 
 export async function POST(request: NextRequest) {
@@ -146,9 +250,19 @@ export async function POST(request: NextRequest) {
 
     assertPayGateConfigured();
 
+    const paymentChannel = validateRequestedPaymentChannel(parsedBody.data);
+    if (!paymentChannel) {
+      return errorResponse(
+        "VALIDATION_ERROR",
+        "Unsupported payment method.",
+        400,
+        requestId,
+        { paymentMethod: getRequestedPaymentMethod(parsedBody.data) },
+      );
+    }
+
     const { grossAmountIdr, grossAmountUsd } = calculatePaymentAmount(parsedBody.data);
     const orderId = generatePaymentOrderId();
-    const paymentMethod = getRequestedPaymentMethod(parsedBody.data);
     const paymentBaseUrl = getConfiguredPaymentBaseUrl() ?? request.nextUrl.origin;
     const callbackUrls = buildPaymentRedirectUrls({
       baseUrl: paymentBaseUrl,
@@ -173,11 +287,12 @@ export async function POST(request: NextRequest) {
       duration: parsedBody.data.duration,
       grossAmountIdr,
       orderId,
-      ...(paymentMethod ? { paymentMethod } : { bank: "bca" }),
+      ...buildPayGateChannelInput(paymentChannel),
       plan: parsedBody.data.plan,
       metadata: {
         duration: parsedBody.data.duration,
-        paymentMethod: paymentMethod ?? "bca",
+        paymentMethod: paymentChannel.id,
+        paymentType: paymentChannel.paymentType,
         plan: parsedBody.data.plan,
         source: "linksnap",
       },
@@ -187,9 +302,15 @@ export async function POST(request: NextRequest) {
 
     return successResponse(
       {
+        actions: getPayGatePaymentActions(payGateTransaction),
+        channel: buildPaymentChannelResponse(paymentChannel),
+        expiresAt: payGateTransaction.expires_at ?? null,
         orderId,
-        paymentMethod: payGateTransaction.payment_method ?? paymentMethod ?? "bca",
+        paymentCode: getPayGatePaymentCode(payGateTransaction),
+        paymentMethod: payGateTransaction.payment_method ?? paymentChannel.id,
         paymentType: payGateTransaction.payment_type,
+        qrString: getPayGateQrString(payGateTransaction),
+        qrUrl: getPayGateQrUrl(payGateTransaction),
         redirectUrl: callbackUrls.finish,
         status: payGateTransaction.status,
         transactionId: payGateTransaction.transaction_id,

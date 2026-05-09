@@ -53,6 +53,25 @@ describe("PayGate multi-channel client", () => {
     });
   });
 
+  it("should resolve explicit legacy channel fields", () => {
+    expect(buildPayGateChargePayload(createChargeInput({ bank: "bni" }))).toMatchObject({
+      bank: "bni",
+      payment_type: "bank_transfer",
+    });
+    expect(
+      buildPayGateChargePayload(createChargeInput({ ewallet: "gopay" })),
+    ).toMatchObject({
+      ewallet: "gopay",
+      payment_type: "ewallet",
+    });
+    expect(
+      buildPayGateChargePayload(createChargeInput({ store: "indomaret" })),
+    ).toMatchObject({
+      payment_type: "cstore",
+      store: "indomaret",
+    });
+  });
+
   it("should construct e-wallet payloads for every supported wallet", () => {
     for (const ewallet of PAYGATE_EWALLET_CODES) {
       expect(

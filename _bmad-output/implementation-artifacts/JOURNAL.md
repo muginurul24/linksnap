@@ -8823,3 +8823,44 @@ Reworked billing upgrades from direct checkout creation into a multi-step dialog
 - ✅ Payment detail and checkout APIs remain no-store/no-cache flows.
 
 **Next Task:** 23.5 — Payment Create API with Channel Support.
+
+### 23.5 — Payment Create API with Channel Support
+- **Date:** 2026-05-09 09:29 GMT+7
+- **Duration:** 0h 06m
+- **Status:** ✅ Complete
+
+**What I Did:**
+Completed server-side payment channel support for `POST /api/v1/payments/create`. The route now validates requested payment methods against the channel registry before creating pending transactions, maps each channel category into the correct PayGate charge parameters, and returns enriched channel metadata for checkout rendering.
+
+**Files Changed:**
+- `src/app/api/v1/payments/create/route.ts` — Added registry validation, channel-to-PayGate mapping, enriched response fields, and unsupported-channel rejection before DB writes.
+- `src/lib/payments/paygate.ts` — Allowed legacy `ewallet` and `store` fields to resolve channels when `paymentMethod` is omitted.
+- `src/lib/validations/payment.ts` — Channel payload support was kept from 23.4 and verified here.
+- `tests/integration/create-payment-api.test.ts` — Added per-channel coverage for bank transfer, e-wallet, QRIS, convenience-store, enriched response metadata, and invalid channel rejection.
+- `tests/unit/paygate-multi-channel.test.ts` — Added legacy channel-field resolution coverage.
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Checked off 23.5.
+- `_bmad-output/implementation-artifacts/JOURNAL.md` — Logged 23.5.
+
+**Decisions Made:**
+- Validated channel IDs before `createPendingTransactionRecord()` so invalid methods do not create orphan pending rows.
+- Returned `channel`, `actions`, `qrUrl`, `qrString`, `paymentCode`, `expiresAt`, and `vaNumbers` in the create response so 23.6 can render channel-aware instructions without guessing.
+- Kept default BCA behavior for older clients that still send only `{ plan, duration }`.
+
+**Tests:**
+- ✅ Targeted unit/integration: `rtk bun run test -- tests/integration/create-payment-api.test.ts tests/unit/paygate-multi-channel.test.ts tests/unit/payment-pricing-validation.test.ts` — 26 passed.
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Full unit/integration: `rtk bun run test` — 157 passed, 1 skipped; 724 passed, 2 skipped.
+- ✅ Production build: `rtk bun run build` — Passed.
+
+**Issues Encountered:**
+- No blockers. The create route now owns channel validation; PayGate client unsupported-channel handling remains as a secondary guard.
+
+**Security Checks:**
+- ✅ Unsupported channels rejected before payment record creation.
+- ✅ Auth, rate limiting, order ID generation, and pending transaction record behavior preserved.
+- ✅ No payment mutation caching added.
+- ✅ No secrets exposed to client responses.
+- ✅ No raw SQL added.
+
+**Next Task:** 23.6 — Checkout Success Page (Channel-Aware).

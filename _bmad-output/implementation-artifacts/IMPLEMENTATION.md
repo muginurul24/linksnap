@@ -3135,13 +3135,13 @@ Premium Flutter experience. 🟢
 
 ### TASK 23.5 — Payment Create API with Channel Support
 
-- [ ] Update `POST /api/v1/payments/create/route.ts`
-- [ ] Update `createPaymentSchema` to accept `paymentMethod` + optional channel params (bank, ewallet, store)
-- [ ] Server-side validate paymentMethod against channel registry
-- [ ] Map paymentMethod → PayGate charge parameters dynamically
-- [ ] Return enriched response with channel metadata (vaNumbers, qrUrl, paymentCode, instructions)
-- [ ] Keep: auth, rate limiting, order ID generation, pending transaction record
-- [ ] Add integration tests per channel
+- [x] Update `POST /api/v1/payments/create/route.ts`
+- [x] Update `createPaymentSchema` to accept `paymentMethod` + optional channel params (bank, ewallet, store)
+- [x] Server-side validate paymentMethod against channel registry
+- [x] Map paymentMethod → PayGate charge parameters dynamically
+- [x] Return enriched response with channel metadata (vaNumbers, qrUrl, paymentCode, instructions)
+- [x] Keep: auth, rate limiting, order ID generation, pending transaction record
+- [x] Add integration tests per channel
 
 ### TASK 23.6 — Checkout Success Page (Channel-Aware)
 
