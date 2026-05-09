@@ -3343,3 +3343,125 @@ Premium Flutter experience. 🟢
 | 24.10 | Loading/empty/error pass | P0 |
 
 **Estimated total:** 201 + 10 = 211 tasks | **Implementation gate:** Awaiting Rafi approval.
+
+---
+
+## 🔴 Phase 25: Launch Readiness — Production-Grade Final Polish
+
+> **Status:** Approved by Rafi — 2026-05-09. FINAL PHASE. 🚀
+> **Spec:** `_bmad-output/planning-artifacts/spec-phase-25-launch-readiness.md`
+> **Goal:** Every remaining checkbox, every rough edge, every security concern — addressed. LinkSnap ships production-grade. Leave nothing for "later".
+
+### 🔴 Phase Rules
+
+- [ ] This is the FINAL implementation phase. Check everything off.
+- [ ] One commit per logical group.
+- [ ] Every commit: typecheck + lint + unit tests + targeted E2E + build.
+- [ ] Production safety first. Never break existing functionality.
+- [ ] If something CANNOT be done (needs external service), document with rationale.
+
+### TASK 25.1 — Production Environment & Deployment
+
+- [ ] Audit `.env.example` — all vars documented with descriptions
+- [ ] Create `DEPLOY.md` — complete deployment guide
+- [ ] Verify Vercel: env vars, domain, cron jobs, CRON_SECRET, NEXTAUTH_URL
+- [ ] Verify Google OAuth callback URL matches production
+- [ ] Verify PayGate webhook URL is production
+- [ ] Create `scripts/verify-production-env.sh`
+- [ ] Production build must succeed
+
+### TASK 25.2 — Security Final Audit
+
+- [ ] Close all 16 SECURITY.md categories
+- [ ] Verify no debug endpoints or verbose errors in production
+- [ ] SSRF scan: no user-controlled URLs in server-side fetch
+- [ ] Verify no `console.log` in production code (only structured logger)
+- [ ] Dependency audit for known CVEs
+- [ ] Document security posture
+
+### TASK 25.3 — Accessibility & Lighthouse
+
+- [ ] Lighthouse audit on all key pages → target score ≥ 95
+- [ ] Fix: aria-label on icon-only buttons, keyboard navigation, heading hierarchy
+- [ ] Fix: color contrast WCAG AA, form labels, landmarks
+- [ ] Performance: image optimization, bundle size audit
+- [ ] SEO: meta descriptions, OG tags, sitemap, robots.txt
+
+### TASK 25.4 — Error Tracking & Observability
+
+- [ ] Ensure structured logger used consistently in all catch blocks
+- [ ] Add `requestId` to ALL API error responses
+- [ ] Create health check endpoint: `GET /api/v1/health`
+- [ ] Add critical path instrumentation (redirect latency, payment timing)
+- [ ] Document monitoring recommendations
+
+### TASK 25.5 — Load Testing & Performance Baseline
+
+- [ ] Create Artillery/k6 load test scripts
+- [ ] Test: 5000 concurrent redirects, p50 < 5ms, p99 < 500ms
+- [ ] Test: Analytics API under load, payment API under load
+- [ ] Verify rate limiting activates correctly
+- [ ] Document results
+
+### TASK 25.6 — Database Backup & Recovery
+
+- [ ] Document Neon.tech backup strategy
+- [ ] Create disaster recovery plan
+- [ ] Verify Drizzle migrations in sync with schema
+- [ ] Document restore procedure, redeploy procedure
+
+### TASK 25.7 — Documentation & README
+
+- [ ] Write comprehensive README
+- [ ] Verify API docs page is complete
+- [ ] Add inline code comments for complex logic
+- [ ] Document known limitations and roadmap
+
+### TASK 25.8 — Final PRD Gap Analysis
+
+- [ ] Compare PRD promises vs IMPLEMENTATION.md reality
+- [ ] Create gap report: what's promised but not built
+- [ ] Categorize: P0 (fix now), P1 (V2), P2 (wont do with rationale)
+- [ ] Fix any P0 gaps
+
+### TASK 25.9 — Google OAuth End-to-End Test
+
+- [ ] Configure Google Cloud Console for production
+- [ ] Test OAuth flow end-to-end in production
+- [ ] Document OAuth setup procedure
+
+### TASK 25.10 — Flutter Mobile App Build
+
+- [ ] Verify Flutter SDK, run `flutter pub get`
+- [ ] Build release APK: < 25 MB, < 10 min
+- [ ] Build appbundle for Play Store
+- [ ] Test install on device, app icon
+- [ ] Document build process
+
+### TASK 25.11 — Final Quality Gate & Go-Live
+
+- [ ] Complete quality gate: typecheck + lint + test + test:e2e + build
+- [ ] Manual walkthrough: EVERY dashboard page, EVERY public page
+- [ ] Verify redirect handler works for existing links
+- [ ] Zero type errors, zero lint errors, all tests pass
+- [ ] 🚀 Go-live!
+
+### 📊 Phase 25 Task Summary
+
+| Task | Area | Priority |
+|---|---|---|
+| 25.1 | Production env & deployment | P0 |
+| 25.2 | Security final audit | P0 |
+| 25.3 | Accessibility & Lighthouse | P1 |
+| 25.4 | Error tracking & observability | P1 |
+| 25.5 | Load testing & performance | P1 |
+| 25.6 | Database backup & recovery | P0 |
+| 25.7 | Documentation & README | P1 |
+| 25.8 | PRD gap analysis | P0 |
+| 25.9 | Google OAuth e2e test | P0 |
+| 25.10 | Flutter mobile build | P2 |
+| 25.11 | Final quality gate & go-live | P0 |
+
+**Estimated total:** 211 + 11 = 222 tasks | **Implementation gate:** ✅ Rafi approved 2026-05-09.
+
+🚀 **This is the final phase. After this, LinkSnap ships.**
