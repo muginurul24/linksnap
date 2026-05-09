@@ -3293,11 +3293,11 @@ Premium Flutter experience. 🟢
 
 ### TASK 24.7 — Admin Dashboard Real Data
 
-- [ ] Replace static dashes with real DB queries
-- [ ] Load: total users, links, clicks, revenue
-- [ ] Show recent audit log entries
-- [ ] Loading skeleton, error state
-- [ ] Add unit tests
+- [x] Replace static dashes with real DB queries
+- [x] Load: total users, links, clicks, revenue
+- [x] Show recent audit log entries
+- [x] Loading skeleton, error state
+- [x] Add unit tests
 
 ### TASK 24.8 — Dashboard Onboarding for New Users
 
