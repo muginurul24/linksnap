@@ -9285,6 +9285,7 @@ Replaced the template README with LinkSnap-specific setup, architecture, API, te
 - `src/app/api/v1/payments/create/route.ts` — Added comments around transaction-before-provider and channel allowlist behavior.
 - `src/lib/analytics/click-queue.ts` — Added comments around queue-first redirect logging and dead-letter retention.
 - `tests/unit/api-docs-completeness.test.ts` — Added filesystem-backed test that ensures every implemented v1 route is documented.
+- `tests/e2e/api-docs.spec.ts` — Added paid-user browser coverage for dashboard API docs and OpenAPI JSON.
 - `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Checked off 25.7.
 - `_bmad-output/implementation-artifacts/JOURNAL.md` — Logged 25.7.
 
