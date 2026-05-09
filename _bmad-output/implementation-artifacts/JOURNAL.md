@@ -9405,6 +9405,41 @@ Added a dedicated production Google OAuth smoke test and full setup procedure. R
 
 **Next Task:** 25.10 — Flutter Mobile App Build
 
+### 25.10 — Flutter Mobile App Build
+- **Date:** 2026-05-09 20:05 GMT+7
+- **Duration:** 20m
+- **Status:** ⚠️ Partial
+
+**What I Did:**
+Audited `apps/mobile_flutter`, verified Flutter/Dart commands exist through snap, attempted Flutter SDK initialization, and documented the Android build procedure plus blockers.
+
+**Files Changed:**
+- `_bmad-output/planning-artifacts/flutter-mobile-build.md` — Added Flutter Android build runbook, toolchain requirements, commands, artifact paths, size checks, and current blockers.
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Checked off only the documentation portion of 25.10.
+- `_bmad-output/implementation-artifacts/JOURNAL.md` — Logged 25.10 partial status.
+
+**Decisions Made:**
+- Did not let Flutter snap continue downloading a 1.4GB SDK archive at 120-300KB/s because the estimated completion time was 80-180 minutes.
+- Did not generate `android/` platform files manually without a working Flutter SDK because generated Gradle/manifest files should come from the installed Flutter toolchain and then be reviewed.
+- Left APK, AAB, and install verification unchecked because no real Android build artifacts exist yet.
+
+**Tests:**
+- ⚠️ Flutter SDK check: `rtk proxy flutter --version` — Blocked by first-run SDK download.
+- ⚠️ Flutter doctor: `rtk proxy flutter doctor -v` — Blocked by first-run SDK download.
+- ❌ `flutter pub get`, APK build, AAB build, and device install were not run because Flutter SDK bootstrap did not complete and `android/` is missing.
+
+**Issues Encountered:**
+- Flutter snap attempted to download `flutter_linux_3.41.9-stable.tar.xz` from Google storage; download was too slow for this session.
+- `apps/mobile_flutter` has no `android/` directory, so release APK/AAB builds cannot run even after dependencies are installed until platform files are generated and reviewed.
+- No Android device/emulator was attached for install/icon verification.
+
+**Security Checks:**
+- ✅ No signing keys, keystores, store credentials, or mobile secrets were created or committed.
+- ✅ Build runbook requires API base URL verification before release.
+- ✅ No generated Android signing config was added.
+
+**Next Task:** 25.11 — Final Quality Gate & Go-Live
+
 ### 24.9 — Global Cross-Navigation Polish
 - **Date:** 2026-05-09 15:45 GMT+7
 - **Duration:** 45m

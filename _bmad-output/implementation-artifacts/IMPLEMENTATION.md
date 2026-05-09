@@ -3436,7 +3436,7 @@ Premium Flutter experience. 🟢
 - [ ] Build release APK: < 25 MB, < 10 min
 - [ ] Build appbundle for Play Store
 - [ ] Test install on device, app icon
-- [ ] Document build process
+- [x] Document build process
 
 ### TASK 25.11 — Final Quality Gate & Go-Live
 
