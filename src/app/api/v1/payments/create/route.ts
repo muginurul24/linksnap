@@ -11,6 +11,10 @@ import {
   findBillingUserById,
 } from "@/lib/db/queries/payments";
 import { getApiEndpointRateLimit } from "@/lib/links/limits";
+import {
+  createMetricTimer,
+  trackTimingMetric,
+} from "@/lib/observability/instrumentation";
 import { logger } from "@/lib/observability/logger";
 import { getFriendlyPayGateError } from "@/lib/payments/paygate-errors";
 import {
@@ -233,6 +237,7 @@ function getPayGatePaymentActions(transaction: {
 
 export async function POST(request: NextRequest) {
   const requestId = createRequestId();
+  const timer = createMetricTimer();
   let selectedPaymentChannel: PaymentChannelDefinition | null = null;
 
   try {
@@ -324,6 +329,17 @@ export async function POST(request: NextRequest) {
       status: payGateTransaction.status,
       userId: authResult.userId,
     });
+    trackTimingMetric({
+      durationMs: timer.elapsedMs(),
+      name: "payment.create",
+      requestId,
+      tags: {
+        channelCategory: paymentChannel.category,
+        paymentMethod: paymentChannel.id,
+        plan: parsedBody.data.plan,
+        status: "success",
+      },
+    });
 
     return successResponse(
       {
@@ -348,6 +364,12 @@ export async function POST(request: NextRequest) {
       error instanceof PayGateConfigurationError ||
       error instanceof PaymentConfigurationError
     ) {
+      trackTimingMetric({
+        durationMs: timer.elapsedMs(),
+        name: "payment.create",
+        requestId,
+        tags: { status: "configuration_error" },
+      });
       return errorResponse(
         "PAYMENT_CONFIGURATION_ERROR",
         "Payment provider is not configured.",
@@ -357,6 +379,15 @@ export async function POST(request: NextRequest) {
     }
 
     if (error instanceof PayGateUnsupportedChannelError) {
+      trackTimingMetric({
+        durationMs: timer.elapsedMs(),
+        name: "payment.create",
+        requestId,
+        tags: {
+          paymentMethod: error.paymentMethod,
+          status: "unsupported_channel",
+        },
+      });
       return errorResponse(
         "VALIDATION_ERROR",
         "Unsupported payment method.",
@@ -378,6 +409,15 @@ export async function POST(request: NextRequest) {
         route: "POST /api/v1/payments/create",
         status: error.status,
       });
+      trackTimingMetric({
+        durationMs: timer.elapsedMs(),
+        name: "payment.create",
+        requestId,
+        tags: {
+          paymentMethod: selectedPaymentChannel?.id ?? null,
+          status: "provider_error",
+        },
+      });
       return errorResponse(
         "PAYMENT_PROVIDER_ERROR",
         friendlyError.message,
@@ -387,6 +427,15 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    trackTimingMetric({
+      durationMs: timer.elapsedMs(),
+      name: "payment.create",
+      requestId,
+      tags: {
+        paymentMethod: selectedPaymentChannel?.id ?? null,
+        status: "internal_error",
+      },
+    });
     logApiErrorResponse({ code: "INTERNAL_ERROR", error, requestId, route: "POST /api/v1/payments/create" });
     return errorResponse(
       "INTERNAL_ERROR",

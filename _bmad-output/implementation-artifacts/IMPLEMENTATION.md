@@ -3389,11 +3389,11 @@ Premium Flutter experience. 🟢
 
 ### TASK 25.4 — Error Tracking & Observability
 
-- [ ] Ensure structured logger used consistently in all catch blocks
-- [ ] Add `requestId` to ALL API error responses
-- [ ] Create health check endpoint: `GET /api/v1/health`
-- [ ] Add critical path instrumentation (redirect latency, payment timing)
-- [ ] Document monitoring recommendations
+- [x] Ensure structured logger used consistently in all catch blocks
+- [x] Add `requestId` to ALL API error responses
+- [x] Create health check endpoint: `GET /api/v1/health`
+- [x] Add critical path instrumentation (redirect latency, payment timing)
+- [x] Document monitoring recommendations
 
 ### TASK 25.5 — Load Testing & Performance Baseline
 

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { trackApiErrorMetric } from "@/lib/observability/instrumentation";
 import { logger } from "@/lib/observability/logger";
 
 type ErrorDetails = Record<string, unknown> | unknown[] | string | number;
@@ -64,4 +65,5 @@ export function logApiErrorResponse({
     route,
     status,
   });
+  trackApiErrorMetric({ code, requestId, route, status });
 }

@@ -10,6 +10,10 @@ import {
   REDIRECT_CLICK_QUEUE_PROCESS_LIMIT,
 } from "@/lib/analytics/click-queue";
 import { invalidateClickQueueProcessingCaches } from "@/lib/cache/invalidation";
+import {
+  createMetricTimer,
+  trackTimingMetric,
+} from "@/lib/observability/instrumentation";
 
 export const runtime = "nodejs";
 
@@ -32,6 +36,7 @@ function getProcessLimit(request: NextRequest): number {
 
 export async function GET(request: NextRequest) {
   const requestId = createRequestId();
+  const timer = createMetricTimer();
 
   try {
     if (!process.env.CRON_SECRET?.trim()) {
@@ -60,9 +65,25 @@ export async function GET(request: NextRequest) {
       reason: "click_queue_processing",
       requestId,
     });
+    trackTimingMetric({
+      durationMs: timer.elapsedMs(),
+      name: "click_queue.process",
+      requestId,
+      tags: {
+        deadLettered: result.deadLettered,
+        processed: result.processed,
+        status: "success",
+      },
+    });
 
     return successResponse(result, 200);
   } catch (error) {
+    trackTimingMetric({
+      durationMs: timer.elapsedMs(),
+      name: "click_queue.process",
+      requestId,
+      tags: { status: "error" },
+    });
     logApiErrorResponse({ code: "INTERNAL_ERROR", error, requestId, route: "GET /api/v1/analytics/click-queue/process" });
     return errorResponse(
       "INTERNAL_ERROR",

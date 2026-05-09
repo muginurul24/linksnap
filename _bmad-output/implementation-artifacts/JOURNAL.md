@@ -9129,6 +9129,53 @@ Added full PayGate smoke coverage for the upgraded multi-channel checkout flow, 
 
 **Next Task:** Phase 24 — Dashboard UX Completion after Rafi approval.
 
+### 25.4 — Error Tracking & Observability
+- **Date:** 2026-05-09 18:18 GMT+7
+- **Duration:** 1h 5m
+- **Status:** ✅ Complete
+
+**What I Did:**
+Added launch observability primitives: a dependency health endpoint, Redis-backed rolling API error counters, structured timing metrics for redirects, payment creation, and click queue processing, plus a monitoring runbook for production alerting and future vendor wiring.
+
+**Files Changed:**
+- `src/lib/observability/instrumentation.ts` — Added API error counters, critical timing metrics, and async-safe tracking helpers.
+- `src/lib/observability/health.ts` — Added Neon and Redis health checks with recent error-rate reporting.
+- `src/app/api/v1/health/route.ts` — Added `GET /api/v1/health` with request correlation and degraded status handling.
+- `src/lib/api/response.ts` — Connected centralized API error logging to Redis error-rate metrics.
+- `src/app/[slug]/page.tsx` — Added redirect/link-page resolution timing instrumentation.
+- `src/app/api/v1/payments/create/route.ts` — Added payment creation success and failure timing instrumentation.
+- `src/app/api/v1/analytics/click-queue/process/route.ts` — Added click queue processing timing metrics.
+- `tests/unit/observability-instrumentation.test.ts` — Covered error counter and timing metric writes.
+- `tests/integration/health-api.test.ts` — Covered healthy and degraded health endpoint responses.
+- `_bmad-output/planning-artifacts/monitoring-observability.md` — Documented monitoring setup, keys, and alert recommendations.
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Checked off 25.4.
+- `_bmad-output/implementation-artifacts/JOURNAL.md` — Logged 25.4.
+
+**Decisions Made:**
+- Kept observability vendor-neutral and structured-log based so Sentry/Logtail/Vercel drains can be added without changing app behavior.
+- Used minute-bucketed Redis counters for launch error rate because the health endpoint needs a cheap signal without introducing a metrics vendor.
+- Disabled async Redis metric writes during Vitest by default to keep tests deterministic while keeping direct instrumentation tests explicit.
+
+**Tests:**
+- ✅ Targeted unit/integration: `rtk bun run test -- tests/unit/observability-instrumentation.test.ts tests/integration/health-api.test.ts` — 5 passed.
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Full unit/integration: `rtk bun run test` — 175 passed, 1 skipped; 781 passed, 2 skipped.
+- ✅ Targeted E2E: `rtk bun run test:e2e -- tests/e2e/link-flow.spec.ts -g "should create link from dashboard then log redirect analytics"` — 1 passed.
+- ✅ Targeted E2E: `rtk bun run test:e2e -- tests/e2e/payment-flow.spec.ts -g "should start billing upgrade from the Pro button and redirect to checkout"` — 1 passed.
+- ✅ Production build: `rtk bun run build` — Passed.
+
+**Issues Encountered:**
+- Initial test bucket expectations used the wrong epoch-minute value; fixed the deterministic fixture to match UTC bucket calculation.
+
+**Security Checks:**
+- ✅ Health output exposes dependency status and latency only, not connection strings or secrets.
+- ✅ API errors continue to include `requestId` and avoid raw stack traces in production logs.
+- ✅ Metric tags avoid sensitive payment/customer payloads.
+- ✅ No new unauthenticated mutation endpoint was added.
+
+**Next Task:** 25.5 — Load Testing & Performance Baseline
+
 ### 24.9 — Global Cross-Navigation Polish
 - **Date:** 2026-05-09 15:45 GMT+7
 - **Duration:** 45m

@@ -15,6 +15,10 @@ import {
   isRedirectLinkAvailable,
 } from "@/lib/links/redirect";
 import {
+  createMetricTimer,
+  trackTimingMetric,
+} from "@/lib/observability/instrumentation";
+import {
   buildRuleEvaluationContext,
   evaluateSmartRulesForLink,
 } from "@/lib/rules/rule-engine";
@@ -50,6 +54,7 @@ export async function generateMetadata({
 }
 
 export default async function RedirectPage({ params }: RedirectPageProps) {
+  const timer = createMetricTimer();
   const { slug } = await params;
   if (!isPublicSlug(slug)) notFound();
 
@@ -74,6 +79,15 @@ export default async function RedirectPage({ params }: RedirectPageProps) {
           linkPageHasCountdown,
         }),
       );
+      trackTimingMetric({
+        durationMs: timer.elapsedMs(),
+        name: "redirect.resolve",
+        tags: {
+          hasLinkPage: true,
+          outcome: "link_page",
+          slug: link.slug,
+        },
+      });
 
       return (
         <LinkPageRenderer
@@ -106,6 +120,17 @@ export default async function RedirectPage({ params }: RedirectPageProps) {
     }),
     link.clickCount,
   );
+  trackTimingMetric({
+    durationMs: timer.elapsedMs(),
+    name: "redirect.resolve",
+    tags: {
+      hasLinkPage: false,
+      outcome: "redirect",
+      ruleMatched: ruleResult !== null,
+      slug: link.slug,
+      splitTestMatched: splitTestResult !== null,
+    },
+  });
 
   permanentRedirect(
     ruleResult?.destinationUrl ??
