@@ -1,6 +1,7 @@
 import { notFound, redirect } from "next/navigation";
 import { BarChart3, Pencil } from "lucide-react";
 import { BackNavigationLink } from "@/components/dashboard/back-navigation-link";
+import { DashboardBreadcrumbs } from "@/components/dashboard/dashboard-breadcrumbs";
 import { Badge } from "@/components/ui/badge";
 import { ButtonLink } from "@/components/ui/button-link";
 import { Card, CardContent } from "@/components/ui/card";
@@ -53,6 +54,13 @@ export default async function CampaignDetailPage({
   return (
     <div className="space-y-5">
       <div className="space-y-3">
+        <DashboardBreadcrumbs
+          items={[
+            { href: "/dashboard", label: "Dashboard" },
+            { href: "/campaigns", label: "Campaigns" },
+            { label: campaign.name },
+          ]}
+        />
         <BackNavigationLink href="/campaigns">Back to Campaigns</BackNavigationLink>
         <Card>
           <CardContent className="flex flex-col gap-4 p-4 sm:flex-row sm:items-start sm:justify-between">

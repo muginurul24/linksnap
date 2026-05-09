@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { BarChart3, CalendarClock, Download, QrCode } from "lucide-react";
+import { BarChart3, CalendarClock, Download, Edit, QrCode } from "lucide-react";
 import { auth } from "@/lib/auth";
 import { getSessionUserId } from "@/lib/auth/session-helpers";
 import {
@@ -131,6 +131,7 @@ function QrCodeCard({
 }) {
   const quota = getQrDownloadQuotaState({ link, links, userPlan });
   const analyticsHref = `/analytics?range=30&qrSlug=${encodeURIComponent(link.slug)}`;
+  const editHref = `/links/${encodeURIComponent(link.slug)}/edit`;
 
   return (
     <Card className="relative overflow-hidden transition-colors hover:border-primary/40 hover:bg-muted/20">
@@ -202,6 +203,13 @@ function QrCodeCard({
             >
               <BarChart3 className="size-4" />
               View Analytics
+            </Link>
+            <Link
+              className={buttonVariants({ size: "sm", variant: "outline" })}
+              href={editHref}
+            >
+              <Edit className="size-4" />
+              View Link
             </Link>
           </div>
         </PlanGate.Quota>

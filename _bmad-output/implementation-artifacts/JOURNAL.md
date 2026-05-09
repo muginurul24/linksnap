@@ -9129,6 +9129,53 @@ Added full PayGate smoke coverage for the upgraded multi-channel checkout flow, 
 
 **Next Task:** Phase 24 — Dashboard UX Completion after Rafi approval.
 
+### 24.9 — Global Cross-Navigation Polish
+- **Date:** 2026-05-09 15:45 GMT+7
+- **Duration:** 45m
+- **Status:** ✅ Complete
+
+**What I Did:**
+Completed dashboard cross-navigation so each major entity has a direct path to its related management or analytics page. Added deep-page breadcrumbs for link and campaign edit/detail routes, moved Link Page card clicks to the edit workflow, added QR "View Link" navigation, and exposed "Manage Links" from Analytics.
+
+**Files Changed:**
+- `src/components/dashboard/dashboard-breadcrumbs.tsx` — Added reusable deep-page breadcrumb renderer.
+- `src/app/(dashboard)/links/link-actions.tsx` — Pointed per-row Analytics actions at the selected link context.
+- `src/app/(dashboard)/pages/page.tsx` — Made Link Page cards open their edit workflow while keeping analytics actions available.
+- `src/app/(dashboard)/qr/page.tsx` — Added QR card View Link action.
+- `src/app/(dashboard)/analytics/page.tsx` — Added Manage Links action.
+- `src/app/(dashboard)/links/[slug]/edit/page.tsx` — Added Dashboard > My Links breadcrumb.
+- `src/app/(dashboard)/campaigns/[id]/page.tsx` — Added Dashboard > Campaigns breadcrumb.
+- `src/app/(dashboard)/campaigns/[id]/edit/page.tsx` — Added campaign edit breadcrumb.
+- `tests/unit/dashboard-breadcrumbs.test.tsx` — Added breadcrumb rendering coverage.
+- `tests/e2e/link-flow.spec.ts` — Added Link Pages card navigation coverage and QR View Link regression coverage.
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Checked off 24.9.
+- `_bmad-output/implementation-artifacts/JOURNAL.md` — Logged 24.9.
+
+**Decisions Made:**
+- Kept breadcrumbs local to deep pages instead of overloading the global header breadcrumb map, because entity names are loaded server-side on those pages.
+- Preserved analytics entry points while making primary card clicks follow the most common management workflow.
+- Used existing edit routes for QR View Link so QR cards do not introduce a separate duplicate link detail surface.
+
+**Tests:**
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Targeted unit: `rtk bun run test -- tests/unit/dashboard-breadcrumbs.test.tsx` — 1 passed.
+- ✅ Targeted E2E: `rtk bun run test:e2e -- tests/e2e/link-flow.spec.ts -g "Link Pages cards|QR codes"` — 2 passed.
+- ✅ Full unit/integration: `rtk bun run test` — 170 passed, 1 skipped; 763 passed, 2 skipped.
+- ✅ Production build: `rtk bun run build` — Passed.
+
+**Issues Encountered:**
+- The first breadcrumb renderer nested separator list items inside breadcrumb items. Reworked it to render item/separator siblings with a fragment.
+- Playwright dev server emitted an existing React warning about a script tag rendered by observability/SEO code; it did not fail the navigation flow and was not introduced by this task.
+
+**Security Checks:**
+- ✅ No new state-changing API calls were added.
+- ✅ Navigation remains scoped to authenticated dashboard routes protected by existing route gates.
+- ✅ Query string context uses encoded link/QR identifiers.
+- ✅ No unsafe HTML, secrets, or raw analytics payload logging added.
+
+**Next Task:** 24.10 — Loading, Empty, Error States Pass
+
 ### 24.6 — My Links Table Sorting & Bulk Actions
 - **Date:** 2026-05-09 15:19 GMT+7
 - **Duration:** 1h 10m

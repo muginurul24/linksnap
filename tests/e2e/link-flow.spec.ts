@@ -531,6 +531,40 @@ test("should preview a Link Page from the dashboard links table", async ({ page 
   }
 });
 
+test("should navigate from Link Pages cards to edit pages with breadcrumbs", async ({
+  page,
+}) => {
+  const email = `e2e-pages-nav-${Date.now()}@example.com`;
+  const password = "Password1";
+  const slug = `pages-nav-${Date.now()}`;
+  let userId: string | undefined;
+
+  try {
+    userId = await createVerifiedUser(email, password);
+    await createLinkPageFixture({ slug, userId });
+
+    await signIn(page, { email, password });
+    await page.goto("/pages");
+    await expect(
+      page.getByRole("heading", { exact: true, name: "Link Pages" }),
+    ).toBeVisible();
+
+    await page
+      .getByRole("link", { name: "Edit Link Page for Acme Preview" })
+      .click();
+
+    await expect(page).toHaveURL(new RegExp(`/links/${slug}/edit$`), {
+      timeout: 15_000,
+    });
+    await expect(page.getByRole("heading", { name: "Edit Link" })).toBeVisible();
+    await expect(
+      page.locator('[data-slot="breadcrumb"]').filter({ hasText: "My Links" }),
+    ).toContainText(`/${slug}`);
+  } finally {
+    await cleanupLinkFlowState(email, userId, [slug]);
+  }
+});
+
 test("should sort and bulk manage links from the dashboard table", async ({ page }) => {
   const marker = `${Date.now()}`;
   const email = `e2e-bulk-${marker}@example.com`;
@@ -1065,6 +1099,14 @@ test("should download QR codes from the QR dashboard", async ({ page }) => {
 
     expect(svgDownload.suggestedFilename()).toBe(`${slug}.svg`);
     expect(svgContent).toContain("<svg");
+
+    await page.getByRole("link", { name: "View Link" }).click();
+    await expect(page).toHaveURL(new RegExp(`/links/${slug}/edit$`), {
+      timeout: 15_000,
+    });
+    await expect(
+      page.locator('[data-slot="breadcrumb"]').filter({ hasText: "My Links" }),
+    ).toContainText(`/${slug}`);
   } finally {
     await cleanupLinkFlowState(email, userId, [slug]);
   }

@@ -1,5 +1,6 @@
 import { notFound, redirect } from "next/navigation";
 import { BackNavigationLink } from "@/components/dashboard/back-navigation-link";
+import { DashboardBreadcrumbs } from "@/components/dashboard/dashboard-breadcrumbs";
 import { auth } from "@/lib/auth";
 import { getSessionUserId } from "@/lib/auth/session-helpers";
 import {
@@ -49,6 +50,13 @@ export default async function EditLinkPage({ params }: EditLinkPageProps) {
   return (
     <>
       <div className="space-y-3">
+        <DashboardBreadcrumbs
+          items={[
+            { href: "/dashboard", label: "Dashboard" },
+            { href: "/links", label: "My Links" },
+            { label: `/${initialLink.slug}` },
+          ]}
+        />
         <BackNavigationLink href="/links">Back to Links</BackNavigationLink>
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Edit Link</h1>

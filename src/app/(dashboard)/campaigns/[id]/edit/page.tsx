@@ -1,5 +1,6 @@
 import { notFound, redirect } from "next/navigation";
 import { BackNavigationLink } from "@/components/dashboard/back-navigation-link";
+import { DashboardBreadcrumbs } from "@/components/dashboard/dashboard-breadcrumbs";
 import { auth } from "@/lib/auth";
 import { getSessionUserId } from "@/lib/auth/session-helpers";
 import { findCampaignById } from "@/lib/db/queries/campaigns";
@@ -49,6 +50,14 @@ export default async function EditCampaignPage({ params }: EditCampaignPageProps
   return (
     <>
       <div className="space-y-3">
+        <DashboardBreadcrumbs
+          items={[
+            { href: "/dashboard", label: "Dashboard" },
+            { href: "/campaigns", label: "Campaigns" },
+            { href: `/campaigns/${initialCampaign.id}`, label: initialCampaign.name },
+            { label: "Edit" },
+          ]}
+        />
         <BackNavigationLink href="/campaigns">
           Back to Campaigns
         </BackNavigationLink>

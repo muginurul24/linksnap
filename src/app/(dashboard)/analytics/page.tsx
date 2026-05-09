@@ -1,5 +1,11 @@
 import { redirect } from "next/navigation";
-import { AlertCircle, Calendar, Download, MousePointerClick } from "lucide-react";
+import {
+  AlertCircle,
+  Calendar,
+  Download,
+  Link2,
+  MousePointerClick,
+} from "lucide-react";
 import { EmptyState } from "@/components/dashboard/empty-state";
 import { Button } from "@/components/ui/button";
 import { ButtonLink } from "@/components/ui/button-link";
@@ -271,11 +277,17 @@ export default async function AnalyticsPage({ searchParams }: AnalyticsPageProps
         </div>
         <div className="flex flex-col gap-2 lg:items-end">
           <AnalyticsRangeControls errorMessage={errorMessage} range={range} />
-          <AnalyticsExportButton
-            disabled={!hasAnalyticsData}
-            filename={getCsvFilename(range)}
-            href={toCsvDataUri(analytics.csv)}
-          />
+          <div className="flex flex-wrap gap-2 lg:justify-end">
+            <ButtonLink href="/links" size="sm" variant="outline">
+              <Link2 className="size-4" />
+              Manage Links
+            </ButtonLink>
+            <AnalyticsExportButton
+              disabled={!hasAnalyticsData}
+              filename={getCsvFilename(range)}
+              href={toCsvDataUri(analytics.csv)}
+            />
+          </div>
         </div>
       </div>
 

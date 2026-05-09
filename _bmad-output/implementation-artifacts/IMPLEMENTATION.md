@@ -3309,14 +3309,14 @@ Premium Flutter experience. 🟢
 
 ### TASK 24.9 — Global Cross-Navigation Polish
 
-- [ ] Audit all pages: every entity links to related pages
-- [ ] My Links → View Analytics per row
-- [ ] Link Pages → card click → edit page
-- [ ] QR Codes → View Link
-- [ ] Campaigns → card click → detail
-- [ ] Analytics → Manage Links
-- [ ] Add breadcrumbs on deep pages (edit, detail)
-- [ ] Add E2E tests
+- [x] Audit all pages: every entity links to related pages
+- [x] My Links → View Analytics per row
+- [x] Link Pages → card click → edit page
+- [x] QR Codes → View Link
+- [x] Campaigns → card click → detail
+- [x] Analytics → Manage Links
+- [x] Add breadcrumbs on deep pages (edit, detail)
+- [x] Add E2E tests
 
 ### TASK 24.10 — Loading, Empty, Error States Pass
 

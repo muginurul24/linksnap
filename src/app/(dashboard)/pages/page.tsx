@@ -52,9 +52,9 @@ function LinkPageCard({ page }: { page: ListedLinkPage }) {
       }`}
     >
       <Link
-        aria-label={`View analytics for ${page.brandName}`}
+        aria-label={`Edit Link Page for ${page.brandName}`}
         className="absolute inset-0 z-10"
-        href={analyticsHref}
+        href={editHref}
       />
       <CardHeader className="relative pb-3">
         <div className="flex items-start justify-between">

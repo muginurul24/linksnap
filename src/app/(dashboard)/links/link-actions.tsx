@@ -173,7 +173,11 @@ export function LinkActions({ id, shortUrl, slug }: LinkActionsProps) {
             <Download className="mr-2 size-4" />
             Download QR SVG
           </DropdownMenuItem>
-          <DropdownMenuItem render={<Link href="/analytics" />}>
+          <DropdownMenuItem
+            render={
+              <Link href={`/analytics?range=30&linkId=${encodeURIComponent(id)}`} />
+            }
+          >
             <BarChart3 className="mr-2 size-4" />
             Analytics
           </DropdownMenuItem>
