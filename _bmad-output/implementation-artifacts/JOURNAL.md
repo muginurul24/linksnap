@@ -8704,3 +8704,39 @@ Aligned Phase 23 with the latest PayGate Core API multi-channel plan, then expan
 - ✅ No raw SQL, secrets, or client-side payment provider keys added.
 
 **Next Task:** 23.2 — Payment Channel Registry & Definitions.
+
+### 23.2 — Payment Channel Registry & Definitions
+- **Date:** 2026-05-09 08:58 GMT+7
+- **Duration:** 0h 18m
+- **Status:** ✅ Complete
+
+**What I Did:**
+Added a central payment channel registry for all PayGate-supported payment methods. The registry includes grouped bank, e-wallet, QRIS, and convenience-store definitions with labels, short names, icon keys, processing time, instructions, priorities, enabled flags, and UI color tokens.
+
+**Files Changed:**
+- `src/lib/payments/payment-channels.ts` — Added channel metadata, grouped exports, helper functions, and category color mapping.
+- `tests/unit/payment-channels.test.ts` — Added coverage for grouping, uniqueness, ordering, helpers, instructions, and colors.
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Checked off 23.2.
+- `_bmad-output/implementation-artifacts/JOURNAL.md` — Logged 23.2.
+
+**Decisions Made:**
+- Kept registry icons as serializable icon keys instead of importing React/lucide components into `lib`.
+- Reused PayGate channel constants from the client so server validation and UI metadata cannot drift.
+- Used deterministic priority bands: banks first, then e-wallets, QRIS, and convenience stores.
+
+**Tests:**
+- ✅ Targeted unit: `rtk bun run test -- tests/unit/payment-channels.test.ts tests/unit/paygate-multi-channel.test.ts` — 13 passed.
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Full unit/integration: `rtk bun run test` — 155 passed, 1 skipped; 707 passed, 2 skipped.
+- ✅ Production build: `rtk bun run build` — Passed.
+
+**Issues Encountered:**
+- No blockers. The registry is intentionally UI-ready but framework-neutral.
+
+**Security Checks:**
+- ✅ No payment mutations or cache behavior added.
+- ✅ Channel IDs are derived from the typed PayGate allowlist.
+- ✅ No secrets or provider tokens added.
+
+**Next Task:** 23.3 — Payment Method Selector UI Component.

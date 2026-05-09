@@ -3101,12 +3101,12 @@ Premium Flutter experience. 🟢
 
 ### TASK 23.2 — Payment Channel Registry & Definitions
 
-- [ ] Create `src/lib/payments/payment-channels.ts`
-- [ ] Define `PaymentChannel` type: id, name, icon, category, priority, description, instructions
-- [ ] Export grouped lists: `BANK_CHANNELS`, `EWALLET_CHANNELS`, `QRIS_CHANNEL`, `CSTORE_CHANNELS`
-- [ ] Helpers: `getChannelById()`, `getChannelIcon()`, `getPaymentInstructions()`
-- [ ] Color mapping per category for UI badges
-- [ ] Add unit tests
+- [x] Create `src/lib/payments/payment-channels.ts`
+- [x] Define `PaymentChannel` type: id, name, icon, category, priority, description, instructions
+- [x] Export grouped lists: `BANK_CHANNELS`, `EWALLET_CHANNELS`, `QRIS_CHANNEL`, `CSTORE_CHANNELS`
+- [x] Helpers: `getChannelById()`, `getChannelIcon()`, `getPaymentInstructions()`
+- [x] Color mapping per category for UI badges
+- [x] Add unit tests
 
 ### TASK 23.3 — Payment Method Selector UI Component
 
