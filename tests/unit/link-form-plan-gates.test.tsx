@@ -43,7 +43,7 @@ function renderForm(
 }
 
 describe("link form plan gates", () => {
-  it("should disable Link Page and Smart Rules toggles for free users", () => {
+  it("should disable Link Page and allow Smart Rules toggles for free users", () => {
     expect(
       getPlanGatedToggleState({
         feature: "LINK_PAGE",
@@ -60,10 +60,7 @@ describe("link form plan gates", () => {
         isSubmitting: false,
         userPlan: "FREE",
       }),
-    ).toEqual({
-      disabled: true,
-      message: "Smart Rules require Pro plan",
-    });
+    ).toEqual({ disabled: false });
   });
 
   it("should allow Link Page and Smart Rules toggles for paid users", () => {
@@ -88,7 +85,9 @@ describe("link form plan gates", () => {
 
     expect(markup).toContain("Custom slugs require Pro or Business plan.");
     expect(markup).toContain("Link Pages require Pro or Business plan.");
-    expect(markup).toContain("Smart Rules require Pro or Business plan.");
+    expect(markup).not.toContain("Smart Rules require Pro or Business plan.");
+    expect(markup).toContain("Enable Smart Rules");
+    expect(markup).not.toContain("/settings/billing?upgrade=smart-rules");
     expect(markup).toContain('data-plan-gate-state="locked"');
   });
 

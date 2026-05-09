@@ -14,6 +14,7 @@ import {
   type SQL,
 } from "drizzle-orm";
 import { db } from "@/lib/db";
+import { retryTransientDbQuery } from "@/lib/db/retry";
 import { campaigns, clickEvents, links } from "@/lib/db/schema";
 import { getCursorPage, type CreatedAtCursor } from "@/lib/pagination/cursor";
 import type {
@@ -204,19 +205,23 @@ export function sortCampaignCardMetrics(
 }
 
 async function countCampaignLinks(campaignId: string): Promise<number> {
-  const [row] = await db
-    .select({ value: count() })
-    .from(links)
-    .where(eq(links.campaignId, campaignId));
+  const [row] = await retryTransientDbQuery(() =>
+    db
+      .select({ value: count() })
+      .from(links)
+      .where(eq(links.campaignId, campaignId)),
+  );
 
   return row?.value ?? 0;
 }
 
 export async function countCampaignsByUserId(userId: string): Promise<number> {
-  const [row] = await db
-    .select({ value: count() })
-    .from(campaigns)
-    .where(eq(campaigns.userId, userId));
+  const [row] = await retryTransientDbQuery(() =>
+    db
+      .select({ value: count() })
+      .from(campaigns)
+      .where(eq(campaigns.userId, userId)),
+  );
 
   return row?.value ?? 0;
 }
@@ -269,18 +274,20 @@ export async function listCampaignsByUserId({
   const offset = (page - 1) * limit;
   const rowLimit = cursor ? limit + 1 : limit;
 
-  const [items, totalRows] = await Promise.all([
-    db
-      .select(campaignSelectColumns)
-      .from(campaigns)
-      .leftJoin(links, eq(links.campaignId, campaigns.id))
-      .where(paginatedWhere)
-      .groupBy(...getCampaignGroupByColumns())
-      .orderBy(desc(campaigns.createdAt), desc(campaigns.id))
-      .limit(rowLimit)
-      .offset(cursor ? 0 : offset),
-    db.select({ value: count() }).from(campaigns).where(where),
-  ]);
+  const [items, totalRows] = await retryTransientDbQuery(() =>
+    Promise.all([
+      db
+        .select(campaignSelectColumns)
+        .from(campaigns)
+        .leftJoin(links, eq(links.campaignId, campaigns.id))
+        .where(paginatedWhere)
+        .groupBy(...getCampaignGroupByColumns())
+        .orderBy(desc(campaigns.createdAt), desc(campaigns.id))
+        .limit(rowLimit)
+        .offset(cursor ? 0 : offset),
+      db.select({ value: count() }).from(campaigns).where(where),
+    ]),
+  );
   const cursorPage = cursor ? getCursorPage(items, limit) : null;
 
   return {
@@ -320,37 +327,39 @@ export async function listCampaignCardsByUserId({
     sql<number>`count(*) filter (where ${clickEvents.timestamp} >= ${range.from})`.mapWith(
       Number,
     );
-  const [metricRows, trendRows] = await Promise.all([
-    db
-      .select({
-        campaignId: links.campaignId,
-        clicksLast7Days,
-        totalClicks: count(clickEvents.id),
-      })
-      .from(clickEvents)
-      .innerJoin(links, eq(clickEvents.linkId, links.id))
-      .where(and(
-        inArray(links.campaignId, campaignIds),
-        lte(clickEvents.timestamp, range.to),
-        ne(clickEvents.eventType, "LINK_PAGE_CTA_CLICK"),
-      ))
-      .groupBy(links.campaignId),
-    db
-      .select({
-        campaignId: links.campaignId,
-        date: clickDate,
-        totalClicks: count(clickEvents.id),
-      })
-      .from(clickEvents)
-      .innerJoin(links, eq(clickEvents.linkId, links.id))
-      .where(and(
-        inArray(links.campaignId, campaignIds),
-        gte(clickEvents.timestamp, range.from),
-        lte(clickEvents.timestamp, range.to),
-        ne(clickEvents.eventType, "LINK_PAGE_CTA_CLICK"),
-      ))
-      .groupBy(links.campaignId, clickDate),
-  ]);
+  const [metricRows, trendRows] = await retryTransientDbQuery(() =>
+    Promise.all([
+      db
+        .select({
+          campaignId: links.campaignId,
+          clicksLast7Days,
+          totalClicks: count(clickEvents.id),
+        })
+        .from(clickEvents)
+        .innerJoin(links, eq(clickEvents.linkId, links.id))
+        .where(and(
+          inArray(links.campaignId, campaignIds),
+          lte(clickEvents.timestamp, range.to),
+          ne(clickEvents.eventType, "LINK_PAGE_CTA_CLICK"),
+        ))
+        .groupBy(links.campaignId),
+      db
+        .select({
+          campaignId: links.campaignId,
+          date: clickDate,
+          totalClicks: count(clickEvents.id),
+        })
+        .from(clickEvents)
+        .innerJoin(links, eq(clickEvents.linkId, links.id))
+        .where(and(
+          inArray(links.campaignId, campaignIds),
+          gte(clickEvents.timestamp, range.from),
+          lte(clickEvents.timestamp, range.to),
+          ne(clickEvents.eventType, "LINK_PAGE_CTA_CLICK"),
+        ))
+        .groupBy(links.campaignId, clickDate),
+    ]),
+  );
   const metricsByCampaign = new Map(
     metricRows.flatMap((row) =>
       row.campaignId
@@ -400,13 +409,15 @@ export async function listCampaignCardsByUserId({
 export async function findCampaignById(
   id: string,
 ): Promise<CampaignWithLinkCount | null> {
-  const [campaign] = await db
-    .select(campaignSelectColumns)
-    .from(campaigns)
-    .leftJoin(links, eq(links.campaignId, campaigns.id))
-    .where(eq(campaigns.id, id))
-    .groupBy(...getCampaignGroupByColumns())
-    .limit(1);
+  const [campaign] = await retryTransientDbQuery(() =>
+    db
+      .select(campaignSelectColumns)
+      .from(campaigns)
+      .leftJoin(links, eq(links.campaignId, campaigns.id))
+      .where(eq(campaigns.id, id))
+      .groupBy(...getCampaignGroupByColumns())
+      .limit(1),
+  );
 
   return campaign ?? null;
 }
@@ -417,12 +428,14 @@ export async function findCampaignsBySlugsForUser({
 }: FindCampaignsBySlugsInput): Promise<CampaignWithLinkCount[]> {
   if (slugs.length === 0) return [];
 
-  return db
-    .select(campaignSelectColumns)
-    .from(campaigns)
-    .leftJoin(links, eq(links.campaignId, campaigns.id))
-    .where(and(eq(campaigns.userId, userId), inArray(campaigns.slug, slugs)))
-    .groupBy(...getCampaignGroupByColumns());
+  return retryTransientDbQuery(() =>
+    db
+      .select(campaignSelectColumns)
+      .from(campaigns)
+      .leftJoin(links, eq(links.campaignId, campaigns.id))
+      .where(and(eq(campaigns.userId, userId), inArray(campaigns.slug, slugs)))
+      .groupBy(...getCampaignGroupByColumns()),
+  );
 }
 
 export async function updateCampaignRecordForUser({

@@ -95,14 +95,16 @@ type ListPaymentTransactionsInput = {
 export async function findBillingUserById(
   userId: string,
 ): Promise<BillingUser | null> {
-  const user = await db.query.users.findFirst({
-    columns: {
-      email: true,
-      name: true,
-      plan: true,
-    },
-    where: eq(users.id, userId),
-  });
+  const user = await retryTransientDbQuery(() =>
+    db.query.users.findFirst({
+      columns: {
+        email: true,
+        name: true,
+        plan: true,
+      },
+      where: eq(users.id, userId),
+    }),
+  );
 
   return user ?? null;
 }

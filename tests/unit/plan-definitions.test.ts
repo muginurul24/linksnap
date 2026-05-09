@@ -73,6 +73,17 @@ describe("plan definitions", () => {
       });
   });
 
+  it("should not advertise webhook callbacks as a launched feature", () => {
+    expect(getPlanDefinition("BUSINESS").features).not.toContain(
+      "Webhook callbacks",
+    );
+    expect(
+      PLAN_COMPARISON_ROWS.find((row) => row.feature === "Webhook callbacks"),
+    ).toMatchObject({
+      business: "Roadmap",
+    });
+  });
+
   it("should format pricing and yearly savings consistently", () => {
     expect(formatUsdPrice(0)).toBe("$0");
     expect(formatUsdPrice(8)).toBe("$8");

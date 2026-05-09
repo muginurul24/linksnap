@@ -253,14 +253,12 @@ export function getPlanGatedToggleState({
   userPlan: UserPlan;
 }): { disabled: boolean; message?: string } {
   if (isSubmitting) return { disabled: true };
+  if (feature === "SMART_RULES") return { disabled: false };
   if (userPlan !== "FREE") return { disabled: false };
 
   return {
     disabled: true,
-    message:
-      feature === "LINK_PAGE"
-        ? "Link Pages require Pro plan"
-        : "Smart Rules require Pro plan",
+    message: "Link Pages require Pro plan",
   };
 }
 
@@ -342,7 +340,7 @@ export function CreateLinkForm({
   const linkPagePlanAllowed = userPlan !== "FREE";
   const linkPageQuotaAvailable = linkPageQuotaUsed < linkPageLimit;
   const smartRulesLimit = getSmartRuleQuota(userPlan);
-  const smartRulesPlanAllowed = userPlan !== "FREE";
+  const smartRulesPlanAllowed = true;
   const smartRulesQuotaUsedForToggle = enableSmartRules
     ? Math.max(0, smartRulesValue.rules.length - 1)
     : smartRulesValue.rules.length;

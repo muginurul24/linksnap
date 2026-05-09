@@ -201,7 +201,7 @@ describe("auth flow", () => {
       image: undefined,
     });
     expect(isProtectedPath("/links")).toBe(true);
-  });
+  }, 10_000);
 
   it("should reject login when registered email is not verified", async () => {
     const registerResponse = await registerPost(

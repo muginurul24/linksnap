@@ -89,7 +89,7 @@ function featureList(plan: UserPlan): string[] {
       ? "A/B split testing not included"
       : `${formatLimit(limits.splitTestVariants)} A/B split variants`,
     "API key access",
-    ...(plan === "BUSINESS" ? ["Webhook callbacks", "Priority support"] : []),
+    ...(plan === "BUSINESS" ? ["Priority support"] : []),
   ];
 }
 
@@ -189,7 +189,7 @@ export const PLAN_COMPARISON_ROWS: PlanComparisonRow[] = [
     pro: formatApiRateLimit("PRO"),
   },
   {
-    business: "Included",
+    business: "Roadmap",
     feature: "Webhook callbacks",
     free: "Not included",
     pro: "Not included",

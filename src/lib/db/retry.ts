@@ -34,7 +34,7 @@ function sleep(ms: number): Promise<void> {
 
 export async function retryTransientDbQuery<T>(
   operation: () => Promise<T>,
-  { attempts = 3, delayMs = 150 }: RetryOptions = {},
+  { attempts = 8, delayMs = 300 }: RetryOptions = {},
 ): Promise<T> {
   let lastError: unknown;
 

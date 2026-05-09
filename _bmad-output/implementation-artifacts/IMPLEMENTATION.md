@@ -3419,10 +3419,10 @@ Premium Flutter experience. 🟢
 
 ### TASK 25.8 — Final PRD Gap Analysis
 
-- [ ] Compare PRD promises vs IMPLEMENTATION.md reality
-- [ ] Create gap report: what's promised but not built
-- [ ] Categorize: P0 (fix now), P1 (V2), P2 (wont do with rationale)
-- [ ] Fix any P0 gaps
+- [x] Compare PRD promises vs IMPLEMENTATION.md reality
+- [x] Create gap report: what's promised but not built
+- [x] Categorize: P0 (fix now), P1 (V2), P2 (wont do with rationale)
+- [x] Fix any P0 gaps
 
 ### TASK 25.9 — Google OAuth End-to-End Test
 

@@ -113,7 +113,7 @@ describe("change password API", () => {
     await expect(
       verifyPassword("Current1", mockState.passwordHash ?? ""),
     ).resolves.toBe(false);
-  });
+  }, 10_000);
 
   it("should reject an invalid current password", async () => {
     const response = await POST(

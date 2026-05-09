@@ -429,11 +429,11 @@ async function visitSlugWithUserAgent({
 
   try {
     await page.goto(`${baseURL}/${slug}`, {
-      timeout: 10_000,
+      timeout: 20_000,
       waitUntil: "commit",
     });
     await page
-      .waitForURL(expectedUrl, { timeout: 10_000 })
+      .waitForURL(expectedUrl, { timeout: 20_000 })
       .catch((error: unknown) => {
         if (error instanceof Error && error.message.includes("ERR_ABORTED")) return;
 

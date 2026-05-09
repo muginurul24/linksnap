@@ -341,11 +341,13 @@ export async function countLinksByUserId(userId: string): Promise<number> {
 }
 
 export async function countLinkPagesByUserId(userId: string): Promise<number> {
-  const [row] = await db
-    .select({ value: count() })
-    .from(linkPages)
-    .innerJoin(links, eq(linkPages.linkId, links.id))
-    .where(eq(links.userId, userId));
+  const [row] = await retryTransientDbQuery(() =>
+    db
+      .select({ value: count() })
+      .from(linkPages)
+      .innerJoin(links, eq(linkPages.linkId, links.id))
+      .where(eq(links.userId, userId)),
+  );
 
   return row?.value ?? 0;
 }
@@ -353,26 +355,28 @@ export async function countLinkPagesByUserId(userId: string): Promise<number> {
 export async function listLinkPagesByUserId(
   userId: string,
 ): Promise<ListedLinkPage[]> {
-  const pages = await db
-    .select({
-      brandName: linkPages.brandName,
-      countdownTarget: linkPages.countdownTarget,
-      createdAt: linkPages.createdAt,
-      ctaText: linkPages.ctaText,
-      hasLinkPage: links.hasLinkPage,
-      id: linkPages.id,
-      isLinkActive: links.isActive,
-      linkId: linkPages.linkId,
-      showCountdown: linkPages.showCountdown,
-      showQrCode: linkPages.showQrCode,
-      slug: links.slug,
-      title: linkPages.title,
-      updatedAt: linkPages.updatedAt,
-    })
-    .from(linkPages)
-    .innerJoin(links, eq(linkPages.linkId, links.id))
-    .where(eq(links.userId, userId))
-    .orderBy(desc(linkPages.updatedAt));
+  const pages = await retryTransientDbQuery(() =>
+    db
+      .select({
+        brandName: linkPages.brandName,
+        countdownTarget: linkPages.countdownTarget,
+        createdAt: linkPages.createdAt,
+        ctaText: linkPages.ctaText,
+        hasLinkPage: links.hasLinkPage,
+        id: linkPages.id,
+        isLinkActive: links.isActive,
+        linkId: linkPages.linkId,
+        showCountdown: linkPages.showCountdown,
+        showQrCode: linkPages.showQrCode,
+        slug: links.slug,
+        title: linkPages.title,
+        updatedAt: linkPages.updatedAt,
+      })
+      .from(linkPages)
+      .innerJoin(links, eq(linkPages.linkId, links.id))
+      .where(eq(links.userId, userId))
+      .orderBy(desc(linkPages.updatedAt)),
+  );
 
   return hydrateListedLinkPages(pages);
 }
@@ -393,35 +397,37 @@ export async function listLinkPagesByUserIdPaginated({
   const offset = (page - 1) * limit;
   const rowLimit = cursor ? limit + 1 : limit;
 
-  const [pages, totalRows] = await Promise.all([
-    db
-      .select({
-        brandName: linkPages.brandName,
-        countdownTarget: linkPages.countdownTarget,
-        createdAt: linkPages.createdAt,
-        ctaText: linkPages.ctaText,
-        hasLinkPage: links.hasLinkPage,
-        id: linkPages.id,
-        isLinkActive: links.isActive,
-        linkId: linkPages.linkId,
-        showCountdown: linkPages.showCountdown,
-        showQrCode: linkPages.showQrCode,
-        slug: links.slug,
-        title: linkPages.title,
-        updatedAt: linkPages.updatedAt,
-      })
-      .from(linkPages)
-      .innerJoin(links, eq(linkPages.linkId, links.id))
-      .where(paginatedWhere)
-      .orderBy(desc(linkPages.createdAt), desc(linkPages.id))
-      .limit(rowLimit)
-      .offset(cursor ? 0 : offset),
-    db
-      .select({ value: count() })
-      .from(linkPages)
-      .innerJoin(links, eq(linkPages.linkId, links.id))
-      .where(baseWhere),
-  ]);
+  const [pages, totalRows] = await retryTransientDbQuery(() =>
+    Promise.all([
+      db
+        .select({
+          brandName: linkPages.brandName,
+          countdownTarget: linkPages.countdownTarget,
+          createdAt: linkPages.createdAt,
+          ctaText: linkPages.ctaText,
+          hasLinkPage: links.hasLinkPage,
+          id: linkPages.id,
+          isLinkActive: links.isActive,
+          linkId: linkPages.linkId,
+          showCountdown: linkPages.showCountdown,
+          showQrCode: linkPages.showQrCode,
+          slug: links.slug,
+          title: linkPages.title,
+          updatedAt: linkPages.updatedAt,
+        })
+        .from(linkPages)
+        .innerJoin(links, eq(linkPages.linkId, links.id))
+        .where(paginatedWhere)
+        .orderBy(desc(linkPages.createdAt), desc(linkPages.id))
+        .limit(rowLimit)
+        .offset(cursor ? 0 : offset),
+      db
+        .select({ value: count() })
+        .from(linkPages)
+        .innerJoin(links, eq(linkPages.linkId, links.id))
+        .where(baseWhere),
+    ]),
+  );
   const cursorPage = cursor ? getCursorPage(pages, limit) : null;
 
   return {
@@ -950,27 +956,29 @@ export async function listLinksByUserId({
   const offset = (page - 1) * limit;
   const rowLimit = cursor ? limit + 1 : limit;
 
-  const [items, totalRows] = await Promise.all([
-    db
-      .select({
-        campaignId: links.campaignId,
-        clickCount: links.clickCount,
-        createdAt: links.createdAt,
-        destinationUrl: links.destinationUrl,
-        hasLinkPage: links.hasLinkPage,
-        id: links.id,
-        isActive: links.isActive,
-        slug: links.slug,
-        title: links.title,
-        updatedAt: links.updatedAt,
-      })
-      .from(links)
-      .where(paginatedWhere)
-      .orderBy(desc(links.createdAt), desc(links.id))
-      .limit(rowLimit)
-      .offset(cursor ? 0 : offset),
-    db.select({ value: count() }).from(links).where(where),
-  ]);
+  const [items, totalRows] = await retryTransientDbQuery(() =>
+    Promise.all([
+      db
+        .select({
+          campaignId: links.campaignId,
+          clickCount: links.clickCount,
+          createdAt: links.createdAt,
+          destinationUrl: links.destinationUrl,
+          hasLinkPage: links.hasLinkPage,
+          id: links.id,
+          isActive: links.isActive,
+          slug: links.slug,
+          title: links.title,
+          updatedAt: links.updatedAt,
+        })
+        .from(links)
+        .where(paginatedWhere)
+        .orderBy(desc(links.createdAt), desc(links.id))
+        .limit(rowLimit)
+        .offset(cursor ? 0 : offset),
+      db.select({ value: count() }).from(links).where(where),
+    ]),
+  );
   const cursorPage = cursor ? getCursorPage(items, limit) : null;
 
   return {
@@ -1009,20 +1017,22 @@ export async function listLinksWithTrendsByUserId({
 
   const range = getLinkClickTrendRange(now);
   const clickDate = sql<string>`to_char(date_trunc('day', ${clickEvents.timestamp}), 'YYYY-MM-DD')`;
-  const trendRows = await db
-    .select({
-      date: clickDate,
-      linkId: clickEvents.linkId,
-      totalClicks: count(),
-    })
-    .from(clickEvents)
-    .where(and(
-      inArray(clickEvents.linkId, linkIds),
-      inArray(clickEvents.eventType, ["DIRECT_REDIRECT", "LINK_PAGE_CTA_CLICK"]),
-      gte(clickEvents.timestamp, range.from),
-      lte(clickEvents.timestamp, range.to),
-    ))
-    .groupBy(clickEvents.linkId, clickDate);
+  const trendRows = await retryTransientDbQuery(() =>
+    db
+      .select({
+        date: clickDate,
+        linkId: clickEvents.linkId,
+        totalClicks: count(),
+      })
+      .from(clickEvents)
+      .where(and(
+        inArray(clickEvents.linkId, linkIds),
+        inArray(clickEvents.eventType, ["DIRECT_REDIRECT", "LINK_PAGE_CTA_CLICK"]),
+        gte(clickEvents.timestamp, range.from),
+        lte(clickEvents.timestamp, range.to),
+      ))
+      .groupBy(clickEvents.linkId, clickDate),
+  );
   const trendsByLinkId = new Map<string, Map<string, number>>();
 
   for (const row of trendRows) {
@@ -1100,20 +1110,22 @@ export async function listQrCodeLinksByUserId({
     sql<number>`count(*) filter (where ${clickEvents.timestamp} >= ${from})`.mapWith(
       Number,
     );
-  const scanRows = await db
-    .select({
-      lastScanAt: sql<Date | null>`max(${clickEvents.timestamp})`,
-      linkId: clickEvents.linkId,
-      qrScanCount: count(clickEvents.id),
-      qrScansLast30Days: scansLast30Days,
-    })
-    .from(clickEvents)
-    .where(and(
-      inArray(clickEvents.linkId, linkIds),
-      eq(clickEvents.referrer, QR_SCAN_REFERRER),
-      lte(clickEvents.timestamp, now),
-    ))
-    .groupBy(clickEvents.linkId);
+  const scanRows = await retryTransientDbQuery(() =>
+    db
+      .select({
+        lastScanAt: sql<Date | null>`max(${clickEvents.timestamp})`,
+        linkId: clickEvents.linkId,
+        qrScanCount: count(clickEvents.id),
+        qrScansLast30Days: scansLast30Days,
+      })
+      .from(clickEvents)
+      .where(and(
+        inArray(clickEvents.linkId, linkIds),
+        eq(clickEvents.referrer, QR_SCAN_REFERRER),
+        lte(clickEvents.timestamp, now),
+      ))
+      .groupBy(clickEvents.linkId),
+  );
   const scansByLinkId = new Map(
     scanRows.map((row) => [
       row.linkId,
@@ -1170,41 +1182,43 @@ async function hydrateListedLinkPages(
   const linkIds = pages.map((page) => page.linkId);
   const range = getLinkPageTrendRange();
   const clickDate = sql<string>`to_char(date_trunc('day', ${clickEvents.timestamp}), 'YYYY-MM-DD')`;
-  const [eventCounts, trendRows] = await Promise.all([
-    db
-      .select({
-        eventType: clickEvents.eventType,
-        linkId: clickEvents.linkId,
-        value: count(),
-      })
-      .from(clickEvents)
-      .where(
-        and(
-          inArray(
-            clickEvents.eventType,
-            ["LINK_PAGE_VIEW", "LINK_PAGE_CTA_CLICK"],
+  const [eventCounts, trendRows] = await retryTransientDbQuery(() =>
+    Promise.all([
+      db
+        .select({
+          eventType: clickEvents.eventType,
+          linkId: clickEvents.linkId,
+          value: count(),
+        })
+        .from(clickEvents)
+        .where(
+          and(
+            inArray(
+              clickEvents.eventType,
+              ["LINK_PAGE_VIEW", "LINK_PAGE_CTA_CLICK"],
+            ),
+            inArray(clickEvents.linkId, linkIds),
           ),
-          inArray(clickEvents.linkId, linkIds),
-        ),
-      )
-      .groupBy(clickEvents.linkId, clickEvents.eventType),
-    db
-      .select({
-        date: clickDate,
-        linkId: clickEvents.linkId,
-        pageViews: count(),
-      })
-      .from(clickEvents)
-      .where(
-        and(
-          eq(clickEvents.eventType, "LINK_PAGE_VIEW"),
-          inArray(clickEvents.linkId, linkIds),
-          gte(clickEvents.timestamp, range.from),
-          lte(clickEvents.timestamp, range.to),
-        ),
-      )
-      .groupBy(clickEvents.linkId, clickDate),
-  ]);
+        )
+        .groupBy(clickEvents.linkId, clickEvents.eventType),
+      db
+        .select({
+          date: clickDate,
+          linkId: clickEvents.linkId,
+          pageViews: count(),
+        })
+        .from(clickEvents)
+        .where(
+          and(
+            eq(clickEvents.eventType, "LINK_PAGE_VIEW"),
+            inArray(clickEvents.linkId, linkIds),
+            gte(clickEvents.timestamp, range.from),
+            lte(clickEvents.timestamp, range.to),
+          ),
+        )
+        .groupBy(clickEvents.linkId, clickDate),
+    ]),
+  );
 
   const countsByLinkId = new Map<
     string,

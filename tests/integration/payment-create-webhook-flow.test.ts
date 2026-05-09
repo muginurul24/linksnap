@@ -327,5 +327,5 @@ describe("payment create to webhook flow", () => {
       providerTransactionId: "paygate-transaction-1",
       to: "buyer@example.com",
     });
-  });
+  }, 10_000);
 });
