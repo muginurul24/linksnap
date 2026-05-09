@@ -9214,6 +9214,53 @@ Redesigned the `/campaigns` card grid to show real performance metrics per campa
 
 **Next Task:** 24.3 — Campaign Links Cross-Navigation
 
+### 24.3 — Campaign Links Cross-Navigation
+- **Date:** 2026-05-09 14:43 GMT+7
+- **Duration:** 1h 5m
+- **Status:** ✅ Complete
+
+**What I Did:**
+Added a campaign links management section to `/campaigns/[id]` with an attached-links table, edit/remove actions, an uncampaigned link picker, UTM preview before attach, and automatic analytics refresh after link changes. Added API support for `unassigned=true` link filtering so the picker only loads eligible links.
+
+**Files Changed:**
+- `src/components/campaigns/campaign-detail-client.tsx` — Added shared client wrapper to refresh analytics after link changes.
+- `src/components/campaigns/campaign-links-manager.tsx` — Added campaign link table, add-links dialog, UTM preview, and remove confirmation.
+- `src/components/campaigns/campaign-analytics-client.tsx` — Added external refresh token support.
+- `src/app/(dashboard)/campaigns/[id]/page.tsx` — Rendered the unified campaign detail client.
+- `src/lib/validations/link.ts` — Added strict boolean parsing for `unassigned=true`.
+- `src/lib/db/queries/links.ts` — Added unassigned link filtering.
+- `src/app/api/v1/links/route.ts` — Passed unassigned filtering through to the query layer.
+- `tests/unit/link-validation.test.ts` — Covered unassigned query parsing.
+- `tests/e2e/campaign-links-management.spec.ts` — Added add/search/preview/remove browser coverage.
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Checked off 24.3.
+- `_bmad-output/implementation-artifacts/JOURNAL.md` — Logged 24.3.
+
+**Decisions Made:**
+- Added server-side unassigned filtering instead of client-side filtering, keeping the picker smaller and preventing accidental display of already assigned links.
+- Used the existing campaign links API for preview and mutation so UTM behavior stays in one backend path.
+- Triggered analytics refresh from the shared client wrapper after add/remove so users see campaign metrics update without a manual reload.
+
+**Tests:**
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Targeted unit: `rtk bun run test -- tests/unit/link-validation.test.ts` — 29 passed.
+- ✅ Targeted E2E: `rtk bun run test:e2e -- tests/e2e/campaign-links-management.spec.ts` — 1 passed.
+- ✅ Regression E2E: `rtk bun run test:e2e -- tests/e2e/campaign-analytics.spec.ts` — 3 passed.
+- ✅ Full unit/integration: `rtk bun run test` — 165 passed, 1 skipped; 751 passed, 2 skipped.
+- ✅ Production build: `rtk bun run build` — Passed.
+
+**Issues Encountered:**
+- The first E2E assertion reached the table while the dev server was still loading the campaign links API; I scoped and extended the row wait instead of adding arbitrary sleeps.
+- Toast text could duplicate removed slugs outside the table, so removal assertions are scoped to the campaign links manager.
+
+**Security Checks:**
+- ✅ State-changing POST/DELETE calls include `X-Requested-With: XMLHttpRequest`.
+- ✅ Link picker only requests authenticated user links and filters to unassigned links server-side.
+- ✅ Add/remove APIs continue to verify campaign ownership and link ownership.
+- ✅ No secrets or raw URLs beyond user-owned destinations are logged.
+
+**Next Task:** 24.4 — Link Pages → Analytics Cross-Navigation
+
 ### 23.10 Follow-up — Full Quality Gate Stabilization
 - **Date:** 2026-05-09 13:56 GMT+7
 - **Duration:** 2h 40m

@@ -11,7 +11,7 @@ import {
   listCampaignsByUserId,
 } from "@/lib/db/queries/campaigns";
 import { campaignIdParamsSchema } from "@/lib/validations/campaign";
-import { CampaignAnalyticsClient } from "@/components/campaigns/campaign-analytics-client";
+import { CampaignDetailClient } from "@/components/campaigns/campaign-detail-client";
 
 type CampaignDetailPageProps = {
   params: Promise<{ id: string }>;
@@ -92,7 +92,7 @@ export default async function CampaignDetailPage({
         </Card>
       </div>
 
-      <CampaignAnalyticsClient
+      <CampaignDetailClient
         campaign={{
           id: campaign.id,
           linkCount: campaign.linkCount,

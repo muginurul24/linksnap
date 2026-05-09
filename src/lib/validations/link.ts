@@ -8,6 +8,17 @@ function emptyStringToUndefined(value: unknown): unknown {
   return typeof value === "string" && value.trim() === "" ? undefined : value;
 }
 
+function emptyStringToBoolean(value: unknown): unknown {
+  if (typeof value !== "string") return value;
+
+  const trimmed = value.trim().toLowerCase();
+  if (!trimmed) return undefined;
+  if (trimmed === "true") return true;
+  if (trimmed === "false") return false;
+
+  return value;
+}
+
 function emptyStringToNull(value: unknown): unknown {
   return typeof value === "string" && value.trim() === "" ? null : value;
 }
@@ -181,6 +192,7 @@ export const listLinksQuerySchema = z
       emptyStringToUndefined,
       z.string().trim().max(100, "Search is too long").optional(),
     ),
+    unassigned: z.preprocess(emptyStringToBoolean, z.boolean().optional()),
   })
   .strict();
 

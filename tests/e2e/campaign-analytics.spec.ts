@@ -315,7 +315,7 @@ test.describe("Campaign detail analytics page", () => {
     ).toBeVisible();
     await expect(dashboard.getByText("Geo Breakdown", { exact: true })).toBeVisible();
     await expect(dashboard.getByText("Top Links", { exact: true })).toBeVisible();
-    await expect(page.getByText(`/${seeded.topLinkSlug}`)).toBeVisible();
+    await expect(dashboard.getByText(`/${seeded.topLinkSlug}`)).toBeVisible();
 
     await page
       .getByRole("checkbox", { name: new RegExp(seeded.compareCampaignName) })

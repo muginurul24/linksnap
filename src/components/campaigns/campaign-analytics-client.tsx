@@ -59,7 +59,7 @@ import {
 } from "@/components/ui/table";
 import type { CountMetric } from "@/lib/analytics/summary";
 
-type CampaignOption = {
+export type CampaignOption = {
   id: string;
   linkCount: number;
   name: string;
@@ -129,6 +129,7 @@ type ApiEnvelope<T> =
 type CampaignAnalyticsClientProps = {
   campaign: CampaignOption;
   comparisonCampaigns: CampaignOption[];
+  refreshToken?: number;
 };
 
 type RangeKey = "7" | "30" | "custom";
@@ -1046,6 +1047,7 @@ function AnalyticsContent({ data }: { data: CampaignAnalyticsPayload }) {
 export function CampaignAnalyticsClient({
   campaign,
   comparisonCampaigns,
+  refreshToken = 0,
 }: CampaignAnalyticsClientProps) {
   const initialRange = useMemo(() => presetDateRange(7), []);
   const [rangeKey, setRangeKey] = useState<RangeKey>("7");
@@ -1103,7 +1105,7 @@ export function CampaignAnalyticsClient({
       });
 
     return () => controller.abort();
-  }, [analyticsUrl, reloadToken]);
+  }, [analyticsUrl, refreshToken, reloadToken]);
 
   const csv = data ? buildCampaignCsv(data) : "";
   const csvFilename = `linksnap-campaign-${campaign.slug}-${fromDate}-${toDate}.csv`;

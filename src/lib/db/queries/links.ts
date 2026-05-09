@@ -145,6 +145,7 @@ type ListLinksInput = {
   limit: number;
   page: number;
   search?: string;
+  unassigned?: boolean;
   userId: string;
 };
 
@@ -800,11 +801,14 @@ export async function softDeleteLinkForUser(
 function buildListLinksWhere({
   campaignId,
   search,
+  unassigned,
   userId,
-}: Pick<ListLinksInput, "campaignId" | "search" | "userId">): SQL {
+}: Pick<ListLinksInput, "campaignId" | "search" | "unassigned" | "userId">): SQL {
   const filters: SQL[] = [eq(links.userId, userId)];
 
-  if (campaignId) {
+  if (unassigned) {
+    filters.push(isNull(links.campaignId));
+  } else if (campaignId) {
     filters.push(eq(links.campaignId, campaignId));
   }
 
@@ -838,13 +842,14 @@ export async function listLinksByUserId({
   limit,
   page,
   search,
+  unassigned,
   userId,
 }: ListLinksInput): Promise<{
   items: ListedLink[];
   nextCursor: string | null;
   total: number;
 }> {
-  const where = buildListLinksWhere({ campaignId, search, userId });
+  const where = buildListLinksWhere({ campaignId, search, unassigned, userId });
   const cursorWhere = cursor ? buildLinksCursorWhere(cursor) : undefined;
   const paginatedWhere = cursorWhere ? and(where, cursorWhere) : where;
   const offset = (page - 1) * limit;

@@ -118,6 +118,7 @@ describe("link validation", () => {
       limit: "10",
       page: "2",
       search: " promo ",
+      unassigned: "true",
     });
 
     expect(parsed.success).toBe(true);
@@ -127,6 +128,7 @@ describe("link validation", () => {
       limit: 10,
       page: 2,
       search: "promo",
+      unassigned: true,
     });
   });
 

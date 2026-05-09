@@ -3260,12 +3260,12 @@ Premium Flutter experience. 🟢
 
 ### TASK 24.3 — Campaign Links Cross-Navigation
 
-- [ ] Add links table to campaign detail page
-- [ ] Quick actions: edit link, remove from campaign
-- [ ] "Add Links" button → uncampaigned links picker dialog
-- [ ] UTM preview before adding
-- [ ] Refresh analytics after link changes
-- [ ] Add E2E tests
+- [x] Add links table to campaign detail page
+- [x] Quick actions: edit link, remove from campaign
+- [x] "Add Links" button → uncampaigned links picker dialog
+- [x] UTM preview before adding
+- [x] Refresh analytics after link changes
+- [x] Add E2E tests
 
 ### TASK 24.4 — Link Pages → Analytics Cross-Navigation
 

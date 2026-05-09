@@ -336,6 +336,7 @@ async function listLinks(
     limit: input.limit,
     page: input.page,
     search: input.search,
+    unassigned: input.unassigned,
     userId,
   });
 
