@@ -3232,7 +3232,7 @@ Premium Flutter experience. 🟢
 
 ### 🔴 Phase Rules
 
-- [ ] Read the full spec at `spec-phase-24-dashboard-ux-completion.md` before starting.
+- [x] Read the full spec at `spec-phase-24-dashboard-ux-completion.md` before starting.
 - [ ] One commit per task.
 - [ ] Every page must have: loading state, empty state, error state, data state.
 - [ ] Cross-navigation: every entity page links to its analytics/detail page.
@@ -3240,13 +3240,13 @@ Premium Flutter experience. 🟢
 
 ### TASK 24.1 — Campaign Detail Analytics Page
 
-- [ ] Create `/campaigns/[id]` — Full analytics dashboard for one campaign
-- [ ] KPI cards: Total Clicks, Unique Visitors, Links, CTR
-- [ ] Click trend chart (Recharts area), device/geo/referrer breakdown
-- [ ] Top links table, link page funnel, campaign comparison selector
-- [ ] Date range: 7D/30D/custom, CSV export
-- [ ] Empty state, loading skeleton, error boundary with retry
-- [ ] Add E2E tests
+- [x] Create `/campaigns/[id]` — Full analytics dashboard for one campaign
+- [x] KPI cards: Total Clicks, Unique Visitors, Links, CTR
+- [x] Click trend chart (Recharts area), device/geo/referrer breakdown
+- [x] Top links table, link page funnel, campaign comparison selector
+- [x] Date range: 7D/30D/custom, CSV export
+- [x] Empty state, loading skeleton, error boundary with retry
+- [x] Add E2E tests
 
 ### TASK 24.2 — Campaign Cards with Performance Metrics
 

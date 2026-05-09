@@ -9129,6 +9129,47 @@ Added full PayGate smoke coverage for the upgraded multi-channel checkout flow, 
 
 **Next Task:** Phase 24 — Dashboard UX Completion after Rafi approval.
 
+### 24.1 — Campaign Detail Analytics Page
+- **Date:** 2026-05-09 14:21 GMT+7
+- **Duration:** 1h 25m
+- **Status:** ✅ Complete
+
+**What I Did:**
+Built the authenticated `/campaigns/[id]` detail dashboard with campaign ownership gating, KPI cards, trend chart, funnel analytics, traffic breakdowns, top links, campaign comparison, date filters, CSV export, loading skeleton, and route-level error recovery. Added browser E2E coverage for populated data, empty data, CSV export availability, comparison behavior, and mobile overflow.
+
+**Files Changed:**
+- `src/app/(dashboard)/campaigns/[id]/page.tsx` — Added the campaign detail analytics route.
+- `src/app/(dashboard)/campaigns/[id]/loading.tsx` — Added campaign analytics loading skeleton.
+- `src/app/(dashboard)/campaigns/[id]/error.tsx` — Added friendly route error boundary with retry/back actions.
+- `src/components/campaigns/campaign-analytics-client.tsx` — Added interactive analytics controls, charts, export, comparison, and responsive tables.
+- `tests/e2e/campaign-analytics.spec.ts` — Added Playwright coverage for campaign analytics data, empty state, and mobile layout.
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Checked off 24.1.
+- `_bmad-output/implementation-artifacts/JOURNAL.md` — Logged 24.1.
+
+**Decisions Made:**
+- Kept ownership enforcement on the server page before rendering the client analytics surface, matching the existing API authorization model.
+- Used `cache: "no-store"` for the client analytics fetch because campaign analytics are live operational metrics, not static dashboard chrome.
+- Added internal table overflow instead of page overflow so mobile users can scroll dense link data without breaking the viewport.
+
+**Tests:**
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Full unit/integration: `rtk bun run test` — 164 passed, 1 skipped; 748 passed, 2 skipped.
+- ✅ Targeted E2E: `rtk bun run test:e2e -- tests/e2e/campaign-analytics.spec.ts` — 3 passed.
+- ✅ Production build: `rtk bun run build` — Passed.
+
+**Issues Encountered:**
+- React lint rejected synchronous state updates indirectly called from an effect, so analytics fetching was refactored into an async fetch/parse chain with state updates only after resolution.
+- Playwright selectors initially matched duplicate visible labels; assertions were tightened to dashboard-scoped or test-id selectors.
+
+**Security Checks:**
+- ✅ Input validation remains handled by `campaignIdParamsSchema` and the existing analytics query schema.
+- ✅ Ownership verified before rendering campaign details and again inside the analytics API.
+- ✅ Analytics API rate limiting remains active per user.
+- ✅ No secrets or sensitive payloads added to logs or tests.
+
+**Next Task:** 24.2 — Campaign Cards with Performance Metrics
+
 ### 23.10 Follow-up — Full Quality Gate Stabilization
 - **Date:** 2026-05-09 13:56 GMT+7
 - **Duration:** 2h 40m
