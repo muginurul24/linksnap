@@ -3285,11 +3285,11 @@ Premium Flutter experience. 🟢
 
 ### TASK 24.6 — My Links Table Sorting & Bulk Actions
 
-- [ ] Sortable columns: Slug, Destination, Clicks, Created, Status
-- [ ] Bulk actions: Select All → Add to Campaign, Delete, Export CSV
-- [ ] Add "Last 7 Days" mini trend indicator
-- [ ] Keep existing search, pagination, per-row actions
-- [ ] Add E2E tests
+- [x] Sortable columns: Slug, Destination, Clicks, Created, Status
+- [x] Bulk actions: Select All → Add to Campaign, Delete, Export CSV
+- [x] Add "Last 7 Days" mini trend indicator
+- [x] Keep existing search, pagination, per-row actions
+- [x] Add E2E tests
 
 ### TASK 24.7 — Admin Dashboard Real Data
 

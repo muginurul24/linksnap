@@ -1,7 +1,7 @@
 import { expect, test, type Browser, type Page } from "@playwright/test";
 import { loadEnvConfig } from "@next/env";
 import { readFile } from "node:fs/promises";
-import { count, eq } from "drizzle-orm";
+import { and, count, eq, inArray } from "drizzle-orm";
 import { db } from "../../src/lib/db";
 import {
   campaigns,
@@ -130,6 +130,34 @@ async function countClicksForLink(linkId: string): Promise<number> {
   return row?.value ?? 0;
 }
 
+async function countLinksAssignedToCampaign({
+  campaignId,
+  linkIds,
+}: {
+  campaignId: string;
+  linkIds: string[];
+}): Promise<number> {
+  const [row] = await retryTransientDb(() =>
+    db
+      .select({ value: count() })
+      .from(links)
+      .where(and(eq(links.campaignId, campaignId), inArray(links.id, linkIds))),
+  );
+
+  return row?.value ?? 0;
+}
+
+async function countPausedLinks(linkIds: string[]): Promise<number> {
+  const [row] = await retryTransientDb(() =>
+    db
+      .select({ value: count() })
+      .from(links)
+      .where(and(eq(links.isActive, false), inArray(links.id, linkIds))),
+  );
+
+  return row?.value ?? 0;
+}
+
 async function processRedirectClickQueue(page: Page): Promise<void> {
   const response = await page.request.get(
     "/api/v1/analytics/click-queue/process?limit=100",
@@ -141,6 +169,88 @@ async function processRedirectClickQueue(page: Page): Promise<void> {
   );
 
   expect(response.ok()).toBe(true);
+}
+
+async function createBulkLinksFixture({
+  marker,
+  userId,
+}: {
+  marker: string;
+  userId: string;
+}): Promise<{ campaignId: string; linkIds: string[]; slugs: string[] }> {
+  const [campaign] = await retryTransientDb(() =>
+    db
+      .insert(campaigns)
+      .values({
+        name: "Bulk Campaign",
+        slug: `bulk-campaign-${marker}`,
+        userId,
+        utmCampaign: `bulk-${marker}`,
+        utmMedium: "dashboard",
+        utmSource: "links",
+      })
+      .returning({ id: campaigns.id }),
+  );
+
+  if (!campaign) throw new Error("Unable to create bulk campaign.");
+
+  const createdAt = new Date("2026-05-01T00:00:00Z");
+  const insertedLinks = await retryTransientDb(() =>
+    db
+      .insert(links)
+      .values([
+        {
+          clickCount: 1,
+          createdAt,
+          destinationUrl: "https://example.com/bulk-alpha",
+          slug: `bulk-a-${marker}`,
+          title: "Bulk Alpha",
+          userId,
+        },
+        {
+          clickCount: 4,
+          createdAt: new Date("2026-05-02T00:00:00Z"),
+          destinationUrl: "https://example.com/bulk-zeta",
+          slug: `bulk-z-${marker}`,
+          title: "Bulk Zeta",
+          userId,
+        },
+      ])
+      .returning({ id: links.id, slug: links.slug }),
+  );
+
+  if (insertedLinks.length !== 2) throw new Error("Unable to create bulk links.");
+
+  await retryTransientDb(() =>
+    db.insert(clickEvents).values([
+      {
+        eventType: "DIRECT_REDIRECT",
+        linkId: insertedLinks[0]?.id,
+        timestamp: new Date("2026-05-08T10:00:00Z"),
+      },
+      {
+        eventType: "DIRECT_REDIRECT",
+        linkId: insertedLinks[1]?.id,
+        timestamp: new Date("2026-05-08T10:00:00Z"),
+      },
+      {
+        eventType: "DIRECT_REDIRECT",
+        linkId: insertedLinks[1]?.id,
+        timestamp: new Date("2026-05-08T11:00:00Z"),
+      },
+      {
+        eventType: "LINK_PAGE_CTA_CLICK",
+        linkId: insertedLinks[1]?.id,
+        timestamp: new Date("2026-05-08T12:00:00Z"),
+      },
+    ]),
+  );
+
+  return {
+    campaignId: campaign.id,
+    linkIds: insertedLinks.map((link) => link.id),
+    slugs: insertedLinks.map((link) => link.slug),
+  };
 }
 
 async function createLinkPageFixture({
@@ -418,6 +528,92 @@ test("should preview a Link Page from the dashboard links table", async ({ page 
     );
   } finally {
     await cleanupLinkFlowState(email, userId);
+  }
+});
+
+test("should sort and bulk manage links from the dashboard table", async ({ page }) => {
+  const marker = `${Date.now()}`;
+  const email = `e2e-bulk-${marker}@example.com`;
+  const password = "Password1";
+  let userId: string | undefined;
+  let fixture:
+    | { campaignId: string; linkIds: string[]; slugs: string[] }
+    | undefined;
+
+  try {
+    userId = await createVerifiedUser(email, password);
+    fixture = await createBulkLinksFixture({ marker, userId });
+
+    await signIn(page, { email, password });
+    await expect(page).toHaveURL(/\/links$/, { timeout: 15_000 });
+
+    await expect(page.getByText("2 visible links")).toBeVisible({
+      timeout: 15_000,
+    });
+    await expect(page.getByText("3 7d")).toBeVisible();
+
+    await page.getByRole("button", { name: /^Link$/ }).click();
+    await expect(page.getByRole("row").nth(1)).toContainText(
+      `/${fixture.slugs[0]}`,
+    );
+
+    await page.getByLabel("Select all visible links").check();
+    await expect(page.getByText("2 selected")).toBeVisible();
+
+    const downloadPromise = page.waitForEvent("download");
+    await page.getByRole("button", { name: "Export CSV" }).click();
+    const download = await downloadPromise;
+    expect(download.suggestedFilename()).toMatch(/linksnap-links-\d{4}-\d{2}-\d{2}\.csv/);
+
+    const assignResponsePromise = page.waitForResponse(
+      (response) =>
+        responsePath(response) ===
+          `/api/v1/campaigns/${fixture?.campaignId}/links` &&
+        response.request().method() === "POST",
+      { timeout: 60_000 },
+    );
+    await page.getByRole("button", { name: "Add to Campaign" }).click();
+    expect((await assignResponsePromise).ok()).toBe(true);
+    await expect
+      .poll(() =>
+        fixture
+          ? countLinksAssignedToCampaign({
+              campaignId: fixture.campaignId,
+              linkIds: fixture.linkIds,
+            })
+          : 0,
+      )
+      .toBe(2);
+
+    await page.getByLabel("Select all visible links").check();
+    await page.getByRole("button", { name: "Delete" }).click();
+    await expect(
+      page.getByText("Are you sure you want to delete 2 selected links?"),
+    ).toBeVisible();
+    const deleteResponses: number[] = [];
+    page.on("response", (response) => {
+      if (
+        responsePath(response).startsWith("/api/v1/links/") &&
+        response.request().method() === "DELETE"
+      ) {
+        deleteResponses.push(response.status());
+      }
+    });
+    await page.getByRole("dialog").getByRole("button", { name: "Delete" }).click();
+
+    await expect
+      .poll(() => deleteResponses.length, { timeout: 60_000 })
+      .toBe(2);
+    expect(deleteResponses.every((status) => status >= 200 && status < 300)).toBe(
+      true,
+    );
+    await expect
+      .poll(() => (fixture ? countPausedLinks(fixture.linkIds) : 0), {
+        timeout: 30_000,
+      })
+      .toBe(2);
+  } finally {
+    await cleanupLinkFlowState(email, userId, fixture?.slugs ?? []);
   }
 });
 

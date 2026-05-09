@@ -61,6 +61,16 @@ export type ListedLink = {
   updatedAt: Date;
 };
 
+export type LinkClickTrendPoint = {
+  date: string;
+  totalClicks: number;
+};
+
+export type ListedLinkWithTrend = ListedLink & {
+  clickTrend: LinkClickTrendPoint[];
+  clicksLast7Days: number;
+};
+
 export type QrCodeSort = "most-scanned" | "recently-created";
 
 export type ListedQrCodeLink = ListedLink & {
@@ -179,6 +189,10 @@ type ListQrCodeLinksInput = ListLinksInput & {
   sort?: QrCodeSort;
 };
 
+type ListLinksWithTrendsInput = ListLinksInput & {
+  now?: Date;
+};
+
 type UpdateLinkRecordInput = {
   destinationUrl?: string;
   id: string;
@@ -249,6 +263,7 @@ const linkDetailColumns = {
 } as const;
 
 const DAY_MS = 24 * 60 * 60 * 1000;
+const LINK_TREND_DAYS = 7;
 const LINK_PAGE_TREND_DAYS = 7;
 const QR_SCAN_REFERRER = "qr";
 const QR_SCAN_WINDOW_DAYS = 30;
@@ -275,6 +290,22 @@ function getLinkPageTrendRange(now = new Date()): {
     startOfUtcDay(now).getTime() - (LINK_PAGE_TREND_DAYS - 1) * DAY_MS,
   );
   const dates = Array.from({ length: LINK_PAGE_TREND_DAYS }, (_, index) =>
+    formatUtcDate(new Date(from.getTime() + index * DAY_MS)),
+  );
+
+  return { dates, from, to };
+}
+
+function getLinkClickTrendRange(now = new Date()): {
+  dates: string[];
+  from: Date;
+  to: Date;
+} {
+  const to = now;
+  const from = new Date(
+    startOfUtcDay(now).getTime() - (LINK_TREND_DAYS - 1) * DAY_MS,
+  );
+  const dates = Array.from({ length: LINK_TREND_DAYS }, (_, index) =>
     formatUtcDate(new Date(from.getTime() + index * DAY_MS)),
   );
 
@@ -944,6 +975,78 @@ export async function listLinksByUserId({
     items: cursorPage?.items ?? items,
     nextCursor: cursorPage?.nextCursor ?? null,
     total: totalRows[0]?.value ?? 0,
+  };
+}
+
+export async function listLinksWithTrendsByUserId({
+  campaignId,
+  cursor,
+  limit,
+  now = new Date(),
+  page,
+  search,
+  unassigned,
+  userId,
+}: ListLinksWithTrendsInput): Promise<{
+  items: ListedLinkWithTrend[];
+  nextCursor: string | null;
+  total: number;
+}> {
+  const linkResult = await listLinksByUserId({
+    campaignId,
+    cursor,
+    limit,
+    page,
+    search,
+    unassigned,
+    userId,
+  });
+  const linkIds = linkResult.items.map((link) => link.id);
+
+  if (linkIds.length === 0) return { ...linkResult, items: [] };
+
+  const range = getLinkClickTrendRange(now);
+  const clickDate = sql<string>`to_char(date_trunc('day', ${clickEvents.timestamp}), 'YYYY-MM-DD')`;
+  const trendRows = await db
+    .select({
+      date: clickDate,
+      linkId: clickEvents.linkId,
+      totalClicks: count(),
+    })
+    .from(clickEvents)
+    .where(and(
+      inArray(clickEvents.linkId, linkIds),
+      inArray(clickEvents.eventType, ["DIRECT_REDIRECT", "LINK_PAGE_CTA_CLICK"]),
+      gte(clickEvents.timestamp, range.from),
+      lte(clickEvents.timestamp, range.to),
+    ))
+    .groupBy(clickEvents.linkId, clickDate);
+  const trendsByLinkId = new Map<string, Map<string, number>>();
+
+  for (const row of trendRows) {
+    const trend = trendsByLinkId.get(row.linkId) ?? new Map<string, number>();
+    trend.set(row.date, Number(row.totalClicks));
+    trendsByLinkId.set(row.linkId, trend);
+  }
+
+  return {
+    ...linkResult,
+    items: linkResult.items.map((link) => {
+      const trend = trendsByLinkId.get(link.id);
+      const clickTrend = range.dates.map((date) => ({
+        date,
+        totalClicks: trend?.get(date) ?? 0,
+      }));
+
+      return {
+        ...link,
+        clickTrend,
+        clicksLast7Days: clickTrend.reduce(
+          (total, point) => total + point.totalClicks,
+          0,
+        ),
+      };
+    }),
   };
 }
 

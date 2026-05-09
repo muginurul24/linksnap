@@ -15,11 +15,13 @@ describe("mobile navigation polish", () => {
   });
 
   it("should hide nonessential links table columns on mobile", () => {
-    const linksPage = readSource("src/app/(dashboard)/links/page.tsx");
+    const linksTable = readSource(
+      "src/app/(dashboard)/links/links-table-client.tsx",
+    );
 
-    expect(linksPage).toContain("hidden text-right sm:table-cell");
-    expect(linksPage).toContain("hidden md:table-cell");
-    expect(linksPage).toContain("hidden lg:table-cell");
+    expect(linksTable).toContain("hidden text-right sm:table-cell");
+    expect(linksTable).toContain("hidden md:table-cell");
+    expect(linksTable).toContain("hidden lg:table-cell");
   });
 
   it("should stack billing plan cards on mobile", () => {

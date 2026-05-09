@@ -9129,6 +9129,46 @@ Added full PayGate smoke coverage for the upgraded multi-channel checkout flow, 
 
 **Next Task:** Phase 24 — Dashboard UX Completion after Rafi approval.
 
+### 24.6 — My Links Table Sorting & Bulk Actions
+- **Date:** 2026-05-09 15:19 GMT+7
+- **Duration:** 1h 10m
+- **Status:** ✅ Complete
+
+**What I Did:**
+Rebuilt the My Links table as an interactive dashboard surface with sortable columns, visible-row selection, bulk Add to Campaign, bulk delete confirmation, CSV export, and 7-day click trend indicators while preserving search, link preview, and per-row actions.
+
+**Files Changed:**
+- `src/lib/db/queries/links.ts` — Added batched 7-day click trend enrichment for listed links.
+- `src/app/(dashboard)/links/page.tsx` — Loaded campaigns and serialized enriched links for the client table.
+- `src/app/(dashboard)/links/links-table-client.tsx` — Added sortable table, selection state, bulk toolbar, CSV export, and delete flow.
+- `tests/e2e/link-flow.spec.ts` — Added E2E coverage for sorting, select-all, CSV export, Add to Campaign, and bulk delete.
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Checked off 24.6.
+- `_bmad-output/implementation-artifacts/JOURNAL.md` — Logged 24.6.
+
+**Decisions Made:**
+- Kept trend enrichment server-side and batched by visible link IDs to avoid N+1 table rendering.
+- Used existing campaign-link and link-delete APIs for bulk operations so ownership checks, rate limiting, validation, and cache invalidation remain centralized.
+- Export CSV uses selected rows only, matching the selection-driven bulk action model.
+
+**Tests:**
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Targeted E2E: `rtk bun run test:e2e -- tests/e2e/link-flow.spec.ts -g "should sort and bulk manage"` — 1 passed.
+- ✅ Full unit/integration: `rtk bun run test` — 167 passed, 1 skipped; 756 passed, 2 skipped.
+- ✅ Production build: `rtk bun run build` — Passed.
+
+**Issues Encountered:**
+- The first bulk-delete E2E assertion polled database state before both DELETE requests had finished in dev mode. The test now waits for both DELETE responses before asserting database state.
+- An existing static mobile-polish unit test still inspected the old server page file for responsive table classes. Updated it to inspect the new client table file.
+
+**Security Checks:**
+- ✅ Bulk Add to Campaign uses the existing authenticated ownership-gated campaign links endpoint.
+- ✅ Bulk Delete uses the existing authenticated ownership-gated link endpoint with cache invalidation.
+- ✅ CSV export only includes selected links already visible to the authenticated user.
+- ✅ No new secrets, raw tokens, or untrusted HTML paths added.
+
+**Next Task:** 24.7 — Admin Dashboard Real Data
+
 ### 24.5 — QR Codes Page Enhancement
 - **Date:** 2026-05-09 15:02 GMT+7
 - **Duration:** 45m

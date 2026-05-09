@@ -1,10 +1,8 @@
 import { redirect } from "next/navigation";
 import {
   Filter,
-  Globe,
   Link2,
   Plus,
-  QrCode,
   Search,
 } from "lucide-react";
 import { PlanGate } from "@/components/plan-gate";
@@ -12,28 +10,22 @@ import { auth } from "@/lib/auth";
 import { getSessionUserId } from "@/lib/auth/session-helpers";
 import {
   countLinksByUserId,
-  listLinksByUserId,
-  type ListedLink,
+  listLinksWithTrendsByUserId,
+  type ListedLinkWithTrend,
 } from "@/lib/db/queries/links";
+import { listCampaignsByUserId } from "@/lib/db/queries/campaigns";
 import { findBillingUserById } from "@/lib/db/queries/payments";
 import { hydrateRedirectClickCounts } from "@/lib/links/click-count-cache";
 import type { UserPlan } from "@/lib/links/limits";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ButtonLink } from "@/components/ui/button-link";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { EmptyState } from "@/components/dashboard/empty-state";
-import { LinkActions } from "@/app/(dashboard)/links/link-actions";
-import { LinkPagePreviewDialog } from "@/app/(dashboard)/links/link-page-preview-dialog";
+import {
+  LinksTableClient,
+  type LinkTableItem,
+} from "@/app/(dashboard)/links/links-table-client";
 import {
   getLinksSearchQuery,
   LINKS_SEARCH_MAX_LENGTH,
@@ -51,6 +43,23 @@ type LinksPageProps = {
 function getShortUrl(slug: string): string {
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL?.trim().replace(/\/+$/, "");
   return `${baseUrl || "https://www.justqiu.cloud"}/${slug}`;
+}
+
+function toLinkTableItem(link: ListedLinkWithTrend): LinkTableItem {
+  return {
+    campaignId: link.campaignId,
+    clickCount: link.clickCount,
+    clickTrend: link.clickTrend,
+    clicksLast7Days: link.clicksLast7Days,
+    createdAt: link.createdAt.toISOString(),
+    destinationUrl: link.destinationUrl,
+    hasLinkPage: link.hasLinkPage,
+    id: link.id,
+    isActive: link.isActive,
+    shortUrl: getShortUrl(link.slug),
+    slug: link.slug,
+    title: link.title,
+  };
 }
 
 function LinksEmptyState({
@@ -98,72 +107,6 @@ function CreateLinkButton({
   );
 }
 
-function LinkRows({ links }: { links: ListedLink[] }) {
-  return (
-    <TableBody>
-      {links.map((link) => (
-        <TableRow key={link.id} className={!link.isActive ? "opacity-50" : ""}>
-          <TableCell>
-            <div className="flex items-center gap-2">
-              <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary/10">
-                <QrCode className="size-4 text-primary" />
-              </div>
-              <div className="min-w-0">
-                <p className="truncate font-mono text-sm font-medium">/{link.slug}</p>
-                <p className="truncate text-xs text-muted-foreground">
-                  {getShortUrl(link.slug)}
-                </p>
-              </div>
-            </div>
-          </TableCell>
-          <TableCell className="hidden md:table-cell">
-            <p className="max-w-[250px] truncate text-sm text-muted-foreground">
-              {link.destinationUrl}
-            </p>
-          </TableCell>
-          <TableCell className="hidden sm:table-cell">
-            {link.hasLinkPage ? (
-              <Badge variant="secondary" className="text-xs">
-                <Globe className="mr-1 size-3" />
-                Page
-              </Badge>
-            ) : (
-              <span className="text-xs text-muted-foreground">None</span>
-            )}
-          </TableCell>
-          <TableCell className="hidden text-right font-mono font-medium tabular-nums sm:table-cell">
-            {link.clickCount.toLocaleString()}
-          </TableCell>
-          <TableCell className="hidden lg:table-cell">
-            <Badge variant={link.isActive ? "default" : "secondary"}>
-              {link.isActive ? "Active" : "Paused"}
-            </Badge>
-          </TableCell>
-          <TableCell className="w-10">
-            <LinkPagePreviewDialog
-              link={{
-                clickCount: link.clickCount,
-                destinationUrl: link.destinationUrl,
-                hasLinkPage: link.hasLinkPage,
-                id: link.id,
-                shortUrl: getShortUrl(link.slug),
-                slug: link.slug,
-              }}
-            />
-          </TableCell>
-          <TableCell>
-            <LinkActions
-              id={link.id}
-              shortUrl={getShortUrl(link.slug)}
-              slug={link.slug}
-            />
-          </TableCell>
-        </TableRow>
-      ))}
-    </TableBody>
-  );
-}
-
 export default async function LinksPage({ searchParams }: LinksPageProps) {
   const session = await auth();
   const userId = getSessionUserId(session);
@@ -171,8 +114,8 @@ export default async function LinksPage({ searchParams }: LinksPageProps) {
 
   const params = await searchParams;
   const search = getLinksSearchQuery(params.search);
-  const [linkResult, linkCount, billingUser] = await Promise.all([
-    listLinksByUserId({
+  const [linkResult, linkCount, billingUser, campaignResult] = await Promise.all([
+    listLinksWithTrendsByUserId({
       limit: PAGE_LIMIT,
       page: 1,
       search,
@@ -180,6 +123,11 @@ export default async function LinksPage({ searchParams }: LinksPageProps) {
     }),
     countLinksByUserId(userId),
     findBillingUserById(userId),
+    listCampaignsByUserId({
+      limit: 100,
+      page: 1,
+      userId,
+    }),
   ]);
   const links = await hydrateRedirectClickCounts(linkResult.items);
   const userPlan = billingUser?.plan ?? "FREE";
@@ -220,22 +168,13 @@ export default async function LinksPage({ searchParams }: LinksPageProps) {
       ) : (
         <Card>
           <CardContent className="p-0">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Link</TableHead>
-                  <TableHead className="hidden md:table-cell">Destination</TableHead>
-                  <TableHead className="hidden sm:table-cell">Features</TableHead>
-                  <TableHead className="hidden text-right sm:table-cell">Clicks</TableHead>
-                  <TableHead className="hidden lg:table-cell">Status</TableHead>
-                  <TableHead className="w-10">
-                    <span className="sr-only">Preview</span>
-                  </TableHead>
-                  <TableHead className="w-10" />
-                </TableRow>
-              </TableHeader>
-              <LinkRows links={links} />
-            </Table>
+            <LinksTableClient
+              campaigns={campaignResult.items.map((campaign) => ({
+                id: campaign.id,
+                name: campaign.name,
+              }))}
+              links={links.map(toLinkTableItem)}
+            />
           </CardContent>
         </Card>
       )}
