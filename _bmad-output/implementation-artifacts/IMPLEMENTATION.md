@@ -3320,12 +3320,12 @@ Premium Flutter experience. 🟢
 
 ### TASK 24.10 — Loading, Empty, Error States Pass
 
-- [ ] Audit every dashboard page for missing states
-- [ ] Ensure loading.tsx exists everywhere (skeleton)
-- [ ] Ensure error.tsx exists everywhere (friendly + retry + requestId)
-- [ ] Ensure empty state everywhere (guidance + CTA)
-- [ ] Standardize skeleton components
-- [ ] No bare pages anywhere
+- [x] Audit every dashboard page for missing states
+- [x] Ensure loading.tsx exists everywhere (skeleton)
+- [x] Ensure error.tsx exists everywhere (friendly + retry + requestId)
+- [x] Ensure empty state everywhere (guidance + CTA)
+- [x] Standardize skeleton components
+- [x] No bare pages anywhere
 
 ### 📊 Phase 24 Task Summary
 

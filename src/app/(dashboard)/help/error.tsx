@@ -2,7 +2,7 @@
 
 import { DashboardRouteErrorState } from "@/components/dashboard/route-error-state";
 
-export default function LinkPagesError({
+export default function HelpError({
   error,
   reset,
 }: {
@@ -12,16 +12,16 @@ export default function LinkPagesError({
   return (
     <DashboardRouteErrorState
       action={{
-        href: "/links/new",
-        label: "Create Link Page",
+        href: "mailto:support@justqiu.cloud",
+        label: "Email Support",
         showBackIcon: false,
         variant: "default",
       }}
-      description="Try again, or create a new Link Page if this view stays unavailable."
+      description="The help center could not load. Try again, or email support if you need help right now."
       error={error}
-      logKey="link_pages_render_error"
+      logKey="help_page_error_boundary"
       reset={reset}
-      title="Link Pages could not load"
+      title="Help is temporarily unavailable"
     />
   );
 }

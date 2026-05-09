@@ -2,7 +2,7 @@
 
 import { DashboardRouteErrorState } from "@/components/dashboard/route-error-state";
 
-export default function LinkPagesError({
+export default function QrError({
   error,
   reset,
 }: {
@@ -13,15 +13,15 @@ export default function LinkPagesError({
     <DashboardRouteErrorState
       action={{
         href: "/links/new",
-        label: "Create Link Page",
+        label: "Create link",
         showBackIcon: false,
         variant: "default",
       }}
-      description="Try again, or create a new Link Page if this view stays unavailable."
+      description="Your QR codes could not load. Try again, or create a link to generate a new QR code."
       error={error}
-      logKey="link_pages_render_error"
+      logKey="qr_page_error_boundary"
       reset={reset}
-      title="Link Pages could not load"
+      title="QR Codes are temporarily unavailable"
     />
   );
 }

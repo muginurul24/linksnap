@@ -2,7 +2,7 @@
 
 import { DashboardRouteErrorState } from "@/components/dashboard/route-error-state";
 
-export default function CampaignDetailError({
+export default function EditCampaignError({
   error,
   reset,
 }: {
@@ -12,11 +12,11 @@ export default function CampaignDetailError({
   return (
     <DashboardRouteErrorState
       action={{ href: "/campaigns", label: "Back to campaigns" }}
-      description="This campaign page could not load. Try again, or return to campaigns while we recover this view."
+      description="The campaign edit form could not load right now. Try again, or return to campaigns while we recover this view."
       error={error}
-      logKey="campaign_detail_page_error_boundary"
+      logKey="edit_campaign_error_boundary"
       reset={reset}
-      title="Campaign analytics are temporarily unavailable"
+      title="Campaign editing is temporarily unavailable"
     />
   );
 }

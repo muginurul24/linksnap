@@ -290,3 +290,107 @@ export function LinkFormPageSkeleton() {
     </>
   );
 }
+
+export function CampaignFormPageSkeleton() {
+  return (
+    <>
+      <PageHeaderSkeleton hasAction />
+      <Card>
+        <CardHeader className="space-y-2">
+          <Skeleton className="h-6 w-40" />
+          <Skeleton className="h-4 w-72 max-w-full" />
+        </CardHeader>
+        <CardContent className="grid gap-4 md:grid-cols-2">
+          {Array.from({ length: 7 }).map((_, index) => (
+            <div key={index} className="space-y-2">
+              <Skeleton className="h-4 w-28" />
+              <Skeleton className="h-9 w-full" />
+            </div>
+          ))}
+        </CardContent>
+      </Card>
+    </>
+  );
+}
+
+export function DocsPageSkeleton() {
+  return (
+    <>
+      <PageHeaderSkeleton hasAction />
+      <Card>
+        <CardHeader className="space-y-2">
+          <Skeleton className="h-5 w-36" />
+          <Skeleton className="h-4 w-80 max-w-full" />
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <Skeleton className="h-12 w-full" />
+          <Skeleton className="h-8 w-36" />
+        </CardContent>
+      </Card>
+      <div className="space-y-6">
+        {Array.from({ length: 3 }).map((_, sectionIndex) => (
+          <section key={sectionIndex} className="space-y-3">
+            <div className="space-y-2">
+              <Skeleton className="h-6 w-40" />
+              <Skeleton className="h-4 w-72 max-w-full" />
+            </div>
+            <div className="space-y-3">
+              {Array.from({ length: 2 }).map((_, cardIndex) => (
+                <Card key={cardIndex}>
+                  <CardContent className="space-y-4 p-4">
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                      <div className="space-y-2">
+                        <Skeleton className="h-5 w-56 max-w-full" />
+                        <Skeleton className="h-4 w-72 max-w-full" />
+                      </div>
+                    </div>
+                    <div className="grid gap-3 lg:grid-cols-2">
+                      <Skeleton className="h-28 w-full" />
+                      <Skeleton className="h-28 w-full" />
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </section>
+        ))}
+      </div>
+    </>
+  );
+}
+
+export function HelpPageSkeleton() {
+  return (
+    <>
+      <PageHeaderSkeleton />
+      <div className="grid gap-4 lg:grid-cols-[1fr_320px]">
+        <div className="space-y-4">
+          {Array.from({ length: 4 }).map((_, index) => (
+            <Card key={index}>
+              <CardHeader className="space-y-2">
+                <Skeleton className="h-5 w-48" />
+              </CardHeader>
+              <CardContent>
+                <Skeleton className="h-4 w-full" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+        <div className="space-y-4">
+          {Array.from({ length: 2 }).map((_, index) => (
+            <Card key={index}>
+              <CardHeader className="space-y-2">
+                <Skeleton className="h-5 w-36" />
+                <Skeleton className="h-4 w-full" />
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <Skeleton className="h-9 w-full" />
+                <Skeleton className="h-16 w-full" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
+    </>
+  );
+}

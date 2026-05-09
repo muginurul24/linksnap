@@ -2,7 +2,7 @@
 
 import { DashboardRouteErrorState } from "@/components/dashboard/route-error-state";
 
-export default function SettingsError({
+export default function CampaignsError({
   error,
   reset,
 }: {
@@ -12,15 +12,11 @@ export default function SettingsError({
   return (
     <DashboardRouteErrorState
       action={{ href: "/dashboard", label: "Back to dashboard" }}
-      description="An error occurred while loading settings. This might be a temporary database issue."
+      description="We could not load your campaigns. Try again, or return to the dashboard while we recover this view."
       error={error}
-      heading={{
-        description: "Manage your account and preferences.",
-        title: "Settings",
-      }}
-      logKey="settings_error_boundary"
+      logKey="campaigns_page_error_boundary"
       reset={reset}
-      title="Settings are temporarily unavailable"
+      title="Campaigns are temporarily unavailable"
     />
   );
 }
