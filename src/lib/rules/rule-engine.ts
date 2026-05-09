@@ -380,6 +380,8 @@ async function ruleMatches(
   rule: SmartRuleRecord,
   context: RuleEvaluationContext,
 ): Promise<boolean> {
+  // Keep legacy single-condition rules working while supporting the newer
+  // multi-condition payload shape produced by the dashboard rule builder.
   const v2Payload = getV2Payload(rule);
   if (v2Payload) return v2RuleMatches(v2Payload, context);
 
@@ -455,6 +457,8 @@ export async function evaluateSmartRulesForLink({
   const rules = await getRulesForLink({ linkId, slug });
   const sortedRules = [...rules].sort((a, b) => a.priority - b.priority);
 
+  // First match wins; fallback destinations only apply after every active rule
+  // misses so owners can set one safe default for the full rule set.
   for (const rule of sortedRules) {
     if (await ruleMatches(rule, context)) {
       return {

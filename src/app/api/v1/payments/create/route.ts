@@ -278,6 +278,8 @@ export async function POST(request: NextRequest) {
       orderId,
     });
 
+    // Persist the pending transaction before calling PayGate so webhook replay
+    // and provider callbacks can be matched even if the client disconnects.
     await createPendingTransactionRecord({
       duration: parsedBody.data.duration,
       grossAmountIdr,
@@ -299,6 +301,8 @@ export async function POST(request: NextRequest) {
       userId: authResult.userId,
     });
 
+    // PayGate receives only server-calculated amounts and allowlisted channel
+    // fields; user-submitted payment method strings never reach the provider raw.
     const payGateCharge = await createPayGateCharge({
       callbackUrl: buildPaymentWebhookUrl(paymentBaseUrl),
       customer: {

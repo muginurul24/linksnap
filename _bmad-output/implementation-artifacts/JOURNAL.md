@@ -9281,6 +9281,9 @@ Replaced the template README with LinkSnap-specific setup, architecture, API, te
 - `README.md` — Replaced create-next-app template with comprehensive LinkSnap developer and operations documentation.
 - `ROADMAP.md` — Added launch limitations, MVP status, V2/V3 roadmap, and review cadence.
 - `src/lib/api-docs/spec.ts` — Added missing auth, 2FA, payment, operations, admin, and PUT smart-rule docs; added small comments around OpenAPI generation.
+- `src/lib/rules/rule-engine.ts` — Added orienting comments around legacy/v2 rule compatibility and fallback evaluation.
+- `src/app/api/v1/payments/create/route.ts` — Added comments around transaction-before-provider and channel allowlist behavior.
+- `src/lib/analytics/click-queue.ts` — Added comments around queue-first redirect logging and dead-letter retention.
 - `tests/unit/api-docs-completeness.test.ts` — Added filesystem-backed test that ensures every implemented v1 route is documented.
 - `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Checked off 25.7.
 - `_bmad-output/implementation-artifacts/JOURNAL.md` — Logged 25.7.

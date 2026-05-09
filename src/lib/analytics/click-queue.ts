@@ -77,6 +77,8 @@ export async function recordRedirectClick(
     currentClickCount?: number;
   } = {},
 ): Promise<RedirectClickRecordResult> {
+  // Redirects should stay fast: queue first, then fall back to direct
+  // persistence only when Redis is unavailable.
   try {
     await enqueueRedirectClick(input);
     await incrementCountWhenNeeded(input, options.currentClickCount);
@@ -138,6 +140,8 @@ export async function processRedirectClickQueue({
       await persistRedirectClick(parseRedirectClick(payload));
       processed += 1;
     } catch (error) {
+      // Bad payloads or transient DB failures are retained for operator review
+      // instead of being dropped from the queue path silently.
       deadLettered += 1;
       logger.error("redirect_click_queue_process_failed", { error });
       await moveToDeadLetter(payload);
