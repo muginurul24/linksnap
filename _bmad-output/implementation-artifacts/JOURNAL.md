@@ -9207,6 +9207,44 @@ Replaced the Admin Dashboard placeholder metrics with real database-backed platf
 
 **Next Task:** 24.8 — Dashboard Onboarding for New Users
 
+### 24.8 — Dashboard Onboarding for New Users
+- **Date:** 2026-05-09 15:34 GMT+7
+- **Duration:** 40m
+- **Status:** ✅ Complete
+
+**What I Did:**
+Added dashboard onboarding states for new and zero-click users. Zero-link users now see a dismissible three-step launch checklist, zero-click users with an existing link get a copy-link CTA, and normal users continue to see the existing performance dashboard.
+
+**Files Changed:**
+- `src/lib/dashboard/onboarding.ts` — Added pure onboarding state and checklist calculation.
+- `src/app/(dashboard)/dashboard/dashboard-overview-client.tsx` — Added dismissible onboarding checklist and share-link CTA.
+- `tests/unit/dashboard-onboarding.test.ts` — Added unit coverage for zero-link, zero-click, and normal dashboard states.
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Checked off 24.8.
+- `_bmad-output/implementation-artifacts/JOURNAL.md` — Logged 24.8.
+
+**Decisions Made:**
+- Stored dismiss state in localStorage to avoid adding database schema for a lightweight dashboard preference.
+- Derived checklist completion from existing overview metrics so onboarding stays consistent with the dashboard data source.
+- Used the configured public app URL when copying a share link, with runtime origin fallback for local/dev environments.
+
+**Tests:**
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Targeted unit: `rtk bun run test -- tests/unit/dashboard-onboarding.test.ts` — 3 passed.
+- ✅ Full unit/integration: `rtk bun run test` — 169 passed, 1 skipped; 762 passed, 2 skipped.
+- ✅ Production build: `rtk bun run build` — Passed.
+
+**Issues Encountered:**
+- React Compiler lint rejected setting localStorage-derived state inside an effect. Replaced it with a guarded lazy state initializer.
+
+**Security Checks:**
+- ✅ No new server mutation or sensitive storage added.
+- ✅ Clipboard copy only uses the user's own visible link slug.
+- ✅ No unsafe HTML or script execution added.
+- ✅ Dismiss state stores only a boolean preference.
+
+**Next Task:** 24.9 — Global Cross-Navigation Polish
+
 ### 24.5 — QR Codes Page Enhancement
 - **Date:** 2026-05-09 15:02 GMT+7
 - **Duration:** 45m

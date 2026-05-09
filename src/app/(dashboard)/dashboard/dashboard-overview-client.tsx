@@ -1,6 +1,6 @@
 "use client";
 
-import type { ComponentType } from "react";
+import { useState, type ComponentType } from "react";
 import {
   Area,
   AreaChart,
@@ -13,6 +13,8 @@ import {
 } from "recharts";
 import {
   BarChart3,
+  CheckCircle2,
+  Circle,
   Copy,
   ExternalLink,
   Link2,
@@ -22,7 +24,9 @@ import {
   Plus,
   QrCode,
   Trash2,
+  X,
 } from "lucide-react";
+import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ButtonLink } from "@/components/ui/button-link";
@@ -49,6 +53,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import type { DashboardOverview } from "@/lib/dashboard/overview";
+import { getDashboardOnboardingState } from "@/lib/dashboard/onboarding";
 
 type StatCard = {
   description: string;
@@ -62,6 +67,7 @@ type DashboardOverviewClientProps = {
 };
 
 const numberFormatter = new Intl.NumberFormat("en");
+const ONBOARDING_DISMISSED_KEY = "linksnap:dashboard-onboarding-dismissed:v1";
 
 function formatNumber(value: number): string {
   return numberFormatter.format(value);
@@ -94,6 +100,114 @@ function getStatsCards(overview: DashboardOverview): StatCard[] {
       value: formatNumber(overview.qrScans),
     },
   ];
+}
+
+function getShareUrl(slug: string): string {
+  const configuredBaseUrl = process.env.NEXT_PUBLIC_APP_URL
+    ?.trim()
+    .replace(/\/+$/, "");
+  const runtimeBaseUrl =
+    typeof window === "undefined" ? "" : window.location.origin;
+
+  return `${configuredBaseUrl || runtimeBaseUrl || "https://www.justqiu.cloud"}/${slug}`;
+}
+
+function DashboardOnboarding({ overview }: DashboardOverviewClientProps) {
+  const [isDismissed, setIsDismissed] = useState(
+    () =>
+      typeof window !== "undefined" &&
+      localStorage.getItem(ONBOARDING_DISMISSED_KEY) === "true",
+  );
+  const onboarding = getDashboardOnboardingState(overview);
+
+  const dismiss = () => {
+    localStorage.setItem(ONBOARDING_DISMISSED_KEY, "true");
+    setIsDismissed(true);
+  };
+
+  const copyFirstLink = async () => {
+    if (!onboarding.firstLinkSlug) return;
+
+    await navigator.clipboard.writeText(getShareUrl(onboarding.firstLinkSlug));
+    toast.success("Link copied.");
+  };
+
+  if (isDismissed || (!onboarding.showChecklist && !onboarding.showShareCta)) {
+    return null;
+  }
+
+  if (onboarding.showShareCta && onboarding.firstLinkSlug) {
+    return (
+      <Card className="border-primary/30 bg-primary/5">
+        <CardContent className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="font-medium">Share your first link</p>
+            <p className="text-sm text-muted-foreground">
+              /{onboarding.firstLinkSlug} is ready. Copy it and collect the first click.
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Button onClick={() => void copyFirstLink()} size="sm" type="button">
+              <Copy className="size-4" />
+              Copy Link
+            </Button>
+            <Button onClick={dismiss} size="icon-sm" type="button" variant="ghost">
+              <X className="size-4" />
+              <span className="sr-only">Dismiss onboarding</span>
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <Card className="border-primary/30 bg-primary/5">
+      <CardHeader className="flex flex-row items-start justify-between gap-4">
+        <div>
+          <CardTitle className="text-base">Launch checklist</CardTitle>
+          <p className="text-sm text-muted-foreground">
+            Complete these steps to turn a new account into a trackable link workflow.
+          </p>
+        </div>
+        <Button onClick={dismiss} size="icon-sm" type="button" variant="ghost">
+          <X className="size-4" />
+          <span className="sr-only">Dismiss onboarding</span>
+        </Button>
+      </CardHeader>
+      <CardContent className="grid gap-3 md:grid-cols-3">
+        {onboarding.steps.map((step) => {
+          const Icon = step.completed ? CheckCircle2 : Circle;
+
+          return (
+            <div
+              className="flex items-start gap-3 rounded-lg border bg-background p-3"
+              key={step.id}
+            >
+              <Icon
+                className={
+                  step.completed
+                    ? "mt-0.5 size-5 text-primary"
+                    : "mt-0.5 size-5 text-muted-foreground"
+                }
+              />
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-medium">{step.title}</p>
+                <ButtonLink
+                  className="mt-2"
+                  href={step.actionHref}
+                  size="sm"
+                  variant={step.completed ? "outline" : "default"}
+                >
+                  {step.actionLabel}
+                </ButtonLink>
+              </div>
+            </div>
+          );
+        })}
+      </CardContent>
+    </Card>
+  );
 }
 
 function RecentLinksTable({ overview }: DashboardOverviewClientProps) {
@@ -204,6 +318,8 @@ export function DashboardOverviewClient({
           <Plus className="size-4" /> Create Link
         </ButtonLink>
       </div>
+
+      <DashboardOnboarding overview={overview} />
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         {statsCards.map((stat) => (

@@ -3301,11 +3301,11 @@ Premium Flutter experience. 🟢
 
 ### TASK 24.8 — Dashboard Onboarding for New Users
 
-- [ ] Zero-link user: show onboarding checklist (3-step guidance)
-- [ ] Zero-click user: show share link CTA with copy
-- [ ] Normal user: show existing dashboard
-- [ ] Checklist tracks completion, dismissable
-- [ ] Add unit tests
+- [x] Zero-link user: show onboarding checklist (3-step guidance)
+- [x] Zero-click user: show share link CTA with copy
+- [x] Normal user: show existing dashboard
+- [x] Checklist tracks completion, dismissable
+- [x] Add unit tests
 
 ### TASK 24.9 — Global Cross-Navigation Polish
 
