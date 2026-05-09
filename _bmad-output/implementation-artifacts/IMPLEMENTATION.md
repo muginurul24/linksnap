@@ -3064,154 +3064,160 @@ Premium Flutter experience. 🟢
 
 ---
 
-## 🔴 Phase 23: Midtrans Snap — Full Payment Integration
+
+## 🔴 Phase 23: PayGate Core API — Full Payment Channel Integration
 
 > **Status:** Approved by Rafi — 2026-05-09. Ready for implementation.
-> **Spec:** `_bmad-output/planning-artifacts/spec-midtrans-snap-full-integration.md`
-> **Goal:** Replace PayGate BCA-only Core API with Midtrans Snap, supporting ALL payment methods (bank VA, e-wallets, QRIS, credit card, convenience stores) with best-practice UI/UX.
+> **Spec:** `_bmad-output/planning-artifacts/spec-paygate-full-payment-integration.md`
+> **Goal:** Expand PayGate from BCA-only to support ALL payment channels (15+ methods across bank VA, e-wallets, QRIS, convenience stores) with a custom payment method selector UI — as complete as Snap, built in-house with LinkSnap branding.
 
 ### 🔴 Phase Rules
 
-- [ ] Read the full spec at `spec-midtrans-snap-full-integration.md` before starting any task.
+- [ ] Read the full spec at `spec-paygate-full-payment-integration.md` before starting any task.
 - [ ] One commit per task after implementation starts.
 - [ ] Read PRD, SECURITY, SUPERADMIN, IMPLEMENTATION, and JOURNAL before each task.
 - [ ] Every state-changing browser API call must include `X-Requested-With: XMLHttpRequest`.
 - [ ] No raw SQL; Drizzle query builders only.
-- [ ] Midtrans server key NEVER exposed to client. Client key only via `NEXT_PUBLIC_*`.
 - [ ] Never cache payment mutation results.
-- [ ] Use Snap popup mode (not redirect) for best UX.
-- [ ] After completing all tasks: `grep -ri "paygate" src/` must return ZERO results.
+- [ ] KEEP PayGate — do not introduce Midtrans Snap SDK.
+- [ ] Payment method selection UI must be custom-built (no external popup).
+- [ ] Mobile-first: payment selector and checkout must work perfectly on phone screens.
 
-### TASK 23.1 — Midtrans Server-Side Client
+### 💳 Payment Channels to Support (15 methods)
 
-- [ ] Create `src/lib/payments/midtrans-client.ts`
-- [ ] Implement `createSnapTransaction()` — POST to Snap API with all payment methods enabled
-- [ ] Implement `getTransactionStatus(orderId)` — GET Core API status
-- [ ] Implement `verifySignature()` — SHA512 hash verification for webhooks
-- [ ] Read env: `MIDTRANS_SERVER_KEY`, `MIDTRANS_CLIENT_KEY`, `MIDTRANS_MERCHANT_ID`, `MIDTRANS_IS_PRODUCTION`
-- [ ] Auto-select sandbox vs production API base URL
-- [ ] Structured error types: `MidtransConfigError`, `MidtransApiError`, `MidtransNetworkError`
-- [ ] Add tests: payload construction, error handling, signature verification
+**Bank Transfer VA:** bca, bni, bri, mandiri, permata, cimb, danamon
+**E-Wallet:** gopay, ovo, dana, shopeepay, linkaja
+**QRIS:** qris
+**Convenience Store:** indomaret, alfamart
 
-### TASK 23.2 — Payment Create API Route (Rewrite for Snap)
+### TASK 23.1 — Multi-Channel PayGate Client
 
-- [ ] Rewrite `src/app/api/v1/payments/create/route.ts`
-- [ ] Replace `createPayGateCharge()` → `createSnapTransaction()`
-- [ ] Return `{ snapToken, redirectUrl, orderId }` instead of `{ vaNumbers, ... }`
-- [ ] Handle Midtrans errors with friendly messages
-- [ ] Remove all PayGate imports from this route
-- [ ] Add tests: create Snap transaction, auth required, invalid plan, Midtrans unconfigured
+- [x] Expand `src/lib/payments/paygate.ts` to support dynamic payment types (bank_transfer, ewallet, qris, cstore)
+- [x] Define types: `PaymentChannel`, `BankCode`, `EwalletCode`, `CstoreCode`
+- [x] Update `buildPayGateChargePayload()`: accept `paymentMethod` → map to correct PayGate `payment_type` + channel param
+- [x] Update response types per payment channel
+- [x] Error handling for unsupported channels
+- [x] Add unit tests per channel type
 
-### TASK 23.3 — Midtrans Webhook Handler
+### TASK 23.2 — Payment Channel Registry & Definitions
 
-- [ ] Rewrite `src/app/api/v1/payments/webhook/route.ts` for Midtrans
-- [ ] Verify webhook signature (SHA512)
-- [ ] Parse Midtrans notification body (transaction_status, payment_type, fraud_status)
-- [ ] Map Midtrans status → internal PaymentStatus
-- [ ] Keep subscription activation logic, add payment method storage
-- [ ] Handle idempotency
-- [ ] Add tests: settlement, pending, invalid signature, duplicate, expire/cancel
+- [ ] Create `src/lib/payments/payment-channels.ts`
+- [ ] Define `PaymentChannel` type: id, name, icon, category, priority, description, instructions
+- [ ] Export grouped lists: `BANK_CHANNELS`, `EWALLET_CHANNELS`, `QRIS_CHANNEL`, `CSTORE_CHANNELS`
+- [ ] Helpers: `getChannelById()`, `getChannelIcon()`, `getPaymentInstructions()`
+- [ ] Color mapping per category for UI badges
+- [ ] Add unit tests
 
-### TASK 23.4 — Snap Frontend Integration (Upgrade Flow)
+### TASK 23.3 — Payment Method Selector UI Component
 
-- [ ] Create `src/components/payments/snap-payment-handler.tsx` — Client component
-  - Accept `snapToken`, use `window.snap.pay()`
-  - onSuccess → redirect checkout/success
-  - onPending → redirect checkout/success
-  - onError → toast, stay on page
-  - onClose → stay on page (user cancelled)
-- [ ] Create `src/components/payments/snap-script.tsx` — Lazy-load Midtrans Snap SDK
-- [ ] Rewrite upgrade button to create Snap transaction → open popup
-- [ ] Prevent double-submit, show loading states
-- [ ] Add `NEXT_PUBLIC_MIDTRANS_CLIENT_KEY`, `NEXT_PUBLIC_MIDTRANS_IS_PRODUCTION`
-- [ ] Add tests: snapToken triggers pay(), callbacks behave correctly, script failure handled
+- [ ] Create `src/components/payments/payment-method-selector.tsx`
+- [ ] Display channels grouped by category with section headers (🏦 Bank Transfer, 📱 E-Wallet, 📷 QRIS, 🏪 C-Store)
+- [ ] Grid: 3-col desktop, 2-col mobile. Each channel: icon + name, selectable card with checkmark
+- [ ] BCA pre-selected by default
+- [ ] Animated selection transitions, hover states
+- [ ] "Continue" button disabled until a channel is selected
+- [ ] Search/filter input for quick channel find
+- [ ] Estimated processing time per category
+- [ ] Add unit tests
 
-### TASK 23.5 — Checkout Success Page (Snap-Aware)
+### TASK 23.4 — Upgrade Flow with Payment Selection Dialog
 
-- [ ] Rewrite checkout status client to handle all payment types
-- [ ] Display payment method with friendly icon + label per type:
-  - Bank VA → bank logo + VA number with copy
-  - E-wallet → wallet logo + "Complete payment in your X app"
-  - QRIS → QR code display guidance
-  - Credit Card → card icon + processed confirmation
-  - Convenience store → store logo + payment code
-- [ ] Keep: auto-polling, auto-redirect, loading skeleton
-- [ ] Add E2E tests for each payment type display
+- [ ] Create `src/components/payments/upgrade-dialog.tsx` — Multi-step upgrade dialog:
+  - Step 1: Plan confirmation (what you're buying + price)
+  - Step 2: Payment method selection (using component from 23.3)
+  - Step 3: Summary confirmation (plan + method + amount)
+  - Step 4: Processing spinner → redirect to checkout
+- [ ] Rewrite `upgrade-button.tsx` to open dialog instead of direct API call
+- [ ] Animated step transitions, back button, close with confirmation
+- [ ] POST `/api/v1/payments/create` with `{ plan, duration, paymentMethod, bank? }`
+- [ ] Prevent double-submit, full-screen on mobile
+- [ ] Add unit + E2E tests
 
-### TASK 23.6 — Payment Status API (Transaction Lookup)
+### TASK 23.5 — Payment Create API with Channel Support
 
-- [ ] Update `GET /api/v1/payments/[orderId]`
-- [ ] Read from DB first, sync from Midtrans if stale
-- [ ] Return enriched response: status, paymentMethod, amount, expiresAt, vaNumbers, actions
-- [ ] Add `expiresAt` column to transactions table (DB migration)
-- [ ] Auth check: only payment owner can query
-- [ ] Add tests: own order, other user's order, stale sync
+- [ ] Update `POST /api/v1/payments/create/route.ts`
+- [ ] Update `createPaymentSchema` to accept `paymentMethod` + optional channel params (bank, ewallet, store)
+- [ ] Server-side validate paymentMethod against channel registry
+- [ ] Map paymentMethod → PayGate charge parameters dynamically
+- [ ] Return enriched response with channel metadata (vaNumbers, qrUrl, paymentCode, instructions)
+- [ ] Keep: auth, rate limiting, order ID generation, pending transaction record
+- [ ] Add integration tests per channel
 
-### TASK 23.7 — Pricing Page with Best Practice UX
+### TASK 23.6 — Checkout Success Page (Channel-Aware)
 
-- [ ] Rewrite pricing page with plan cards side-by-side
-- [ ] Monthly/Yearly toggle with savings badge
-- [ ] Feature comparison table with checkmarks/crosses
-- [ ] CTA per plan: logged-out → login redirect, logged-in → Snap popup
-- [ ] Current plan badge, trust badges
-- [ ] Mobile responsive
-- [ ] Replace "PayGate" mention in FAQ with "Midtrans"
-- [ ] Add tests for toggle, prices, CTAs
+- [ ] Rewrite `checkout-status-client.tsx` for multi-channel display with per-channel instruction components:
+  - Bank VA → bank logo + VA number + copy + transfer instructions
+  - E-wallet → wallet logo + "Complete in your X app" + deep link
+  - QRIS → QR code image + "Scan with any QRIS app"
+  - C-store → store logo + payment code + "Show at cashier"
+- [ ] Common: amount, order ID, expiration countdown, auto-polling 10s, auto-redirect on SETTLEMENT
+- [ ] Create `src/components/payments/payment-instructions-*.tsx` per channel type
+- [ ] Add unit + E2E tests
 
-### TASK 23.8 — Billing Settings Page Upgrade
+### TASK 23.7 — Pricing Page Redesign
+
+- [ ] Rewrite `pricing-page.tsx` with plan cards, monthly/yearly toggle, feature comparison table
+- [ ] Payment method trust section: "All payments securely processed" + bank/e-wallet logos row
+- [ ] FAQ: "What payment methods do you accept?" (list all 15), "When does my subscription activate?", etc.
+- [ ] Replace "PayGate" user-facing text with "Midtrans" (payment processor branding)
+- [ ] Current plan badge, recommended highlight on Pro
+- [ ] Mobile responsive: stack cards, sticky first column on comparison table
+- [ ] Add tests
+
+### TASK 23.8 — Billing Settings Page
 
 - [ ] Rewrite billing page as plan management hub
-- [ ] Current plan with status badge, plan comparison
-- [ ] Upgrade button opens Snap popup directly (no page navigation)
-- [ ] Payment history table with status badges
-- [ ] Cancel/reactivate subscription flows
-- [ ] Empty state, loading skeleton, error state with retry
+- [ ] Current plan card: name, status badge, limits summary, period
+- [ ] Available upgrades section with UpgradeDialog trigger (from 23.4)
+- [ ] Payment history table: date, order ID, plan, amount, payment method icon + name, status badge
+- [ ] Cancel/reactivate subscription flows with confirmation dialogs
+- [ ] Empty state for no history, loading skeleton, error state with retry
 - [ ] FAQ section
 - [ ] Add E2E tests
 
 ### TASK 23.9 — Invoice Email After Payment
 
-- [ ] Create React Email template: logo, plan, amount, payment method, order ID, CTA
-- [ ] Trigger in webhook handler on SETTLEMENT (non-blocking)
-- [ ] Use existing Resend integration
-- [ ] Add unit tests for email rendering
+- [ ] Create `src/lib/email/invoice-email.tsx` — React Email template
+- [ ] Include: plan, amount (IDR), payment method, transaction ID, order ID, date, period
+- [ ] Trigger in webhook handler on SETTLEMENT (non-blocking — log + continue if email fails)
+- [ ] Add unit tests
 
-### TASK 23.10 — Cleanup & Migration
+### TASK 23.10 — Security, Validation & Final Polish
 
-- [ ] Delete all PayGate files: paygate.ts, paygate-webhook.ts, paygate-webhook-handler.ts, redirects.ts
-- [ ] Update `.env.example`: remove PAYGATE_*, add MIDTRANS_* + NEXT_PUBLIC_MIDTRANS_*
-- [ ] Update DB schema: add `expiresAt` column, migration file
-- [ ] Update cache policy, SECURITY.md, PRD.md, CACHE_POLICY.md (replace PayGate → Midtrans)
-- [ ] Verify ZERO PayGate references in entire codebase
-- [ ] Run full test suite, typecheck, lint, build
+- [ ] Validate paymentMethod against channel registry server-side (not just Zod string)
+- [ ] Store paymentMethod in transaction record on webhook
+- [ ] Update `CACHE_POLICY.md`, `SECURITY.md` — payment mutations remain do-not-cache
+- [ ] Add `payment_method` index to DB for query performance
+- [ ] Handle all PayGate error codes with friendly messages per channel
+- [ ] Run full quality gate: `rtk bun run typecheck && lint && test && test:e2e && build`
 
 ### TASK 23.11 — End-to-End Payment Smoke Tests
 
-- [ ] Create comprehensive E2E test suite
-- [ ] Test: upgrade → Snap popup opens
-- [ ] Test: successful payment → success page → auto-redirect
-- [ ] Test: pending payment → instructions → refresh
-- [ ] Test: failed/expired payment → error states
-- [ ] Test: cancel checkout → no plan change
-- [ ] Test: webhook settlement → subscription activated
-- [ ] Test: double-click prevention
-- [ ] Test: Snap script failure fallback
-- [ ] Test: mobile viewport
+- [ ] Create `tests/e2e/payment-flow-full.spec.ts`
+- [ ] Test: BCA VA full flow (select → create → checkout with VA + copy)
+- [ ] Test: GoPay full flow (select → create → checkout with wallet instructions)
+- [ ] Test: QRIS full flow (select → create → checkout with QR)
+- [ ] Test: Indomaret full flow (select → create → checkout with payment code)
+- [ ] Test: payment selector UI (grouping, search, mobile grid)
+- [ ] Test: dialog steps, back navigation, double-submit prevention
+- [ ] Test: webhook settlement → subscription activated → billing reflects new plan
+- [ ] Test: mobile viewport all flows
+- [ ] Test: already-on-plan → current plan badge, button disabled
 
 ### 📊 Phase 23 Task Summary
 
 | Task | Area | Priority |
 |---|---|---|
-| 23.1 | Midtrans server client | P0 |
-| 23.2 | Payment create API rewrite | P0 |
-| 23.3 | Midtrans webhook handler | P0 |
-| 23.4 | Snap frontend integration | P0 |
-| 23.5 | Checkout success page | P1 |
-| 23.6 | Payment status API | P1 |
-| 23.7 | Pricing page UX | P1 |
+| 23.1 | Multi-channel PayGate client | P0 |
+| 23.2 | Channel registry & definitions | P0 |
+| 23.3 | Payment method selector UI | P0 |
+| 23.4 | Upgrade flow with payment selection | P0 |
+| 23.5 | Payment create API with channels | P0 |
+| 23.6 | Checkout success page (channel-aware) | P0 |
+| 23.7 | Pricing page redesign | P1 |
 | 23.8 | Billing settings page | P1 |
 | 23.9 | Invoice email | P2 |
-| 23.10 | Cleanup & migration | P0 |
+| 23.10 | Security & final polish | P0 |
 | 23.11 | E2E smoke tests | P0 |
 
 **Estimated total:** 190 + 11 = 201 tasks | **Implementation gate:** ✅ Rafi approved 2026-05-09.

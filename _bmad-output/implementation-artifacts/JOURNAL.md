@@ -8664,4 +8664,43 @@ Added request-ID correlation to dashboard/admin analytics cache failure logs and
 - ✅ Redis failures remain non-fatal and are correlated with request IDs.
 - ✅ Admin authorization checks and mutation results remain uncached.
 
-**Next Task:** 23.1 — Midtrans Server-Side Client.
+**Next Task:** 23.1 — Multi-Channel PayGate Client.
+
+### 23.1 — Multi-Channel PayGate Client
+- **Date:** 2026-05-09 08:51 GMT+7
+- **Duration:** 0h 42m
+- **Status:** ✅ Complete
+
+**What I Did:**
+Aligned Phase 23 with the latest PayGate Core API multi-channel plan, then expanded the PayGate client from BCA-only to dynamic payment channels. Added strongly typed bank, e-wallet, QRIS, and convenience-store channel mapping, kept BCA as the default for backward compatibility, and added unsupported-channel validation before a PayGate request can be sent.
+
+**Files Changed:**
+- `src/lib/payments/paygate.ts` — Added bank/e-wallet/store/QRIS channel types, dynamic payload mapping, richer response fields, and unsupported-channel error handling.
+- `tests/unit/paygate-client.test.ts` — Updated the existing BCA payload expectation for channel metadata.
+- `tests/unit/paygate-multi-channel.test.ts` — Added channel mapping coverage for bank VA, e-wallet, QRIS, c-store, default BCA, and invalid channels.
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Updated Phase 23 to the PayGate multi-channel plan and checked off 23.1.
+- `_bmad-output/planning-artifacts/PRD.md`, `_bmad-output/planning-artifacts/SECURITY.md`, and payment planning specs — Aligned planning language from direct Midtrans Snap to PayGate-backed multi-channel payments.
+- `_bmad-output/implementation-artifacts/JOURNAL.md` — Logged 23.1.
+
+**Decisions Made:**
+- Kept `paymentMethod` optional and defaulted it to `bca` so current billing code keeps working until the selector/API schema lands in later tasks.
+- Added channel metadata into PayGate payload metadata for audit/debugging without caching payment mutation data.
+- Left the full UI channel registry for 23.2 so the PayGate client remains focused on server-side API mapping.
+
+**Tests:**
+- ✅ Targeted unit: `rtk bun run test -- tests/unit/paygate-client.test.ts tests/unit/paygate-multi-channel.test.ts` — 13 passed.
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Full unit/integration: `rtk bun run test` — 154 passed, 1 skipped; 701 passed, 2 skipped.
+- ✅ Production build: `rtk bun run build` — Passed.
+
+**Issues Encountered:**
+- The local Phase 23 plan changed from direct Midtrans Snap to PayGate multi-channel after work had started; removed the uncommitted Midtrans client/test and followed the latest approved PayGate plan.
+
+**Security Checks:**
+- ✅ No payment mutation result caching added.
+- ✅ Payment channel is validated server-side before building the PayGate request.
+- ✅ Store API token remains server-only via existing PayGate config.
+- ✅ No raw SQL, secrets, or client-side payment provider keys added.
+
+**Next Task:** 23.2 — Payment Channel Registry & Definitions.

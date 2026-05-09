@@ -73,7 +73,7 @@
     return new Response("Forbidden", { status: 403 });
   }
   ```
-- [x] **Custom header requirement** — Proxy enforces `X-Requested-With: XMLHttpRequest` on mutating `/api/v1/*` requests, with PayGate webhook exempted for server-to-server callbacks.
+- [x] **Custom header requirement** — Proxy enforces `X-Requested-With: XMLHttpRequest` on mutating `/api/v1/*` requests, with PayGate webhook exempted for server-to-server callbacks. PayGate is LinkSnap's own payment gateway built on top of Midtrans Core API.
 
 ### SEC-06: Security Misconfiguration
 - [x] **Security headers** — All implemented in `next.config.ts`:
@@ -156,7 +156,7 @@
     return !blocked.some(b => parsed.hostname.startsWith(b) || parsed.hostname === b);
   }
   ```
-- [x] **Webhook validation** — PayGate webhooks verified via HMAC-SHA256 signature with timing-safe comparison before processing.
+- [x] **Webhook validation** — PayGate webhooks verified via HMAC-SHA256 signature with timing-safe comparison before processing. All payment data flows through PayGate only — no direct Midtrans integration.
 - [ ] **No user-controlled fetch URLs** — Verify no user input flows into `fetch()` calls
   ```bash
   rtk grep -r "fetch(req\|fetch(body\|fetch(params" src/

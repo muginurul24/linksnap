@@ -21,9 +21,65 @@ type PayGateChargeItem = {
   quantity: number;
 };
 
-type PayGateChargePayload = {
+export const PAYGATE_BANK_CODES = [
+  "bca",
+  "bni",
+  "bri",
+  "mandiri",
+  "permata",
+  "cimb",
+  "danamon",
+] as const;
+export const PAYGATE_EWALLET_CODES = [
+  "gopay",
+  "ovo",
+  "dana",
+  "shopeepay",
+  "linkaja",
+] as const;
+export const PAYGATE_CSTORE_CODES = ["indomaret", "alfamart"] as const;
+
+export type BankCode = (typeof PAYGATE_BANK_CODES)[number];
+export type EwalletCode = (typeof PAYGATE_EWALLET_CODES)[number];
+export type CstoreCode = (typeof PAYGATE_CSTORE_CODES)[number];
+export type PayGatePaymentType =
+  | "bank_transfer"
+  | "cstore"
+  | "ewallet"
+  | "qris";
+export type PaymentChannelCode =
+  | BankCode
+  | CstoreCode
+  | EwalletCode
+  | "qris";
+
+export type BankTransfer = {
+  bank: BankCode;
+  paymentMethod: BankCode;
+  paymentType: "bank_transfer";
+};
+export type Ewallet = {
+  ewallet: EwalletCode;
+  paymentMethod: EwalletCode;
+  paymentType: "ewallet";
+};
+export type Qris = {
+  paymentMethod: "qris";
+  paymentType: "qris";
+};
+export type ConvenienceStore = {
+  paymentMethod: CstoreCode;
+  paymentType: "cstore";
+  store: CstoreCode;
+};
+export type PaymentChannel =
+  | BankTransfer
+  | ConvenienceStore
+  | Ewallet
+  | Qris;
+
+type PayGateBaseChargePayload = {
   amount: number;
-  bank: string;
   callback_url: string;
   currency: "IDR";
   customer?: {
@@ -34,18 +90,42 @@ type PayGateChargePayload = {
   items: PayGateChargeItem[];
   metadata: Record<string, unknown>;
   order_id: string;
-  payment_type: "bank_transfer";
 };
 
+type PayGateBankTransferPayload = PayGateBaseChargePayload & {
+  bank: BankCode;
+  payment_type: "bank_transfer";
+};
+type PayGateEwalletPayload = PayGateBaseChargePayload & {
+  ewallet: EwalletCode;
+  payment_type: "ewallet";
+};
+type PayGateQrisPayload = PayGateBaseChargePayload & {
+  payment_type: "qris";
+};
+type PayGateCstorePayload = PayGateBaseChargePayload & {
+  payment_type: "cstore";
+  store: CstoreCode;
+};
+
+export type PayGateChargePayload =
+  | PayGateBankTransferPayload
+  | PayGateCstorePayload
+  | PayGateEwalletPayload
+  | PayGateQrisPayload;
+
 export type PayGateChargeInput = {
-  bank?: string;
+  bank?: BankCode;
   callbackUrl: string;
   customer: PayGateCustomer;
   duration: PaymentDuration;
+  ewallet?: EwalletCode;
   grossAmountIdr: number;
   metadata?: Record<string, unknown>;
   orderId: string;
+  paymentMethod?: PaymentChannelCode;
   plan: PaidPlan;
+  store?: CstoreCode;
 };
 
 export type PayGateVaNumber = {
@@ -53,22 +133,44 @@ export type PayGateVaNumber = {
   va_number: string;
 };
 
+export type PayGatePaymentAction = {
+  method?: string;
+  name?: string;
+  type?: string;
+  url?: string;
+};
+
 export type PayGateChargeResponse = {
   success: true;
   data: {
     amount: number;
+    actions?: PayGatePaymentAction[];
+    bill_key?: string;
+    biller_code?: string;
+    cstore?: CstoreCode | string;
     currency?: string;
     expires_at?: string;
     midtrans?: {
+      actions?: PayGatePaymentAction[];
+      bill_key?: string;
+      biller_code?: string;
+      cstore?: CstoreCode | string;
       fraud_status?: string;
+      payment_code?: string;
+      qr_string?: string;
+      qr_url?: string;
       transaction_id?: string;
       transaction_status?: string;
       va_numbers?: PayGateVaNumber[];
     };
     order_id: string;
     paid_at?: string;
+    payment_code?: string;
+    payment_method?: PaymentChannelCode | string;
     payment_type: string;
     platform_order_id?: string;
+    qr_string?: string;
+    qr_url?: string;
     status: string;
     transaction_id: string;
   };
@@ -96,6 +198,15 @@ export class PayGateApiError extends Error {
     super(message);
     this.details = details;
     this.status = status;
+  }
+}
+
+export class PayGateUnsupportedChannelError extends Error {
+  readonly paymentMethod: string;
+
+  constructor(paymentMethod: string) {
+    super(`Unsupported PayGate payment channel: ${paymentMethod}.`);
+    this.paymentMethod = paymentMethod;
   }
 }
 
@@ -135,14 +246,87 @@ function buildCustomerDetails(
   return Object.keys(details).length > 0 ? details : undefined;
 }
 
+function isBankCode(value: string): value is BankCode {
+  return PAYGATE_BANK_CODES.includes(value as BankCode);
+}
+
+function isEwalletCode(value: string): value is EwalletCode {
+  return PAYGATE_EWALLET_CODES.includes(value as EwalletCode);
+}
+
+function isCstoreCode(value: string): value is CstoreCode {
+  return PAYGATE_CSTORE_CODES.includes(value as CstoreCode);
+}
+
+export function resolvePayGatePaymentChannel(
+  input: Pick<PayGateChargeInput, "bank" | "ewallet" | "paymentMethod" | "store">,
+): PaymentChannel {
+  const paymentMethod = input.paymentMethod ?? input.bank ?? "bca";
+
+  if (isBankCode(paymentMethod)) {
+    return {
+      bank: paymentMethod,
+      paymentMethod,
+      paymentType: "bank_transfer",
+    };
+  }
+
+  if (isEwalletCode(paymentMethod)) {
+    return {
+      ewallet: paymentMethod,
+      paymentMethod,
+      paymentType: "ewallet",
+    };
+  }
+
+  if (paymentMethod === "qris") {
+    return {
+      paymentMethod,
+      paymentType: "qris",
+    };
+  }
+
+  if (isCstoreCode(paymentMethod)) {
+    return {
+      paymentMethod,
+      paymentType: "cstore",
+      store: paymentMethod,
+    };
+  }
+
+  throw new PayGateUnsupportedChannelError(paymentMethod);
+}
+
+function buildPaymentChannelPayload(
+  channel: PaymentChannel,
+): Pick<PayGateBankTransferPayload, "bank" | "payment_type"> |
+  Pick<PayGateEwalletPayload, "ewallet" | "payment_type"> |
+  Pick<PayGateQrisPayload, "payment_type"> |
+  Pick<PayGateCstorePayload, "payment_type" | "store"> {
+  if (channel.paymentType === "bank_transfer") {
+    return { bank: channel.bank, payment_type: "bank_transfer" };
+  }
+
+  if (channel.paymentType === "ewallet") {
+    return { ewallet: channel.ewallet, payment_type: "ewallet" };
+  }
+
+  if (channel.paymentType === "cstore") {
+    return { payment_type: "cstore", store: channel.store };
+  }
+
+  return { payment_type: "qris" };
+}
+
 export function buildPayGateChargePayload(
   input: PayGateChargeInput,
 ): PayGateChargePayload {
   const customer = buildCustomerDetails(input.customer);
+  const channel = resolvePayGatePaymentChannel(input);
+  const channelPayload = buildPaymentChannelPayload(channel);
 
   return {
     amount: input.grossAmountIdr,
-    bank: input.bank ?? "bca",
     callback_url: input.callbackUrl,
     currency: "IDR",
     ...(customer ? { customer } : {}),
@@ -158,10 +342,12 @@ export function buildPayGateChargePayload(
       source: "linksnap",
       plan: input.plan,
       duration: input.duration,
+      paymentMethod: channel.paymentMethod,
+      paymentType: channel.paymentType,
       ...input.metadata,
     },
     order_id: input.orderId,
-    payment_type: "bank_transfer",
+    ...channelPayload,
   };
 }
 

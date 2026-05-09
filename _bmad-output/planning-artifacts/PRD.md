@@ -27,7 +27,7 @@ LinkSnap adalah platform URL shortener next-gen yang menggabungkan **Smart Redir
 | UTM Auto-Builder      | ❌      | ❌              | ❌     | ✅        | ❌        | ✅               |
 | A/B Split Testing     | ❌      | ❌              | ❌     | ✅ (paid) | ❌        | ✅               |
 | Link Scheduler        | ❌      | ❌              | ❌     | ❌        | ❌        | ✅ **Unique**    |
-| Midtrans Payment      | ❌      | ❌              | ❌     | ❌        | ❌        | ✅ **ID focus**  |
+| PayGate Payment       | ❌      | ❌              | ❌     | ❌        | ❌        | ✅ **ID focus**  |
 | Open Source core      | ❌      | ❌              | ✅     | ❌        | ❌        | ✅               |
 
 ### Posisi di Pasar
@@ -123,7 +123,7 @@ Kelola links dalam campaign untuk analytics terpadu:
 **Payment:**
 
 - Plans: Free ($0), Pro ($8/mo or $75/yr), Business ($19/mo or $180/yr)
-- Midtrans payment integration
+- PayGate payment integration (backed by Midtrans)
 - Webhook handling (payment status update)
 - Invoice email via Resend
 
@@ -230,8 +230,8 @@ interface ApiError {
 | GET    | `/v1/campaigns`               | Access   | List campaigns                         |
 | GET    | `/v1/campaigns/:id/analytics` | Access   | Campaign analytics                     |
 | POST   | `/v1/campaigns/:id/links`     | Access   | Add links to campaign                  |
-| POST   | `/v1/payments/create`         | Access   | Create Midtrans transaction            |
-| POST   | `/v1/payments/webhook`        | Midtrans | Webhook handler                        |
+| POST   | `/v1/payments/create`         | Access   | Create payment transaction via PayGate |
+| POST   | `/v1/payments/webhook`        | PayGate  | Webhook handler                        |
 | GET    | `/v1/payments/history`        | Access   | Billing history                        |
 
 ---
@@ -488,7 +488,7 @@ export const settings = pgTable("settings", {
 | **PostgreSQL** (Neon.tech)       | Primary database                                                             |
 | **Redis** (Upstash)              | Caching, rate limiting, session store                                        |
 | **Resend**                       | Transactional email                                                          |
-| **Midtrans**                     | Payment gateway                                                              |
+| **PayGate**                      | Payment gateway (backed by Midtrans)                                        |
 | **NextAuth.js v5**               | Authentication (email, Google OAuth)                                         |
 | **TanStack Query**               | Client-side data fetching                                                    |
 | **Recharts**                     | Analytics charts                                                             |
@@ -577,7 +577,7 @@ export const settings = pgTable("settings", {
 - **Input Validation** — Zod schemas on all API routes
 - **Security Headers** — CSP, HSTS, X-Content-Type-Options via `next.config.ts`
 - **SQL Injection Prevention** — Drizzle ORM parameterized queries
-- **Midtrans Signature Verification** — SHA512 HMAC validation on webhooks
+- **PayGate Webhook Signature Verification** — HMAC-SHA256 validation on webhooks
 - **IP Hashing** — SHA256(ip + salt) for analytics, original IP discarded after 7 days
 
 ---
@@ -619,7 +619,7 @@ linksnap/
 │   │   ├── analytics/          # Click processing
 │   │   ├── geo/                # Geo IP lookup
 │   │   ├── qr/                 # QR generation
-│   │   ├── payments/           # Midtrans integration
+│   │   ├── payments/           # PayGate payment integration
 │   │   └── utils/              # Shared utilities
 │   ├── hooks/                  # React hooks
 │   └── styles/
@@ -659,7 +659,7 @@ linksnap/
 | **5. QR Codes**        | 1 minggu                 | Server-side QR generation, PNG/SVG download, QR preview di dashboard               |
 | **6. Campaigns**       | 1.5 minggu               | Campaign CRUD, UTM auto-builder, campaign analytics, link grouping                 |
 | **7. Landing + Blog**  | 1.5 minggu               | Marketing pages (SSR/SSG), pricing page, demo generator, blog MDX (3 artikel)      |
-| **8. Payments**        | 1.5 minggu               | Midtrans integration, subscription lifecycle, webhook, invoice email               |
+| **8. Payments**        | 1.5 minggu               | PayGate integration, subscription lifecycle, webhook, invoice email                |
 | **9. Polish & Launch** | 1.5 minggu               | E2E testing, load testing, a11y audit, Lighthouse 90+, production deploy           |
 | **Total**              | **~12 minggu (3 bulan)** |                                                                                    |
 
@@ -671,7 +671,7 @@ linksnap/
 | ---------------------------------------------- | ----------- | ------ | ----------------------------------------------------------------- |
 | Link Pages tidak appealing untuk sebagian user | Medium      | Low    | Opsional — user bisa skip dan langsung redirect                   |
 | Smart Rules engine performance overhead        | Low         | Medium | Evaluasi rules di Redis (Lua script) sebelum redirect             |
-| Midtrans webhook delay/failure                 | Low         | High   | Idempotent processing, reconciliation job, manual retry dashboard |
+| PayGate webhook delay/failure                  | Low         | High   | Idempotent processing, reconciliation job, manual retry dashboard  |
 | Next.js cold starts di Vercel (free tier)      | Medium      | Medium | Edge config caching, keep warm via cron ping                      |
 | Geo IP database accuracy                       | Low         | Low    | Gunakan MaxMind GeoLite2 (99.5% country accuracy)                 |
 | Vercel/Neon/Upstash free tier limits           | Medium      | Low    | Usage monitoring, auto-alert sebelum limit                        |

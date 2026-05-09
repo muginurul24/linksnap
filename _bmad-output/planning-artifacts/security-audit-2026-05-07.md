@@ -10,7 +10,7 @@ the current Next.js web app.
 - Added `/api/v1/*` mutation guard in `src/proxy.ts` for trusted `Origin` and
   `X-Requested-With: XMLHttpRequest`.
 - Exempted `POST /api/v1/payments/webhook` from the custom browser header while
-  preserving origin checks and Midtrans signature validation.
+  preserving origin checks and PayGate signature validation.
 - Removed `dangerouslySetInnerHTML` from chart styling and added CSS
   identifier/color sanitization.
 - Added rate limiting to `POST /api/v1/auth/verify`.
@@ -38,7 +38,7 @@ the current Next.js web app.
   generated CSS.
 - MEDIUM fixed: `POST /api/v1/auth/verify` was missing OTP brute-force rate
   limiting.
-- MEDIUM pass: Midtrans webhook verifies SHA512 signatures with
+- MEDIUM pass: PayGate webhook verifies HMAC-SHA256 signatures with
   `timingSafeEqual` before processing.
 - MEDIUM pass: cron subscription renewal requires `Authorization: Bearer
   CRON_SECRET`.

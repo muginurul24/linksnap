@@ -10,7 +10,7 @@ access; baseline production smoke monitoring is now configured in GitHub Actions
 
 ## Verified
 - Local environment values are present for database, auth, Redis, Resend,
-  Midtrans, app URLs, cron, MaxMind, IP hashing, and currency override.
+  PayGate, app URLs, cron, MaxMind, IP hashing, and currency override.
 - Local `.env` now includes `AUTH_URL` and `AUTH_TRUST_HOST` without exposing
   secrets in source control.
 - `.env.example` includes `AUTH_URL` and `AUTH_TRUST_HOST` placeholders.

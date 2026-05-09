@@ -78,6 +78,8 @@ describe("PayGate client", () => {
       metadata: {
         campaign: "launch",
         duration: "MONTHLY",
+        paymentMethod: "bca",
+        paymentType: "bank_transfer",
         plan: "PRO",
         source: "linksnap",
       },

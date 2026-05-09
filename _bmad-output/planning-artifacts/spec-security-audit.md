@@ -24,7 +24,7 @@ guard for mutating `/api/v1/*` browser requests, and remove avoidable
 ## Acceptance Criteria
 - [x] Security headers are applied to all routes.
 - [x] Mutating API routes reject untrusted origins and missing custom headers.
-- [x] Midtrans webhook remains compatible with server-to-server callbacks.
+- [x] PayGate webhook remains compatible with server-to-server callbacks.
 - [x] `dangerouslySetInnerHTML` no longer appears in `src/`.
 - [x] Raw SQL, exec/spawn, unsafe fetch, and N+1 scans are documented.
 - [x] Typecheck, lint, tests, and build pass.

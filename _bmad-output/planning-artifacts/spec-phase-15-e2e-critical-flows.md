@@ -4,7 +4,7 @@
 Existing Playwright coverage handles several launch flows, but Phase 15 requires explicit coverage for logout, campaign deletion, billing upgrade button redirects, and settings profile/password updates.
 
 ## Approach
-Extend the current Playwright suite instead of adding a new runner. Reuse direct database setup for deterministic authenticated users, intercept only the billing provider redirect path, and keep provider-dependent Midtrans sandbox coverage conditional.
+Extend the current Playwright suite instead of adding a new runner. Reuse direct database setup for deterministic authenticated users, intercept only the billing provider redirect path, and keep provider-dependent PayGate sandbox coverage conditional.
 
 ## Affected Files
 - `tests/e2e/auth.spec.ts`
