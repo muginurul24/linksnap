@@ -203,6 +203,7 @@ describe("cache helpers", () => {
     await expect(getCachedDashboardAnalyticsAggregates({
       from: new Date("2026-05-01T00:00:00.000Z"),
       loader,
+      requestId: "req_cache_fallback",
       to: new Date("2026-05-08T23:59:59.999Z"),
       userId: "user-1",
     })).resolves.toBe(fresh);
@@ -213,6 +214,15 @@ describe("cache helpers", () => {
     );
     expect(mockState.loggerErrors.map((entry) => entry.message)).toContain(
       "cache_read_failed",
+    );
+    expect(mockState.loggerErrors).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          context: expect.objectContaining({
+            requestId: "req_cache_fallback",
+          }),
+        }),
+      ]),
     );
   });
 

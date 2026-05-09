@@ -17,8 +17,34 @@ import {
   successResponse,
 } from "@/lib/api/response";
 import { writeAdminAuditLog } from "@/lib/admin/audit";
+import { logger } from "@/lib/observability/logger";
 
 type RouteParams = { params: Promise<{ id: string }> };
+
+function logAdminActionFailure({
+  action,
+  adminUserId,
+  reason,
+  requestId,
+  status,
+  targetUserId,
+}: {
+  action: "user.plan.change" | "user.suspend_toggle";
+  adminUserId: string;
+  reason: "invalid_json" | "validation_error" | "target_not_found";
+  requestId: string;
+  status: number;
+  targetUserId: string;
+}): void {
+  logger.warn("admin_action_failed", {
+    action,
+    adminUserId,
+    reason,
+    requestId,
+    status,
+    targetUserId,
+  });
+}
 
 export async function GET(
   _request: NextRequest,
@@ -72,6 +98,14 @@ export async function PATCH(
   try {
     body = await request.json();
   } catch {
+    logAdminActionFailure({
+      action: "user.plan.change",
+      adminUserId: admin.adminUserId,
+      reason: "invalid_json",
+      requestId: admin.requestId,
+      status: 400,
+      targetUserId: id,
+    });
     return withAdminActionHeader(errorResponse(
       "VALIDATION_ERROR",
       "Invalid JSON body.",
@@ -82,6 +116,14 @@ export async function PATCH(
 
   const parsed = adminUpdateUserPlanSchema.safeParse(body);
   if (!parsed.success) {
+    logAdminActionFailure({
+      action: "user.plan.change",
+      adminUserId: admin.adminUserId,
+      reason: "validation_error",
+      requestId: admin.requestId,
+      status: 400,
+      targetUserId: id,
+    });
     return withAdminActionHeader(errorResponse(
       "VALIDATION_ERROR",
       "Invalid plan value.",
@@ -94,6 +136,14 @@ export async function PATCH(
   try {
     const result = await updateUserPlan({ userId: id, plan: parsed.data.plan });
     if (!result.updated) {
+      logAdminActionFailure({
+        action: "user.plan.change",
+        adminUserId: admin.adminUserId,
+        reason: "target_not_found",
+        requestId: admin.requestId,
+        status: 404,
+        targetUserId: id,
+      });
       return withAdminActionHeader(errorResponse(
         "NOT_FOUND",
         "User not found.",
@@ -152,6 +202,14 @@ export async function POST(
   try {
     body = await request.json();
   } catch {
+    logAdminActionFailure({
+      action: "user.suspend_toggle",
+      adminUserId: admin.adminUserId,
+      reason: "invalid_json",
+      requestId: admin.requestId,
+      status: 400,
+      targetUserId: id,
+    });
     return withAdminActionHeader(errorResponse(
       "VALIDATION_ERROR",
       "Invalid JSON body.",
@@ -162,6 +220,14 @@ export async function POST(
 
   const parsed = adminSuspendUserSchema.safeParse(body);
   if (!parsed.success) {
+    logAdminActionFailure({
+      action: "user.suspend_toggle",
+      adminUserId: admin.adminUserId,
+      reason: "validation_error",
+      requestId: admin.requestId,
+      status: 400,
+      targetUserId: id,
+    });
     return withAdminActionHeader(errorResponse(
       "VALIDATION_ERROR",
       "Action must be 'suspend' or 'unsuspend'.",
@@ -178,6 +244,14 @@ export async function POST(
       : await unsuspendUser(id);
 
     if (!success) {
+      logAdminActionFailure({
+        action: "user.suspend_toggle",
+        adminUserId: admin.adminUserId,
+        reason: "target_not_found",
+        requestId: admin.requestId,
+        status: 404,
+        targetUserId: id,
+      });
       return withAdminActionHeader(errorResponse(
         "NOT_FOUND",
         "User not found.",

@@ -12,6 +12,7 @@
     "test:watch": "vitest",
     "test:e2e": "playwright test",
     "smoke:production": "bash scripts/smoke-production.sh",
+    "smoke:cache-fallback": "vitest run tests/unit/cache-helpers.test.ts -t \"should fall back to fresh analytics when Redis reads fail\"",
     "cache:warm": "bun run scripts/warm-redis-cache.ts",
     "security:smoke": "bash scripts/basic-penetration-smoke.sh",
     "db:push": "drizzle-kit push",

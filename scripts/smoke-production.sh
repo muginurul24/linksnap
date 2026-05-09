@@ -4,6 +4,10 @@ set -euo pipefail
 BASE_URL="${BASE_URL:-https://www.justqiu.cloud}"
 APEX_URL="${APEX_URL:-https://justqiu.cloud}"
 TIMEOUT_SECONDS="${TIMEOUT_SECONDS:-20}"
+PRODUCTION_SMOKE_COOKIE="${PRODUCTION_SMOKE_COOKIE:-}"
+PRODUCTION_SMOKE_ADMIN_USER_ID="${PRODUCTION_SMOKE_ADMIN_USER_ID:-}"
+PRODUCTION_SMOKE_ADMIN_PLAN="${PRODUCTION_SMOKE_ADMIN_PLAN:-BUSINESS}"
+PRODUCTION_SMOKE_RUN_ADMIN_MUTATION="${PRODUCTION_SMOKE_RUN_ADMIN_MUTATION:-false}"
 
 fail() {
   echo "FAIL: $*" >&2
@@ -41,6 +45,89 @@ expect_status() {
   fi
 
   echo "OK: $url returned HTTP $expected"
+}
+
+expect_authenticated_page() {
+  local path="$1"
+  local label="$2"
+
+  if [[ -z "$PRODUCTION_SMOKE_COOKIE" ]]; then
+    echo "SKIP: $label requires PRODUCTION_SMOKE_COOKIE"
+    return
+  fi
+
+  local body_file
+  local status
+  body_file="$(mktemp)"
+  status="$(
+    curl -sS -o "$body_file" -w "%{http_code}" --max-time "$TIMEOUT_SECONDS" \
+      -H "cookie: $PRODUCTION_SMOKE_COOKIE" \
+      "$BASE_URL$path"
+  )"
+
+  if [[ "$status" != "200" ]]; then
+    rm -f "$body_file"
+    fail "$label returned HTTP $status, expected 200"
+  fi
+
+  local body
+  body="$(<"$body_file")"
+  rm -f "$body_file"
+  expect_not_contains "$body" "Unhandled Runtime Error" "$label body"
+  expect_not_contains "$body" "app_sidebar_dropdown_menu_render_error" "$label body"
+  expect_not_contains "$body" "Error: " "$label body"
+  echo "OK: $label returned HTTP 200 with authenticated session"
+}
+
+expect_authenticated_json_api() {
+  local path="$1"
+  local label="$2"
+
+  if [[ -z "$PRODUCTION_SMOKE_COOKIE" ]]; then
+    echo "SKIP: $label requires PRODUCTION_SMOKE_COOKIE"
+    return
+  fi
+
+  local response
+  response="$(
+    curl -sS --max-time "$TIMEOUT_SECONDS" \
+      -H "accept: application/json" \
+      -H "cookie: $PRODUCTION_SMOKE_COOKIE" \
+      "$BASE_URL$path" \
+      -w "\n%{http_code}"
+  )"
+  expect_contains "$response" '"success":true' "$label"
+  expect_contains "$response" "200" "$label"
+  echo "OK: $label returned successful JSON"
+}
+
+smoke_admin_plan_change() {
+  if [[ "$PRODUCTION_SMOKE_RUN_ADMIN_MUTATION" != "true" ]]; then
+    echo "SKIP: admin plan mutation requires PRODUCTION_SMOKE_RUN_ADMIN_MUTATION=true"
+    return
+  fi
+
+  if [[ -z "$PRODUCTION_SMOKE_COOKIE" || -z "$PRODUCTION_SMOKE_ADMIN_USER_ID" ]]; then
+    echo "SKIP: admin plan mutation requires PRODUCTION_SMOKE_COOKIE and PRODUCTION_SMOKE_ADMIN_USER_ID"
+    return
+  fi
+
+  local response
+  response="$(
+    curl -sS --max-time "$TIMEOUT_SECONDS" \
+      -X PATCH "$BASE_URL/api/v1/admin/users/$PRODUCTION_SMOKE_ADMIN_USER_ID" \
+      -H "content-type: application/json" \
+      -H "origin: $BASE_URL" \
+      -H "x-requested-with: XMLHttpRequest" \
+      -H "cookie: $PRODUCTION_SMOKE_COOKIE" \
+      --data "{\"plan\":\"$PRODUCTION_SMOKE_ADMIN_PLAN\"}" \
+      -w "\n%{http_code}"
+  )"
+
+  expect_contains "$response" '"success":true' "admin plan mutation"
+  expect_contains "$response" "\"plan\":\"$PRODUCTION_SMOKE_ADMIN_PLAN\"" "admin plan mutation"
+  expect_contains "$response" "200" "admin plan mutation"
+  echo "OK: admin plan mutation accepted required headers"
 }
 
 apex_headers="$(curl -sS -I --max-time "$TIMEOUT_SECONDS" "$APEX_URL")"
@@ -100,4 +187,10 @@ expect_contains "$bad_origin_response" "FORBIDDEN_ORIGIN" "bad-origin API guard"
 expect_contains "$bad_origin_response" "403" "bad-origin API guard"
 echo "OK: API guard rejects untrusted origin"
 
+expect_authenticated_page "/analytics" "authenticated analytics page"
+expect_authenticated_page "/admin/analytics" "superadmin analytics page"
+expect_authenticated_json_api "/api/v1/admin/analytics" "superadmin analytics API"
+smoke_admin_plan_change
+
+echo "OK: cache fallback smoke command is available via 'rtk bun run smoke:cache-fallback'"
 echo "Production smoke passed for $BASE_URL"

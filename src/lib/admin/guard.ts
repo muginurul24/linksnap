@@ -49,8 +49,9 @@ export async function adminRouteGuard(): Promise<AdminGuardResult> {
 
     if (!dbUser || dbUser.role !== SUPERADMIN_ROLE) {
       logger.warn("admin_guard_role_mismatch", {
-        userId: authResult.userId,
         dbRole: dbUser?.role ?? "not_found",
+        requestId,
+        userId: authResult.userId,
       });
       return {
         ok: false,
@@ -63,10 +64,14 @@ export async function adminRouteGuard(): Promise<AdminGuardResult> {
       };
     }
   } catch (error) {
-    logger.error("admin_guard_db_validation_failed", { error, userId: authResult.userId });
+    logger.error("admin_guard_db_validation_failed", {
+      error,
+      requestId,
+      userId: authResult.userId,
+    });
     return {
       ok: false,
-        response: withAdminActionHeader(errorResponse(
+      response: withAdminActionHeader(errorResponse(
         "INTERNAL_ERROR",
         "Unable to verify admin access.",
         500,

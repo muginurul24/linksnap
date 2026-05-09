@@ -98,6 +98,7 @@ export async function GET(request: NextRequest) {
     });
     const aggregates = await getCachedDashboardAnalyticsAggregates({
       from: range.from,
+      requestId,
       to: range.to,
       userId: authResult.userId,
     });

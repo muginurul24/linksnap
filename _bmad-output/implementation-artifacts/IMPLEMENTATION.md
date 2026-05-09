@@ -3029,16 +3029,16 @@ Premium Flutter experience. 🟢
 
 ### TASK 22.10 — Security, Observability & Production Smoke
 
-- [ ] Verify all touched APIs keep Zod validation, auth, authorization, ownership, and rate limits.
-- [ ] Verify no new client route logs secrets or raw error stacks.
-- [ ] Add structured logs for analytics/cache/admin-action failures with `requestId`.
-- [ ] Add smoke commands for production:
+- [x] Verify all touched APIs keep Zod validation, auth, authorization, ownership, and rate limits.
+- [x] Verify no new client route logs secrets or raw error stacks.
+- [x] Add structured logs for analytics/cache/admin-action failures with `requestId`.
+- [x] Add smoke commands for production:
   - public `/`
   - authenticated `/analytics`
   - superadmin `/admin/users/[id]` plan change
   - superadmin `/admin/analytics`
   - cache fallback when Redis is unavailable in tests
-- [ ] Run before completion:
+- [x] Run before completion:
   - `rtk bun run typecheck`
   - `rtk bun run lint`
   - `rtk bun run test`
@@ -3060,4 +3060,158 @@ Premium Flutter experience. 🟢
 | 22.9 | Form/action UX consistency | P2 |
 | 22.10 | Security/observability/smoke | P0 |
 
-**Estimated total:** 180 + 10 = 190 tasks | **Implementation gate:** Awaiting Rafi approval.
+**Estimated total:** 190 tasks
+
+---
+
+## 🔴 Phase 23: Midtrans Snap — Full Payment Integration
+
+> **Status:** Approved by Rafi — 2026-05-09. Ready for implementation.
+> **Spec:** `_bmad-output/planning-artifacts/spec-midtrans-snap-full-integration.md`
+> **Goal:** Replace PayGate BCA-only Core API with Midtrans Snap, supporting ALL payment methods (bank VA, e-wallets, QRIS, credit card, convenience stores) with best-practice UI/UX.
+
+### 🔴 Phase Rules
+
+- [ ] Read the full spec at `spec-midtrans-snap-full-integration.md` before starting any task.
+- [ ] One commit per task after implementation starts.
+- [ ] Read PRD, SECURITY, SUPERADMIN, IMPLEMENTATION, and JOURNAL before each task.
+- [ ] Every state-changing browser API call must include `X-Requested-With: XMLHttpRequest`.
+- [ ] No raw SQL; Drizzle query builders only.
+- [ ] Midtrans server key NEVER exposed to client. Client key only via `NEXT_PUBLIC_*`.
+- [ ] Never cache payment mutation results.
+- [ ] Use Snap popup mode (not redirect) for best UX.
+- [ ] After completing all tasks: `grep -ri "paygate" src/` must return ZERO results.
+
+### TASK 23.1 — Midtrans Server-Side Client
+
+- [ ] Create `src/lib/payments/midtrans-client.ts`
+- [ ] Implement `createSnapTransaction()` — POST to Snap API with all payment methods enabled
+- [ ] Implement `getTransactionStatus(orderId)` — GET Core API status
+- [ ] Implement `verifySignature()` — SHA512 hash verification for webhooks
+- [ ] Read env: `MIDTRANS_SERVER_KEY`, `MIDTRANS_CLIENT_KEY`, `MIDTRANS_MERCHANT_ID`, `MIDTRANS_IS_PRODUCTION`
+- [ ] Auto-select sandbox vs production API base URL
+- [ ] Structured error types: `MidtransConfigError`, `MidtransApiError`, `MidtransNetworkError`
+- [ ] Add tests: payload construction, error handling, signature verification
+
+### TASK 23.2 — Payment Create API Route (Rewrite for Snap)
+
+- [ ] Rewrite `src/app/api/v1/payments/create/route.ts`
+- [ ] Replace `createPayGateCharge()` → `createSnapTransaction()`
+- [ ] Return `{ snapToken, redirectUrl, orderId }` instead of `{ vaNumbers, ... }`
+- [ ] Handle Midtrans errors with friendly messages
+- [ ] Remove all PayGate imports from this route
+- [ ] Add tests: create Snap transaction, auth required, invalid plan, Midtrans unconfigured
+
+### TASK 23.3 — Midtrans Webhook Handler
+
+- [ ] Rewrite `src/app/api/v1/payments/webhook/route.ts` for Midtrans
+- [ ] Verify webhook signature (SHA512)
+- [ ] Parse Midtrans notification body (transaction_status, payment_type, fraud_status)
+- [ ] Map Midtrans status → internal PaymentStatus
+- [ ] Keep subscription activation logic, add payment method storage
+- [ ] Handle idempotency
+- [ ] Add tests: settlement, pending, invalid signature, duplicate, expire/cancel
+
+### TASK 23.4 — Snap Frontend Integration (Upgrade Flow)
+
+- [ ] Create `src/components/payments/snap-payment-handler.tsx` — Client component
+  - Accept `snapToken`, use `window.snap.pay()`
+  - onSuccess → redirect checkout/success
+  - onPending → redirect checkout/success
+  - onError → toast, stay on page
+  - onClose → stay on page (user cancelled)
+- [ ] Create `src/components/payments/snap-script.tsx` — Lazy-load Midtrans Snap SDK
+- [ ] Rewrite upgrade button to create Snap transaction → open popup
+- [ ] Prevent double-submit, show loading states
+- [ ] Add `NEXT_PUBLIC_MIDTRANS_CLIENT_KEY`, `NEXT_PUBLIC_MIDTRANS_IS_PRODUCTION`
+- [ ] Add tests: snapToken triggers pay(), callbacks behave correctly, script failure handled
+
+### TASK 23.5 — Checkout Success Page (Snap-Aware)
+
+- [ ] Rewrite checkout status client to handle all payment types
+- [ ] Display payment method with friendly icon + label per type:
+  - Bank VA → bank logo + VA number with copy
+  - E-wallet → wallet logo + "Complete payment in your X app"
+  - QRIS → QR code display guidance
+  - Credit Card → card icon + processed confirmation
+  - Convenience store → store logo + payment code
+- [ ] Keep: auto-polling, auto-redirect, loading skeleton
+- [ ] Add E2E tests for each payment type display
+
+### TASK 23.6 — Payment Status API (Transaction Lookup)
+
+- [ ] Update `GET /api/v1/payments/[orderId]`
+- [ ] Read from DB first, sync from Midtrans if stale
+- [ ] Return enriched response: status, paymentMethod, amount, expiresAt, vaNumbers, actions
+- [ ] Add `expiresAt` column to transactions table (DB migration)
+- [ ] Auth check: only payment owner can query
+- [ ] Add tests: own order, other user's order, stale sync
+
+### TASK 23.7 — Pricing Page with Best Practice UX
+
+- [ ] Rewrite pricing page with plan cards side-by-side
+- [ ] Monthly/Yearly toggle with savings badge
+- [ ] Feature comparison table with checkmarks/crosses
+- [ ] CTA per plan: logged-out → login redirect, logged-in → Snap popup
+- [ ] Current plan badge, trust badges
+- [ ] Mobile responsive
+- [ ] Replace "PayGate" mention in FAQ with "Midtrans"
+- [ ] Add tests for toggle, prices, CTAs
+
+### TASK 23.8 — Billing Settings Page Upgrade
+
+- [ ] Rewrite billing page as plan management hub
+- [ ] Current plan with status badge, plan comparison
+- [ ] Upgrade button opens Snap popup directly (no page navigation)
+- [ ] Payment history table with status badges
+- [ ] Cancel/reactivate subscription flows
+- [ ] Empty state, loading skeleton, error state with retry
+- [ ] FAQ section
+- [ ] Add E2E tests
+
+### TASK 23.9 — Invoice Email After Payment
+
+- [ ] Create React Email template: logo, plan, amount, payment method, order ID, CTA
+- [ ] Trigger in webhook handler on SETTLEMENT (non-blocking)
+- [ ] Use existing Resend integration
+- [ ] Add unit tests for email rendering
+
+### TASK 23.10 — Cleanup & Migration
+
+- [ ] Delete all PayGate files: paygate.ts, paygate-webhook.ts, paygate-webhook-handler.ts, redirects.ts
+- [ ] Update `.env.example`: remove PAYGATE_*, add MIDTRANS_* + NEXT_PUBLIC_MIDTRANS_*
+- [ ] Update DB schema: add `expiresAt` column, migration file
+- [ ] Update cache policy, SECURITY.md, PRD.md, CACHE_POLICY.md (replace PayGate → Midtrans)
+- [ ] Verify ZERO PayGate references in entire codebase
+- [ ] Run full test suite, typecheck, lint, build
+
+### TASK 23.11 — End-to-End Payment Smoke Tests
+
+- [ ] Create comprehensive E2E test suite
+- [ ] Test: upgrade → Snap popup opens
+- [ ] Test: successful payment → success page → auto-redirect
+- [ ] Test: pending payment → instructions → refresh
+- [ ] Test: failed/expired payment → error states
+- [ ] Test: cancel checkout → no plan change
+- [ ] Test: webhook settlement → subscription activated
+- [ ] Test: double-click prevention
+- [ ] Test: Snap script failure fallback
+- [ ] Test: mobile viewport
+
+### 📊 Phase 23 Task Summary
+
+| Task | Area | Priority |
+|---|---|---|
+| 23.1 | Midtrans server client | P0 |
+| 23.2 | Payment create API rewrite | P0 |
+| 23.3 | Midtrans webhook handler | P0 |
+| 23.4 | Snap frontend integration | P0 |
+| 23.5 | Checkout success page | P1 |
+| 23.6 | Payment status API | P1 |
+| 23.7 | Pricing page UX | P1 |
+| 23.8 | Billing settings page | P1 |
+| 23.9 | Invoice email | P2 |
+| 23.10 | Cleanup & migration | P0 |
+| 23.11 | E2E smoke tests | P0 |
+
+**Estimated total:** 190 + 11 = 201 tasks | **Implementation gate:** ✅ Rafi approved 2026-05-09.

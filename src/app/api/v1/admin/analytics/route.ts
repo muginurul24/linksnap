@@ -13,7 +13,9 @@ export async function GET() {
   const { admin } = guard;
 
   try {
-    const stats = await getCachedAdminSystemStats();
+    const stats = await getCachedAdminSystemStats({
+      requestId: admin.requestId,
+    });
     const response = withAdminActionHeader(successResponse(stats));
     response.headers.set("Cache-Control", "no-store");
 

@@ -8615,3 +8615,53 @@ Standardized high-risk dashboard/admin action handling with a reusable single-fl
 - ✅ No secrets added.
 
 **Next Task:** 22.10 — Security, Observability & Production Smoke.
+
+### 22.10 — Security, Observability & Production Smoke
+- **Date:** 2026-05-09 08:36 GMT+7
+- **Duration:** 0h 45m
+- **Status:** ✅ Complete
+
+**What I Did:**
+Added request-ID correlation to dashboard/admin analytics cache failure logs and admin action rejection logs, then expanded production smoke coverage with public, optional authenticated, optional superadmin, optional admin mutation, and Redis cache fallback commands. Added regression tests for observability, smoke command coverage, cache fallback behavior, and route error UI stack-safety.
+
+**Files Changed:**
+- `src/lib/cache/analytics.ts` — Propagated optional `requestId` into cache version/read/write failure logs.
+- `src/app/api/v1/analytics/route.ts` — Passed analytics API request IDs into the cache wrapper.
+- `src/app/api/v1/admin/analytics/route.ts` — Passed superadmin request IDs into cached admin analytics reads.
+- `src/app/api/v1/admin/users/[id]/route.ts` — Logged validation/not-found admin action failures with action, admin user, target user, status, reason, and request ID only.
+- `src/lib/admin/guard.ts` — Added request IDs to admin guard warning/error logs.
+- `scripts/smoke-production.sh` — Added optional authenticated analytics, superadmin analytics/API, guarded admin plan mutation, and cache fallback smoke command output.
+- `package.json` — Added `smoke:cache-fallback`.
+- `tests/unit/cache-helpers.test.ts` — Verified Redis read fallback logs preserve request IDs.
+- `tests/unit/security-observability-smoke.test.ts` — Added source-contract coverage for request-ID logs, route error stack-safety, and smoke command coverage.
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Checked off 22.10.
+- `_bmad-output/implementation-artifacts/JOURNAL.md` — Logged 22.10.
+
+**Decisions Made:**
+- Kept authenticated/admin production smoke opt-in via `PRODUCTION_SMOKE_COOKIE` so the default smoke command never depends on a private browser session.
+- Kept admin plan mutation behind `PRODUCTION_SMOKE_RUN_ADMIN_MUTATION=true` to avoid accidental production mutations.
+- Logged admin action failures without raw request bodies or parsed validation payloads to avoid leaking sensitive data.
+
+**Tests:**
+- ✅ Targeted unit: `rtk bun run test -- tests/unit/security-observability-smoke.test.ts tests/unit/cache-helpers.test.ts` — 10 passed.
+- ✅ Cache fallback smoke: `rtk bun run smoke:cache-fallback` — 1 passed, 5 skipped.
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Full unit/integration: `rtk bun run test` — 153 passed, 1 skipped; 694 passed, 2 skipped.
+- ✅ Dashboard analytics E2E: `rtk bun run test:e2e -- tests/e2e/analytics-page.spec.ts` — 4 passed.
+- ✅ Admin analytics/action E2E: `rtk bun run test:e2e -- tests/e2e/admin-flow.spec.ts -g "system analytics|admin plan update"` — 6 passed.
+- ✅ Production build: `rtk bun run build` — Passed.
+- ✅ Production smoke: `rtk bun run smoke:production` — Public/security smoke passed; authenticated/admin sections skipped because no smoke cookie was provided.
+
+**Issues Encountered:**
+- `git pull --rebase` was blocked by existing local `IMPLEMENTATION.md` changes and an untracked Midtrans spec; preserved them and continued without overwriting.
+- Production authenticated smoke cannot run without a valid `PRODUCTION_SMOKE_COOKIE`; the command now documents this through explicit SKIP output.
+
+**Security Checks:**
+- ✅ Touched analytics/admin APIs keep auth, superadmin authorization, Zod validation, and rate limiting.
+- ✅ Admin mutation requests remain protected by `X-Requested-With: XMLHttpRequest` and origin checks.
+- ✅ No secrets, raw request bodies, or raw error stacks are rendered in route error UI.
+- ✅ Redis failures remain non-fatal and are correlated with request IDs.
+- ✅ Admin authorization checks and mutation results remain uncached.
+
+**Next Task:** 23.1 — Midtrans Server-Side Client.
