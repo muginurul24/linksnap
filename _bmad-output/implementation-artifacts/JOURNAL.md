@@ -8864,3 +8864,49 @@ Completed server-side payment channel support for `POST /api/v1/payments/create`
 - ✅ No raw SQL added.
 
 **Next Task:** 23.6 — Checkout Success Page (Channel-Aware).
+
+### 23.6 — Checkout Success Page (Channel-Aware)
+- **Date:** 2026-05-09 09:37 GMT+7
+- **Duration:** 0h 08m
+- **Status:** ✅ Complete
+
+**What I Did:**
+Reworked the checkout success client to render payment instructions by channel type. Bank transfers show the VA number with copy action, e-wallets show app/deep-link instructions, QRIS shows the QR image/string, and convenience stores show cashier payment codes. The page keeps the existing no-store polling, adds an expiration countdown, and still redirects automatically after settlement.
+
+**Files Changed:**
+- `src/app/(marketing)/checkout/success/checkout-status-client.tsx` — Rewrote checkout status rendering for channel-aware instructions, countdown, polling, and settlement redirect.
+- `src/components/payments/payment-copy-button.tsx` — Added reusable copy button for payment values.
+- `src/components/payments/payment-instructions-bank.tsx` — Added bank VA instruction component.
+- `src/components/payments/payment-instructions-ewallet.tsx` — Added e-wallet instruction component.
+- `src/components/payments/payment-instructions-qris.tsx` — Added QRIS instruction component with optimized/unoptimized dynamic QR image rendering.
+- `src/components/payments/payment-instructions-cstore.tsx` — Added convenience-store instruction component.
+- `tests/unit/payment-instructions.test.tsx` — Added channel instruction, countdown, polling, and redirect wiring coverage.
+- `tests/unit/checkout-pages.test.tsx` — Updated initial checkout copy expectation for the loading state.
+- `tests/e2e/payment-flow.spec.ts` — Updated mocked payment detail payload and checkout status assertion.
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Checked off 23.6.
+- `_bmad-output/implementation-artifacts/JOURNAL.md` — Logged 23.6.
+
+**Decisions Made:**
+- Derived channel metadata from PayGate `payment_method` first, then safe fallbacks from `payment_type` and provider fields.
+- Used `next/image` with `unoptimized` for dynamic QR URLs to keep lint clean without adding remote image configuration.
+- Kept payment polling at 10 seconds and countdown ticking separately at 1 second only when an expiry exists.
+
+**Tests:**
+- ✅ Targeted unit: `rtk bun run test -- tests/unit/payment-instructions.test.tsx tests/unit/checkout-pages.test.tsx` — 7 passed.
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Full unit/integration: `rtk bun run test` — 158 passed, 1 skipped; 728 passed, 2 skipped.
+- ✅ Production build: `rtk bun run build` — Passed.
+- ✅ Targeted E2E: `rtk bun run test:e2e -- tests/e2e/payment-flow.spec.ts -g "should start billing upgrade"` — Passed.
+
+**Issues Encountered:**
+- `next lint` warned about a raw QR `<img>`. Switched to `next/image` with `unoptimized` for dynamic provider-hosted QR URLs.
+
+**Security Checks:**
+- ✅ Payment detail fetch remains `cache: "no-store"`.
+- ✅ No provider secrets or tokens exposed.
+- ✅ No raw HTML rendering added.
+- ✅ Copy actions only copy provider-returned payment values.
+- ✅ Settlement redirect remains client-side after confirmed paid/local settlement status.
+
+**Next Task:** 23.7 — Pricing Page Redesign.

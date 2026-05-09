@@ -96,7 +96,7 @@ describe("checkout pages", () => {
     const markup = renderToStaticMarkup(element);
 
     expect(markup).toContain("Checkout complete");
-    expect(markup).toContain("Finish the bank transfer");
+    expect(markup).toContain("Review the payment status");
     expect(markup).toContain("Loading");
     expect(mockState.syncCalls).toEqual([]);
   });

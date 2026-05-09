@@ -3145,14 +3145,14 @@ Premium Flutter experience. 🟢
 
 ### TASK 23.6 — Checkout Success Page (Channel-Aware)
 
-- [ ] Rewrite `checkout-status-client.tsx` for multi-channel display with per-channel instruction components:
+- [x] Rewrite `checkout-status-client.tsx` for multi-channel display with per-channel instruction components:
   - Bank VA → bank logo + VA number + copy + transfer instructions
   - E-wallet → wallet logo + "Complete in your X app" + deep link
   - QRIS → QR code image + "Scan with any QRIS app"
   - C-store → store logo + payment code + "Show at cashier"
-- [ ] Common: amount, order ID, expiration countdown, auto-polling 10s, auto-redirect on SETTLEMENT
-- [ ] Create `src/components/payments/payment-instructions-*.tsx` per channel type
-- [ ] Add unit + E2E tests
+- [x] Common: amount, order ID, expiration countdown, auto-polling 10s, auto-redirect on SETTLEMENT
+- [x] Create `src/components/payments/payment-instructions-*.tsx` per channel type
+- [x] Add unit + E2E tests
 
 ### TASK 23.7 — Pricing Page Redesign
 

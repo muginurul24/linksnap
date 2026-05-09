@@ -207,6 +207,7 @@ test("should start billing upgrade from the Pro button and redirect to checkout"
               va_numbers: [{ bank: "bca", va_number: "88001234567890" }],
             },
             order_id: orderId,
+            payment_method: "bca",
             payment_type: "bank_transfer",
             status: "pending",
             transaction_id: "paygate-transaction-1",
@@ -241,7 +242,7 @@ test("should start billing upgrade from the Pro button and redirect to checkout"
     await expect(page.getByText("Checkout complete", { exact: true })).toBeVisible();
     await expect(page.getByText("88001234567890")).toBeVisible();
     await expect(
-      page.getByText("Payment status refreshes every 10 seconds after transfer."),
+      page.getByText("Payment status refreshes every 10 seconds after payment."),
     ).toBeVisible();
   } finally {
     await cleanupPaymentFlowState(email, userId);
