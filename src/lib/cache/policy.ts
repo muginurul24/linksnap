@@ -204,7 +204,8 @@ export const DO_NOT_CACHE_POLICIES = {
   paymentMutations: {
     classification: "do_not_cache",
     owner: "payments",
-    reason: "Checkout creation and payment mutations must be idempotent, fresh, and provider-confirmed.",
+    reason:
+      "Checkout creation and payment mutations must be idempotent, fresh, provider-confirmed, and never reused across payment method attempts.",
     storage: "none",
   },
   rawAnalyticsEventLists: {

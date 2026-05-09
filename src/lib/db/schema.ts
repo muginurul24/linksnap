@@ -304,6 +304,7 @@ export const transactions = pgTable("transactions", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 }, (table) => ({
+  paymentMethodIdx: index("tx_payment_method_idx").on(table.paymentMethod),
   userIdIdx: index("tx_user_idx").on(table.userId),
   settledUserIdIdx: index("tx_settled_user_idx")
     .on(table.userId)

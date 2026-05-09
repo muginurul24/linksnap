@@ -44,7 +44,7 @@
 | CSRF/origin decisions | Must be evaluated per request |
 | Password/reset secrets | Stored as one-way hashes with explicit expiry, never cached |
 | API key plaintext | Plaintext exists only at creation time |
-| Payment create/mutation results | Must be fresh, idempotent, and provider-confirmed |
+| Payment create/mutation results | Must be fresh, idempotent, provider-confirmed, and never reused across channel/payment method attempts |
 | Webhook verification outcomes | Signatures and outcomes must be verified per request |
 | Admin mutation results | Must be strongly consistent and auditable |
 | Raw analytics event lists | Can include PII-heavy metadata; only scoped aggregates are cacheable |
@@ -56,6 +56,7 @@
 - Invalidations must happen in the write path before a task is marked complete.
 - Analytics aggregate caches must be keyed by scoped identifiers and normalized date windows only.
 - Payment, admin, auth, and security decisions must prefer correctness over latency and stay uncached.
+- Payment mutation endpoints (`/api/v1/payments/create`, subscription cancel/reactivate/renew, and PayGate webhook processing) must not read mutation outcomes from Redis. Redis may only be used for rate limiting and post-settlement invalidation signals.
 
 ## Test Requirements
 

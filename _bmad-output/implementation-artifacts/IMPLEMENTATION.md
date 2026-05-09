@@ -3184,11 +3184,11 @@ Premium Flutter experience. 🟢
 
 ### TASK 23.10 — Security, Validation & Final Polish
 
-- [ ] Validate paymentMethod against channel registry server-side (not just Zod string)
-- [ ] Store paymentMethod in transaction record on webhook
-- [ ] Update `CACHE_POLICY.md`, `SECURITY.md` — payment mutations remain do-not-cache
-- [ ] Add `payment_method` index to DB for query performance
-- [ ] Handle all PayGate error codes with friendly messages per channel
+- [x] Validate paymentMethod against channel registry server-side (not just Zod string)
+- [x] Store paymentMethod in transaction record on webhook
+- [x] Update `CACHE_POLICY.md`, `SECURITY.md` — payment mutations remain do-not-cache
+- [x] Add `payment_method` index to DB for query performance
+- [x] Handle all PayGate error codes with friendly messages per channel
 - [ ] Run full quality gate: `rtk bun run typecheck && lint && test && test:e2e && build`
 
 ### TASK 23.11 — End-to-End Payment Smoke Tests

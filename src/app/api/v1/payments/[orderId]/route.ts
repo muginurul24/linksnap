@@ -13,6 +13,7 @@ import {
   PayGateApiError,
   PayGateConfigurationError,
 } from "@/lib/payments/paygate";
+import { getFriendlyPayGateError } from "@/lib/payments/paygate-errors";
 import { slidingWindowRateLimit } from "@/lib/redis/rate-limit";
 import { checkoutSuccessQuerySchema } from "@/lib/validations/payment";
 
@@ -88,6 +89,7 @@ export async function GET(
   context: PaymentDetailRouteContext,
 ) {
   const requestId = createRequestId();
+  let paymentMethod: string | null = null;
 
   try {
     const authResult = await getAuthenticatedBillingUser(request, requestId);
@@ -109,6 +111,7 @@ export async function GET(
         requestId,
       );
     }
+    paymentMethod = transaction.paymentMethod;
 
     const payGateTransaction = await getPayGateTransaction(parsedParams.orderId);
 
@@ -130,6 +133,7 @@ export async function GET(
     }
 
     if (error instanceof PayGateApiError) {
+      const friendlyError = getFriendlyPayGateError(error, paymentMethod);
       logApiErrorResponse({
         code: "PAYMENT_PROVIDER_ERROR",
         error,
@@ -139,10 +143,10 @@ export async function GET(
       });
       return errorResponse(
         "PAYMENT_PROVIDER_ERROR",
-        "Payment provider rejected the transaction lookup.",
+        friendlyError.message,
         502,
         requestId,
-        { providerStatus: error.status },
+        friendlyError.details,
       );
     }
 

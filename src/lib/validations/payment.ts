@@ -50,6 +50,7 @@ export const checkoutCancelQuerySchema = z
 
 export const payGateWebhookSchema = z.object({
   amount: z.number().int().positive(),
+  bank: z.string().optional(),
   currency: z.string().optional(),
   customer: z
     .object({
@@ -61,14 +62,25 @@ export const payGateWebhookSchema = z.object({
   metadata: z.record(z.string(), z.unknown()).optional(),
   midtrans: z
     .object({
+      cstore: z.string().optional(),
       fraud_status: z.string().optional(),
       transaction_id: z.string().optional(),
       transaction_status: z.string().optional(),
+      va_numbers: z
+        .array(
+          z.object({
+            bank: z.string().optional(),
+            va_number: z.string().optional(),
+          }),
+        )
+        .optional(),
     })
     .optional(),
   order_id: z.string().min(1, "Order ID is required").max(100),
   paid_at: z.string().optional(),
+  payment_method: z.string().optional(),
   payment_type: z.string().optional(),
+  ewallet: z.string().optional(),
   status: z.enum([
     "paid",
     "pending",
@@ -79,6 +91,7 @@ export const payGateWebhookSchema = z.object({
     "refunded",
     "partial_refunded",
   ]),
+  store: z.string().optional(),
   store_id: z.string(),
   transaction_id: z.string(),
   webhook_id: z.string(),

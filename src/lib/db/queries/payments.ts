@@ -72,6 +72,7 @@ type CreatePendingTransactionInput = {
   grossAmountIdr: number;
   grossAmountUsd: number;
   orderId: string;
+  paymentMethod: string;
   plan: PaidPlan;
   userId: string;
 };
@@ -110,6 +111,7 @@ export async function createPendingTransactionRecord({
   grossAmountIdr,
   grossAmountUsd,
   orderId,
+  paymentMethod,
   plan,
   userId,
 }: CreatePendingTransactionInput): Promise<PendingTransaction> {
@@ -120,6 +122,7 @@ export async function createPendingTransactionRecord({
       grossAmountIdr,
       grossAmountUsd,
       orderId,
+      paymentMethod,
       plan,
       userId,
     })

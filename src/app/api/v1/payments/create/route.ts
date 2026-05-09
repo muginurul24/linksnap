@@ -11,6 +11,8 @@ import {
   findBillingUserById,
 } from "@/lib/db/queries/payments";
 import { getApiEndpointRateLimit } from "@/lib/links/limits";
+import { logger } from "@/lib/observability/logger";
+import { getFriendlyPayGateError } from "@/lib/payments/paygate-errors";
 import {
   assertPayGateConfigured,
   createPayGateCharge,
@@ -231,6 +233,7 @@ function getPayGatePaymentActions(transaction: {
 
 export async function POST(request: NextRequest) {
   const requestId = createRequestId();
+  let selectedPaymentChannel: PaymentChannelDefinition | null = null;
 
   try {
     const authResult = await getAuthenticatedPaymentUser(request, requestId);
@@ -260,6 +263,7 @@ export async function POST(request: NextRequest) {
         { paymentMethod: getRequestedPaymentMethod(parsedBody.data) },
       );
     }
+    selectedPaymentChannel = paymentChannel;
 
     const { grossAmountIdr, grossAmountUsd } = calculatePaymentAmount(parsedBody.data);
     const orderId = generatePaymentOrderId();
@@ -274,7 +278,19 @@ export async function POST(request: NextRequest) {
       grossAmountIdr,
       grossAmountUsd,
       orderId,
+      paymentMethod: paymentChannel.id,
       plan: parsedBody.data.plan,
+      userId: authResult.userId,
+    });
+
+    logger.info("payment_create_requested", {
+      channelCategory: paymentChannel.category,
+      duration: parsedBody.data.duration,
+      grossAmountIdr,
+      orderId,
+      paymentMethod: paymentChannel.id,
+      plan: parsedBody.data.plan,
+      requestId,
       userId: authResult.userId,
     });
 
@@ -299,6 +315,15 @@ export async function POST(request: NextRequest) {
     });
 
     const payGateTransaction = payGateCharge.data;
+    logger.info("payment_create_completed", {
+      orderId,
+      paymentMethod: paymentChannel.id,
+      paymentType: payGateTransaction.payment_type,
+      providerTransactionId: payGateTransaction.transaction_id,
+      requestId,
+      status: payGateTransaction.status,
+      userId: authResult.userId,
+    });
 
     return successResponse(
       {
@@ -342,6 +367,10 @@ export async function POST(request: NextRequest) {
     }
 
     if (error instanceof PayGateApiError) {
+      const friendlyError = getFriendlyPayGateError(
+        error,
+        selectedPaymentChannel?.id,
+      );
       logApiErrorResponse({
         code: "PAYMENT_PROVIDER_ERROR",
         error,
@@ -351,10 +380,10 @@ export async function POST(request: NextRequest) {
       });
       return errorResponse(
         "PAYMENT_PROVIDER_ERROR",
-        "Payment provider rejected the transaction.",
+        friendlyError.message,
         502,
         requestId,
-        { providerStatus: error.status },
+        friendlyError.details,
       );
     }
 

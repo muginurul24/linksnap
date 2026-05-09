@@ -9040,3 +9040,51 @@ Added a React invoice email template and wired settled payment webhooks to send 
 - ✅ No provider tokens or customer-sensitive values added to logs.
 
 **Next Task:** 23.10 — Security, Validation & Final Polish.
+
+### 23.10 — Security, Validation & Final Polish
+- **Date:** 2026-05-09 11:01 GMT+7
+- **Duration:** 0h 45m
+- **Status:** ⚠️ Partial
+
+**What I Did:**
+Hardened PayGate payment method handling so checkout creation stores the selected channel ID, webhooks only persist allowlisted channel IDs, and invoice/billing data do not drift to broad provider types like `bank_transfer`. Added friendly PayGate error mapping, structured payment creation logs, a `payment_method` DB index, and updated payment cache/security documentation.
+
+**Files Changed:**
+- `src/app/api/v1/payments/create/route.ts` — Stores selected payment method, logs channel-aware creation events, and returns friendly provider errors.
+- `src/app/api/v1/payments/[orderId]/route.ts` — Uses friendly provider lookup errors with local payment method context.
+- `src/app/api/v1/payments/webhook/route.ts` — Logs amount mismatch events without exposing raw provider payloads.
+- `src/lib/payments/paygate-webhook-handler.ts` — Validates webhook payment method candidates against the channel registry before storing.
+- `src/lib/payments/paygate-errors.ts` — Added user-safe PayGate error mapping.
+- `src/lib/db/queries/payments.ts` and `src/lib/db/schema.ts` — Persist initial payment method and added `tx_payment_method_idx`.
+- `src/lib/validations/payment.ts` — Accepted optional webhook payment method/channel fields.
+- `src/lib/cache/policy.ts`, `_bmad-output/planning-artifacts/CACHE_POLICY.md`, `_bmad-output/planning-artifacts/SECURITY.md` — Documented no-cache payment mutation rules and payment method allowlist.
+- `playwright.config.ts` — Raised global E2E timeout to match the actual long-running authenticated workflows.
+- `tests/unit/paygate-errors.test.ts`, `tests/integration/create-payment-api.test.ts`, `tests/integration/payment-webhook-api.test.ts`, `tests/integration/payment-create-webhook-flow.test.ts` — Added and updated payment security/error coverage.
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Checked off completed 23.10 subitems; left full E2E gate unchecked.
+- `_bmad-output/implementation-artifacts/JOURNAL.md` — Logged 23.10.
+
+**Decisions Made:**
+- Treat provider webhook payment method data as untrusted metadata until it matches the local channel registry.
+- Store the requested channel at checkout creation so old or sparse webhooks cannot downgrade history/invoice data to generic provider types.
+- Keep provider error details limited to status/code/method and return user-safe messages.
+
+**Tests:**
+- ✅ Targeted unit/integration: `rtk bun run test -- tests/unit/paygate-errors.test.ts tests/integration/create-payment-api.test.ts tests/integration/payment-webhook-api.test.ts tests/integration/payment-create-webhook-flow.test.ts tests/unit/cache-policy.test.ts` — 28 passed.
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Full unit/integration: `rtk bun run test` — 162 passed, 1 skipped; 742 passed, 2 skipped.
+- ✅ Production build: `rtk bun run build` — Passed.
+- ✅ DB schema push: `rtk bun run db:push` — Applied `payment_method` index.
+- ✅ Targeted E2E: `rtk bun run test:e2e -- tests/e2e/payment-flow.spec.ts -g "should start billing upgrade"` — Passed.
+- ⚠️ Full E2E: `rtk bun run test:e2e` — Failed in unrelated legacy auth/link/public timing assertions while payment-specific targeted E2E passed.
+
+**Issues Encountered:**
+- Full E2E remains unstable in the current dev-server environment. Failures were broad timing/state assertions in existing auth/link/public flows, not the new PayGate validation path. I left the 23.10 full-gate checkbox unchecked instead of overstating completion.
+
+**Security Checks:**
+- ✅ Payment method persisted only after registry allowlist validation.
+- ✅ Payment mutation results remain do-not-cache.
+- ✅ Webhook amount validation remains before subscription activation.
+- ✅ Provider errors are user-safe and do not leak raw payloads or secrets.
+
+**Next Task:** 23.11 — End-to-End Payment Smoke Tests.

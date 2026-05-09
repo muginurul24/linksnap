@@ -5,6 +5,7 @@ import {
   logApiErrorResponse,
   successResponse,
 } from "@/lib/api/response";
+import { logger } from "@/lib/observability/logger";
 import {
   InvalidPaymentPlanError,
   PaymentAmountMismatchError,
@@ -91,6 +92,10 @@ export async function POST(request: NextRequest) {
     }
 
     if (error instanceof PaymentAmountMismatchError) {
+      logger.warn("payment_webhook_amount_mismatch", {
+        error,
+        requestId,
+      });
       return errorResponse(
         "PAYMENT_AMOUNT_MISMATCH",
         "Payment amount does not match the order.",

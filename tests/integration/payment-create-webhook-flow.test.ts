@@ -118,6 +118,7 @@ vi.mock("@/lib/db/queries/payments", () => ({
     grossAmountIdr,
     grossAmountUsd,
     orderId,
+    paymentMethod,
     plan,
     userId,
   }: {
@@ -125,6 +126,7 @@ vi.mock("@/lib/db/queries/payments", () => ({
     grossAmountIdr: number;
     grossAmountUsd: number;
     orderId: string;
+    paymentMethod: string;
     plan: PaidPlan;
     userId: string;
   }) => {
@@ -134,7 +136,7 @@ vi.mock("@/lib/db/queries/payments", () => ({
       grossAmountUsd,
       orderId,
       paidAt: null,
-      paymentMethod: null,
+      paymentMethod,
       plan,
       snapToken: null,
       status: "PENDING" as const,
@@ -310,7 +312,7 @@ describe("payment create to webhook flow", () => {
         grossAmountIdr: 128000,
         grossAmountUsd: 8,
         orderId: createBody.data.orderId,
-        paymentMethod: "bank_transfer",
+        paymentMethod: "bca",
         plan: "PRO",
         snapToken: null,
         status: "SETTLEMENT",
@@ -321,7 +323,7 @@ describe("payment create to webhook flow", () => {
     expect(mockState.invoiceEmails).toHaveLength(1);
     expect(mockState.invoiceEmails[0]).toMatchObject({
       orderId: createBody.data.orderId,
-      paymentMethod: "bank_transfer",
+      paymentMethod: "bca",
       providerTransactionId: "paygate-transaction-1",
       to: "buyer@example.com",
     });

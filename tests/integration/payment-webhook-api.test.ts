@@ -137,7 +137,9 @@ function createWebhookPayload(
       fraud_status: "accept",
       transaction_id: "trx-1",
       transaction_status: "settlement",
+      va_numbers: [{ bank: "bca", va_number: "88001234567890" }],
     },
+    metadata: { paymentMethod: "bca" },
     order_id: "LS-123",
     paid_at: "2026-05-07T08:00:00+07:00",
     payment_type: "bank_transfer",
@@ -214,7 +216,7 @@ describe("payment webhook API", () => {
       {
         expectedStatus: "PENDING",
         orderId: "LS-123",
-        paymentMethod: "bank_transfer",
+        paymentMethod: "bca",
         status: "SETTLEMENT",
       },
     ]);
@@ -233,7 +235,7 @@ describe("payment webhook API", () => {
         grossAmountIdr: 128000,
         grossAmountUsd: 8,
         orderId: "LS-123",
-        paymentMethod: "bank_transfer",
+        paymentMethod: "bca",
         plan: "PRO",
         providerTransactionId: "paygate-transaction-1",
         to: "buyer@example.com",
@@ -272,6 +274,35 @@ describe("payment webhook API", () => {
     expect(body.data.ignored).toBe(true);
     expect(mockState.subscriptions).toEqual([]);
     expect(mockState.invoiceInputs).toEqual([]);
+  });
+
+  it("should ignore unregistered webhook payment methods and keep stored channel", async () => {
+    mockState.transaction = createTransaction({ paymentMethod: "gopay" });
+
+    const response = await POST(
+      createRequest(
+        createWebhookPayload({
+          metadata: { paymentMethod: "dragonpay" },
+          midtrans: {
+            fraud_status: "accept",
+            transaction_id: "trx-1",
+            transaction_status: "settlement",
+            va_numbers: [{ bank: "unknown", va_number: "88001234567890" }],
+          },
+          payment_method: "paypal",
+        }),
+      ),
+    );
+
+    expect(response.status).toBe(200);
+    expect(mockState.updateInputs[0]).toMatchObject({
+      paymentMethod: "gopay",
+      status: "SETTLEMENT",
+    });
+    expect(mockState.invoiceInputs[0]).toMatchObject({
+      paymentMethod: "gopay",
+      providerTransactionId: "paygate-transaction-1",
+    });
   });
 
   it("should ignore duplicate settled notifications", async () => {

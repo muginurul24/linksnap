@@ -11,6 +11,7 @@ import {
   createOrRenewSubscriptionForPayment,
 } from "@/lib/payments/subscription";
 import { invalidateSubscriptionCaches } from "@/lib/cache/invalidation";
+import { isPaymentChannelId } from "@/lib/payments/payment-channels";
 import {
   mapPayGateStatus,
   parsePayGateTimestamp,
@@ -26,14 +27,22 @@ const TERMINAL_PAYMENT_STATUSES = new Set<PaymentStatus>([
 
 type PayGateWebhookPayload = {
   amount: number;
+  bank?: string;
+  ewallet?: string;
   metadata?: Record<string, unknown>;
   midtrans?: {
+    cstore?: string;
     transaction_id?: string;
+    va_numbers?: Array<{
+      bank?: string;
+    }>;
   };
   order_id: string;
   paid_at?: string;
+  payment_method?: string;
   payment_type?: string;
   status: PayGateWebhookStatus;
+  store?: string;
   transaction_id: string;
 };
 
@@ -89,8 +98,32 @@ function getWebhookMetadataString(
   return typeof value === "string" && value.trim() ? value.trim() : null;
 }
 
-function getWebhookPaymentMethod(payload: PayGateWebhookPayload): string | null {
-  return getWebhookMetadataString(payload, "paymentMethod") ?? payload.payment_type ?? null;
+function getWebhookQrisMethod(payload: PayGateWebhookPayload): string | null {
+  return payload.payment_type === "qris" ? "qris" : null;
+}
+
+function getWebhookPaymentMethod(
+  payload: PayGateWebhookPayload,
+  transaction: PaymentTransactionForWebhook,
+): string | null {
+  const candidates = [
+    getWebhookMetadataString(payload, "paymentMethod"),
+    payload.payment_method,
+    payload.bank,
+    payload.ewallet,
+    payload.store,
+    payload.midtrans?.va_numbers?.[0]?.bank,
+    payload.midtrans?.cstore,
+    getWebhookQrisMethod(payload),
+    transaction.paymentMethod,
+  ];
+
+  return (
+    candidates.find(
+      (candidate): candidate is string =>
+        typeof candidate === "string" && isPaymentChannelId(candidate),
+    ) ?? null
+  );
 }
 
 function getWebhookProviderTransactionId(
@@ -130,11 +163,12 @@ export async function handlePayGatePaymentWebhook(
   const paidAt = statusAction.activateSubscription
     ? parsePayGateTimestamp(payload.paid_at) ?? new Date()
     : undefined;
+  const paymentMethod = getWebhookPaymentMethod(payload, transaction);
   const updatedTransaction = await updatePaymentTransactionStatus({
     expectedStatus: transaction.status,
     orderId: payload.order_id,
     paidAt,
-    paymentMethod: getWebhookPaymentMethod(payload),
+    ...(paymentMethod === null ? {} : { paymentMethod }),
     status: statusAction.status,
   });
 
@@ -150,7 +184,7 @@ export async function handlePayGatePaymentWebhook(
   if (statusAction.activateSubscription) {
     try {
       await createOrRenewSubscriptionForPayment(updatedTransaction, {
-        paymentMethod: getWebhookPaymentMethod(payload),
+        paymentMethod,
         providerTransactionId: getWebhookProviderTransactionId(payload),
       });
       await invalidateSubscriptionCaches({

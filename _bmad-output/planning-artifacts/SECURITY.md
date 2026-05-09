@@ -177,9 +177,10 @@
 
 ### SEC-12: Payment Security
 - [x] **PayGate signature verification** — HMAC-SHA256 on every webhook
-- [ ] **Amount validation server-side** — Never trust client-submitted amounts
-- [ ] **Idempotent webhooks** — Check `orderId` before processing
-- [ ] **No card data storage** — PayGate handles payment provider handoff; LinkSnap stores no card data
+- [x] **Amount validation server-side** — Webhook amount must match the local transaction amount before any subscription activation.
+- [x] **Payment method allowlist** — Checkout and webhook `paymentMethod` values must resolve to the channel registry (`bca`, `gopay`, `qris`, etc.) before storage or user-facing display.
+- [x] **Idempotent webhooks** — Terminal transaction states are ignored on replay; already-settled orders cannot activate a subscription twice.
+- [x] **No card data storage** — PayGate handles payment provider handoff; LinkSnap stores no card data, only order IDs, provider transaction IDs, status, amount, and allowlisted payment method.
 - [ ] **Webhook IP allowlist** — Restrict callbacks to PayGate infrastructure where supported
 
 ### SEC-13: Data Protection

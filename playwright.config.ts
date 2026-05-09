@@ -11,6 +11,7 @@ const paymentEmailFile = join(process.cwd(), ".e2e/payment-emails.jsonl");
 
 export default defineConfig({
   testDir: "./tests/e2e",
+  timeout: Number(process.env.E2E_TEST_TIMEOUT ?? 90_000),
   fullyParallel: false,
   retries: process.env.CI ? 2 : 0,
   workers: 1,

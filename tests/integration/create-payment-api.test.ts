@@ -32,6 +32,7 @@ type PendingTransactionInput = {
   grossAmountIdr: number;
   grossAmountUsd: number;
   orderId: string;
+  paymentMethod: string;
   plan: PaymentPlan;
   userId: string;
 };
@@ -58,6 +59,8 @@ type ApiEnvelope<T> =
   | {
       error: {
         code: string;
+        details?: unknown;
+        message: string;
       };
       success: false;
     };
@@ -152,10 +155,12 @@ vi.mock("@/lib/payments/paygate", () => {
     }
   }
   class PayGateApiError extends Error {
+    readonly details: unknown;
     readonly status: number;
 
-    constructor(status: number, message: string) {
+    constructor(status: number, message: string, details?: unknown) {
       super(message);
+      this.details = details;
       this.status = status;
     }
   }
@@ -362,6 +367,7 @@ describe("create payment API", () => {
         grossAmountIdr: 128000,
         grossAmountUsd: 8,
         orderId: body.data.orderId,
+        paymentMethod: "bca",
         plan: "PRO",
         userId: "user-1",
       },
@@ -584,7 +590,12 @@ describe("create payment API", () => {
   });
 
   it("should return provider errors when PayGate rejects the transaction", async () => {
-    mockState.payGateError = new PayGateApiError(400, "bad parameter");
+    mockState.payGateError = new PayGateApiError(400, "bad parameter", {
+      error: {
+        code: "VALIDATION_ERROR",
+        message: "Invalid charge payload.",
+      },
+    });
 
     const response = await POST(
       createRequest({
@@ -598,6 +609,40 @@ describe("create payment API", () => {
     expect(body.success).toBe(false);
     if (body.success) return;
     expect(body.error.code).toBe("PAYMENT_PROVIDER_ERROR");
+    expect(body.error.message).toBe(
+      "Payment details were rejected. Please choose another method or try again.",
+    );
     expect(mockState.pendingInputs).toHaveLength(1);
+  });
+
+  it("should return a friendly channel unavailable error", async () => {
+    mockState.payGateError = new PayGateApiError(502, "midtrans error", {
+      error: {
+        code: "MIDTRANS_ERROR",
+        message: "Payment channel is not activated.",
+      },
+    });
+
+    const response = await POST(
+      createRequest({
+        duration: "MONTHLY",
+        paymentMethod: "gopay",
+        plan: "PRO",
+      }),
+    );
+    const body = await readJson<unknown>(response);
+
+    expect(response.status).toBe(502);
+    expect(body.success).toBe(false);
+    if (body.success) return;
+    expect(body.error.code).toBe("PAYMENT_PROVIDER_ERROR");
+    expect(body.error.message).toBe(
+      "This payment method is temporarily unavailable. Please choose another method.",
+    );
+    expect(body.error.details).toMatchObject({
+      paymentMethod: "gopay",
+      providerCode: "MIDTRANS_ERROR",
+      providerStatus: 502,
+    });
   });
 });
