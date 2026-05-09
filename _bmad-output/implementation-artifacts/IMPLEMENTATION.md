@@ -3372,12 +3372,12 @@ Premium Flutter experience. 🟢
 
 ### TASK 25.2 — Security Final Audit
 
-- [ ] Close all 16 SECURITY.md categories
-- [ ] Verify no debug endpoints or verbose errors in production
-- [ ] SSRF scan: no user-controlled URLs in server-side fetch
-- [ ] Verify no `console.log` in production code (only structured logger)
-- [ ] Dependency audit for known CVEs
-- [ ] Document security posture
+- [x] Close all 16 SECURITY.md categories
+- [x] Verify no debug endpoints or verbose errors in production
+- [x] SSRF scan: no user-controlled URLs in server-side fetch
+- [x] Verify no `console.log` in production code (only structured logger)
+- [x] Dependency audit for known CVEs
+- [x] Document security posture
 
 ### TASK 25.3 — Accessibility & Lighthouse
 

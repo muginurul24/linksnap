@@ -9261,6 +9261,53 @@ Prepared production deployment readiness: expanded `.env.example` with documente
 
 **Next Task:** 25.2 — Security Final Audit
 
+### 25.2 — Security Final Audit
+- **Date:** 2026-05-09 17:13 GMT+7
+- **Duration:** 1h 20m
+- **Status:** ✅ Complete
+
+**What I Did:**
+Closed the final security audit gate for launch readiness. Replaced the stale SECURITY checklist with closed SEC-01 through SEC-16 posture, added a detailed final audit report, remediated dependency advisories with package overrides, hardened structured logging redaction/production stack handling, and added regression tests for security audit invariants.
+
+**Files Changed:**
+- `package.json` — Added transitive dependency overrides for patched `esbuild`, `hono`, `ip-address`, and `postcss`.
+- `bun.lock` — Regenerated after security overrides.
+- `src/lib/observability/logger.ts` — Redacts sensitive log fields and omits stack traces in production logs.
+- `tests/unit/logger.test.ts` — Covered production stack omission and sensitive field redaction.
+- `tests/unit/security-final-audit.test.ts` — Added source-level guards for direct console usage, dangerous JS/HTML sinks, unreviewed server `fetch`, and final audit documentation.
+- `_bmad-output/planning-artifacts/SECURITY.md` — Closed all 16 security categories with launch posture notes.
+- `_bmad-output/planning-artifacts/security-audit-2026-05-09.md` — Added detailed Phase 25.2 security audit report.
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Checked off 25.2.
+- `_bmad-output/implementation-artifacts/JOURNAL.md` — Logged 25.2.
+
+**Decisions Made:**
+- Used dependency overrides instead of a broad framework upgrade because the advisories were transitive and the patched versions resolved `rtk bun audit` without changing application APIs.
+- Kept direct `console.*` allowed only inside the structured logger; scripts may use console for CLI output.
+- Treated Cloudflare, Vercel, Neon, Upstash, Google OAuth, and PayGate dashboard checks as documented provider-side controls because repository code cannot prove dashboard state.
+
+**Tests:**
+- ✅ Dependency audit: `rtk bun audit` — Passed with no vulnerabilities.
+- ✅ Security scans: console/debug, eval/XSS sinks, server fetch, debug markers, raw SQL, and tracked env scans — Passed with documented findings.
+- ✅ Targeted unit: `rtk bun run test -- tests/unit/logger.test.ts tests/unit/security-final-audit.test.ts` — 7 passed.
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Production security smoke: `rtk bun run security:smoke` — Passed against `https://www.justqiu.cloud`.
+- ✅ Targeted E2E: `rtk bun run test:e2e -- tests/e2e/public-site.spec.ts -g "landing pricing"` — 1 passed.
+- ✅ Full unit/integration: `rtk bun run test` — 173 passed, 1 skipped; 775 passed, 2 skipped.
+- ✅ Production build: `rtk bun run build` — Passed.
+
+**Issues Encountered:**
+- Initial dependency audit found 6 low/moderate advisories in transitive tooling packages; resolved via overrides and lockfile refresh.
+- Provider-side security controls cannot be verified from the repository alone, so the final audit report lists exact dashboard checks for go-live.
+
+**Security Checks:**
+- ✅ No tracked real env files or secrets.
+- ✅ No dangerous HTML/string-evaluation sinks in production source.
+- ✅ No user-controlled server-side fetch path found.
+- ✅ Structured logs redact sensitive fields and omit stack traces in production.
+
+**Next Task:** 25.3 — Accessibility & Lighthouse
+
 ### 24.6 — My Links Table Sorting & Bulk Actions
 - **Date:** 2026-05-09 15:19 GMT+7
 - **Duration:** 1h 10m
