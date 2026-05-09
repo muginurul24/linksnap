@@ -3193,16 +3193,16 @@ Premium Flutter experience. 🟢
 
 ### TASK 23.11 — End-to-End Payment Smoke Tests
 
-- [ ] Create `tests/e2e/payment-flow-full.spec.ts`
-- [ ] Test: BCA VA full flow (select → create → checkout with VA + copy)
-- [ ] Test: GoPay full flow (select → create → checkout with wallet instructions)
-- [ ] Test: QRIS full flow (select → create → checkout with QR)
-- [ ] Test: Indomaret full flow (select → create → checkout with payment code)
-- [ ] Test: payment selector UI (grouping, search, mobile grid)
-- [ ] Test: dialog steps, back navigation, double-submit prevention
-- [ ] Test: webhook settlement → subscription activated → billing reflects new plan
-- [ ] Test: mobile viewport all flows
-- [ ] Test: already-on-plan → current plan badge, button disabled
+- [x] Create `tests/e2e/payment-flow-full.spec.ts`
+- [x] Test: BCA VA full flow (select → create → checkout with VA + copy)
+- [x] Test: GoPay full flow (select → create → checkout with wallet instructions)
+- [x] Test: QRIS full flow (select → create → checkout with QR)
+- [x] Test: Indomaret full flow (select → create → checkout with payment code)
+- [x] Test: payment selector UI (grouping, search, mobile grid)
+- [x] Test: dialog steps, back navigation, double-submit prevention
+- [x] Test: webhook settlement → subscription activated → billing reflects new plan
+- [x] Test: mobile viewport all flows
+- [x] Test: already-on-plan → current plan badge, button disabled
 
 ### 📊 Phase 23 Task Summary
 

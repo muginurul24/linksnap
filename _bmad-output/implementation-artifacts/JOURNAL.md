@@ -9088,3 +9088,43 @@ Hardened PayGate payment method handling so checkout creation stores the selecte
 - ✅ Provider errors are user-safe and do not leak raw payloads or secrets.
 
 **Next Task:** 23.11 — End-to-End Payment Smoke Tests.
+
+### 23.11 — End-to-End Payment Smoke Tests
+- **Date:** 2026-05-09 11:17 GMT+7
+- **Duration:** 0h 35m
+- **Status:** ✅ Complete
+
+**What I Did:**
+Added full PayGate smoke coverage for the upgraded multi-channel checkout flow, covering BCA VA, GoPay, QRIS, Indomaret, selector UX, mobile layout, dialog back navigation, double-submit prevention, webhook settlement, billing reflection, and already-paid plan state. Also fixed Base UI anchor-button usage surfaced during the smoke run.
+
+**Files Changed:**
+- `tests/e2e/payment-flow-full.spec.ts` — Added full channel-aware payment E2E smoke coverage.
+- `src/components/payments/payment-instructions-ewallet.tsx` — Marked wallet action links as non-native Base UI buttons.
+- `src/app/(dashboard)/analytics/page.tsx` — Marked CSV export link as non-native Base UI button.
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Checked off 23.11.
+- `_bmad-output/implementation-artifacts/JOURNAL.md` — Logged 23.11.
+
+**Decisions Made:**
+- Mocked PayGate create/status calls for deterministic checkout-channel UI coverage, then used the real local webhook endpoint for settlement-to-subscription verification.
+- Kept the settlement test database-backed so billing assertions verify real transaction/subscription persistence rather than mocked UI state.
+- Treated Base UI production warning cleanup as part of the smoke task because it was directly surfaced by payment E2E.
+
+**Tests:**
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Targeted unit: `rtk bun run test -- tests/unit/paygate-errors.test.ts tests/unit/payment-instructions.test.tsx` — 6 passed.
+- ✅ Full unit/integration: `rtk bun run test` — 162 passed, 1 skipped; 742 passed, 2 skipped.
+- ✅ Targeted E2E: `rtk bun run test:e2e -- tests/e2e/payment-flow-full.spec.ts` — 7 passed.
+- ✅ Production build: `rtk bun run build` — Passed.
+
+**Issues Encountered:**
+- E2E surfaced Base UI warnings for links rendered through `Button`; I added `nativeButton={false}` where those links are intentional anchors.
+- The smoke run still logs an existing React warning about a script tag rendered from a public-page component; it did not affect payment assertions and should be handled in the dashboard/public polish phase.
+
+**Security Checks:**
+- ✅ Payment create/status responses are not cached.
+- ✅ Webhook settlement path uses signature validation and DB-backed transaction ownership.
+- ✅ No provider secrets or raw PayGate payloads logged in tests.
+- ✅ Double-submit guard verified in browser flow.
+
+**Next Task:** Phase 24 — Dashboard UX Completion after Rafi approval.

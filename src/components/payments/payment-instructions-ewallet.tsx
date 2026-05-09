@@ -33,7 +33,10 @@ export function PaymentInstructionsEwallet({
           </div>
         </div>
         {actionUrl ? (
-          <Button render={<a href={actionUrl} rel="noreferrer" target="_blank" />}>
+          <Button
+            nativeButton={false}
+            render={<a href={actionUrl} rel="noreferrer" target="_blank" />}
+          >
             <ExternalLink className="size-4" />
             Open {channel.shortName}
           </Button>

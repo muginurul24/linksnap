@@ -128,6 +128,7 @@ function AnalyticsExportButton({
 
   return (
     <Button
+      nativeButton={false}
       render={<a download={filename} href={href} />}
       size="sm"
       variant="outline"
