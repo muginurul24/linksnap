@@ -33,18 +33,18 @@ rtk proxy bash scripts/load-test-redirect.sh --dry-run api
 Approved redirect run:
 
 ```bash
-rtk LOAD_TEST_TARGET=https://www.justqiu.cloud \
+rtk proxy env LOAD_TEST_TARGET=https://www.justqiu.cloud \
   LOAD_TEST_SLUG=existing-cached-slug \
-  proxy bash scripts/load-test-redirect.sh run redirect
+  bash scripts/load-test-redirect.sh run redirect
 ```
 
 Approved analytics/payment run:
 
 ```bash
-rtk LOAD_TEST_TARGET=https://www.justqiu.cloud \
+rtk proxy env LOAD_TEST_TARGET=https://www.justqiu.cloud \
   LOAD_TEST_SESSION_COOKIE='next-auth.session-token=...' \
   LOAD_TEST_LINK_ID='owned-link-id' \
-  proxy bash scripts/load-test-redirect.sh run api
+  bash scripts/load-test-redirect.sh run api
 ```
 
 ## Results

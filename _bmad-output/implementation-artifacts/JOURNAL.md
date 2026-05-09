@@ -9218,6 +9218,50 @@ Added a guarded Artillery load-test harness for redirect, analytics, payment cre
 
 **Next Task:** 25.6 — Database Backup & Recovery
 
+### 25.6 — Database Backup & Recovery
+- **Date:** 2026-05-09 18:48 GMT+7
+- **Duration:** 45m
+- **Status:** ✅ Complete
+
+**What I Did:**
+Documented LinkSnap disaster recovery around Neon instant restore/PITR and supplemental `pg_dump` backups. Added a guarded manual backup script, ignored local backup artifacts, generated the initial Drizzle migration baseline from the current schema, and documented Neon-safe restore flags.
+
+**Files Changed:**
+- `scripts/db-backup-manual.sh` — Added unpooled-connection `pg_dump` backup helper with dry-run validation, lock timeout, and low compression.
+- `_bmad-output/planning-artifacts/disaster-recovery.md` — Added Neon backup strategy, restore, redeploy, contact, and `DATABASE_URL` rotation procedures.
+- `src/lib/db/migrations/0000_omniscient_tomorrow_man.sql` — Added generated Drizzle schema baseline.
+- `src/lib/db/migrations/meta/_journal.json` — Added Drizzle migration journal metadata.
+- `src/lib/db/migrations/meta/0000_snapshot.json` — Added Drizzle schema snapshot metadata.
+- `.gitignore` — Ignored local backup dump output.
+- `_bmad-output/implementation-artifacts/IMPLEMENTATION.md` — Checked off 25.6.
+- `_bmad-output/implementation-artifacts/JOURNAL.md` — Logged 25.6.
+
+**Decisions Made:**
+- Used Neon PITR as the primary recovery mechanism and `pg_dump -Fc` as supplemental long-retention/export backup.
+- Rejected pooled `-pooler` connection strings in the backup script because Neon recommends unpooled connections for `pg_dump`.
+- Generated a baseline Drizzle migration because the repo previously had a schema but no migration directory.
+- Documented `pg_restore --no-owner --no-tablespaces --single-transaction` for safer restores into Neon targets.
+
+**Tests:**
+- ✅ Drizzle generate: `rtk bun run db:generate` — Created initial migration baseline.
+- ✅ Backup dry-run: `rtk proxy env BACKUP_DATABASE_URL=... bash scripts/db-backup-manual.sh --dry-run`.
+- ✅ Typecheck: `rtk bun run typecheck`.
+- ✅ Lint: `rtk bun run lint`.
+- ✅ Unit/integration: `rtk bun run test` — 175 passed, 1 skipped; 781 tests passed, 2 skipped.
+- ✅ Build: `rtk bun run build`.
+
+**Issues Encountered:**
+- No existing migration directory was present, so 25.6 created the initial baseline instead of comparing against prior migration history.
+- `rtk` did not accept inline env assignment in this shell, so new operator docs use `rtk proxy env ...` for backup and load-test examples.
+
+**Security Checks:**
+- ✅ Backup script refuses pooled URLs and does not echo connection strings.
+- ✅ Backup outputs are ignored under `/backups`.
+- ✅ Restore procedure requires validation before rotating production `DATABASE_URL`.
+- ✅ No secrets or database URLs committed.
+
+**Next Task:** 25.7 — Documentation & README
+
 ### 24.9 — Global Cross-Navigation Polish
 - **Date:** 2026-05-09 15:45 GMT+7
 - **Duration:** 45m
