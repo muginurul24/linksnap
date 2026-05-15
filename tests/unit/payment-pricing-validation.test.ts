@@ -31,7 +31,7 @@ describe("payment validation and pricing", () => {
     expect(
       createPaymentSchema.safeParse({
         duration: "MONTHLY",
-        paymentMethod: "bca",
+        paymentMethod: "bsi",
         plan: "PRO",
       }).success,
     ).toBe(true);

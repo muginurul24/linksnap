@@ -81,7 +81,7 @@ const mockState = vi.hoisted(() => ({
     data: {
       amount: 128000,
       midtrans: {
-        va_numbers: [{ bank: "bca", va_number: "88001234567890" }],
+          va_numbers: [{ bank: "bsi", va_number: "88001234567890" }],
       },
       order_id: "LS-1746691200000-abc123def456",
       payment_type: "bank_transfer",
@@ -290,7 +290,7 @@ describe("create payment API", () => {
       data: {
         amount: 128000,
         midtrans: {
-          va_numbers: [{ bank: "bca", va_number: "88001234567890" }],
+          va_numbers: [{ bank: "bsi", va_number: "88001234567890" }],
         },
         order_id: "LS-1746691200000-abc123def456",
         payment_type: "bank_transfer",

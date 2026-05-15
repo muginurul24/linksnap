@@ -9460,6 +9460,7 @@ Investigated the production checkout error on `www.justqiu.cloud` and confirmed 
 - `tests/integration/payment-webhook-api.test.ts` — Covers pending webhook payloads with `paid_at: null` and active BSI channel metadata.
 - `tests/unit/paygate-webhook.test.ts` — Covers null timestamp parsing.
 - `tests/integration/payment-create-webhook-flow.test.ts` — Keeps the default payment flow aligned to QRIS Dinamis GoPay.
+- `tests/unit/invoice-email.test.tsx`, `tests/unit/paygate-client.test.ts`, `tests/unit/payment-pricing-validation.test.ts`, `tests/unit/paygate-errors.test.ts`, `tests/integration/create-payment-api.test.ts`, `tests/e2e/payment-flow-full.spec.ts` — Removed stale BCA fixture expectations so payment tests use active production channels.
 - `_bmad-output/implementation-artifacts/JOURNAL.md` — Logged this production follow-up.
 
 **Decisions Made:**
@@ -9469,6 +9470,7 @@ Investigated the production checkout error on `www.justqiu.cloud` and confirmed 
 **Tests:**
 - ✅ Targeted webhook: `rtk bun run test -- tests/unit/paygate-webhook.test.ts tests/integration/payment-webhook-api.test.ts tests/integration/payment-create-webhook-flow.test.ts` — Passed.
 - ✅ Payment suite: `rtk bun run test -- tests/unit/paygate-client.test.ts tests/unit/paygate-multi-channel.test.ts tests/unit/payment-channels.test.ts tests/unit/payment-method-selector.test.tsx tests/unit/payment-instructions.test.tsx tests/integration/create-payment-api.test.ts tests/unit/paygate-webhook.test.ts tests/integration/payment-webhook-api.test.ts tests/integration/payment-create-webhook-flow.test.ts` — Passed.
+- ✅ Full unit/integration: `rtk bun run test` — 176 passed, 1 skipped; 787 passed, 2 skipped.
 - ✅ Typecheck: `rtk bun run typecheck` — Passed.
 - ✅ Lint: `rtk bun run lint` — Passed.
 

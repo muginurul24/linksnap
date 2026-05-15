@@ -486,7 +486,7 @@ test("should activate subscription from webhook and show billing plan", async ({
     expect(response.ok()).toBe(true);
     await page.goto("/settings/billing");
     await expect(page.getByRole("main").getByText("Pro Plan").first()).toBeVisible();
-    await expect(page.getByText("BCA").first()).toBeVisible();
+    await expect(page.getByText("BSI").first()).toBeVisible();
   } finally {
     await cleanupPaymentSmokeState(email, userId);
   }

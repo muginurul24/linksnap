@@ -15,7 +15,7 @@ describe("payment invoice email", () => {
       grossAmountUsd: 8,
       orderId: "LS-123",
       paidAt: new Date("2026-05-07T01:00:00.000Z"),
-      paymentMethod: "bca",
+      paymentMethod: "bsi",
       periodEnd: new Date("2026-06-07T01:00:00.000Z"),
       periodStart: new Date("2026-05-07T01:00:00.000Z"),
       plan: "PRO",
@@ -25,7 +25,7 @@ describe("payment invoice email", () => {
     expect(props).toMatchObject({
       duration: "Monthly",
       orderId: "LS-123",
-      paymentMethod: "BCA Virtual Account",
+      paymentMethod: "BSI Virtual Account",
       plan: "PRO",
       transactionId: "paygate-transaction-1",
     });
@@ -36,7 +36,7 @@ describe("payment invoice email", () => {
 
     const markup = renderToStaticMarkup(<PaymentInvoiceEmail {...props} />);
     expect(markup).toContain("LinkSnap invoice");
-    expect(markup).toContain("BCA Virtual Account");
+    expect(markup).toContain("BSI Virtual Account");
     expect(markup).toContain("paygate-transaction-1");
     expect(markup).toContain("LS-123");
     expect(markup).toContain("Subscription period");
@@ -44,7 +44,7 @@ describe("payment invoice email", () => {
     const text = buildPaymentInvoiceEmailText(props);
     expect(text).toContain("Amount:");
     expect(text).toContain("128.000");
-    expect(text).toContain("Payment method: BCA Virtual Account");
+    expect(text).toContain("Payment method: BSI Virtual Account");
     expect(text).toContain("Transaction ID: paygate-transaction-1");
   });
 

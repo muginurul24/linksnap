@@ -8,13 +8,13 @@ describe("PayGate friendly errors", () => {
       new PayGateApiError(400, "Invalid charge payload.", {
         error: { code: "VALIDATION_ERROR" },
       }),
-      "bca",
+      "bsi",
     );
     expect(validation.message).toBe(
       "Payment details were rejected. Please choose another method or try again.",
     );
     expect(validation.details).toMatchObject({
-      paymentMethod: "bca",
+      paymentMethod: "bsi",
       providerCode: "VALIDATION_ERROR",
       providerStatus: 400,
     });

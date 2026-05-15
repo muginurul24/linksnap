@@ -37,7 +37,7 @@ function createPayGateResponse(orderId = "LS-123") {
         fraud_status: "accept",
         transaction_id: "trx-1",
         transaction_status: "pending",
-        va_numbers: [{ bank: "bca", va_number: "88001234567890" }],
+        va_numbers: [{ bank: "bsi", va_number: "88001234567890" }],
       },
       order_id: orderId,
       payment_type: "bank_transfer",
@@ -102,7 +102,7 @@ describe("PayGate client", () => {
     });
 
     expect(transaction.data.midtrans?.va_numbers).toEqual([
-      { bank: "bca", va_number: "88001234567890" },
+      { bank: "bsi", va_number: "88001234567890" },
     ]);
     expect(requests).toHaveLength(1);
     expect(requests[0]?.url).toBe("https://paygate.test/v1/transactions/charge");
