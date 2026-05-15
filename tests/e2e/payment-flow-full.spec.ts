@@ -17,10 +17,10 @@ const testIp = "198.51.100.31";
 type ChannelSmokeCase = {
   amount: number;
   expectedText: string;
-  method: "bca" | "gopay" | "indomaret" | "qris";
+  method: "bsi" | "gopay" | "qris_gopay";
   name: string;
   orderSuffix: string;
-  paymentType: "bank_transfer" | "cstore" | "ewallet" | "qris";
+  paymentType: "bank_transfer" | "ewallet" | "qris";
   search: string;
   selectName: string;
 };
@@ -29,12 +29,12 @@ const channelSmokeCases: ChannelSmokeCase[] = [
   {
     amount: 128000,
     expectedText: "88001234567890",
-    method: "bca",
-    name: "BCA Virtual Account",
-    orderSuffix: "bca111111111",
+    method: "bsi",
+    name: "BSI Virtual Account",
+    orderSuffix: "bsi111111111",
     paymentType: "bank_transfer",
-    search: "bca",
-    selectName: "Select BCA Virtual Account",
+    search: "bsi",
+    selectName: "Select BSI Virtual Account",
   },
   {
     amount: 128000,
@@ -49,22 +49,12 @@ const channelSmokeCases: ChannelSmokeCase[] = [
   {
     amount: 128000,
     expectedText: "000201010212",
-    method: "qris",
-    name: "QRIS",
+    method: "qris_gopay",
+    name: "QRIS Dinamis GoPay",
     orderSuffix: "c0ffee000001",
     paymentType: "qris",
     search: "qris",
-    selectName: "Select QRIS",
-  },
-  {
-    amount: 128000,
-    expectedText: "1234567890",
-    method: "indomaret",
-    name: "Indomaret",
-    orderSuffix: "1d0a1d0a1d0a",
-    paymentType: "cstore",
-    search: "indomaret",
-    selectName: "Select Indomaret",
+    selectName: "Select QRIS Dinamis GoPay",
   },
 ];
 
@@ -139,32 +129,19 @@ function createPaymentResponse(caseData: ChannelSmokeCase, orderId: string) {
     category:
       caseData.paymentType === "bank_transfer"
         ? "bank_transfer"
-        : caseData.paymentType === "cstore"
-          ? "convenience_store"
-          : caseData.paymentType,
+        : caseData.paymentType,
     categoryLabel:
       caseData.paymentType === "bank_transfer"
         ? "Bank Transfer"
-        : caseData.paymentType === "cstore"
-          ? "Convenience Store"
-          : caseData.paymentType === "ewallet"
-            ? "E-Wallet"
-            : "QRIS",
+        : caseData.paymentType === "ewallet"
+          ? "E-Wallet"
+          : "QRIS",
     estimatedProcessingTime:
-      caseData.paymentType === "bank_transfer"
-        ? "1-2 hours"
-        : caseData.paymentType === "cstore"
-          ? "Up to 1 hour"
-          : "Instant",
+      caseData.paymentType === "bank_transfer" ? "1-2 hours" : "Instant",
     id: caseData.method,
     instructions: "Complete the payment before it expires.",
     name: caseData.name,
-    shortName:
-      caseData.method === "bca"
-        ? "BCA"
-        : caseData.method === "indomaret"
-          ? "Indomaret"
-          : caseData.name,
+    shortName: caseData.method === "bsi" ? "BSI" : caseData.name,
   };
 
   return {
@@ -182,17 +159,17 @@ function createPaymentResponse(caseData: ChannelSmokeCase, orderId: string) {
       channel,
       expiresAt: "2026-05-09T05:00:00.000Z",
       orderId,
-      paymentCode: caseData.method === "indomaret" ? "1234567890" : null,
+      paymentCode: null,
       paymentMethod: caseData.method,
       paymentType: caseData.paymentType,
-      qrString: caseData.method === "qris" ? "000201010212" : null,
-      qrUrl: caseData.method === "qris" ? "https://pay.example/qris.png" : null,
+      qrString: caseData.method === "qris_gopay" ? "000201010212" : null,
+      qrUrl: caseData.method === "qris_gopay" ? "https://pay.example/qris.png" : null,
       redirectUrl: `/checkout/success?order_id=${orderId}`,
       status: "pending",
       transactionId: "paygate-transaction-1",
       vaNumbers:
-        caseData.method === "bca"
-          ? [{ bank: "bca", va_number: "88001234567890" }]
+        caseData.method === "bsi"
+          ? [{ bank: "bsi", va_number: "88001234567890" }]
           : [],
     },
     success: true,
@@ -210,13 +187,10 @@ function createPaymentDetailResponse(caseData: ChannelSmokeCase, orderId: string
       currency: "IDR",
       localStatus: "PENDING",
       midtrans: {
-        ...(caseData.method === "bca"
-          ? { va_numbers: [{ bank: "bca", va_number: "88001234567890" }] }
+        ...(caseData.method === "bsi"
+          ? { va_numbers: [{ bank: "bsi", va_number: "88001234567890" }] }
           : {}),
-        ...(caseData.method === "indomaret"
-          ? { cstore: "indomaret", payment_code: "1234567890" }
-          : {}),
-        ...(caseData.method === "qris"
+        ...(caseData.method === "qris_gopay"
           ? {
               qr_string: "000201010212",
               qr_url: "https://pay.example/qris.png",
@@ -224,11 +198,11 @@ function createPaymentDetailResponse(caseData: ChannelSmokeCase, orderId: string
           : {}),
       },
       order_id: orderId,
-      payment_code: caseData.method === "indomaret" ? "1234567890" : null,
+      payment_code: null,
       payment_method: caseData.method,
       payment_type: caseData.paymentType,
-      qr_string: caseData.method === "qris" ? "000201010212" : null,
-      qr_url: caseData.method === "qris" ? "https://pay.example/qris.png" : null,
+      qr_string: caseData.method === "qris_gopay" ? "000201010212" : null,
+      qr_url: caseData.method === "qris_gopay" ? "https://pay.example/qris.png" : null,
       status: "pending",
       transaction_id: "paygate-transaction-1",
     },
@@ -332,7 +306,7 @@ async function createPendingPaymentTransaction({
       grossAmountIdr: 128000,
       grossAmountUsd: 8,
       orderId,
-      paymentMethod: "bca",
+      paymentMethod: "bsi",
       plan: "PRO",
       status: "PENDING",
       userId,
@@ -484,16 +458,16 @@ test("should activate subscription from webhook and show billing plan", async ({
       amount: 128000,
       currency: "IDR",
       event: "transaction.updated",
-      metadata: { paymentMethod: "bca" },
+      metadata: { paymentMethod: "bsi" },
       midtrans: {
         fraud_status: "accept",
         transaction_id: "midtrans-trx-1",
         transaction_status: "settlement",
-        va_numbers: [{ bank: "bca", va_number: "88001234567890" }],
+        va_numbers: [{ bank: "bsi", va_number: "88001234567890" }],
       },
       order_id: orderId,
       paid_at: timestamp,
-      payment_method: "bca",
+      payment_method: "bsi",
       payment_type: "bank_transfer",
       status: "paid",
       store_id: "store-1",

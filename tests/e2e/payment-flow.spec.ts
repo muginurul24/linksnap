@@ -198,7 +198,7 @@ test("should start billing upgrade from the Pro button and redirect to checkout"
       expect(request.headers()["x-requested-with"]).toBe("XMLHttpRequest");
       expect(payload).toMatchObject({
         duration: "MONTHLY",
-        paymentMethod: "bca",
+        paymentMethod: "qris_gopay",
         plan: "PRO",
       });
 
@@ -206,10 +206,14 @@ test("should start billing upgrade from the Pro button and redirect to checkout"
         body: JSON.stringify({
           data: {
             orderId,
+            paymentMethod: "qris_gopay",
+            paymentType: "qris",
+            qrString: "000201010212",
+            qrUrl: "https://pay.example/qris.png",
             redirectUrl: `${baseURL}/checkout/success?order_id=${orderId}`,
             status: "pending",
             transactionId: "paygate-transaction-1",
-            vaNumbers: [{ bank: "bca", va_number: "88001234567890" }],
+            vaNumbers: [],
           },
           success: true,
         }),
@@ -225,11 +229,14 @@ test("should start billing upgrade from the Pro button and redirect to checkout"
             currency: "IDR",
             localStatus: "PENDING",
             midtrans: {
-              va_numbers: [{ bank: "bca", va_number: "88001234567890" }],
+              qr_string: "000201010212",
+              qr_url: "https://pay.example/qris.png",
             },
             order_id: orderId,
-            payment_method: "bca",
-            payment_type: "bank_transfer",
+            payment_method: "qris_gopay",
+            payment_type: "qris",
+            qr_string: "000201010212",
+            qr_url: "https://pay.example/qris.png",
             status: "pending",
             transaction_id: "paygate-transaction-1",
           },
@@ -250,7 +257,7 @@ test("should start billing upgrade from the Pro button and redirect to checkout"
       page.getByRole("region", { name: "Payment method" }),
     ).toBeVisible();
     await expect(
-      page.getByRole("button", { name: "Select BCA Virtual Account" }),
+      page.getByRole("button", { name: "Select QRIS Dinamis GoPay" }),
     ).toHaveAttribute("aria-pressed", "true");
     await page.getByRole("button", { name: "Review upgrade" }).click();
     await expect(page.getByText("Summary")).toBeVisible();
@@ -276,7 +283,7 @@ test("should start billing upgrade from the Pro button and redirect to checkout"
     );
     expect((await paymentDetailsResponsePromise).ok()).toBe(true);
     await expect(page.getByText("Checkout complete", { exact: true })).toBeVisible();
-    await expect(page.getByText("88001234567890")).toBeVisible();
+    await expect(page.getByText("000201010212")).toBeVisible();
     await expect(
       page.getByText("Payment status refreshes every 10 seconds after payment."),
     ).toBeVisible();

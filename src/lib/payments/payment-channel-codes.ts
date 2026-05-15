@@ -1,25 +1,20 @@
 export const PAYGATE_BANK_CODES = [
-  "bca",
   "bni",
   "bri",
+  "bsi",
   "mandiri",
   "permata",
   "cimb",
-  "danamon",
 ] as const;
 
-export const PAYGATE_EWALLET_CODES = [
-  "gopay",
-  "ovo",
-  "dana",
-  "shopeepay",
-  "linkaja",
-] as const;
+export const PAYGATE_EWALLET_CODES = ["gopay"] as const;
+export const PAYGATE_QRIS_CODES = ["qris_gopay"] as const;
 
-export const PAYGATE_CSTORE_CODES = ["indomaret", "alfamart"] as const;
+export const PAYGATE_CSTORE_CODES = [] as const;
 
 export type BankCode = (typeof PAYGATE_BANK_CODES)[number];
 export type EwalletCode = (typeof PAYGATE_EWALLET_CODES)[number];
+export type QrisCode = (typeof PAYGATE_QRIS_CODES)[number];
 export type CstoreCode = (typeof PAYGATE_CSTORE_CODES)[number];
 
 export type PayGatePaymentType =
@@ -32,7 +27,7 @@ export type PaymentChannelCode =
   | BankCode
   | CstoreCode
   | EwalletCode
-  | "qris";
+  | QrisCode;
 
 export type BankTransfer = {
   bank: BankCode;
@@ -47,7 +42,8 @@ export type Ewallet = {
 };
 
 export type Qris = {
-  paymentMethod: "qris";
+  acquirer: "gopay";
+  paymentMethod: QrisCode;
   paymentType: "qris";
 };
 

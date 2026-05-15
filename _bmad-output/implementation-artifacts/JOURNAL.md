@@ -10075,3 +10075,51 @@ Closed the remaining 23.10 quality gate by hardening transient Redis/Neon behavi
 - ✅ No secrets or raw provider payloads added to logs.
 
 **Next Task:** Phase 24 — Dashboard UX Completion after Rafi approval.
+
+### 23.12 Follow-up — Production Channel Alignment & LinkSnap Integration
+- **Date:** 2026-05-15 07:40 GMT+7
+- **Duration:** 3 hours 0 minutes
+- **Status:** ✅ Complete
+
+**What I Did:**
+Aligned LinkSnap with the live PayGate production channel matrix and treated `qris_gopay` as a distinct QRIS Dinamis GoPay channel, separate from `gopay`. Updated the checkout creation, payment selector, success page, webhook fallback logic, and payment instructions to carry the explicit channel identity end to end, then verified the result against the live production channel probe set.
+
+**Files Changed:**
+- `src/lib/payments/payment-channel-codes.ts` — Added explicit channel constants so `qris_gopay` stays separate from `gopay`.
+- `src/lib/payments/payment-channels.ts` — Rebuilt the registry around active production channels and QRIS Dinamis GoPay metadata.
+- `src/lib/payments/paygate.ts` — Updated payload resolution so QRIS flows map to GoPay acquirer data without collapsing into e-wallet handling.
+- `src/app/api/v1/payments/create/route.ts` — Validates and forwards the selected payment channel explicitly.
+- `src/app/(marketing)/checkout/success/checkout-status-client.tsx` — Resolves QRIS and GoPay checkout states through distinct channel IDs.
+- `src/lib/payments/paygate-webhook-handler.ts` — Persists only allowlisted payment channel IDs from PayGate callbacks.
+- `src/components/payments/payment-method-selector.tsx` — Defaults checkout selection to the active production QRIS Dinamis GoPay channel.
+- `src/components/payments/upgrade-dialog.tsx` — Keeps the upgrade flow aligned with the new payment selector defaults.
+- `tests/unit/payment-channels.test.ts` — Covered channel registry and QRIS/GoPay separation.
+- `tests/unit/paygate-client.test.ts` — Covered PayGate payload mapping for the QRIS path.
+- `tests/unit/paygate-multi-channel.test.ts` — Covered multi-channel payload construction.
+- `tests/unit/payment-method-selector.test.tsx` — Covered selector defaults and channel grouping.
+- `tests/unit/payment-instructions.test.tsx` — Covered channel-specific instructions.
+- `tests/integration/create-payment-api.test.ts` — Covered create-payment request/response behavior for production channels.
+- `tests/e2e/payment-flow.spec.ts` — Covered the upgraded payment flow.
+- `tests/e2e/payment-flow-full.spec.ts` — Covered the end-to-end payment smoke path.
+- `_bmad-output/implementation-artifacts/JOURNAL.md` — Logged this follow-up entry.
+
+**Decisions Made:**
+- Used `qris_gopay` as the explicit QRIS channel ID so it cannot be mistaken for the GoPay e-wallet path.
+- Kept the payment selector and checkout fallback constrained to active production channels instead of exposing inactive methods.
+- Preserved server-side validation so user input never reaches PayGate unchecked.
+
+**Tests:**
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+- ✅ Targeted unit/integration: `rtk bun run test -- tests/unit/paygate-client.test.ts tests/unit/paygate-multi-channel.test.ts tests/unit/payment-channels.test.ts tests/unit/payment-method-selector.test.tsx tests/unit/payment-instructions.test.tsx tests/integration/create-payment-api.test.ts` — Passed.
+- ✅ Production channel probe: BSI, CIMB Niaga, QRIS Dinamis GoPay, GoPay, and Permata all returned valid production charge/expire results.
+
+**Issues Encountered:**
+- No new code issues after the channel split; the remaining production prerequisite outside the app is still the inactive BCA channel on the merchant account.
+
+**Security Checks:**
+- ✅ Channel selection remains allowlisted server-side.
+- ✅ QRIS and GoPay are persisted as distinct payment methods in metadata and webhook handling.
+- ✅ No provider tokens or raw payloads were introduced in client code.
+
+**Next Task:** 25.11 — Final Quality Gate & Go-Live

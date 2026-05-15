@@ -128,22 +128,14 @@ vi.mock("@/lib/db/queries/payments", () => ({
 
 vi.mock("@/lib/payments/paygate", () => {
   const bankMethods = new Set([
-    "bca",
     "bni",
     "bri",
+    "bsi",
     "cimb",
-    "danamon",
     "mandiri",
     "permata",
   ]);
-  const ewalletMethods = new Set([
-    "dana",
-    "gopay",
-    "linkaja",
-    "ovo",
-    "shopeepay",
-  ]);
-  const cstoreMethods = new Set(["alfamart", "indomaret"]);
+  const ewalletMethods = new Set(["gopay"]);
 
   class PayGateConfigurationError extends Error {}
   class PayGateUnsupportedChannelError extends Error {
@@ -166,14 +158,13 @@ vi.mock("@/lib/payments/paygate", () => {
   }
 
   function getMockPaymentMethod(input: PayGateInput): string {
-    return input.paymentMethod ?? input.bank ?? input.ewallet ?? input.store ?? "bca";
+    return input.paymentMethod ?? input.bank ?? input.ewallet ?? input.store ?? "qris_gopay";
   }
 
   function getMockPaymentType(method: string): string {
     if (bankMethods.has(method)) return "bank_transfer";
     if (ewalletMethods.has(method)) return "ewallet";
-    if (cstoreMethods.has(method)) return "cstore";
-    if (method === "qris") return "qris";
+    if (method === "qris_gopay") return "qris";
 
     throw new PayGateUnsupportedChannelError(method);
   }
@@ -208,7 +199,7 @@ vi.mock("@/lib/payments/paygate", () => {
       };
     }
 
-    if (method === "qris") {
+    if (method === "qris_gopay") {
       return {
         midtrans: {
           qr_string: "000201010212",
@@ -320,7 +311,7 @@ describe("create payment API", () => {
     restoreEnv("NEXT_PUBLIC_APP_URL", previousPublicAppUrl);
   });
 
-  it("should create a PayGate bank transfer transaction for a paid plan", async () => {
+  it("should create a PayGate QRIS GoPay transaction for a paid plan by default", async () => {
     const response = await POST(
       createRequest({
         duration: "MONTHLY",
@@ -347,15 +338,17 @@ describe("create payment API", () => {
 
     expect(body.data).toMatchObject({
       channel: {
-        id: "bca",
-        name: "BCA Virtual Account",
+        id: "qris_gopay",
+        name: "QRIS Dinamis GoPay",
       },
-      paymentMethod: "bca",
-      paymentType: "bank_transfer",
+      paymentMethod: "qris_gopay",
+      paymentType: "qris",
+      qrString: "000201010212",
+      qrUrl: "https://pay.example/qris.png",
       redirectUrl: expect.stringContaining("/checkout/success?order_id="),
       status: "pending",
       transactionId: "paygate-transaction-1",
-      vaNumbers: [{ bank: "bca", va_number: "88001234567890" }],
+      vaNumbers: [],
     });
     expect(body.data.orderId).toMatch(/^LS-\d+-[a-f0-9]{12}$/);
     expect(mockState.rateLimitOptions).toEqual([
@@ -367,14 +360,13 @@ describe("create payment API", () => {
         grossAmountIdr: 128000,
         grossAmountUsd: 8,
         orderId: body.data.orderId,
-        paymentMethod: "bca",
+        paymentMethod: "qris_gopay",
         plan: "PRO",
         userId: "user-1",
       },
     ]);
     expect(mockState.payGateInputs).toEqual([
       {
-        bank: "bca",
         callbackUrl: "https://www.justqiu.cloud/api/v1/payments/webhook",
         customer: {
           email: "buyer@example.com",
@@ -384,13 +376,13 @@ describe("create payment API", () => {
         grossAmountIdr: 128000,
         metadata: {
           duration: "MONTHLY",
-          paymentMethod: "bca",
-          paymentType: "bank_transfer",
+          paymentMethod: "qris_gopay",
+          paymentType: "qris",
           plan: "PRO",
           source: "linksnap",
         },
         orderId: body.data.orderId,
-        paymentMethod: "bca",
+        paymentMethod: "qris_gopay",
         plan: "PRO",
       },
     ]);
@@ -398,14 +390,36 @@ describe("create payment API", () => {
 
   it.each([
     {
-      channelName: "BNI Virtual Account",
-      extraInput: { bank: "bni", paymentMethod: "bni" },
-      method: "bni",
+      channelName: "BSI Virtual Account",
+      extraInput: { bank: "bsi", paymentMethod: "bsi" },
+      method: "bsi",
       paymentType: "bank_transfer",
       responseFields: {
         paymentCode: null,
         qrUrl: null,
-        vaNumbers: [{ bank: "bni", va_number: "88001234567890" }],
+        vaNumbers: [{ bank: "bsi", va_number: "88001234567890" }],
+      },
+    },
+    {
+      channelName: "CIMB Niaga Virtual Account",
+      extraInput: { bank: "cimb", paymentMethod: "cimb" },
+      method: "cimb",
+      paymentType: "bank_transfer",
+      responseFields: {
+        paymentCode: null,
+        qrUrl: null,
+        vaNumbers: [{ bank: "cimb", va_number: "88001234567890" }],
+      },
+    },
+    {
+      channelName: "Permata Virtual Account",
+      extraInput: { bank: "permata", paymentMethod: "permata" },
+      method: "permata",
+      paymentType: "bank_transfer",
+      responseFields: {
+        paymentCode: null,
+        qrUrl: null,
+        vaNumbers: [{ bank: "permata", va_number: "88001234567890" }],
       },
     },
     {
@@ -426,24 +440,14 @@ describe("create payment API", () => {
       },
     },
     {
-      channelName: "QRIS",
-      extraInput: { paymentMethod: "qris" },
-      method: "qris",
+      channelName: "QRIS Dinamis GoPay",
+      extraInput: { paymentMethod: "qris_gopay" },
+      method: "qris_gopay",
       paymentType: "qris",
       responseFields: {
         paymentCode: null,
         qrString: "000201010212",
         qrUrl: "https://pay.example/qris.png",
-      },
-    },
-    {
-      channelName: "Indomaret",
-      extraInput: { paymentMethod: "indomaret", store: "indomaret" },
-      method: "indomaret",
-      paymentType: "cstore",
-      responseFields: {
-        paymentCode: "1234567890",
-        qrUrl: null,
       },
     },
   ])(

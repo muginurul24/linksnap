@@ -41,7 +41,7 @@ type UpgradeDialogProps = {
 };
 
 const STEP_ORDER: UpgradeStep[] = ["plan", "method", "confirm", "processing"];
-const DEFAULT_CHANNEL = getChannelById("bca");
+const DEFAULT_CHANNEL = getChannelById("qris_gopay");
 
 export function getUpgradePlanLabel(plan: PaidPlan): string {
   return plan === "BUSINESS" ? "Business" : "Pro";
@@ -68,7 +68,7 @@ function shouldConfirmClose(step: UpgradeStep): boolean {
 
 function getDefaultChannel(): PaymentChannel {
   if (!DEFAULT_CHANNEL) {
-    throw new Error("Default BCA payment channel is not configured.");
+    throw new Error("Default QRIS GoPay payment channel is not configured.");
   }
 
   return DEFAULT_CHANNEL;

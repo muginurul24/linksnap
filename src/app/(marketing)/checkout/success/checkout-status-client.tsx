@@ -139,12 +139,29 @@ function getPaymentActions(transaction: PaymentLookupData): PayGatePaymentAction
   return transaction.actions ?? transaction.midtrans?.actions ?? [];
 }
 
+function getActionUrl(
+  transaction: PaymentLookupData,
+  predicate: (action: PayGatePaymentAction) => boolean,
+): string | null {
+  return getPaymentActions(transaction).find((action) => action.url && predicate(action))
+    ?.url ?? null;
+}
+
 function getPaymentCode(transaction: PaymentLookupData): string | null {
   return transaction.payment_code ?? transaction.midtrans?.payment_code ?? null;
 }
 
 function getQrUrl(transaction: PaymentLookupData): string | null {
-  return transaction.qr_url ?? transaction.midtrans?.qr_url ?? null;
+  return (
+    transaction.qr_url ??
+    transaction.midtrans?.qr_url ??
+    getActionUrl(transaction, (action) => {
+      const name = action.name?.toLowerCase() ?? "";
+      const type = action.type?.toLowerCase() ?? "";
+
+      return name.includes("qr") || type.includes("qr");
+    })
+  );
 }
 
 function getQrString(transaction: PaymentLookupData): string | null {
@@ -156,7 +173,7 @@ function getPaymentChannelId(transaction: PaymentLookupData): string {
 
   const paymentType = transaction.payment_type.toLowerCase();
   if (paymentType === "bank_transfer") {
-    return getVaNumber(transaction)?.bank.toLowerCase() ?? "bca";
+    return getVaNumber(transaction)?.bank.toLowerCase() ?? "bni";
   }
 
   if (paymentType === "cstore") {
@@ -167,7 +184,7 @@ function getPaymentChannelId(transaction: PaymentLookupData): string {
     );
   }
 
-  if (paymentType === "qris") return "qris";
+  if (paymentType === "qris") return "qris_gopay";
 
   return paymentType;
 }

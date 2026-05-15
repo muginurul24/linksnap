@@ -1,12 +1,12 @@
 import {
   PAYGATE_BANK_CODES,
-  PAYGATE_CSTORE_CODES,
   PAYGATE_EWALLET_CODES,
+  PAYGATE_QRIS_CODES,
   type BankCode,
-  type CstoreCode,
   type EwalletCode,
   type PayGatePaymentType,
   type PaymentChannelCode,
+  type QrisCode,
 } from "@/lib/payments/payment-channel-codes";
 
 export type PaymentChannelCategory =
@@ -74,26 +74,23 @@ export const PAYMENT_CHANNEL_CATEGORY_COLORS: Record<
 };
 
 const BANK_NAMES: Record<BankCode, { name: string; shortName: string }> = {
-  bca: { name: "BCA Virtual Account", shortName: "BCA" },
   bni: { name: "BNI Virtual Account", shortName: "BNI" },
   bri: { name: "BRI Virtual Account", shortName: "BRI" },
+  bsi: { name: "BSI Virtual Account", shortName: "BSI" },
   cimb: { name: "CIMB Niaga Virtual Account", shortName: "CIMB Niaga" },
-  danamon: { name: "Danamon Virtual Account", shortName: "Danamon" },
   mandiri: { name: "Mandiri Virtual Account", shortName: "Mandiri" },
   permata: { name: "Permata Virtual Account", shortName: "Permata" },
 };
 
 const EWALLET_NAMES: Record<EwalletCode, { name: string; shortName: string }> = {
-  dana: { name: "DANA", shortName: "DANA" },
   gopay: { name: "GoPay", shortName: "GoPay" },
-  linkaja: { name: "LinkAja", shortName: "LinkAja" },
-  ovo: { name: "OVO", shortName: "OVO" },
-  shopeepay: { name: "ShopeePay", shortName: "ShopeePay" },
 };
 
-const CSTORE_NAMES: Record<CstoreCode, { name: string; shortName: string }> = {
-  alfamart: { name: "Alfamart", shortName: "Alfamart" },
-  indomaret: { name: "Indomaret", shortName: "Indomaret" },
+const QRIS_NAMES: Record<QrisCode, { name: string; shortName: string }> = {
+  qris_gopay: {
+    name: "QRIS Dinamis GoPay",
+    shortName: "QRIS GoPay",
+  },
 };
 
 export const BANK_CHANNELS: readonly PaymentChannel[] = PAYGATE_BANK_CODES.map(
@@ -129,41 +126,39 @@ export const EWALLET_CHANNELS: readonly PaymentChannel[] =
     shortName: EWALLET_NAMES[id].shortName,
   }));
 
-export const QRIS_CHANNEL: PaymentChannel = {
-  category: "qris",
-  categoryLabel: "QRIS",
-  description: "Scan with any QRIS-supported bank or wallet app.",
-  enabled: true,
-  estimatedProcessingTime: "Instant",
-  icon: "qr-code",
-  id: "qris",
-  instructions: "Scan the QR code with any QRIS-supported app and pay the exact amount.",
-  name: "QRIS",
-  paymentType: "qris",
-  priority: 200,
-  shortName: "QRIS",
-};
-
-export const CSTORE_CHANNELS: readonly PaymentChannel[] =
-  PAYGATE_CSTORE_CODES.map((id, index) => ({
-    category: "convenience_store",
-    categoryLabel: "Convenience Store",
-    description: `Pay at the nearest ${CSTORE_NAMES[id].shortName} cashier.`,
+export const QRIS_CHANNELS: readonly PaymentChannel[] = PAYGATE_QRIS_CODES.map(
+  (id, index) => ({
+    category: "qris",
+    categoryLabel: "QRIS",
+    description: "Scan the dynamic QRIS code generated through GoPay.",
     enabled: true,
-    estimatedProcessingTime: "Up to 1 hour",
-    icon: "store",
+    estimatedProcessingTime: "Instant",
+    icon: "qr-code",
     id,
-    instructions: `Show the payment code to the ${CSTORE_NAMES[id].shortName} cashier before it expires.`,
-    name: CSTORE_NAMES[id].name,
-    paymentType: "cstore",
-    priority: 300 + index + 1,
-    shortName: CSTORE_NAMES[id].shortName,
-  }));
+    instructions:
+      "Scan the dynamic QRIS code with a QRIS-supported bank or wallet app and pay the exact amount.",
+    name: QRIS_NAMES[id].name,
+    paymentType: "qris",
+    priority: 200 + index + 1,
+    shortName: QRIS_NAMES[id].shortName,
+  }),
+);
+
+function getPrimaryQrisChannel(): PaymentChannel {
+  const channel = QRIS_CHANNELS[0];
+  if (!channel) throw new Error("QRIS GoPay payment channel is not configured.");
+
+  return channel;
+}
+
+export const QRIS_CHANNEL: PaymentChannel = getPrimaryQrisChannel();
+
+export const CSTORE_CHANNELS: readonly PaymentChannel[] = [];
 
 export const ALL_PAYMENT_CHANNELS: readonly PaymentChannel[] = [
   ...BANK_CHANNELS,
   ...EWALLET_CHANNELS,
-  QRIS_CHANNEL,
+  ...QRIS_CHANNELS,
   ...CSTORE_CHANNELS,
 ].sort((a, b) => a.priority - b.priority);
 
@@ -174,7 +169,7 @@ export const CHANNELS_BY_CATEGORY: Record<
   bank_transfer: BANK_CHANNELS,
   convenience_store: CSTORE_CHANNELS,
   ewallet: EWALLET_CHANNELS,
-  qris: [QRIS_CHANNEL],
+  qris: QRIS_CHANNELS,
 };
 
 export function getChannelById(id: string): PaymentChannel | undefined {

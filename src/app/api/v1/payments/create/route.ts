@@ -150,7 +150,7 @@ function buildPaymentWebhookUrl(baseUrl: string): string {
 
 function getRequestedPaymentMethod(input: CreatePaymentInput): string {
   const requestedMethod =
-    input.paymentMethod ?? input.bank ?? input.ewallet ?? input.store ?? "bca";
+    input.paymentMethod ?? input.bank ?? input.ewallet ?? input.store ?? "qris_gopay";
 
   return requestedMethod;
 }
@@ -189,7 +189,7 @@ function buildPayGateChannelInput(
   }
 
   return {
-    paymentMethod: "qris",
+    paymentMethod: channel.id,
   };
 }
 

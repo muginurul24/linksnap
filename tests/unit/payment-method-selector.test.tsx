@@ -24,21 +24,20 @@ describe("payment method selector", () => {
       "Bank Transfer",
       "E-Wallet",
       "QRIS",
-      "Convenience Store",
       "Continue",
     ]) {
       expect(markup).toContain(label);
     }
 
-    for (const channel of ["BCA", "GoPay", "QRIS", "Indomaret"]) {
+    for (const channel of ["BSI", "GoPay", "QRIS GoPay"]) {
       expect(markup).toContain(channel);
     }
   });
 
-  it("should preselect BCA by default", () => {
+  it("should preselect QRIS GoPay by default", () => {
     const markup = renderToStaticMarkup(<PaymentMethodSelector />);
 
-    expect(markup).toContain('aria-label="Select BCA Virtual Account"');
+    expect(markup).toContain('aria-label="Select QRIS Dinamis GoPay"');
     expect(markup).toContain('aria-pressed="true"');
   });
 
@@ -61,19 +60,14 @@ describe("payment method selector", () => {
   });
 
   it("should filter channels by id, name, and category", () => {
-    expect(filterPaymentChannels(ALL_PAYMENT_CHANNELS, "bca").map((c) => c.id)).toEqual([
-      "bca",
+    expect(filterPaymentChannels(ALL_PAYMENT_CHANNELS, "bsi").map((c) => c.id)).toEqual([
+      "bsi",
     ]);
     expect(filterPaymentChannels(ALL_PAYMENT_CHANNELS, "E-Wallet").map((c) => c.id)).toEqual([
       "gopay",
-      "ovo",
-      "dana",
-      "shopeepay",
-      "linkaja",
     ]);
-    expect(filterPaymentChannels(ALL_PAYMENT_CHANNELS, "cashier").map((c) => c.id)).toEqual([
-      "indomaret",
-      "alfamart",
+    expect(filterPaymentChannels(ALL_PAYMENT_CHANNELS, "dynamic").map((c) => c.id)).toEqual([
+      "qris_gopay",
     ]);
   });
 
@@ -82,8 +76,8 @@ describe("payment method selector", () => {
       <PaymentMethodSelector channels={BANK_CHANNELS.slice(0, 2)} />,
     );
 
-    expect(markup).toContain("Select BCA Virtual Account");
     expect(markup).toContain("Select BNI Virtual Account");
+    expect(markup).toContain("Select BRI Virtual Account");
     expect(markup).not.toContain("Select GoPay");
   });
 

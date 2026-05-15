@@ -6,7 +6,6 @@ import {
   getExpirationCountdown,
 } from "../../src/app/(marketing)/checkout/success/checkout-status-client";
 import { PaymentInstructionsBank } from "../../src/components/payments/payment-instructions-bank";
-import { PaymentInstructionsCstore } from "../../src/components/payments/payment-instructions-cstore";
 import { PaymentInstructionsEwallet } from "../../src/components/payments/payment-instructions-ewallet";
 import { PaymentInstructionsQris } from "../../src/components/payments/payment-instructions-qris";
 import { getChannelById } from "../../src/lib/payments/payment-channels";
@@ -25,12 +24,12 @@ describe("payment instructions", () => {
   it("should render bank transfer instructions with copyable VA number", () => {
     const markup = renderToStaticMarkup(
       <PaymentInstructionsBank
-        channel={getRequiredChannel("bca")}
-        vaNumber={{ bank: "bca", va_number: "88001234567890" }}
+        channel={getRequiredChannel("bsi")}
+        vaNumber={{ bank: "bsi", va_number: "88001234567890" }}
       />,
     );
 
-    expect(markup).toContain("BCA virtual account");
+    expect(markup).toContain("BSI virtual account");
     expect(markup).toContain("88001234567890");
     expect(markup).toContain("Copy");
   });
@@ -48,21 +47,12 @@ describe("payment instructions", () => {
     expect(
       renderToStaticMarkup(
         <PaymentInstructionsQris
-          channel={getRequiredChannel("qris")}
+          channel={getRequiredChannel("qris_gopay")}
           qrString="000201010212"
           qrUrl="https://pay.example/qris.png"
         />,
       ),
     ).toContain("Scan with any QRIS app");
-
-    expect(
-      renderToStaticMarkup(
-        <PaymentInstructionsCstore
-          channel={getRequiredChannel("indomaret")}
-          paymentCode="1234567890"
-        />,
-      ),
-    ).toContain("Show at Indomaret cashier");
   });
 
   it("should format expiration countdowns", () => {

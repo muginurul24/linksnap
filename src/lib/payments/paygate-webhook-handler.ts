@@ -99,7 +99,7 @@ function getWebhookMetadataString(
 }
 
 function getWebhookQrisMethod(payload: PayGateWebhookPayload): string | null {
-  return payload.payment_type === "qris" ? "qris" : null;
+  return payload.payment_type === "qris" ? "qris_gopay" : null;
 }
 
 function getWebhookPaymentMethod(

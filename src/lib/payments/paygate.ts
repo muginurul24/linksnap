@@ -6,17 +6,20 @@ import {
   PAYGATE_BANK_CODES,
   PAYGATE_CSTORE_CODES,
   PAYGATE_EWALLET_CODES,
+  PAYGATE_QRIS_CODES,
   type BankCode,
   type CstoreCode,
   type EwalletCode,
   type PaymentChannelCode,
   type PayGateResolvedPaymentChannel,
+  type QrisCode,
 } from "@/lib/payments/payment-channel-codes";
 
 export {
   PAYGATE_BANK_CODES,
   PAYGATE_CSTORE_CODES,
   PAYGATE_EWALLET_CODES,
+  PAYGATE_QRIS_CODES,
 };
 export type {
   BankCode,
@@ -29,6 +32,7 @@ export type {
   PayGateResolvedPaymentChannel as PaymentChannel,
   PaymentChannelCode,
   Qris,
+  QrisCode,
 } from "@/lib/payments/payment-channel-codes";
 
 type PaymentChannel = PayGateResolvedPaymentChannel;
@@ -74,6 +78,7 @@ type PayGateEwalletPayload = PayGateBaseChargePayload & {
   payment_type: "ewallet";
 };
 type PayGateQrisPayload = PayGateBaseChargePayload & {
+  acquirer: "gopay";
   payment_type: "qris";
 };
 type PayGateCstorePayload = PayGateBaseChargePayload & {
@@ -231,11 +236,17 @@ function isCstoreCode(value: string): value is CstoreCode {
   return PAYGATE_CSTORE_CODES.includes(value as CstoreCode);
 }
 
+function isQrisCode(value: string): value is QrisCode {
+  return PAYGATE_QRIS_CODES.includes(value as QrisCode);
+}
+
 export function resolvePayGatePaymentChannel(
   input: Pick<PayGateChargeInput, "bank" | "ewallet" | "paymentMethod" | "store">,
 ): PaymentChannel {
+  const requestedPaymentMethod: string =
+    input.paymentMethod ?? input.bank ?? input.ewallet ?? input.store ?? "qris_gopay";
   const paymentMethod =
-    input.paymentMethod ?? input.bank ?? input.ewallet ?? input.store ?? "bca";
+    requestedPaymentMethod === "qris" ? "qris_gopay" : requestedPaymentMethod;
 
   if (isBankCode(paymentMethod)) {
     return {
@@ -253,8 +264,9 @@ export function resolvePayGatePaymentChannel(
     };
   }
 
-  if (paymentMethod === "qris") {
+  if (isQrisCode(paymentMethod)) {
     return {
+      acquirer: "gopay",
       paymentMethod,
       paymentType: "qris",
     };
@@ -275,7 +287,7 @@ function buildPaymentChannelPayload(
   channel: PaymentChannel,
 ): Pick<PayGateBankTransferPayload, "bank" | "payment_type"> |
   Pick<PayGateEwalletPayload, "ewallet" | "payment_type"> |
-  Pick<PayGateQrisPayload, "payment_type"> |
+  Pick<PayGateQrisPayload, "acquirer" | "payment_type"> |
   Pick<PayGateCstorePayload, "payment_type" | "store"> {
   if (channel.paymentType === "bank_transfer") {
     return { bank: channel.bank, payment_type: "bank_transfer" };
@@ -289,7 +301,7 @@ function buildPaymentChannelPayload(
     return { payment_type: "cstore", store: channel.store };
   }
 
-  return { payment_type: "qris" };
+  return { acquirer: channel.acquirer, payment_type: "qris" };
 }
 
 export function buildPayGateChargePayload(

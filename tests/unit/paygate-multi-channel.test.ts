@@ -42,14 +42,14 @@ describe("PayGate multi-channel client", () => {
     }
   });
 
-  it("should keep BCA as the default channel for backward compatibility", () => {
+  it("should use QRIS GoPay as the default production channel", () => {
     expect(buildPayGateChargePayload(createChargeInput())).toMatchObject({
-      bank: "bca",
+      acquirer: "gopay",
       metadata: {
-        paymentMethod: "bca",
-        paymentType: "bank_transfer",
+        paymentMethod: "qris_gopay",
+        paymentType: "qris",
       },
-      payment_type: "bank_transfer",
+      payment_type: "qris",
     });
   });
 
@@ -63,12 +63,6 @@ describe("PayGate multi-channel client", () => {
     ).toMatchObject({
       ewallet: "gopay",
       payment_type: "ewallet",
-    });
-    expect(
-      buildPayGateChargePayload(createChargeInput({ store: "indomaret" })),
-    ).toMatchObject({
-      payment_type: "cstore",
-      store: "indomaret",
     });
   });
 
@@ -87,14 +81,15 @@ describe("PayGate multi-channel client", () => {
     }
   });
 
-  it("should construct QRIS payloads without channel-specific fields", () => {
+  it("should construct QRIS dynamic GoPay payloads with the GoPay acquirer", () => {
     const payload = buildPayGateChargePayload(
-      createChargeInput({ paymentMethod: "qris" }),
+      createChargeInput({ paymentMethod: "qris_gopay" }),
     );
 
     expect(payload).toMatchObject({
+      acquirer: "gopay",
       metadata: {
-        paymentMethod: "qris",
+        paymentMethod: "qris_gopay",
         paymentType: "qris",
       },
       payment_type: "qris",
@@ -138,14 +133,10 @@ describe("PayGate multi-channel client", () => {
       paymentMethod: "gopay",
       paymentType: "ewallet",
     });
-    expect(resolvePayGatePaymentChannel({ paymentMethod: "qris" })).toEqual({
-      paymentMethod: "qris",
+    expect(resolvePayGatePaymentChannel({ paymentMethod: "qris_gopay" })).toEqual({
+      acquirer: "gopay",
+      paymentMethod: "qris_gopay",
       paymentType: "qris",
-    });
-    expect(resolvePayGatePaymentChannel({ paymentMethod: "alfamart" })).toEqual({
-      paymentMethod: "alfamart",
-      paymentType: "cstore",
-      store: "alfamart",
     });
   });
 });

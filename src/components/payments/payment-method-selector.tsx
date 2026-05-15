@@ -71,7 +71,7 @@ export function PaymentMethodSelector({
   channels = ALL_PAYMENT_CHANNELS,
   className,
   continueLabel = "Continue",
-  defaultChannelId = "bca",
+  defaultChannelId = "qris_gopay",
   disabled = false,
   onContinue,
   onSelectedChannelChange,

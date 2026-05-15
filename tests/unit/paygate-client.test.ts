@@ -59,8 +59,8 @@ describe("PayGate client", () => {
     });
 
     expect(payload).toEqual({
+      acquirer: "gopay",
       amount: 128000,
-      bank: "bca",
       callback_url: "https://linksnap.test/api/v1/payments/webhook",
       currency: "IDR",
       customer: {
@@ -78,13 +78,13 @@ describe("PayGate client", () => {
       metadata: {
         campaign: "launch",
         duration: "MONTHLY",
-        paymentMethod: "bca",
-        paymentType: "bank_transfer",
+        paymentMethod: "qris_gopay",
+        paymentType: "qris",
         plan: "PRO",
         source: "linksnap",
       },
       order_id: "LS-123",
-      payment_type: "bank_transfer",
+      payment_type: "qris",
     });
   });
 
