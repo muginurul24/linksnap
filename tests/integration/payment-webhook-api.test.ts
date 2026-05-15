@@ -137,9 +137,9 @@ function createWebhookPayload(
       fraud_status: "accept",
       transaction_id: "trx-1",
       transaction_status: "settlement",
-      va_numbers: [{ bank: "bca", va_number: "88001234567890" }],
+      va_numbers: [{ bank: "bsi", va_number: "88001234567890" }],
     },
-    metadata: { paymentMethod: "bca" },
+    metadata: { paymentMethod: "bsi" },
     order_id: "LS-123",
     paid_at: "2026-05-07T08:00:00+07:00",
     payment_type: "bank_transfer",
@@ -216,7 +216,7 @@ describe("payment webhook API", () => {
       {
         expectedStatus: "PENDING",
         orderId: "LS-123",
-        paymentMethod: "bca",
+        paymentMethod: "bsi",
         status: "SETTLEMENT",
       },
     ]);
@@ -235,7 +235,7 @@ describe("payment webhook API", () => {
         grossAmountIdr: 128000,
         grossAmountUsd: 8,
         orderId: "LS-123",
-        paymentMethod: "bca",
+        paymentMethod: "bsi",
         plan: "PRO",
         providerTransactionId: "paygate-transaction-1",
         to: "buyer@example.com",
@@ -256,7 +256,7 @@ describe("payment webhook API", () => {
     const response = await POST(
       createRequest(
         createWebhookPayload({
-          paid_at: undefined,
+          paid_at: null,
           status: "pending",
         }),
       ),

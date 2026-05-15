@@ -84,10 +84,14 @@ vi.mock("@/lib/payments/paygate", () => {
       data: {
         amount: grossAmountIdr,
         midtrans: {
-          va_numbers: [{ bank: "bca", va_number: "88001234567890" }],
+          qr_string: "000201010212",
+          qr_url: "https://pay.example/qris.png",
         },
         order_id: orderId,
-        payment_type: "bank_transfer",
+        payment_method: "qris_gopay",
+        payment_type: "qris",
+        qr_string: "000201010212",
+        qr_url: "https://pay.example/qris.png",
         platform_order_id: `linksnap_${orderId}`,
         status: "pending",
         transaction_id: "paygate-transaction-1",
@@ -312,7 +316,7 @@ describe("payment create to webhook flow", () => {
         grossAmountIdr: 128000,
         grossAmountUsd: 8,
         orderId: createBody.data.orderId,
-        paymentMethod: "bca",
+        paymentMethod: "qris_gopay",
         plan: "PRO",
         snapToken: null,
         status: "SETTLEMENT",
@@ -323,7 +327,7 @@ describe("payment create to webhook flow", () => {
     expect(mockState.invoiceEmails).toHaveLength(1);
     expect(mockState.invoiceEmails[0]).toMatchObject({
       orderId: createBody.data.orderId,
-      paymentMethod: "bca",
+      paymentMethod: "qris_gopay",
       providerTransactionId: "paygate-transaction-1",
       to: "buyer@example.com",
     });

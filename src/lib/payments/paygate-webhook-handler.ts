@@ -38,7 +38,7 @@ type PayGateWebhookPayload = {
     }>;
   };
   order_id: string;
-  paid_at?: string;
+  paid_at?: string | null;
   payment_method?: string;
   payment_type?: string;
   status: PayGateWebhookStatus;

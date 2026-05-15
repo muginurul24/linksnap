@@ -142,7 +142,7 @@ export type PayGateChargeResponse = {
       va_numbers?: PayGateVaNumber[];
     };
     order_id: string;
-    paid_at?: string;
+    paid_at?: string | null;
     payment_code?: string;
     payment_method?: PaymentChannelCode | string;
     payment_type: string;

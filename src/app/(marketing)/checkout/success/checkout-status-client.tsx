@@ -59,7 +59,7 @@ type PaymentLookupData = {
     va_numbers?: BankVaNumber[];
   };
   order_id: string;
-  paid_at?: string;
+  paid_at?: string | null;
   payment_code?: string;
   payment_method?: string;
   payment_type: string;

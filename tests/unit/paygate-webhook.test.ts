@@ -73,5 +73,6 @@ describe("PayGate webhook helpers", () => {
       "2026-05-08T03:00:00.000Z",
     );
     expect(parsePayGateTimestamp("not-a-date")).toBeNull();
+    expect(parsePayGateTimestamp(null)).toBeNull();
   });
 });

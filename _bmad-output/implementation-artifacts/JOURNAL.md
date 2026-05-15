@@ -9443,6 +9443,45 @@ Audited `apps/mobile_flutter`, verified Flutter/Dart commands exist through snap
 
 **Next Task:** 25.11 — Final Quality Gate & Go-Live
 
+### 23.13 Follow-up — Production Checkout Detail & Webhook Null Timestamp
+- **Date:** 2026-05-15 08:10 GMT+7
+- **Duration:** 1 hour 30 minutes
+- **Status:** ✅ Complete
+
+**What I Did:**
+Investigated the production checkout error on `www.justqiu.cloud` and confirmed the live PayGate lookup for order `LS-1778806110022-cfdbe91dba67` now returns a valid pending payment detail after the PayGate backend deployment. Fixed LinkSnap webhook validation so pending PayGate callbacks with `paid_at: null` are accepted instead of rejected as validation errors.
+
+**Files Changed:**
+- `src/lib/validations/payment.ts` — Allows nullable `paid_at` in PayGate webhook payloads.
+- `src/lib/payments/paygate-webhook-handler.ts` — Carries nullable `paid_at` through the webhook handler type.
+- `src/lib/payments/paygate-webhook.ts` — Treats null timestamps as absent timestamps.
+- `src/lib/payments/paygate.ts` — Aligns PayGate transaction response typing with nullable provider timestamps.
+- `src/app/(marketing)/checkout/success/checkout-status-client.tsx` — Aligns checkout detail typing with nullable provider timestamps.
+- `tests/integration/payment-webhook-api.test.ts` — Covers pending webhook payloads with `paid_at: null` and active BSI channel metadata.
+- `tests/unit/paygate-webhook.test.ts` — Covers null timestamp parsing.
+- `tests/integration/payment-create-webhook-flow.test.ts` — Keeps the default payment flow aligned to QRIS Dinamis GoPay.
+- `_bmad-output/implementation-artifacts/JOURNAL.md` — Logged this production follow-up.
+
+**Decisions Made:**
+- Accept `paid_at: null` only as an absent timestamp; settlement still uses a valid provider timestamp when provided and falls back to server time only for activating statuses.
+- Kept production fixtures on active channels (`bsi`, `qris_gopay`) instead of reintroducing inactive BCA expectations.
+
+**Tests:**
+- ✅ Targeted webhook: `rtk bun run test -- tests/unit/paygate-webhook.test.ts tests/integration/payment-webhook-api.test.ts tests/integration/payment-create-webhook-flow.test.ts` — Passed.
+- ✅ Payment suite: `rtk bun run test -- tests/unit/paygate-client.test.ts tests/unit/paygate-multi-channel.test.ts tests/unit/payment-channels.test.ts tests/unit/payment-method-selector.test.tsx tests/unit/payment-instructions.test.tsx tests/integration/create-payment-api.test.ts tests/unit/paygate-webhook.test.ts tests/integration/payment-webhook-api.test.ts tests/integration/payment-create-webhook-flow.test.ts` — Passed.
+- ✅ Typecheck: `rtk bun run typecheck` — Passed.
+- ✅ Lint: `rtk bun run lint` — Passed.
+
+**Issues Encountered:**
+- The production PayGate callback retry had already reached permanent failure before this LinkSnap patch because the pending payload contained `paid_at: null`.
+
+**Security Checks:**
+- ✅ No payment provider secrets were added to logs or client code.
+- ✅ Payment channel values remain allowlisted before persistence.
+- ✅ Pending webhook callbacks do not activate subscriptions.
+
+**Next Task:** Redeploy LinkSnap through Vercel, then resend or replay the failed PayGate webhook delivery if a clean delivery record is required.
+
 ### 25.11 — Final Quality Gate & Go-Live
 - **Date:** 2026-05-09 19:53 GMT+7
 - **Duration:** 15m

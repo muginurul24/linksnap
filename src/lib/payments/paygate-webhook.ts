@@ -96,7 +96,7 @@ export function mapPayGateStatus(
   }
 }
 
-export function parsePayGateTimestamp(value: string | undefined): Date | null {
+export function parsePayGateTimestamp(value: string | null | undefined): Date | null {
   if (!value) return null;
 
   const parsed = new Date(value);

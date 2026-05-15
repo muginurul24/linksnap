@@ -77,7 +77,7 @@ export const payGateWebhookSchema = z.object({
     })
     .optional(),
   order_id: z.string().min(1, "Order ID is required").max(100),
-  paid_at: z.string().optional(),
+  paid_at: z.string().nullable().optional(),
   payment_method: z.string().optional(),
   payment_type: z.string().optional(),
   ewallet: z.string().optional(),
